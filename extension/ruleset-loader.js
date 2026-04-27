@@ -130,10 +130,15 @@ function fetchRulesetFromUrl(url) {
 }
 
 function getChatId() {
-  var m = window.location.pathname.match(/\/chat\/([^/?#]+)/);
-  if (m) return m[1];
-  m = window.location.pathname.match(/\/game\/([^/?#]+)/);
-  if (m) return m[1];
+  /* Marinara is a single-page app; the URL doesn't change between chats.
+     The active chat id lives in localStorage under "marinara-active-chat-id"
+     (see packages/client/src/stores/chat.store.ts STORAGE_KEY). Read that
+     directly rather than guessing from the URL. */
+  var stored = lsGet("marinara-active-chat-id");
+  if (stored) return stored;
+  /* URL fallback in case a future Marinara version adds a router. */
+  var m = window.location.pathname.match(/\/(chat|game)\/([^/?#]+)/);
+  if (m) return m[2];
   return null;
 }
 
@@ -1283,22 +1288,25 @@ function exposeDebug() {
   };
 }
 
-/* SPAs use history.pushState which does NOT fire popstate. Polling is the
-   portable way to detect Marinara's chat navigation. Only runs after a
-   ruleset has activated; dormant tabs do no work. */
+/* Marinara is a state-driven SPA — the URL doesn't change between chats.
+   Poll Marinara's own active-chat localStorage key instead so we detect
+   chat switches AND the case where the chat id wasn't yet set when our
+   extension first ran (Marinara's init order vs ours). */
 function watchRouteChanges() {
-  var lastPath = window.location.pathname;
+  var lastSeenChatId = state.chatId;
   marinara.setInterval(function () {
-    if (window.location.pathname === lastPath) return;
-    lastPath = window.location.pathname;
     var newId = getChatId();
-    if (newId === state.chatId) return;
+    if (newId === lastSeenChatId) return;
+    lastSeenChatId = newId;
+
+    log("chatId changed: " + state.chatId + " -> " + newId);
 
     /* Persist the outgoing chat's character before swapping any state. */
     flushSave();
 
     state.chatId = newId;
     if (!state.ruleset) return;
+    if (!newId) return;  /* nothing to load until a chat is selected */
 
     /* Each chat has its own character list and active character. Reload
        fully — previously this only refreshed state.sheet, which left the
