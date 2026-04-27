@@ -44,13 +44,15 @@ var BOTCH_TRIGGER = {
 };
 
 var state = {
-  ruleset: null,
-  sheet:   null,
-  chatId:  null,
-  mountEl: null,
-  diceEl:  null,
-  dialogEl:null,
-  gearEl:  null
+  ruleset:           null,
+  sheet:             null,
+  chatId:            null,
+  characters:        [],
+  activeCharacterId: null,
+  mountEl:           null,
+  diceEl:            null,
+  dialogEl:          null,
+  gearEl:            null
 };
 
 /* ─────  utilities  ───── */
@@ -123,9 +125,13 @@ function getChatId() {
   return null;
 }
 
+function sheetKey(chatId, characterId) {
+  return LS_SHEET_PFX + chatId + "-" + characterId;
+}
+
 function loadSheet(chatId, ruleset) {
-  if (!chatId) return blankSheet(ruleset);
-  var raw = lsGet(LS_SHEET_PFX + chatId);
+  if (!chatId || !state.activeCharacterId) return blankSheet(ruleset);
+  var raw = lsGet(sheetKey(chatId, state.activeCharacterId));
   if (!raw) return blankSheet(ruleset);
   var parsed = safeParse(raw);
   if (!parsed) return blankSheet(ruleset);
@@ -133,8 +139,93 @@ function loadSheet(chatId, ruleset) {
 }
 
 function saveSheet(chatId, sheet) {
+  if (!chatId || !state.activeCharacterId) return;
+  lsSet(sheetKey(chatId, state.activeCharacterId), JSON.stringify(sheet));
+}
+
+function loadCharacters(chatId) {
+  if (!chatId) return [{ id: "player", name: "Player" }];
+  var raw = lsGet("mrr-chars-" + chatId);
+  if (raw) {
+    var parsed = safeParse(raw);
+    if (Array.isArray(parsed) && parsed.length) return parsed;
+  }
+  return [{ id: "player", name: "Player" }];
+}
+
+function saveCharacters() {
+  if (!state.chatId) return;
+  lsSet("mrr-chars-" + state.chatId, JSON.stringify(state.characters));
+}
+
+function loadActiveCharacterId(chatId, fallback) {
+  if (!chatId) return fallback;
+  return lsGet("mrr-active-char-" + chatId) || fallback;
+}
+
+function saveActiveCharacterId() {
+  if (!state.chatId || !state.activeCharacterId) return;
+  lsSet("mrr-active-char-" + state.chatId, state.activeCharacterId);
+}
+
+function migrateLegacySheet(chatId) {
+  /* One-time migration: pre-character sheet key "mrr-sheet-{chatId}" becomes
+     "mrr-sheet-{chatId}-player" so legacy data survives the per-character split. */
   if (!chatId) return;
-  lsSet(LS_SHEET_PFX + chatId, JSON.stringify(sheet));
+  var oldKey = LS_SHEET_PFX + chatId;
+  var newKey = LS_SHEET_PFX + chatId + "-player";
+  var oldData = lsGet(oldKey);
+  if (oldData && !lsGet(newKey)) {
+    lsSet(newKey, oldData);
+    lsDel(oldKey);
+  }
+}
+
+function slugify(name) {
+  var s = String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return s || ("char-" + Date.now());
+}
+
+function switchCharacter(id) {
+  if (!id) return;
+  state.activeCharacterId = id;
+  saveActiveCharacterId();
+  state.sheet = loadSheet(state.chatId, state.ruleset);
+  renderSheet();
+}
+
+function addCharacter() {
+  var name = (window.prompt("New character name:") || "").trim();
+  if (!name) return;
+  var id = slugify(name);
+  if (state.characters.some(function (c) { return c.id === id; })) id = id + "-" + Date.now();
+  state.characters.push({ id: id, name: name });
+  saveCharacters();
+  switchCharacter(id);
+}
+
+function renameActiveCharacter() {
+  var current = state.characters.find(function (c) { return c.id === state.activeCharacterId; });
+  if (!current) return;
+  var newName = (window.prompt("Rename character:", current.name) || "").trim();
+  if (!newName || newName === current.name) return;
+  current.name = newName;
+  saveCharacters();
+  renderSheet();
+}
+
+function removeActiveCharacter() {
+  if (state.characters.length <= 1) {
+    window.alert("Cannot remove the last character. Add another first, then remove this one.");
+    return;
+  }
+  var current = state.characters.find(function (c) { return c.id === state.activeCharacterId; });
+  if (!current) return;
+  if (!window.confirm("Remove " + current.name + "? Their sheet will be deleted.")) return;
+  lsDel(sheetKey(state.chatId, current.id));
+  state.characters = state.characters.filter(function (c) { return c.id !== current.id; });
+  saveCharacters();
+  switchCharacter(state.characters[0].id);
 }
 
 function blankSheet(rs) {
@@ -222,6 +313,66 @@ function hideBuiltInAttributesPanel(container) {
 
 /* ─────  shared UI helpers  ───── */
 
+/* Pointer-event drag for floating panels. `el` is the panel; `handle` is the
+   region the user grabs. Position persists in localStorage under posKey so
+   the panel returns to the user's chosen spot after reload / chat switch.
+   Drags from inside interactive controls (button/input/select) are ignored. */
+function makeDraggable(el, handle, posKey) {
+  if (!el || !handle) return;
+  var saved = lsGet(posKey);
+  if (saved) {
+    var pos = safeParse(saved);
+    if (pos && typeof pos.left === "number" && typeof pos.top === "number") {
+      el.style.left = pos.left + "px";
+      el.style.top = pos.top + "px";
+      el.style.right = "auto";
+      el.style.bottom = "auto";
+    }
+  }
+  handle.classList.add("mrr-draggable-handle");
+
+  var dragging = false;
+  var startX = 0, startY = 0;
+  var startLeft = 0, startTop = 0;
+  var pid = null;
+
+  marinara.on(handle, "pointerdown", function (e) {
+    if (e.target.closest("button, input, select, textarea, a")) return;
+    var rect = el.getBoundingClientRect();
+    dragging = true;
+    pid = e.pointerId;
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+    try { handle.setPointerCapture(pid); } catch (err) {}
+    e.preventDefault();
+  });
+
+  marinara.on(handle, "pointermove", function (e) {
+    if (!dragging || e.pointerId !== pid) return;
+    var nx = startLeft + (e.clientX - startX);
+    var ny = startTop  + (e.clientY - startY);
+    nx = Math.max(0, Math.min(window.innerWidth  - 80, nx));
+    ny = Math.max(0, Math.min(window.innerHeight - 30, ny));
+    el.style.left = nx + "px";
+    el.style.top  = ny + "px";
+    el.style.right  = "auto";
+    el.style.bottom = "auto";
+  });
+
+  function endDrag(e) {
+    if (!dragging) return;
+    if (e && e.pointerId !== pid) return;
+    dragging = false;
+    try { handle.releasePointerCapture(pid); } catch (err) {}
+    var rect = el.getBoundingClientRect();
+    lsSet(posKey, JSON.stringify({ left: rect.left, top: rect.top }));
+  }
+  marinara.on(handle, "pointerup",     endDrag);
+  marinara.on(handle, "pointercancel", endDrag);
+}
+
 /* Stepper used by attributes, skills, derived values, derived bars.
    opts: { get(), set(v), min, max, onChange?(v) } */
 function addStepper(parent, opts) {
@@ -283,21 +434,22 @@ function renderSheet() {
   if (state.mountEl && state.mountEl.parentNode) state.mountEl.parentNode.removeChild(state.mountEl);
 
   var host = findSheetContainer();
+  var floating = false;
   if (!host) {
     state.mountEl = marinara.addElement(document.body, "div", { "class": "mrr-sheet mrr-sheet--floating" });
-    if (!state.mountEl) return;
+    floating = true;
   } else {
     hideBuiltInAttributesPanel(host);
     state.mountEl = marinara.addElement(host, "div", { "class": "mrr-sheet" });
-    if (!state.mountEl) return;
   }
+  if (!state.mountEl) return;
 
-  marinara.addElement(state.mountEl, "div", {
-    "class": "mrr-sheet__header",
-    innerHTML:
-      "<span class='mrr-sheet__title'>" + escapeHtml(state.ruleset.name) + "</span>" +
-      "<span class='mrr-sheet__meta'>v" + escapeHtml(state.ruleset.version) + " &middot; " + escapeHtml(state.ruleset.dice.type) + "</span>"
-  });
+  renderSheetHeader(state.mountEl);
+
+  if (floating) {
+    var sheetHeader = state.mountEl.querySelector(".mrr-sheet__header");
+    if (sheetHeader) makeDraggable(state.mountEl, sheetHeader, "mrr-sheet-pos");
+  }
 
   var sections = (state.ruleset.sheetSections && state.ruleset.sheetSections.length)
     ? state.ruleset.sheetSections
@@ -317,6 +469,63 @@ function renderSheet() {
     if (btnRoll) marinara.on(btnRoll, "click", function () { showDice(true); });
     if (btnSync) marinara.on(btnSync, "click", syncSheetToChat);
   }
+}
+
+function renderSheetHeader(parent) {
+  var header = marinara.addElement(parent, "div", { "class": "mrr-sheet__header" });
+  if (!header) return;
+
+  var titleRow = marinara.addElement(header, "div", { "class": "mrr-sheet__title-row" });
+  if (titleRow) {
+    marinara.addElement(titleRow, "span", {
+      "class": "mrr-sheet__title",
+      textContent: state.ruleset.name
+    });
+    marinara.addElement(titleRow, "span", {
+      "class": "mrr-sheet__meta",
+      textContent: "v" + state.ruleset.version + " · " + state.ruleset.dice.type
+    });
+  }
+
+  var charRow = marinara.addElement(header, "div", { "class": "mrr-sheet__char-row" });
+  if (!charRow) return;
+
+  marinara.addElement(charRow, "label", {
+    "class": "mrr-sheet__char-label",
+    textContent: "Character:"
+  });
+
+  var sel = marinara.addElement(charRow, "select", { "class": "mrr-char-select" });
+  if (sel) {
+    state.characters.forEach(function (c) {
+      var opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.name;
+      if (c.id === state.activeCharacterId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    marinara.on(sel, "change", function () { switchCharacter(sel.value); });
+  }
+
+  var btnAdd = marinara.addElement(charRow, "button", {
+    "class": "mrr-char-btn",
+    textContent: "+",
+    title: "Add a new character sheet"
+  });
+  if (btnAdd) marinara.on(btnAdd, "click", addCharacter);
+
+  var btnRename = marinara.addElement(charRow, "button", {
+    "class": "mrr-char-btn",
+    textContent: "rename"
+  });
+  if (btnRename) marinara.on(btnRename, "click", renameActiveCharacter);
+
+  var btnRemove = marinara.addElement(charRow, "button", {
+    "class": "mrr-char-btn mrr-char-btn--danger",
+    textContent: "x",
+    title: "Remove this character"
+  });
+  if (btnRemove) marinara.on(btnRemove, "click", removeActiveCharacter);
 }
 
 function renderAttributes(parent) {
@@ -533,6 +742,7 @@ function buildDice() {
     marinara.addElement(header, "span", { "class": "mrr-dice__title", textContent: "Dice — " + state.ruleset.name });
     var close = marinara.addElement(header, "button", { "class": "mrr-dice__close", innerHTML: "&times;" });
     if (close) marinara.on(close, "click", function () { showDice(false); });
+    makeDraggable(state.diceEl, header, "mrr-dice-pos");
   }
 
   var mode = state.ruleset.resolution.mode;
@@ -808,17 +1018,26 @@ function setMsg(el, text, kind) {
 
 function syncSheetToChat() {
   if (!state.chatId) { warn("no chat id; cannot sync"); return; }
-  var fields = [];
-  Object.keys(state.sheet.attributes).forEach(function (n) { fields.push({ name: n, value: String(state.sheet.attributes[n]) }); });
-  Object.keys(state.sheet.skills).forEach(function (n) { fields.push({ name: n, value: String(state.sheet.skills[n]) }); });
-  Object.keys(state.sheet.derived).forEach(function (n) { fields.push({ name: n, value: String(state.sheet.derived[n]) }); });
-  Object.keys(state.sheet.states).forEach(function (n) { fields.push({ name: n, value: String(state.sheet.states[n]) }); });
+  var current = state.characters.find(function (c) { return c.id === state.activeCharacterId; });
+  var prefix = current ? "[" + current.name + "] " : "";
 
-  marinara.apiFetch("/chats/" + state.chatId, {
-    method: "PATCH",
-    body: JSON.stringify({ customTrackerFields: fields })
-  }).then(function () {
-    log("synced " + fields.length + " fields to chat " + state.chatId);
+  marinara.apiFetch("/chats/" + state.chatId).then(function (chat) {
+    var existing = (chat && chat.customTrackerFields) || [];
+    /* Read-modify-write so other characters' synced fields survive when we
+       update this character's slice. Strip our own prefix, then re-add. */
+    var kept = existing.filter(function (f) { return !f.name || f.name.indexOf(prefix) !== 0; });
+    var fresh = [];
+    Object.keys(state.sheet.attributes).forEach(function (n) { fresh.push({ name: prefix + n, value: String(state.sheet.attributes[n]) }); });
+    Object.keys(state.sheet.skills    ).forEach(function (n) { fresh.push({ name: prefix + n, value: String(state.sheet.skills[n]) }); });
+    Object.keys(state.sheet.derived   ).forEach(function (n) { fresh.push({ name: prefix + n, value: String(state.sheet.derived[n]) }); });
+    Object.keys(state.sheet.states    ).forEach(function (n) { fresh.push({ name: prefix + n, value: String(state.sheet.states[n]) }); });
+    var allFields = kept.concat(fresh);
+    return marinara.apiFetch("/chats/" + state.chatId, {
+      method: "PATCH",
+      body: JSON.stringify({ customTrackerFields: allFields })
+    }).then(function () { return fresh.length; });
+  }).then(function (n) {
+    log("synced " + n + " fields for " + (current ? current.name : "?") + " to chat " + state.chatId);
   }).catch(function (e) {
     warn("sync failed: " + (e && e.message ? e.message : e));
   });
@@ -835,11 +1054,18 @@ function init() {
   }
   state.ruleset = rs;
   state.chatId  = getChatId();
-  state.sheet   = loadSheet(state.chatId, rs);
+  migrateLegacySheet(state.chatId);
+  state.characters = loadCharacters(state.chatId);
+  state.activeCharacterId = loadActiveCharacterId(state.chatId, state.characters[0].id);
+  if (!state.characters.some(function (c) { return c.id === state.activeCharacterId; })) {
+    state.activeCharacterId = state.characters[0].id;
+    saveActiveCharacterId();
+  }
+  state.sheet = loadSheet(state.chatId, rs);
   renderSheet();
   buildDice();
   watchRouteChanges();
-  log("activated ruleset " + rs.id + " v" + rs.version + " on chat " + (state.chatId || "(none)"));
+  log("activated ruleset " + rs.id + " v" + rs.version + " on chat " + (state.chatId || "(none)") + " as " + state.activeCharacterId);
 }
 
 /* SPAs use history.pushState which does NOT fire popstate. Polling is the
