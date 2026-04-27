@@ -225,7 +225,7 @@ function hideBuiltInAttributesPanel(container) {
 /* Stepper used by attributes, skills, derived values, derived bars.
    opts: { get(), set(v), min, max, onChange?(v) } */
 function addStepper(parent, opts) {
-  var stp = marinara.addElement(parent, "span", { className: "mrr-stepper" });
+  var stp = marinara.addElement(parent, "span", { "class": "mrr-stepper" });
   if (!stp) return null;
   var minus = marinara.addElement(stp, "button", { textContent: "-" });
   var plus  = marinara.addElement(stp, "button", { textContent: "+" });
@@ -245,16 +245,16 @@ function addStepper(parent, opts) {
 
 /* One row in the dice widget. data-mrr-input="key" is what numFromInput reads. */
 function diceRow(parent, label, key, def) {
-  var r = marinara.addElement(parent, "div", { className: "mrr-dice__row" });
+  var r = marinara.addElement(parent, "div", { "class": "mrr-dice__row" });
   if (!r) return null;
   marinara.addElement(r, "label", { textContent: label });
-  return marinara.addElement(r, "input", { className: "mrr-dice__input", type: "number", value: String(def), "data-mrr-input": key });
+  return marinara.addElement(r, "input", { "class": "mrr-dice__input", type: "number", value: String(def), "data-mrr-input": key });
 }
 
 /* "Roll" + "Send to chat" footer for every widget. */
 function diceFooter(parent, rollLabel, rollFn) {
-  var btnRoll = marinara.addElement(parent, "button", { className: "mrr-dice__btn", textContent: rollLabel });
-  var btnSend = marinara.addElement(parent, "button", { className: "mrr-dice__btn mrr-dice__btn--secondary mrr-dice__btn--row-spaced", textContent: "Send to chat" });
+  var btnRoll = marinara.addElement(parent, "button", { "class": "mrr-dice__btn", textContent: rollLabel });
+  var btnSend = marinara.addElement(parent, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary mrr-dice__btn--row-spaced", textContent: "Send to chat" });
   if (btnRoll) marinara.on(btnRoll, "click", rollFn);
   if (btnSend) marinara.on(btnSend, "click", sendLastRoll);
 }
@@ -284,16 +284,16 @@ function renderSheet() {
 
   var host = findSheetContainer();
   if (!host) {
-    state.mountEl = marinara.addElement(document.body, "div", { className: "mrr-sheet mrr-sheet--floating" });
+    state.mountEl = marinara.addElement(document.body, "div", { "class": "mrr-sheet mrr-sheet--floating" });
     if (!state.mountEl) return;
   } else {
     hideBuiltInAttributesPanel(host);
-    state.mountEl = marinara.addElement(host, "div", { className: "mrr-sheet" });
+    state.mountEl = marinara.addElement(host, "div", { "class": "mrr-sheet" });
     if (!state.mountEl) return;
   }
 
   marinara.addElement(state.mountEl, "div", {
-    className: "mrr-sheet__header",
+    "class": "mrr-sheet__header",
     innerHTML:
       "<span class='mrr-sheet__title'>" + escapeHtml(state.ruleset.name) + "</span>" +
       "<span class='mrr-sheet__meta'>v" + escapeHtml(state.ruleset.version) + " &middot; " + escapeHtml(state.ruleset.dice.type) + "</span>"
@@ -310,19 +310,19 @@ function renderSheet() {
     else if (sec === "states") renderStates(state.mountEl);
   });
 
-  var actions = marinara.addElement(state.mountEl, "div", { className: "mrr-section" });
+  var actions = marinara.addElement(state.mountEl, "div", { "class": "mrr-section" });
   if (actions) {
-    var btnRoll = marinara.addElement(actions, "button", { className: "mrr-dice__btn", textContent: "Open dice widget" });
-    var btnSync = marinara.addElement(actions, "button", { className: "mrr-dice__btn mrr-dice__btn--secondary mrr-dice__btn--row-spaced", textContent: "Sync sheet to chat fields" });
+    var btnRoll = marinara.addElement(actions, "button", { "class": "mrr-dice__btn", textContent: "Open dice widget" });
+    var btnSync = marinara.addElement(actions, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary mrr-dice__btn--row-spaced", textContent: "Sync sheet to chat fields" });
     if (btnRoll) marinara.on(btnRoll, "click", function () { showDice(true); });
     if (btnSync) marinara.on(btnSync, "click", syncSheetToChat);
   }
 }
 
 function renderAttributes(parent) {
-  var sec = marinara.addElement(parent, "div", { className: "mrr-section" });
+  var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
   if (!sec) return;
-  marinara.addElement(sec, "div", { className: "mrr-section__title", textContent: "Attributes" });
+  marinara.addElement(sec, "div", { "class": "mrr-section__title", textContent: "Attributes" });
 
   var groups = {};
   var groupOrder = [];
@@ -333,19 +333,19 @@ function renderAttributes(parent) {
   });
 
   groupOrder.forEach(function (g) {
-    var grpEl = marinara.addElement(sec, "div", { className: "mrr-group" });
+    var grpEl = marinara.addElement(sec, "div", { "class": "mrr-group" });
     if (!grpEl) return;
-    if (g) marinara.addElement(grpEl, "div", { className: "mrr-group__label", textContent: g });
+    if (g) marinara.addElement(grpEl, "div", { "class": "mrr-group__label", textContent: g });
     groups[g].forEach(function (a) { renderAttrRow(grpEl, a); });
   });
 }
 
 function renderAttrRow(parent, attr) {
-  var row = marinara.addElement(parent, "div", { className: "mrr-row" });
+  var row = marinara.addElement(parent, "div", { "class": "mrr-row" });
   if (!row) return;
-  marinara.addElement(row, "span", { className: "mrr-row__name", textContent: attr.name });
-  marinara.addElement(row, "span", { className: "mrr-row__abbr", textContent: attr.abbreviation || "" });
-  var val = marinara.addElement(row, "span", { className: "mrr-row__value", textContent: String(state.sheet.attributes[attr.name]) });
+  marinara.addElement(row, "span", { "class": "mrr-row__name", textContent: attr.name });
+  marinara.addElement(row, "span", { "class": "mrr-row__abbr", textContent: attr.abbreviation || "" });
+  var val = marinara.addElement(row, "span", { "class": "mrr-row__value", textContent: String(state.sheet.attributes[attr.name]) });
 
   addStepper(row, {
     get: function () { return state.sheet.attributes[attr.name]; },
@@ -357,20 +357,20 @@ function renderAttrRow(parent, attr) {
 }
 
 function renderSkills(parent) {
-  var sec = marinara.addElement(parent, "div", { className: "mrr-section" });
+  var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
   if (!sec) return;
   var title = (state.ruleset.id === "exalted3e") ? "Abilities" : "Skills";
-  marinara.addElement(sec, "div", { className: "mrr-section__title", textContent: title });
+  marinara.addElement(sec, "div", { "class": "mrr-section__title", textContent: title });
 
   state.ruleset.skills.forEach(function (sk) { renderSkillRow(sec, sk); });
 }
 
 function renderSkillRow(parent, skill) {
-  var row = marinara.addElement(parent, "div", { className: "mrr-row" });
+  var row = marinara.addElement(parent, "div", { "class": "mrr-row" });
   if (!row) return;
-  marinara.addElement(row, "span", { className: "mrr-row__name", textContent: skill.name });
-  marinara.addElement(row, "span", { className: "mrr-row__abbr", textContent: skill.linkedAttribute ? "(" + skill.linkedAttribute + ")" : "" });
-  var val = marinara.addElement(row, "span", { className: "mrr-row__value", textContent: String(state.sheet.skills[skill.name]) });
+  marinara.addElement(row, "span", { "class": "mrr-row__name", textContent: skill.name });
+  marinara.addElement(row, "span", { "class": "mrr-row__abbr", textContent: skill.linkedAttribute ? "(" + skill.linkedAttribute + ")" : "" });
+  var val = marinara.addElement(row, "span", { "class": "mrr-row__value", textContent: String(state.sheet.skills[skill.name]) });
 
   var stp = addStepper(row, {
     get: function () { return state.sheet.skills[skill.name]; },
@@ -380,7 +380,7 @@ function renderSkillRow(parent, skill) {
     onChange: function (v) { if (val) val.textContent = String(v); }
   });
   if (!stp) return;
-  var roll = marinara.addElement(stp, "button", { textContent: "roll", className: "mrr-row__roll" });
+  var roll = marinara.addElement(stp, "button", { textContent: "roll", "class": "mrr-row__roll" });
   if (roll) marinara.on(roll, "click", function () { quickRollForSkill(skill); });
 }
 
@@ -408,14 +408,14 @@ function quickRollForSkill(skill) {
 
 function renderDerived(parent) {
   if (!Array.isArray(state.ruleset.derivedStats) || !state.ruleset.derivedStats.length) return;
-  var sec = marinara.addElement(parent, "div", { className: "mrr-section" });
+  var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
   if (!sec) return;
-  marinara.addElement(sec, "div", { className: "mrr-section__title", textContent: "Derived" });
+  marinara.addElement(sec, "div", { "class": "mrr-section__title", textContent: "Derived" });
 
   state.ruleset.derivedStats.forEach(function (d) {
-    var wrap = marinara.addElement(sec, "div", { className: "mrr-derived" });
+    var wrap = marinara.addElement(sec, "div", { "class": "mrr-derived" });
     if (!wrap) return;
-    marinara.addElement(wrap, "div", { className: "mrr-derived__formula", textContent: d.name + " — " + d.formula });
+    marinara.addElement(wrap, "div", { "class": "mrr-derived__formula", textContent: d.name + " — " + d.formula });
     if (d.renderAs === "track" && Array.isArray(d.track)) {
       renderTrack(wrap, d);
     } else if (d.renderAs === "bar") {
@@ -427,9 +427,9 @@ function renderDerived(parent) {
 }
 
 function renderValue(parent, derived) {
-  var row = marinara.addElement(parent, "div", { className: "mrr-row mrr-row--compact" });
+  var row = marinara.addElement(parent, "div", { "class": "mrr-row mrr-row--compact" });
   if (!row) return;
-  var val = marinara.addElement(row, "span", { className: "mrr-row__value", textContent: String(state.sheet.derived[derived.name] || 0) });
+  var val = marinara.addElement(row, "span", { "class": "mrr-row__value", textContent: String(state.sheet.derived[derived.name] || 0) });
   addStepper(row, {
     get: function () { return state.sheet.derived[derived.name] || 0; },
     set: function (v) { state.sheet.derived[derived.name] = v; saveSheet(state.chatId, state.sheet); },
@@ -440,10 +440,10 @@ function renderValue(parent, derived) {
 }
 
 function renderBar(parent, derived) {
-  var bar = marinara.addElement(parent, "div", { className: "mrr-bar" });
+  var bar = marinara.addElement(parent, "div", { "class": "mrr-bar" });
   if (!bar) return;
-  var fill = marinara.addElement(bar, "div", { className: "mrr-bar__fill" });
-  var label = marinara.addElement(bar, "div", { className: "mrr-bar__label" });
+  var fill = marinara.addElement(bar, "div", { "class": "mrr-bar__fill" });
+  var label = marinara.addElement(bar, "div", { "class": "mrr-bar__label" });
   var max = derived.max || DEFAULT_BAR_MAX;
   function refresh() {
     var v = state.sheet.derived[derived.name] || 0;
@@ -452,7 +452,7 @@ function renderBar(parent, derived) {
   }
   refresh();
 
-  var ctrl = marinara.addElement(parent, "div", { className: "mrr-state" });
+  var ctrl = marinara.addElement(parent, "div", { "class": "mrr-state" });
   if (!ctrl) return;
   addStepper(ctrl, {
     get: function () { return state.sheet.derived[derived.name] || 0; },
@@ -464,7 +464,7 @@ function renderBar(parent, derived) {
 }
 
 function renderTrack(parent, derived) {
-  var track = marinara.addElement(parent, "div", { className: "mrr-track" });
+  var track = marinara.addElement(parent, "div", { "class": "mrr-track" });
   if (!track) return;
   var cells = [];
 
@@ -497,15 +497,15 @@ function renderTrack(parent, derived) {
 
 function renderStates(parent) {
   if (!Array.isArray(state.ruleset.states) || !state.ruleset.states.length) return;
-  var sec = marinara.addElement(parent, "div", { className: "mrr-section" });
+  var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
   if (!sec) return;
-  marinara.addElement(sec, "div", { className: "mrr-section__title", textContent: "States" });
+  marinara.addElement(sec, "div", { "class": "mrr-section__title", textContent: "States" });
 
   state.ruleset.states.forEach(function (st) {
-    var row = marinara.addElement(sec, "div", { className: "mrr-state" });
+    var row = marinara.addElement(sec, "div", { "class": "mrr-state" });
     if (!row) return;
-    marinara.addElement(row, "span", { className: "mrr-state__name", textContent: st.name });
-    var sel = marinara.addElement(row, "select", { className: "mrr-state__select" });
+    marinara.addElement(row, "span", { "class": "mrr-state__name", textContent: st.name });
+    var sel = marinara.addElement(row, "select", { "class": "mrr-state__select" });
     if (!sel) return;
     st.values.forEach(function (v) {
       var opt = document.createElement("option");
@@ -525,13 +525,13 @@ function renderStates(parent) {
 
 function buildDice() {
   if (state.diceEl) return state.diceEl;
-  state.diceEl = marinara.addElement(document.body, "div", { className: "mrr-dice" });
+  state.diceEl = marinara.addElement(document.body, "div", { "class": "mrr-dice" });
   if (!state.diceEl) return null;
 
-  var header = marinara.addElement(state.diceEl, "div", { className: "mrr-dice__header" });
+  var header = marinara.addElement(state.diceEl, "div", { "class": "mrr-dice__header" });
   if (header) {
-    marinara.addElement(header, "span", { className: "mrr-dice__title", textContent: "Dice — " + state.ruleset.name });
-    var close = marinara.addElement(header, "button", { className: "mrr-dice__close", innerHTML: "&times;" });
+    marinara.addElement(header, "span", { "class": "mrr-dice__title", textContent: "Dice — " + state.ruleset.name });
+    var close = marinara.addElement(header, "button", { "class": "mrr-dice__close", innerHTML: "&times;" });
     if (close) marinara.on(close, "click", function () { showDice(false); });
   }
 
@@ -540,9 +540,9 @@ function buildDice() {
   else if (mode === MODES.SINGLE) buildSingleRollWidget();
   else if (mode === MODES.D100)   buildD100Widget();
   else if (mode === MODES.PBTA)   buildPbtaWidget();
-  else marinara.addElement(state.diceEl, "div", { className: "mrr-msg mrr-msg--err", textContent: "Unsupported resolution mode: " + mode });
+  else marinara.addElement(state.diceEl, "div", { "class": "mrr-msg mrr-msg--err", textContent: "Unsupported resolution mode: " + mode });
 
-  marinara.addElement(state.diceEl, "div", { className: "mrr-dice__result mrr-dice__result--hidden", id: "mrr-dice-result" });
+  marinara.addElement(state.diceEl, "div", { "class": "mrr-dice__result mrr-dice__result--hidden", id: "mrr-dice-result" });
   return state.diceEl;
 }
 
@@ -679,12 +679,12 @@ function showResult(text, kind, faces) {
   if (!state.diceEl) return;
   var prev = state.diceEl.querySelector("#mrr-dice-result");
   if (prev) prev.parentNode.removeChild(prev);
-  var box = marinara.addElement(state.diceEl, "div", { className: "mrr-dice__result mrr-dice__result--" + kind, id: "mrr-dice-result" });
+  var box = marinara.addElement(state.diceEl, "div", { "class": "mrr-dice__result mrr-dice__result--" + kind, id: "mrr-dice-result" });
   if (!box) return;
   marinara.addElement(box, "div", { textContent: text });
   if (faces && faces.length) {
-    var row = marinara.addElement(box, "div", { className: "mrr-dice__faces" });
-    if (row) faces.forEach(function (f) { marinara.addElement(row, "span", { className: f.cls, textContent: String(f.face) }); });
+    var row = marinara.addElement(box, "div", { "class": "mrr-dice__faces" });
+    if (row) faces.forEach(function (f) { marinara.addElement(row, "span", { "class": f.cls, textContent: String(f.face) }); });
   }
 }
 
@@ -712,7 +712,7 @@ function buildHeaderGear() {
   if (!anchor) anchor = document.body;
 
   state.gearEl = marinara.addElement(anchor, "button", {
-    className: "mrr-gear-btn",
+    "class": "mrr-gear-btn",
     textContent: "Ruleset" + (state.ruleset ? ": " + state.ruleset.name : "")
   });
   if (state.gearEl) marinara.on(state.gearEl, "click", openDialog);
@@ -723,11 +723,11 @@ function openDialog() {
     state.dialogEl.classList.add("mrr-dialog-backdrop--open");
     return;
   }
-  state.dialogEl = marinara.addElement(document.body, "div", { className: "mrr-dialog-backdrop" });
+  state.dialogEl = marinara.addElement(document.body, "div", { "class": "mrr-dialog-backdrop" });
   if (!state.dialogEl) return;
   state.dialogEl.classList.add("mrr-dialog-backdrop--open");
 
-  var dialog = marinara.addElement(state.dialogEl, "div", { className: "mrr-dialog" });
+  var dialog = marinara.addElement(state.dialogEl, "div", { "class": "mrr-dialog" });
   if (!dialog) return;
 
   marinara.addElement(dialog, "h3", { textContent: "Marinara RPG Ruleset" });
@@ -735,12 +735,12 @@ function openDialog() {
     textContent: "Paste a ruleset.json below, or paste a URL to fetch one. Clear both fields and Save to deactivate."
   });
 
-  var urlRow = marinara.addElement(dialog, "div", { className: "mrr-dialog__row" });
+  var urlRow = marinara.addElement(dialog, "div", { "class": "mrr-dialog__row" });
   var urlInput = null;
   if (urlRow) {
-    marinara.addElement(urlRow, "label", { className: "mrr-dialog__label", textContent: "URL" });
+    marinara.addElement(urlRow, "label", { "class": "mrr-dialog__label", textContent: "URL" });
     urlInput = marinara.addElement(urlRow, "input", {
-      className: "mrr-dice__input",
+      "class": "mrr-dice__input",
       type: "text",
       value: lsGet(LS_RULESET_URL) || "",
       placeholder: "https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Rulesets/main/rulesets/exalted3e/ruleset.json"
@@ -751,13 +751,13 @@ function openDialog() {
   var ta = marinara.addElement(dialog, "textarea", {});
   if (ta) ta.value = lsGet(LS_RULESET) || "";
 
-  var msg = marinara.addElement(dialog, "div", { className: "mrr-msg mrr-msg--info mrr-msg--hidden" });
+  var msg = marinara.addElement(dialog, "div", { "class": "mrr-msg mrr-msg--info mrr-msg--hidden" });
 
-  var buttons = marinara.addElement(dialog, "div", { className: "mrr-dialog__buttons" });
+  var buttons = marinara.addElement(dialog, "div", { "class": "mrr-dialog__buttons" });
   if (buttons) {
-    var btnFetch = marinara.addElement(buttons, "button", { className: "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Fetch URL" });
-    var btnClear = marinara.addElement(buttons, "button", { className: "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Clear" });
-    var btnSave  = marinara.addElement(buttons, "button", { className: "mrr-dice__btn", textContent: "Save and reload" });
+    var btnFetch = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Fetch URL" });
+    var btnClear = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Clear" });
+    var btnSave  = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn", textContent: "Save and reload" });
 
     if (btnFetch) marinara.on(btnFetch, "click", function () {
       if (!urlInput || !urlInput.value) { setMsg(msg, "Enter a URL first.", "err"); return; }
