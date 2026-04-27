@@ -309,6 +309,51 @@
   outline: 2px solid var(--mrr-warning);
 }
 
+.mrr-track__cell--extra {
+  border-style: dashed;
+  border-color: var(--mrr-accent-dim);
+}
+
+.mrr-track-ctrl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.mrr-track-ctrl__label {
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+  margin-right: 2px;
+}
+
+.mrr-track-add-btn {
+  background: var(--mrr-tint-2);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 1px 6px;
+  font-size: 10px;
+  font-family: var(--mrr-mono);
+  cursor: pointer;
+}
+
+.mrr-track-add-btn:hover { background: var(--mrr-accent-dim); }
+
+.mrr-track-add-btn--danger:hover {
+  background: rgba(251, 113, 133, 0.30);
+  border-color: var(--mrr-fail);
+}
+
+.mrr-saved-indicator {
+  font-size: 10px;
+  color: var(--mrr-success);
+  font-family: var(--mrr-mono);
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
 /*  ─────  States (anima banner / stunt tier / D&D conditions)  ───── */
 
 .mrr-state {

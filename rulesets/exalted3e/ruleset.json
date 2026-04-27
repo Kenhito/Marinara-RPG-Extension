@@ -64,8 +64,8 @@
   ],
   "derivedStats": [
     { "name": "Essence",            "formula": "Permanent rating, 1-5 for player Solars", "max": 10, "renderAs": "value" },
-    { "name": "Personal Motes",     "formula": "Essence x 3 + 10 (Solar)",                 "renderAs": "bar" },
-    { "name": "Peripheral Motes",   "formula": "Essence x 7 + 26 (Solar)",                 "renderAs": "bar" },
+    { "name": "Personal Motes",     "formula": "Essence x 3 + 10 (Solar)",   "maxFormula": "{Essence} * 3 + 10", "renderAs": "bar" },
+    { "name": "Peripheral Motes",   "formula": "Essence x 7 + 26 (Solar)",   "maxFormula": "{Essence} * 7 + 26", "renderAs": "bar" },
     { "name": "Willpower",          "formula": "Permanent rating, max 10; start 5 for Solars", "max": 10, "renderAs": "bar" },
     {
       "name": "Health Track",

@@ -214,6 +214,10 @@
             "description": "Plain-language formula the GM evaluates (e.g. \"Essence x 7 + 26\" for peripheral motes)."
           },
           "max": { "type": "integer" },
+          "maxFormula": {
+            "type": "string",
+            "description": "Optional auto-calculated max for renderAs=bar. Use {StatName} placeholders that resolve to the current attribute/skill/derived value (e.g. \"{Essence} * 7 + 26\"). Whitelist: digits, + - * / ( ) and {StatName} only."
+          },
           "renderAs": {
             "type": "string",
             "enum": ["bar", "value", "track"],

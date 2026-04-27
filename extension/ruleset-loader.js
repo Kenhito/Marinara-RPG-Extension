@@ -141,6 +141,28 @@ function loadSheet(chatId, ruleset) {
 function saveSheet(chatId, sheet) {
   if (!chatId || !state.activeCharacterId) return;
   lsSet(sheetKey(chatId, state.activeCharacterId), JSON.stringify(sheet));
+  updateSavedIndicator();
+}
+
+function updateSavedIndicator() {
+  if (!state.mountEl) return;
+  var ind = state.mountEl.querySelector(".mrr-saved-indicator");
+  if (!ind) return;
+  var now = new Date();
+  var hh = String(now.getHours()).padStart(2, "0");
+  var mm = String(now.getMinutes()).padStart(2, "0");
+  var ss = String(now.getSeconds()).padStart(2, "0");
+  ind.textContent = "Saved " + hh + ":" + mm + ":" + ss;
+}
+
+/* Defensive: if state.sheet has data, persist before any switch. The
+   stepper handlers already save on each click, but this catches any path
+   that might mutate state.sheet without going through a stepper (e.g.
+   bulk operations, future features). Cheap insurance. */
+function flushSave() {
+  if (state.chatId && state.activeCharacterId && state.sheet) {
+    saveSheet(state.chatId, state.sheet);
+  }
 }
 
 function loadCharacters(chatId) {
@@ -188,6 +210,10 @@ function slugify(name) {
 
 function switchCharacter(id) {
   if (!id) return;
+  /* Persist current character's sheet BEFORE moving the activeCharacterId
+     pointer — saveSheet derives its key from state.activeCharacterId, so
+     the order matters. */
+  flushSave();
   state.activeCharacterId = id;
   saveActiveCharacterId();
   state.sheet = loadSheet(state.chatId, state.ruleset);
@@ -229,13 +255,17 @@ function removeActiveCharacter() {
 }
 
 function blankSheet(rs) {
-  var s = { attributes: {}, skills: {}, derived: {}, states: {}, track: {} };
+  var s = { attributes: {}, skills: {}, derived: {}, states: {}, track: {}, extraTrack: {} };
   rs.attributes.forEach(function (a) { s.attributes[a.name] = (a["default"] != null ? a["default"] : a.min); });
   rs.skills.forEach(function (k) { s.skills[k.name] = (k["default"] != null ? k["default"] : (k.min != null ? k.min : 0)); });
   if (Array.isArray(rs.derivedStats)) {
     rs.derivedStats.forEach(function (d) {
-      if (d.renderAs === "track") s.track[d.name] = 0;
-      else                         s.derived[d.name] = 0;
+      if (d.renderAs === "track") {
+        s.track[d.name] = 0;
+        s.extraTrack[d.name] = [];
+      } else {
+        s.derived[d.name] = 0;
+      }
     });
   }
   if (Array.isArray(rs.states)) {
@@ -252,6 +282,16 @@ function mergeSheet(base, override) {
       });
     }
   });
+  /* extraTrack accepts any track name the saved sheet carried, since users
+     append new health levels at runtime — no schema entry to compare to. */
+  if (override.extraTrack && typeof override.extraTrack === "object") {
+    if (!base.extraTrack) base.extraTrack = {};
+    Object.keys(override.extraTrack).forEach(function (name) {
+      if (Array.isArray(override.extraTrack[name])) {
+        base.extraTrack[name] = override.extraTrack[name];
+      }
+    });
+  }
   return base;
 }
 
@@ -260,6 +300,37 @@ function clamp(v, lo, hi) {
   if (v < lo) return lo;
   if (v > hi) return hi;
   return v;
+}
+
+/* Build a flat lookup of all current stat values for formula evaluation.
+   Attribute / skill / derived all share the same name-space at lookup time,
+   so a maxFormula like "{Essence} * 7 + 26" works regardless of which
+   bucket Essence lives in. */
+function statContext() {
+  var ctx = {};
+  if (!state.sheet) return ctx;
+  Object.keys(state.sheet.attributes || {}).forEach(function (k) { ctx[k] = state.sheet.attributes[k]; });
+  Object.keys(state.sheet.skills     || {}).forEach(function (k) { ctx[k] = state.sheet.skills[k]; });
+  Object.keys(state.sheet.derived    || {}).forEach(function (k) { ctx[k] = state.sheet.derived[k]; });
+  return ctx;
+}
+
+/* Tiny safe formula evaluator. Supports {Name} substitution (resolved against
+   statContext) and arithmetic with + - * / ( ). Anything else is rejected by
+   the whitelist regex, so eval-via-Function is bounded to plain math. */
+function evalFormula(formula, ctx) {
+  if (!formula) return null;
+  var subbed = String(formula).replace(/\{([^}]+)\}/g, function (_, key) {
+    var v = ctx[key];
+    return typeof v === "number" ? String(v) : "0";
+  });
+  if (!/^[\s0-9+\-*/().]*$/.test(subbed)) return null;
+  try {
+    var result = (new Function("return (" + subbed + ");"))();
+    return (typeof result === "number" && isFinite(result)) ? result : null;
+  } catch (e) {
+    return null;
+  }
 }
 
 function findChatInputTextarea() {
@@ -374,17 +445,24 @@ function makeDraggable(el, handle, posKey) {
 }
 
 /* Stepper used by attributes, skills, derived values, derived bars.
-   opts: { get(), set(v), min, max, onChange?(v) } */
+   opts: { get(), set(v), min, max, onChange?(v) }. min and max may be
+   numbers OR functions returning a number (used by renderBar so the cap
+   recomputes from a maxFormula every click instead of being frozen at
+   stepper-creation time). */
 function addStepper(parent, opts) {
   var stp = marinara.addElement(parent, "span", { "class": "mrr-stepper" });
   if (!stp) return null;
   var minus = marinara.addElement(stp, "button", { textContent: "-" });
   var plus  = marinara.addElement(stp, "button", { textContent: "+" });
+  function resolve(bound, fallback) {
+    var v = (typeof bound === "function") ? bound() : bound;
+    return (v != null) ? v : fallback;
+  }
   function step(delta) {
     var current = opts.get();
     if (typeof current !== "number") current = 0;
-    var lo = (opts.min != null) ? opts.min : 0;
-    var hi = (opts.max != null) ? opts.max : DEFAULT_SKILL_MAX;
+    var lo = resolve(opts.min, 0);
+    var hi = resolve(opts.max, DEFAULT_SKILL_MAX);
     var next = clamp(current + delta, lo, hi);
     opts.set(next);
     if (opts.onChange) opts.onChange(next);
@@ -526,6 +604,8 @@ function renderSheetHeader(parent) {
     title: "Remove this character"
   });
   if (btnRemove) marinara.on(btnRemove, "click", removeActiveCharacter);
+
+  marinara.addElement(charRow, "span", { "class": "mrr-saved-indicator", textContent: "" });
 }
 
 function renderAttributes(parent) {
@@ -644,7 +724,13 @@ function renderValue(parent, derived) {
     set: function (v) { state.sheet.derived[derived.name] = v; saveSheet(state.chatId, state.sheet); },
     min: -999,
     max: 999,
-    onChange: function (v) { if (val) val.textContent = String(v); }
+    onChange: function (v) {
+      if (val) val.textContent = String(v);
+      /* A derived value (e.g. Essence) may be referenced by another stat's
+         maxFormula (e.g. Personal Motes = {Essence}*3+10). Re-render the
+         sheet so dependent bars pick up the new max. */
+      renderSheet();
+    }
   });
 }
 
@@ -653,8 +739,17 @@ function renderBar(parent, derived) {
   if (!bar) return;
   var fill = marinara.addElement(bar, "div", { "class": "mrr-bar__fill" });
   var label = marinara.addElement(bar, "div", { "class": "mrr-bar__label" });
-  var max = derived.max || DEFAULT_BAR_MAX;
+
+  function computeMax() {
+    if (derived.maxFormula) {
+      var v = evalFormula(derived.maxFormula, statContext());
+      if (v != null && v > 0) return Math.floor(v);
+    }
+    return derived.max || DEFAULT_BAR_MAX;
+  }
+
   function refresh() {
+    var max = computeMax();
     var v = state.sheet.derived[derived.name] || 0;
     if (fill) fill.style.width = Math.max(0, Math.min(100, (v / max) * 100)) + "%";
     if (label) label.textContent = v + " / " + max;
@@ -667,7 +762,7 @@ function renderBar(parent, derived) {
     get: function () { return state.sheet.derived[derived.name] || 0; },
     set: function (v) { state.sheet.derived[derived.name] = v; saveSheet(state.chatId, state.sheet); },
     min: 0,
-    max: max,
+    max: computeMax,
     onChange: refresh
   });
 }
@@ -675,33 +770,74 @@ function renderBar(parent, derived) {
 function renderTrack(parent, derived) {
   var track = marinara.addElement(parent, "div", { "class": "mrr-track" });
   if (!track) return;
-  var cells = [];
 
-  function refresh() {
+  function rulesetCells() { return derived.track || []; }
+  function extraCells() {
+    if (!state.sheet.extraTrack) state.sheet.extraTrack = {};
+    if (!state.sheet.extraTrack[derived.name]) state.sheet.extraTrack[derived.name] = [];
+    return state.sheet.extraTrack[derived.name];
+  }
+  function totalLen() { return rulesetCells().length + extraCells().length; }
+
+  function rebuild() {
+    track.textContent = "";
+    var all = rulesetCells().concat(extraCells());
     var filled = state.sheet.track[derived.name] || 0;
-    cells.forEach(function (c, idx) {
+    all.forEach(function (cell, idx) {
+      var c = marinara.addElement(track, "div", {
+        title: "penalty " + cell.penalty + (idx >= rulesetCells().length ? " (added)" : ""),
+        textContent: cell.label
+      });
+      if (!c) return;
       var cls = "mrr-track__cell";
       if (idx < filled) cls += " mrr-track__cell--filled";
       if (idx === filled - 1 && filled > 0) cls += " mrr-track__cell--active";
+      if (idx >= rulesetCells().length) cls += " mrr-track__cell--extra";
       c.className = cls;
+      marinara.on(c, "click", function () {
+        var current = state.sheet.track[derived.name] || 0;
+        state.sheet.track[derived.name] = (current === idx + 1) ? idx : idx + 1;
+        saveSheet(state.chatId, state.sheet);
+        rebuild();
+      });
     });
   }
+  rebuild();
 
-  derived.track.forEach(function (cell, idx) {
-    var c = marinara.addElement(track, "div", {
-      title: "penalty " + cell.penalty,
-      textContent: cell.label
+  /* Ox-Body and similar Charms add health levels at runtime. Three buttons
+     for the canonical penalty values plus a remove-last for mistakes. */
+  var ctrl = marinara.addElement(parent, "div", { "class": "mrr-track-ctrl" });
+  if (!ctrl) return;
+  marinara.addElement(ctrl, "span", { "class": "mrr-track-ctrl__label", textContent: "Add level:" });
+
+  [{ label: "-0", penalty: 0 }, { label: "-1", penalty: -1 }, { label: "-2", penalty: -2 }].forEach(function (def) {
+    var btn = marinara.addElement(ctrl, "button", {
+      "class": "mrr-track-add-btn",
+      textContent: def.label
     });
-    if (!c) return;
-    cells.push(c);
-    marinara.on(c, "click", function () {
-      var current = state.sheet.track[derived.name] || 0;
-      state.sheet.track[derived.name] = (current === idx + 1) ? idx : idx + 1;
+    if (!btn) return;
+    marinara.on(btn, "click", function () {
+      extraCells().push({ label: def.label, penalty: def.penalty });
       saveSheet(state.chatId, state.sheet);
-      refresh();
+      rebuild();
     });
   });
-  refresh();
+
+  var rmBtn = marinara.addElement(ctrl, "button", {
+    "class": "mrr-track-add-btn mrr-track-add-btn--danger",
+    textContent: "remove last",
+    title: "Remove the most-recently added level"
+  });
+  if (rmBtn) marinara.on(rmBtn, "click", function () {
+    var extras = extraCells();
+    if (!extras.length) return;
+    extras.pop();
+    /* Clamp filled count if the user removed a filled level. */
+    var len = totalLen();
+    if ((state.sheet.track[derived.name] || 0) > len) state.sheet.track[derived.name] = len;
+    saveSheet(state.chatId, state.sheet);
+    rebuild();
+  });
 }
 
 function renderStates(parent) {
@@ -1065,6 +1201,7 @@ function init() {
   renderSheet();
   buildDice();
   watchRouteChanges();
+  watchLifecycleSaves();
   log("activated ruleset " + rs.id + " v" + rs.version + " on chat " + (state.chatId || "(none)") + " as " + state.activeCharacterId);
 }
 
@@ -1078,12 +1215,39 @@ function watchRouteChanges() {
     lastPath = window.location.pathname;
     var newId = getChatId();
     if (newId === state.chatId) return;
+
+    /* Persist the outgoing chat's character before swapping any state. */
+    flushSave();
+
     state.chatId = newId;
-    if (state.ruleset) {
-      state.sheet = loadSheet(state.chatId, state.ruleset);
-      renderSheet();
+    if (!state.ruleset) return;
+
+    /* Each chat has its own character list and active character. Reload
+       fully — previously this only refreshed state.sheet, which left the
+       active character pointing at someone who might not exist in the new
+       chat and broke saves. */
+    migrateLegacySheet(state.chatId);
+    state.characters = loadCharacters(state.chatId);
+    state.activeCharacterId = loadActiveCharacterId(state.chatId, state.characters[0].id);
+    if (!state.characters.some(function (c) { return c.id === state.activeCharacterId; })) {
+      state.activeCharacterId = state.characters[0].id;
+      saveActiveCharacterId();
     }
+    state.sheet = loadSheet(state.chatId, state.ruleset);
+    renderSheet();
   }, ROUTE_POLL_MS);
+}
+
+/* Browser lifecycle: persist on tab hide and page unload. visibilitychange
+   fires reliably on tab switch / minimize / mobile-background; beforeunload
+   covers full reloads and tab closes. Both call flushSave directly because
+   the user may not have nudged a stepper since their last edit. */
+function watchLifecycleSaves() {
+  marinara.on(document, "visibilitychange", function () {
+    if (document.visibilityState === "hidden") flushSave();
+  });
+  marinara.on(window, "beforeunload", flushSave);
+  marinara.on(window, "pagehide",     flushSave);
 }
 
 init();
