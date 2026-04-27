@@ -55,6 +55,18 @@ var state = {
   gearEl:            null
 };
 
+/* In-place refresh closures for renderAs=bar elements. Populated during
+   renderSheet, drained by refreshAllBars. Lets us update bar maxes/fills
+   when a referenced stat (e.g. Essence) changes without rebuilding the
+   DOM — which would lose scroll position on the floating sheet. */
+var barRefreshers = [];
+
+function refreshAllBars() {
+  for (var i = 0; i < barRefreshers.length; i++) {
+    try { barRefreshers[i](); } catch (e) {}
+  }
+}
+
 /* ─────  utilities  ───── */
 
 function log(msg, payload) {
@@ -130,17 +142,34 @@ function sheetKey(chatId, characterId) {
 }
 
 function loadSheet(chatId, ruleset) {
-  if (!chatId || !state.activeCharacterId) return blankSheet(ruleset);
-  var raw = lsGet(sheetKey(chatId, state.activeCharacterId));
-  if (!raw) return blankSheet(ruleset);
+  if (!chatId || !state.activeCharacterId) {
+    log("loadSheet -> blank: chatId=" + chatId + " active=" + state.activeCharacterId);
+    return blankSheet(ruleset);
+  }
+  var key = sheetKey(chatId, state.activeCharacterId);
+  var raw = lsGet(key);
+  if (!raw) {
+    log("loadSheet -> blank: no data for " + key);
+    return blankSheet(ruleset);
+  }
   var parsed = safeParse(raw);
-  if (!parsed) return blankSheet(ruleset);
+  if (!parsed) {
+    warn("loadSheet -> blank: parse failed for " + key);
+    return blankSheet(ruleset);
+  }
+  log("loadSheet hydrated key=" + key + " bytes=" + raw.length);
   return mergeSheet(blankSheet(ruleset), parsed);
 }
 
 function saveSheet(chatId, sheet) {
-  if (!chatId || !state.activeCharacterId) return;
-  lsSet(sheetKey(chatId, state.activeCharacterId), JSON.stringify(sheet));
+  if (!chatId) { warn("saveSheet skipped: no chatId"); return; }
+  if (!state.activeCharacterId) { warn("saveSheet skipped: no activeCharacterId"); return; }
+  if (!sheet) { warn("saveSheet skipped: no sheet object"); return; }
+  var key = sheetKey(chatId, state.activeCharacterId);
+  var payload = JSON.stringify(sheet);
+  var ok = lsSet(key, payload);
+  if (!ok) { warn("saveSheet: lsSet failed for " + key + " (quota or private mode?)"); return; }
+  log("saved key=" + key + " bytes=" + payload.length);
   updateSavedIndicator();
 }
 
@@ -210,6 +239,7 @@ function slugify(name) {
 
 function switchCharacter(id) {
   if (!id) return;
+  log("switchCharacter " + state.activeCharacterId + " -> " + id);
   /* Persist current character's sheet BEFORE moving the activeCharacterId
      pointer — saveSheet derives its key from state.activeCharacterId, so
      the order matters. */
@@ -509,6 +539,9 @@ function escapeHtml(s) {
 function renderSheet() {
   if (!state.ruleset) return;
 
+  /* Reset bar-refresh registry; renderBar will repopulate during this pass. */
+  barRefreshers.length = 0;
+
   if (state.mountEl && state.mountEl.parentNode) state.mountEl.parentNode.removeChild(state.mountEl);
 
   var host = findSheetContainer();
@@ -641,7 +674,12 @@ function renderAttrRow(parent, attr) {
     set: function (v) { state.sheet.attributes[attr.name] = v; saveSheet(state.chatId, state.sheet); },
     min: attr.min,
     max: attr.max,
-    onChange: function (v) { if (val) val.textContent = String(v); }
+    onChange: function (v) {
+      if (val) val.textContent = String(v);
+      /* Defensive: a future ruleset's maxFormula may reference an
+         attribute. Cheap to refresh; no DOM rebuild. */
+      refreshAllBars();
+    }
   });
 }
 
@@ -666,7 +704,10 @@ function renderSkillRow(parent, skill) {
     set: function (v) { state.sheet.skills[skill.name] = v; saveSheet(state.chatId, state.sheet); },
     min: skill.min != null ? skill.min : 0,
     max: skill.max != null ? skill.max : DEFAULT_SKILL_MAX,
-    onChange: function (v) { if (val) val.textContent = String(v); }
+    onChange: function (v) {
+      if (val) val.textContent = String(v);
+      refreshAllBars();
+    }
   });
   if (!stp) return;
   var roll = marinara.addElement(stp, "button", { textContent: "roll", "class": "mrr-row__roll" });
@@ -727,9 +768,10 @@ function renderValue(parent, derived) {
     onChange: function (v) {
       if (val) val.textContent = String(v);
       /* A derived value (e.g. Essence) may be referenced by another stat's
-         maxFormula (e.g. Personal Motes = {Essence}*3+10). Re-render the
-         sheet so dependent bars pick up the new max. */
-      renderSheet();
+         maxFormula (e.g. Personal Motes = {Essence}*3+10). Refresh the bars
+         in-place so dependents pick up the new max — DOM is not rebuilt,
+         so the user's scroll position survives. */
+      refreshAllBars();
     }
   });
 }
@@ -749,12 +791,14 @@ function renderBar(parent, derived) {
   }
 
   function refresh() {
+    if (!fill || !fill.parentNode) return;
     var max = computeMax();
     var v = state.sheet.derived[derived.name] || 0;
-    if (fill) fill.style.width = Math.max(0, Math.min(100, (v / max) * 100)) + "%";
+    fill.style.width = Math.max(0, Math.min(100, (v / max) * 100)) + "%";
     if (label) label.textContent = v + " / " + max;
   }
   refresh();
+  barRefreshers.push(refresh);
 
   var ctrl = marinara.addElement(parent, "div", { "class": "mrr-state" });
   if (!ctrl) return;
@@ -763,7 +807,7 @@ function renderBar(parent, derived) {
     set: function (v) { state.sheet.derived[derived.name] = v; saveSheet(state.chatId, state.sheet); },
     min: 0,
     max: computeMax,
-    onChange: refresh
+    onChange: refreshAllBars
   });
 }
 
@@ -1202,7 +1246,41 @@ function init() {
   buildDice();
   watchRouteChanges();
   watchLifecycleSaves();
+  exposeDebug();
   log("activated ruleset " + rs.id + " v" + rs.version + " on chat " + (state.chatId || "(none)") + " as " + state.activeCharacterId);
+}
+
+/* Console-callable diagnostics. Open DevTools and run:
+     mrrDebug.dump()        // list every mrr-* localStorage key with size
+     mrrDebug.state()       // full state object
+     mrrDebug.read("KEY")   // pretty-printed JSON for any mrr-* key
+     mrrDebug.forceSave()   // explicit save trigger
+   These bypass the extension's normal flow so you can verify what
+   localStorage actually contains. Useful when "saves aren't working"
+   to pinpoint whether saveSheet ran, ran with the wrong key, or ran
+   correctly but loadSheet is reading the wrong key. */
+function exposeDebug() {
+  window.mrrDebug = {
+    state: function () { return state; },
+    dump: function () {
+      var rows = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf("mrr-") === 0) {
+          var v = localStorage.getItem(k);
+          rows.push({ key: k, bytes: v ? v.length : 0 });
+        }
+      }
+      console.table(rows);
+      return rows;
+    },
+    read: function (key) {
+      var v = lsGet(key);
+      if (!v) return null;
+      try { return JSON.parse(v); } catch (e) { return v; }
+    },
+    forceSave: function () { flushSave(); return "saved"; }
+  };
 }
 
 /* SPAs use history.pushState which does NOT fire popstate. Polling is the
