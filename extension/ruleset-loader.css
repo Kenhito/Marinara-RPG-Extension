@@ -1,0 +1,512 @@
+/*
+ * Marinara-RPG-Rulesets — ruleset-loader.css
+ * Companion stylesheet for ruleset-loader.js. Paste this CSS into Marinara
+ * Engine -> Settings -> Extensions -> Add Extension -> CSS field.
+ *
+ * License: MIT
+ * Source:  https://github.com/Kenhito/Marinara-RPG-Rulesets
+ */
+
+:root {
+  --mrr-bg:           rgba(20, 16, 28, 0.92);
+  --mrr-bg-elev:      rgba(40, 32, 56, 0.92);
+  --mrr-border:       rgba(255, 255, 255, 0.10);
+  --mrr-border-strong:rgba(255, 255, 255, 0.20);
+  --mrr-text:         #f5f0ff;
+  --mrr-text-dim:     rgba(245, 240, 255, 0.65);
+  --mrr-accent:       #d4a8ff;
+  --mrr-accent-dim:   rgba(212, 168, 255, 0.30);
+  --mrr-success:      #6ee7b7;
+  --mrr-fail:         #fb7185;
+  --mrr-warning:      #fbbf24;
+  --mrr-on-accent:    #1a0f2a;
+  --mrr-on-fail:      #1a0f0f;
+  --mrr-tint-1:       rgba(255, 255, 255, 0.04);
+  --mrr-tint-2:       rgba(255, 255, 255, 0.06);
+  --mrr-tint-strong:  rgba(255, 255, 255, 0.20);
+  --mrr-radius:       8px;
+  --mrr-radius-sm:    4px;
+  --mrr-pad:          10px;
+  --mrr-gap:          6px;
+  --mrr-shadow:       0 8px 24px rgba(0, 0, 0, 0.35);
+  --mrr-mono:         ui-monospace, "Cascadia Code", "Fira Code", Menlo, Monaco, monospace;
+  --mrr-z-sheet:      9997;
+  --mrr-z-dice:       9998;
+  --mrr-z-dialog:     9999;
+}
+
+.mrr-hidden { display: none !important; }
+.mrr-msg--hidden,
+.mrr-dice__result--hidden { display: none; }
+
+/*  ─────  Sheet panel (replaces the hidden built-in attribute panel) ───── */
+
+.mrr-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mrr-gap);
+  background: var(--mrr-bg);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius);
+  padding: var(--mrr-pad);
+  margin: var(--mrr-gap) 0;
+  color: var(--mrr-text);
+  font-size: 13px;
+}
+
+.mrr-sheet--floating {
+  position: fixed;
+  left: 16px;
+  top: 80px;
+  width: 320px;
+  max-height: 70vh;
+  overflow: auto;
+  z-index: var(--mrr-z-sheet);
+}
+
+.mrr-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--mrr-border);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+}
+
+.mrr-sheet__title {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--mrr-accent);
+}
+
+.mrr-sheet__meta {
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+  font-family: var(--mrr-mono);
+}
+
+.mrr-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 8px;
+  background: var(--mrr-bg-elev);
+}
+
+.mrr-section__title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mrr-text-dim);
+  margin-bottom: 2px;
+}
+
+.mrr-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.mrr-group__label {
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--mrr-accent);
+  margin-top: 4px;
+}
+
+.mrr-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: var(--mrr-radius-sm);
+}
+
+.mrr-row:hover {
+  background: var(--mrr-tint-1);
+}
+
+.mrr-row--compact {
+  grid-template-columns: 1fr auto auto;
+}
+
+.mrr-row__name {
+  font-weight: 500;
+}
+
+.mrr-row__abbr {
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-row__value {
+  min-width: 32px;
+  text-align: right;
+  font-family: var(--mrr-mono);
+}
+
+.mrr-row__roll {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-accent-dim);
+  border: 1px solid var(--mrr-accent-dim);
+  color: var(--mrr-text);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mrr-row__roll:hover { background: var(--mrr-accent); color: var(--mrr-on-accent); }
+
+.mrr-stepper {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.mrr-stepper button {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mrr-tint-2);
+  border: 1px solid var(--mrr-border);
+  color: var(--mrr-text);
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  padding: 0;
+  line-height: 1;
+}
+
+.mrr-stepper button:hover { background: var(--mrr-accent-dim); }
+.mrr-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/*  ─────  Derived stats  ───── */
+
+.mrr-derived {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mrr-derived__formula {
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-bar {
+  position: relative;
+  height: 14px;
+  background: var(--mrr-tint-2);
+  border-radius: var(--mrr-radius-sm);
+  overflow: hidden;
+}
+
+.mrr-bar__fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--mrr-accent-dim), var(--mrr-accent));
+  width: 0;
+  transition: width 0.18s ease-out;
+}
+
+.mrr-bar__label {
+  position: relative;
+  z-index: 1;
+  font-size: 10px;
+  font-family: var(--mrr-mono);
+  text-align: center;
+  line-height: 14px;
+  color: var(--mrr-text);
+  text-shadow: 0 0 2px rgba(0,0,0,0.6);
+}
+
+.mrr-track {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.mrr-track__cell {
+  min-width: 38px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-family: var(--mrr-mono);
+  text-align: center;
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-tint-1);
+  cursor: pointer;
+  user-select: none;
+}
+
+.mrr-track__cell--filled {
+  background: var(--mrr-fail);
+  color: var(--mrr-on-fail);
+  border-color: var(--mrr-fail);
+}
+
+.mrr-track__cell--active {
+  outline: 2px solid var(--mrr-warning);
+}
+
+/*  ─────  States (anima banner / stunt tier / D&D conditions)  ───── */
+
+.mrr-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.mrr-state__name { font-weight: 500; }
+
+.mrr-state__select {
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+/*  ─────  Floating dice widget  ───── */
+
+.mrr-dice {
+  position: fixed;
+  top: 80px;
+  right: 16px;
+  width: 280px;
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border-strong);
+  border-radius: var(--mrr-radius);
+  padding: var(--mrr-pad);
+  box-shadow: var(--mrr-shadow);
+  z-index: var(--mrr-z-dice);
+  font-size: 13px;
+  display: none;
+}
+
+.mrr-dice--open { display: block; }
+
+.mrr-dice__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--mrr-border);
+}
+
+.mrr-dice__title {
+  font-weight: 600;
+  color: var(--mrr-accent);
+}
+
+.mrr-dice__close {
+  background: transparent;
+  border: 0;
+  color: var(--mrr-text-dim);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.mrr-dice__row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 4px 0;
+}
+
+.mrr-dice__row label {
+  flex: 0 0 80px;
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-dice__input {
+  flex: 1;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 4px 6px;
+  font-family: var(--mrr-mono);
+  font-size: 13px;
+  width: 100%;
+}
+
+.mrr-dice__btn {
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+  border: 0;
+  border-radius: var(--mrr-radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mrr-dice__btn:hover { filter: brightness(1.1); }
+
+.mrr-dice__btn--secondary {
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+}
+
+.mrr-dice__btn--row-spaced { margin-top: 4px; }
+
+.mrr-dice__result {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  font-family: var(--mrr-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.mrr-dice__result--success { border-color: var(--mrr-success); }
+.mrr-dice__result--fail    { border-color: var(--mrr-fail); }
+.mrr-dice__result--botch   { border-color: var(--mrr-warning); background: rgba(251, 191, 36, 0.10); }
+
+.mrr-dice__faces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.mrr-dice__face {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-tint-1);
+}
+
+.mrr-dice__face--success { background: var(--mrr-accent-dim); border-color: var(--mrr-accent); }
+.mrr-dice__face--double  { background: var(--mrr-accent); color: var(--mrr-on-accent); }
+.mrr-dice__face--one     { background: rgba(251, 113, 133, 0.20); border-color: var(--mrr-fail); }
+
+/*  ─────  Header gear button + dialog  ───── */
+
+.mrr-gear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 4px 8px;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.mrr-gear-btn:hover { background: var(--mrr-accent-dim); }
+
+.mrr-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: var(--mrr-z-dialog);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.mrr-dialog-backdrop--open { display: flex; }
+
+.mrr-dialog {
+  width: min(560px, 92vw);
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border-strong);
+  border-radius: var(--mrr-radius);
+  padding: 16px;
+  box-shadow: var(--mrr-shadow);
+}
+
+.mrr-dialog h3 {
+  margin: 0 0 8px;
+  color: var(--mrr-accent);
+  font-size: 16px;
+}
+
+.mrr-dialog p {
+  color: var(--mrr-text-dim);
+  font-size: 12px;
+  margin: 4px 0 8px;
+}
+
+.mrr-dialog textarea {
+  width: 100%;
+  min-height: 220px;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 8px;
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  resize: vertical;
+}
+
+.mrr-dialog__row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.mrr-dialog__label {
+  flex: 0 0 50px;
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-dialog__buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.mrr-msg {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: var(--mrr-radius-sm);
+  font-size: 12px;
+  font-family: var(--mrr-mono);
+}
+
+.mrr-msg--ok    { background: rgba(110, 231, 183, 0.12); border: 1px solid var(--mrr-success); }
+.mrr-msg--err   { background: rgba(251, 113, 133, 0.12); border: 1px solid var(--mrr-fail); }
+.mrr-msg--info  { background: rgba(212, 168, 255, 0.10); border: 1px solid var(--mrr-accent-dim); }

@@ -1,0 +1,87 @@
+{
+  "id": "dnd5e",
+  "name": "Dungeons & Dragons 5th Edition",
+  "version": "1.0.0",
+  "edition": "5e (SRD 5.1)",
+  "license": "CC-BY-4.0 (D&D 5.1 SRD), Wizards of the Coast",
+  "summary": "The classic d20 system. One die, plus an attribute modifier, plus proficiency if trained, against a fixed Difficulty Class. Mirrors Marinara Engine's existing Game Mode default.",
+  "dice": {
+    "type": "d20",
+    "notation": "1d20+MOD"
+  },
+  "resolution": {
+    "mode": "single-roll",
+    "modifierFormula": "1d20 + ability_mod + (proficient ? proficiency_bonus : 0)"
+  },
+  "difficulties": {
+    "Very Easy": { "threshold": 5,  "description": "Trivial; only roll if a fail is interesting." },
+    "Easy":      { "threshold": 10, "description": "An untrained adult can manage on a good day." },
+    "Medium":    { "threshold": 15, "description": "A trained character expects to succeed." },
+    "Hard":      { "threshold": 20, "description": "A trained character with a good attribute may still fail." },
+    "Very Hard": { "threshold": 25, "description": "Possible only with high attribute and proficiency, or magic." },
+    "Nearly Impossible": { "threshold": 30, "description": "Heroic. Stack every advantage." }
+  },
+  "attributes": [
+    { "name": "Strength",     "abbreviation": "STR", "min": 1, "max": 30, "default": 10, "description": "Raw physical power, athletic training, the extent to which you can exert raw physical force." },
+    { "name": "Dexterity",    "abbreviation": "DEX", "min": 1, "max": 30, "default": 10, "description": "Agility, reflexes, balance, poise." },
+    { "name": "Constitution", "abbreviation": "CON", "min": 1, "max": 30, "default": 10, "description": "Health, stamina, vital force." },
+    { "name": "Intelligence", "abbreviation": "INT", "min": 1, "max": 30, "default": 10, "description": "Mental acuity, accuracy of recall, ability to reason." },
+    { "name": "Wisdom",       "abbreviation": "WIS", "min": 1, "max": 30, "default": 10, "description": "Awareness, intuition, insight, attunement to surroundings." },
+    { "name": "Charisma",     "abbreviation": "CHA", "min": 1, "max": 30, "default": 10, "description": "Force of personality, persuasiveness, leadership." }
+  ],
+  "skills": [
+    { "name": "Acrobatics",     "linkedAttribute": "Dexterity",    "min": 0, "max": 30, "default": 0 },
+    { "name": "Animal Handling","linkedAttribute": "Wisdom",       "min": 0, "max": 30, "default": 0 },
+    { "name": "Arcana",         "linkedAttribute": "Intelligence", "min": 0, "max": 30, "default": 0 },
+    { "name": "Athletics",      "linkedAttribute": "Strength",     "min": 0, "max": 30, "default": 0 },
+    { "name": "Deception",      "linkedAttribute": "Charisma",     "min": 0, "max": 30, "default": 0 },
+    { "name": "History",        "linkedAttribute": "Intelligence", "min": 0, "max": 30, "default": 0 },
+    { "name": "Insight",        "linkedAttribute": "Wisdom",       "min": 0, "max": 30, "default": 0 },
+    { "name": "Intimidation",   "linkedAttribute": "Charisma",     "min": 0, "max": 30, "default": 0 },
+    { "name": "Investigation",  "linkedAttribute": "Intelligence", "min": 0, "max": 30, "default": 0 },
+    { "name": "Medicine",       "linkedAttribute": "Wisdom",       "min": 0, "max": 30, "default": 0 },
+    { "name": "Nature",         "linkedAttribute": "Intelligence", "min": 0, "max": 30, "default": 0 },
+    { "name": "Perception",     "linkedAttribute": "Wisdom",       "min": 0, "max": 30, "default": 0 },
+    { "name": "Performance",    "linkedAttribute": "Charisma",     "min": 0, "max": 30, "default": 0 },
+    { "name": "Persuasion",     "linkedAttribute": "Charisma",     "min": 0, "max": 30, "default": 0 },
+    { "name": "Religion",       "linkedAttribute": "Intelligence", "min": 0, "max": 30, "default": 0 },
+    { "name": "Sleight of Hand","linkedAttribute": "Dexterity",    "min": 0, "max": 30, "default": 0 },
+    { "name": "Stealth",        "linkedAttribute": "Dexterity",    "min": 0, "max": 30, "default": 0 },
+    { "name": "Survival",       "linkedAttribute": "Wisdom",       "min": 0, "max": 30, "default": 0 }
+  ],
+  "derivedStats": [
+    { "name": "Hit Points",    "formula": "(class hit die avg) + CON_mod, per level", "renderAs": "bar" },
+    { "name": "Armor Class",   "formula": "10 + DEX_mod (or armor formula)",          "renderAs": "value" },
+    { "name": "Initiative",    "formula": "DEX_mod",                                  "renderAs": "value" },
+    { "name": "Proficiency Bonus", "formula": "+2 at level 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, +6 at 17-20", "renderAs": "value" },
+    { "name": "Speed",         "formula": "Race base (typically 30 ft)",              "renderAs": "value" }
+  ],
+  "states": [
+    {
+      "name": "Condition",
+      "values": [
+        { "label": "None" },
+        { "label": "Blinded",      "description": "Auto-fail sight checks; attacks against have advantage; your attacks have disadvantage." },
+        { "label": "Charmed",      "description": "Cannot attack the charmer or target them with harmful effects." },
+        { "label": "Deafened",     "description": "Cannot hear; auto-fail hearing checks." },
+        { "label": "Frightened",   "description": "Disadvantage on checks/attacks while source is in line of sight; cannot move closer." },
+        { "label": "Grappled",     "description": "Speed becomes 0; ends if grappler is incapacitated or you escape." },
+        { "label": "Incapacitated","description": "Cannot take actions or reactions." },
+        { "label": "Invisible",    "description": "Heavily obscured; attacks against have disadvantage; your attacks have advantage." },
+        { "label": "Paralyzed",    "description": "Incapacitated, cannot move or speak; auto-fail STR/DEX saves; attacks against have advantage and crit at melee range." },
+        { "label": "Petrified",    "description": "Transformed to stone; resistance to all damage; immune to poison/disease." },
+        { "label": "Poisoned",     "description": "Disadvantage on attacks and ability checks." },
+        { "label": "Prone",        "description": "Crawl-only movement; disadvantage on attacks; melee attacks against have advantage, ranged attacks have disadvantage." },
+        { "label": "Restrained",   "description": "Speed 0; disadvantage on attacks and DEX saves; attacks against have advantage." },
+        { "label": "Stunned",      "description": "Incapacitated; auto-fail STR and DEX saves; attacks against have advantage." },
+        { "label": "Unconscious",  "description": "Incapacitated and prone; auto-fail STR/DEX saves; attacks within 5 ft auto-crit." }
+      ]
+    }
+  ],
+  "diceTagFormat": {
+    "template": "[dice: 1d20{+MOD}{+PROF} vs DC{DC} = {result}]",
+    "example": "[dice: 1d20+3+2 vs DC15 = 17 success]"
+  },
+  "sheetSections": ["attributes", "skills", "derived", "states", "inventory", "notes"],
+  "lorebookKeys": ["spell", "class", "subclass", "condition", "feat", "race", "background"]
+}

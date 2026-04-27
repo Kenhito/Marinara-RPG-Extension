@@ -1,0 +1,118 @@
+{
+  "id": "exalted3e",
+  "name": "Exalted 3rd Edition",
+  "version": "1.0.0",
+  "edition": "Exalted 3rd Edition Core (2016, Onyx Path)",
+  "license": "Original mechanics references; charm names belong to Onyx Path Publishing. No verbatim Onyx Path text reproduced.",
+  "summary": "Storyteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.",
+  "dice": {
+    "type": "d10",
+    "notation": "Xd10 vs 7"
+  },
+  "resolution": {
+    "mode": "dice-pool",
+    "poolFormula": "Attribute + Ability (+ specialty +1, + stunt up to +2, + Charm dice)",
+    "target": 7,
+    "doubles": { "face": 10, "successes": 2 },
+    "botches": { "onFace": 1, "trigger": "any-on-zero-successes" }
+  },
+  "difficulties": {
+    "Routine":   { "threshold": 1, "description": "Trivial for a competent character. Often waived." },
+    "Standard":  { "threshold": 2, "description": "Default opposed baseline." },
+    "Difficult": { "threshold": 3, "description": "Pushes a skilled mortal." },
+    "Demanding": { "threshold": 4, "description": "Few mortals can do it reliably." },
+    "Legendary": { "threshold": 5, "description": "Peak of mortal-scale achievement; songs are sung." },
+    "Beyond Legendary": { "threshold": 7, "description": "Wyld navigation, First-Age relics, Essence > 5 territory." }
+  },
+  "attributes": [
+    { "name": "Strength",     "abbreviation": "STR", "group": "Physical", "min": 1, "max": 5, "default": 1, "description": "Raw muscle. Lifting, melee damage." },
+    { "name": "Dexterity",    "abbreviation": "DEX", "group": "Physical", "min": 1, "max": 5, "default": 1, "description": "Agility, hand-eye coordination, attack accuracy." },
+    { "name": "Stamina",      "abbreviation": "STA", "group": "Physical", "min": 1, "max": 5, "default": 1, "description": "Endurance, soak, resisting fatigue." },
+    { "name": "Charisma",     "abbreviation": "CHA", "group": "Social",   "min": 1, "max": 5, "default": 1, "description": "Honest charm, leadership, sincere persuasion." },
+    { "name": "Manipulation", "abbreviation": "MAN", "group": "Social",   "min": 1, "max": 5, "default": 1, "description": "Deceit, guile, indirect influence." },
+    { "name": "Appearance",   "abbreviation": "APP", "group": "Social",   "min": 1, "max": 5, "default": 1, "description": "Beauty / presence; affects attraction and intimidation." },
+    { "name": "Perception",   "abbreviation": "PER", "group": "Mental",   "min": 1, "max": 5, "default": 1, "description": "Spotting, hearing, noticing details." },
+    { "name": "Intelligence", "abbreviation": "INT", "group": "Mental",   "min": 1, "max": 5, "default": 1, "description": "Reasoning, learning, recall, abstract thought." },
+    { "name": "Wits",         "abbreviation": "WIT", "group": "Mental",   "min": 1, "max": 5, "default": 1, "description": "Reaction speed, on-the-fly thinking, initiative." }
+  ],
+  "skills": [
+    { "name": "Archery",      "min": 0, "max": 5, "default": 0 },
+    { "name": "Athletics",    "min": 0, "max": 5, "default": 0 },
+    { "name": "Awareness",    "min": 0, "max": 5, "default": 0 },
+    { "name": "Brawl",        "min": 0, "max": 5, "default": 0, "description": "Includes Martial Arts when the Martial Artist Merit is taken." },
+    { "name": "Bureaucracy",  "min": 0, "max": 5, "default": 0 },
+    { "name": "Craft",        "min": 0, "max": 5, "default": 0 },
+    { "name": "Dodge",        "min": 0, "max": 5, "default": 0 },
+    { "name": "Integrity",    "min": 0, "max": 5, "default": 0 },
+    { "name": "Investigation","min": 0, "max": 5, "default": 0 },
+    { "name": "Larceny",      "min": 0, "max": 5, "default": 0 },
+    { "name": "Linguistics",  "min": 0, "max": 5, "default": 0 },
+    { "name": "Lore",         "min": 0, "max": 5, "default": 0 },
+    { "name": "Medicine",     "min": 0, "max": 5, "default": 0 },
+    { "name": "Melee",        "min": 0, "max": 5, "default": 0 },
+    { "name": "Occult",       "min": 0, "max": 5, "default": 0 },
+    { "name": "Performance",  "min": 0, "max": 5, "default": 0 },
+    { "name": "Presence",     "min": 0, "max": 5, "default": 0 },
+    { "name": "Resistance",   "min": 0, "max": 5, "default": 0 },
+    { "name": "Ride",         "min": 0, "max": 5, "default": 0 },
+    { "name": "Sail",         "min": 0, "max": 5, "default": 0 },
+    { "name": "Socialize",    "min": 0, "max": 5, "default": 0 },
+    { "name": "Stealth",      "min": 0, "max": 5, "default": 0 },
+    { "name": "Survival",     "min": 0, "max": 5, "default": 0 },
+    { "name": "Thrown",       "min": 0, "max": 5, "default": 0 },
+    { "name": "War",          "min": 0, "max": 5, "default": 0 }
+  ],
+  "derivedStats": [
+    { "name": "Essence",            "formula": "Permanent rating, 1-5 for player Solars", "max": 10, "renderAs": "value" },
+    { "name": "Personal Motes",     "formula": "Essence x 3 + 10 (Solar)",                 "renderAs": "bar" },
+    { "name": "Peripheral Motes",   "formula": "Essence x 7 + 26 (Solar)",                 "renderAs": "bar" },
+    { "name": "Willpower",          "formula": "Permanent rating, max 10; start 5 for Solars", "max": 10, "renderAs": "bar" },
+    {
+      "name": "Health Track",
+      "formula": "7 levels: -0/-1/-1/-2/-2/-4/Incapacitated. Penalty equals the highest filled box.",
+      "renderAs": "track",
+      "track": [
+        { "label": "-0",            "penalty": 0 },
+        { "label": "-1",            "penalty": -1 },
+        { "label": "-1",            "penalty": -1 },
+        { "label": "-2",            "penalty": -2 },
+        { "label": "-2",            "penalty": -2 },
+        { "label": "-4",            "penalty": -4 },
+        { "label": "Incapacitated", "penalty": -99 }
+      ]
+    },
+    { "name": "Defense (Parry)",   "formula": "(Dexterity + Melee) / 2, round up; armor and Charms apply",  "renderAs": "value" },
+    { "name": "Defense (Evasion)", "formula": "(Dexterity + Dodge) / 2, round up; armor penalty applies", "renderAs": "value" },
+    { "name": "Resolve",           "formula": "(Wits + Integrity) / 2, round up",                          "renderAs": "value" },
+    { "name": "Guile",             "formula": "(Manipulation + Socialize) / 2, round up",                  "renderAs": "value" },
+    { "name": "Soak (Bashing)",    "formula": "Stamina + armor B-soak",                                    "renderAs": "value" },
+    { "name": "Soak (Lethal)",     "formula": "(Stamina / 2 round down) + armor L-soak",                  "renderAs": "value" }
+  ],
+  "states": [
+    {
+      "name": "Anima Banner",
+      "values": [
+        { "label": "Dim",      "trigger": "0-4 Peripheral motes spent in one action; only the caste mark glints when motes are spent." },
+        { "label": "Glowing",  "trigger": "5-10 Peripheral motes spent in one action; faint nimbus, caste mark steady." },
+        { "label": "Burning",  "trigger": "11-15 Peripheral motes spent in one action; bright glow, surrounding flicker." },
+        { "label": "Bonfire",  "trigger": "16+ Peripheral motes spent in one action; massive radiance, illuminates the scene." },
+        { "label": "Iconic",   "trigger": "Sustained Bonfire or specific Charm triggers; full totemic spirit-shape." }
+      ]
+    },
+    {
+      "name": "Stunt Tier",
+      "values": [
+        { "label": "None",  "description": "Plain action description." },
+        { "label": "1-die", "description": "Vivid, environment-aware. Reward: +2 dice OR +1 to a static value." },
+        { "label": "2-die", "description": "Genuinely creative, integrates fiction. Reward: +2 dice OR +2 static, plus 1 mote OR 1 Willpower." },
+        { "label": "3-die", "description": "Spontaneous, table-applauds. Reward: +2 dice OR +3 static, plus 2 motes OR 2 Willpower (can exceed cap). Rare by GM design." }
+      ]
+    }
+  ],
+  "diceTagFormat": {
+    "template": "[dice: {pool}d10 vs 7 -> {successes} successes{tens}{botch}]",
+    "example": "[dice: 8d10 vs 7 -> 5 successes, 2 tens doubled]"
+  },
+  "sheetSections": ["attributes", "skills", "derived", "states", "charms", "inventory", "notes"],
+  "lorebookKeys": ["charm", "anima", "essence", "mote", "willpower", "stunt", "intimacy", "limit", "caste", "supernal"]
+}

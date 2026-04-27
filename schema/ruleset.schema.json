@@ -1,0 +1,296 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Kenhito/Marinara-RPG-Rulesets/schema/ruleset.schema.json",
+  "title": "Marinara RPG Ruleset",
+  "description": "Declarative spec for a tabletop RPG ruleset that the Marinara-RPG-Rulesets overlay applies to Marinara Engine's Game Mode. The overlay reads this file to render the character sheet, format dice tags, instruct the GM agent, and validate skill resolution. One ruleset per Game Mode chat.",
+  "type": "object",
+  "required": ["id", "name", "version", "dice", "resolution", "attributes", "skills"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,63}$",
+      "description": "Unique kebab-case identifier (e.g. dnd5e, exalted3e, pbta-monster-of-the-week). Used as the localStorage key for ruleset selection."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable ruleset name shown in the UI selector."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$",
+      "description": "SemVer of this ruleset definition file (not the underlying RPG's edition)."
+    },
+    "edition": {
+      "type": "string",
+      "description": "The RPG edition this ruleset models, for human reference (e.g. \"5e (SRD 5.1)\", \"Exalted 3rd Edition Core (2016)\")."
+    },
+    "license": {
+      "type": "string",
+      "description": "License string for this ruleset definition file's content (e.g. \"CC-BY-4.0\", \"Original mechanics references; charm names belong to Onyx Path\")."
+    },
+    "summary": {
+      "type": "string",
+      "description": "One-paragraph description of the ruleset's flavor, suitable for the README ruleset list."
+    },
+    "dice": {
+      "type": "object",
+      "required": ["type", "notation"],
+      "additionalProperties": false,
+      "description": "Primary die used for resolution and a canonical notation example.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["d4", "d6", "d8", "d10", "d12", "d20", "d100", "dF"],
+          "description": "Primary die size. dF means Fudge/FATE dice."
+        },
+        "notation": {
+          "type": "string",
+          "description": "Example notation the GM should use in [dice: ...] tags (e.g. \"1d20+MOD\", \"Xd10 vs 7\")."
+        }
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "required": ["mode"],
+      "description": "How a check is resolved. Different modes have different required sub-fields.",
+      "oneOf": [
+        {
+          "required": ["mode", "modifierFormula"],
+          "properties": {
+            "mode": { "const": "single-roll" },
+            "modifierFormula": {
+              "type": "string",
+              "description": "Plain-language formula the GM applies (e.g. \"1d20 + ability_mod + proficiency_bonus\")."
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "required": ["mode", "poolFormula", "target", "doubles", "botches"],
+          "properties": {
+            "mode": { "const": "dice-pool" },
+            "poolFormula": {
+              "type": "string",
+              "description": "Plain-language formula for pool size (e.g. \"Attribute + Ability\")."
+            },
+            "target": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 20,
+              "description": "Face value at which a die counts as a success (Exalted: 7)."
+            },
+            "doubles": {
+              "type": "object",
+              "required": ["face", "successes"],
+              "additionalProperties": false,
+              "description": "Rule for dice that count as more than one success.",
+              "properties": {
+                "face": { "type": "integer", "minimum": 2, "maximum": 20 },
+                "successes": { "type": "integer", "minimum": 1, "maximum": 3 }
+              }
+            },
+            "botches": {
+              "type": "object",
+              "required": ["onFace", "trigger"],
+              "additionalProperties": false,
+              "properties": {
+                "onFace": { "type": "integer", "minimum": 1, "maximum": 10 },
+                "trigger": {
+                  "type": "string",
+                  "enum": ["any-on-zero-successes", "majority", "always-on-face"],
+                  "description": "How a botch is detected: any 1 with no successes, more 1s than successes, or any roll of the face."
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "required": ["mode", "skillFormula"],
+          "properties": {
+            "mode": { "const": "d100-percentile" },
+            "skillFormula": {
+              "type": "string",
+              "description": "Plain-language formula (e.g. \"Roll 1d100 under skill_value\")."
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "required": ["mode", "modifierFormula", "bands"],
+          "properties": {
+            "mode": { "const": "2d6-stat" },
+            "modifierFormula": { "type": "string" },
+            "bands": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "type": "object",
+                "required": ["min", "label"],
+                "additionalProperties": false,
+                "properties": {
+                  "min": { "type": "integer" },
+                  "max": { "type": "integer" },
+                  "label": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "difficulties": {
+      "type": "object",
+      "description": "Map of difficulty label -> threshold (DC for d20, success count for dice-pool, etc.).",
+      "minProperties": 2,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["threshold"],
+        "additionalProperties": false,
+        "properties": {
+          "threshold": { "type": "integer" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "attributes": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Character attributes. Order in this array is the rendering order on the sheet within each group.",
+      "items": {
+        "type": "object",
+        "required": ["name", "min", "max"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "abbreviation": { "type": "string", "maxLength": 4 },
+          "group": {
+            "type": "string",
+            "description": "Optional grouping for sheet rendering (Physical / Social / Mental, etc.)."
+          },
+          "min": { "type": "integer" },
+          "max": { "type": "integer" },
+          "default": { "type": "integer" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Skills (or Abilities for Exalted). Order is the rendering order on the sheet.",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "linkedAttribute": {
+            "type": "string",
+            "description": "Name of the attribute this skill defaults to. For Exalted, this is null/omitted because Storyteller picks the attribute per check."
+          },
+          "min": { "type": "integer" },
+          "max": { "type": "integer" },
+          "default": { "type": "integer" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "derivedStats": {
+      "type": "array",
+      "description": "Stats computed from attributes/level/etc. Used for HUD readouts.",
+      "items": {
+        "type": "object",
+        "required": ["name", "formula"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "formula": {
+            "type": "string",
+            "description": "Plain-language formula the GM evaluates (e.g. \"Essence x 7 + 26\" for peripheral motes)."
+          },
+          "max": { "type": "integer" },
+          "renderAs": {
+            "type": "string",
+            "enum": ["bar", "value", "track"],
+            "default": "value"
+          },
+          "track": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["label"],
+              "additionalProperties": false,
+              "properties": {
+                "label": { "type": "string" },
+                "penalty": { "type": "integer" }
+              }
+            },
+            "description": "For renderAs=track: ordered cells (e.g. Exalted health levels)."
+          }
+        }
+      }
+    },
+    "states": {
+      "type": "array",
+      "description": "Named UI states (Exalted anima banner, D&D conditions, etc.) the sheet can display as a current value.",
+      "items": {
+        "type": "object",
+        "required": ["name", "values"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "values": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "required": ["label"],
+              "additionalProperties": false,
+              "properties": {
+                "label": { "type": "string" },
+                "description": { "type": "string" },
+                "trigger": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "diceTagFormat": {
+      "type": "object",
+      "required": ["template", "example"],
+      "additionalProperties": false,
+      "description": "How the GM agent should format the [dice: ...] tag the client parses. The extension's roller mirrors this exactly.",
+      "properties": {
+        "template": {
+          "type": "string",
+          "description": "Template string (e.g. \"[dice: {pool}d10 vs {target} -> {successes} successes{double}{botch}]\")."
+        },
+        "example": {
+          "type": "string",
+          "description": "Concrete example output the GM should imitate (e.g. \"[dice: 8d10 vs 7 -> 4 successes, 1 ten doubled]\")."
+        }
+      }
+    },
+    "sheetSections": {
+      "type": "array",
+      "description": "Order of sheet sections rendered by the extension. Recognized values: attributes, skills, derived, states, inventory, charms, notes.",
+      "items": {
+        "type": "string",
+        "enum": ["attributes", "skills", "derived", "states", "inventory", "charms", "notes"]
+      },
+      "uniqueItems": true,
+      "default": ["attributes", "skills", "derived", "states"]
+    },
+    "lorebookKeys": {
+      "type": "array",
+      "description": "Suggested lorebook trigger keywords the user should ensure are present in the bundled lorebook.json.",
+      "items": { "type": "string" }
+    }
+  }
+}

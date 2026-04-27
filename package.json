@@ -1,0 +1,19 @@
+{
+  "name": "marinara-rpg-rulesets",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Custom RPG rulesets for Marinara Engine's Game Mode (D&D 5e, Exalted 3e, and an authoring system for more).",
+  "type": "module",
+  "scripts": {
+    "validate-rulesets": "node tools/validate-ruleset.mjs --all",
+    "validate": "node tools/validate-ruleset.mjs"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kenhito/Marinara-RPG-Rulesets.git"
+  }
+}
