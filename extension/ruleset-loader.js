@@ -23,6 +23,9 @@ var LS_RULESET     = "marinara-rpg-ruleset";
 var LS_RULESET_URL = "marinara-rpg-ruleset-url";
 var LS_SHEET_PFX   = "mrr-sheet-";
 
+var BUNDLE_SCHEMA  = "mrr-character-bundle";
+var BUNDLE_VERSION = 1;
+
 var ROUTE_POLL_MS    = 1500;
 var RELOAD_DELAY_MS  = 600;
 var DEFAULT_BAR_MAX  = 10;
@@ -240,6 +243,155 @@ function migrateLegacySheet(chatId) {
 function slugify(name) {
   var s = String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   return s || ("char-" + Date.now());
+}
+
+/* ─────  portable character bundle (chatId-independent save/load)  ───── */
+
+/* Shape of an exported bundle:
+   { schema: "mrr-character-bundle", version: 1,
+     savedAt: ISO8601, ruleset: { id, version },
+     activeCharacterId: "...",
+     characters: [{ id, name }, ...],
+     sheets: { "<characterId>": { attributes, skills, ... }, ... } } */
+
+function collectBundle() {
+  flushSave();
+  var sheets = {};
+  state.characters.forEach(function (c) {
+    var raw = lsGet(sheetKey(state.chatId, c.id));
+    if (raw) {
+      var parsed = safeParse(raw);
+      if (parsed) sheets[c.id] = parsed;
+    }
+  });
+  return {
+    schema: BUNDLE_SCHEMA,
+    version: BUNDLE_VERSION,
+    savedAt: new Date().toISOString(),
+    ruleset: { id: state.ruleset.id, version: state.ruleset.version },
+    activeCharacterId: state.activeCharacterId,
+    characters: state.characters.map(function (c) { return { id: c.id, name: c.name }; }),
+    sheets: sheets
+  };
+}
+
+function validateBundle(b) {
+  if (!b || typeof b !== "object") return "bundle is not an object";
+  if (b.schema !== BUNDLE_SCHEMA) return "schema mismatch: expected " + BUNDLE_SCHEMA;
+  if (typeof b.version !== "number") return "missing version";
+  if (b.version > BUNDLE_VERSION) return "bundle version " + b.version + " is newer than this extension supports";
+  if (!b.ruleset || !b.ruleset.id) return "missing ruleset.id";
+  if (!Array.isArray(b.characters) || !b.characters.length) return "characters must be a non-empty array";
+  if (!b.sheets || typeof b.sheets !== "object") return "sheets must be an object";
+  for (var i = 0; i < b.characters.length; i++) {
+    var c = b.characters[i];
+    if (!c || !c.id || !c.name) return "character " + i + " missing id or name";
+  }
+  return null;
+}
+
+function applyBundle(b) {
+  if (!state.chatId) { window.alert("No active chat. Open a chat in Marinara first, then import."); return false; }
+  var err = validateBundle(b);
+  if (err) { window.alert("Import failed: " + err); return false; }
+  if (b.ruleset.id !== state.ruleset.id) {
+    window.alert("Import failed: bundle was saved for ruleset \"" + b.ruleset.id +
+                 "\" but the active ruleset is \"" + state.ruleset.id +
+                 "\". Switch ruleset first, then import again.");
+    return false;
+  }
+
+  /* Wipe the current chat's per-character sheets (overwrite mode) so that
+     characters present in the old chat but absent from the bundle don't
+     linger in localStorage. */
+  state.characters.forEach(function (c) { lsDel(sheetKey(state.chatId, c.id)); });
+
+  /* Write the bundle back into chat-keyed localStorage. The persistence
+     layer stays chatId-bound (Marinara's design); the bundle is a
+     transport format that lets the user move data between chats. */
+  state.characters = b.characters.map(function (c) { return { id: c.id, name: c.name }; });
+  saveCharacters();
+
+  /* Iterate the bundle's character list (not Object.keys(sheets)) so a
+     character without a stored sheet still gets a valid blank entry on
+     next load and we avoid an O(n*m) lookup. */
+  b.characters.forEach(function (c) {
+    var sheet = b.sheets && b.sheets[c.id];
+    if (sheet) lsSet(sheetKey(state.chatId, c.id), JSON.stringify(sheet));
+  });
+
+  var nextActive = b.activeCharacterId;
+  if (!nextActive || !state.characters.some(function (c) { return c.id === nextActive; })) {
+    nextActive = state.characters[0].id;
+  }
+  state.activeCharacterId = nextActive;
+  saveActiveCharacterId();
+
+  state.sheet = loadSheet(state.chatId, state.ruleset);
+  renderSheet();
+  log("imported bundle: " + state.characters.length + " character(s), active=" + state.activeCharacterId);
+  return true;
+}
+
+function bundleFilename() {
+  var d = new Date();
+  var stamp = d.getFullYear() +
+              String(d.getMonth() + 1).padStart(2, "0") +
+              String(d.getDate()).padStart(2, "0");
+  return "mrr-" + state.ruleset.id + "-" + stamp + ".json";
+}
+
+function triggerDownload(filename, jsonString) {
+  var blob = new Blob([jsonString], { type: "application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  /* Defer revoke a tick so the browser has time to start the download —
+     same-task revocation cancels the download in some browsers. */
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+
+function triggerUpload(onText) {
+  /* Detached input: clicking a file input that is not in the DOM still
+     opens the picker in all current browsers, and the closure keeps it
+     alive until the user picks (or cancels and GC reclaims it). Avoiding
+     append/removeChild prevents the race where the input is removed
+     before the async change event fires. */
+  var input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json,.json";
+  input.addEventListener("change", function () {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () { onText(String(reader.result || "")); };
+    reader.onerror = function () {
+      var msg = reader.error ? reader.error.message : "unknown error";
+      window.alert("Could not read file: " + msg);
+    };
+    reader.readAsText(file);
+  });
+  input.click();
+}
+
+function exportBundle() {
+  if (!state.ruleset || !state.chatId) { window.alert("Activate a ruleset and open a chat first."); return; }
+  var bundle = collectBundle();
+  triggerDownload(bundleFilename(), JSON.stringify(bundle, null, 2));
+}
+
+function importBundle() {
+  if (!state.ruleset) { window.alert("Activate a ruleset first."); return; }
+  triggerUpload(function (text) {
+    var parsed = safeParse(text);
+    if (!parsed) { window.alert("Import failed: file is not valid JSON."); return; }
+    applyBundle(parsed);
+  });
 }
 
 function switchCharacter(id) {
@@ -642,6 +794,20 @@ function renderSheetHeader(parent) {
     title: "Remove this character"
   });
   if (btnRemove) marinara.on(btnRemove, "click", removeActiveCharacter);
+
+  var btnSave = marinara.addElement(charRow, "button", {
+    "class": "mrr-char-btn",
+    textContent: "save",
+    title: "Download all characters in this chat as a JSON file"
+  });
+  if (btnSave) marinara.on(btnSave, "click", exportBundle);
+
+  var btnLoad = marinara.addElement(charRow, "button", {
+    "class": "mrr-char-btn",
+    textContent: "load",
+    title: "Replace this chat's characters with a previously-saved JSON file"
+  });
+  if (btnLoad) marinara.on(btnLoad, "click", importBundle);
 
   marinara.addElement(charRow, "span", { "class": "mrr-saved-indicator", textContent: "" });
 }
