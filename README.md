@@ -6,6 +6,16 @@ Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara
 
 Marinara Engine ships a Game Mode where an AI Game Master runs the table. By default the engine's GM is biased toward d20 / D&D-style mechanics: six attributes (STR/DEX/CON/INT/WIS/CHA), single-roll resolution, DC ladder. This repo adds a thin overlay that lets you swap the GM's mechanical brain (and the player-facing character sheet) for a different RPG system entirely.
 
+## How it works (in 60 seconds)
+
+You install **one client extension** (one CSS file + one JS file) into Marinara's Settings → Extensions panel. The extension reads a small JSON file that describes your tabletop system — what dice it uses, what attributes and skills characters have, how a check is resolved, what the difficulty ladder looks like. The extension hides Marinara's built-in D&D-shaped character sheet and renders a replacement that respects your system. It also gives you a floating dice widget that rolls correctly for that system and a "save / load" pair of buttons that exports all your characters as a JSON file you can import into any other chat.
+
+You also install **two text files per system** — a custom-agent prompt that teaches the AI Game Master how to narrate in your system, and a lorebook of keyword-triggered rules references. Both go through Marinara's normal Agent and Lorebook editors; nothing about the engine binary changes.
+
+Three systems ship as reference rulesets: **D&D 5e**, **Exalted 3e**, and **Fate Core**. They cover the three most common dice mechanics — d20-and-modifier, d10 dice pool with successes, and 4dF on a verbal ladder. Add a fourth system by copying one of the three folders and editing the data, GM prompt, and lorebook to match your system. About 2 hours for a rules-light system, a day for a mid-weight one.
+
+If you want an AI to do the authoring for you, point it at [`AGENTS.md`](AGENTS.md) — a standalone reference dense enough that a coding agent can build a new ruleset (or extend the framework) without reading anything else first.
+
 ## What's in the box
 
 | Path | What it is |
@@ -16,6 +26,7 @@ Marinara Engine ships a Game Mode where an AI Game Master runs the table. By def
 | `rulesets/fate-core/`        | Fate Core (Evil Hat). 4dF + skill on the Mediocre→Legendary ladder, Fate Points, stress / consequences, success-with-style at +3 shifts. |
 | `extension/ruleset-loader.{css,js}` | The single client extension you paste into Marinara's Settings → Extensions. Hides the built-in attribute panel, renders a ruleset-driven sheet, drives the dice widget, manages a multi-ruleset library. |
 | `tools/validate-ruleset.mjs` | CLI: validates any `ruleset.json` against the schema. `npm run validate-rulesets` validates everything in `rulesets/`. |
+| `AGENTS.md`                  | **Self-contained reference for AI coding agents.** An LLM reading just this file has enough to author a new ruleset bundle from zero or extend the extension with a new resolution mode. Read this if you're an AI agent or if you want an AI to do the authoring. |
 | `docs/AUTHORING.md`          | Original authoring reference (data file fields, design philosophy). |
 | `docs/ADDING-RULESETS.md`    | **Step-by-step worked example** of adding a new ruleset using Fate Core as the case study. Read this first if you want to extend. |
 | `docs/INSTALL.md`            | Top-level install walkthrough (also see each ruleset's own `INSTALL.md`). |
