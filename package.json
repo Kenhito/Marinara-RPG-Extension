@@ -1,5 +1,5 @@
 {
-  "name": "marinara-rpg-rulesets",
+  "name": "marinara-rpg-extension",
   "version": "0.1.0",
   "private": true,
   "description": "Custom RPG rulesets for Marinara Engine's Game Mode (D&D 5e, Exalted 3e, and an authoring system for more).",
@@ -14,6 +14,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Kenhito/Marinara-RPG-Rulesets.git"
+    "url": "https://github.com/Kenhito/Marinara-RPG-Extension.git"
   }
 }

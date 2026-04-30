@@ -18,7 +18,7 @@ Click the **Ruleset** button in the chat header. In the dialog:
 
 - **Option A — paste:** copy `rulesets/dnd5e/ruleset.json` and paste it into the textarea. Click **Save and reload**.
 - **Option B — fetch by URL:** paste the raw URL into the URL field, click **Fetch URL**, then **Save and reload**:
-  `https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Rulesets/main/rulesets/dnd5e/ruleset.json`
+  `https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/dnd5e/ruleset.json`
 
 After reload, the chat header button reads "Ruleset: Dungeons & Dragons 5th Edition" and your character sheet panel shows the D&D-flavored attributes / skills / states.
 

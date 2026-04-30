@@ -1,5 +1,5 @@
 /*
- * Marinara-RPG-Rulesets — ruleset-loader.js
+ * Marinara-RPG-Extension — ruleset-loader.js
  * Client extension that overlays a custom RPG ruleset on Marinara Engine's
  * Game Mode UI. Reads ruleset.json (paste-blob or fetch-by-URL), renders a
  * replacement character sheet, and drives a dice-pool / single-roll widget.
@@ -7,7 +7,7 @@
  * Pair with ruleset-loader.css.
  *
  * License: MIT
- * Source:  https://github.com/Kenhito/Marinara-RPG-Rulesets
+ * Source:  https://github.com/Kenhito/Marinara-RPG-Extension
  *
  * Runtime contract: Marinara invokes this file as
  *     new Function("marinara", source)(marinara)
@@ -1403,7 +1403,7 @@ function openDialog() {
       "class": "mrr-dice__input",
       type: "text",
       value: lsGet(LS_RULESET_URL) || "",
-      placeholder: "https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Rulesets/main/rulesets/exalted3e/ruleset.json"
+      placeholder: "https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/exalted3e/ruleset.json"
     });
   }
 

@@ -35,8 +35,8 @@ If you want an AI to do the authoring for you, point it at [`AGENTS.md`](AGENTS.
 ## Quick start
 
 ```bash
-git clone https://github.com/Kenhito/Marinara-RPG-Rulesets.git
-cd Marinara-RPG-Rulesets
+git clone https://github.com/Kenhito/Marinara-RPG-Extension.git
+cd Marinara-RPG-Extension
 npm install
 npm run validate-rulesets
 ```

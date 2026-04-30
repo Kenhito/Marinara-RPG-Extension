@@ -6,7 +6,7 @@ Roughly 10 minutes start to finish. You'll do four things: install the client ex
 
 - Marinara Engine running locally (tested against v1.5.6).
 - A Game Mode chat already created. The chat's connection should point at a model with strong narrative chops — Claude Sonnet/Opus, GPT-4-class, or a comparable open-weight model. Smaller models can run Fate but lean heavily on the GM agent prompt for structure.
-- This repo cloned somewhere. If you don't have it: `git clone https://github.com/Kenhito/Marinara-RPG-Rulesets.git`.
+- This repo cloned somewhere. If you don't have it: `git clone https://github.com/Kenhito/Marinara-RPG-Extension.git`.
 
 ## 1. Install the client extension (one-time, shared across all rulesets)
 
@@ -30,7 +30,7 @@ Two options:
 - **Paste:** copy the contents of `rulesets/fate-core/ruleset.json` and paste them into the JSON textarea. Click **Save and reload**.
 - **Fetch by URL** (recommended for sharing): in the URL field, paste:
   ```
-  https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Rulesets/main/rulesets/fate-core/ruleset.json
+  https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/fate-core/ruleset.json
   ```
   Click **Fetch URL**, confirm the parsed name appears, then **Save and reload**.
 

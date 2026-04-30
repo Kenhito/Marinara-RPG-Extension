@@ -1,6 +1,6 @@
 # AGENTS.md — Reference for AI coding agents
 
-You are an AI coding agent working on or with the **Marinara-RPG-Rulesets** repository. This file is your single source of truth. Read it end-to-end before making changes. It is intentionally dense and self-contained: you should not need to fetch other files in the repo to understand the architecture, the constraints, or the authoring contract.
+You are an AI coding agent working on or with the **Marinara-RPG-Extension** repository. This file is your single source of truth. Read it end-to-end before making changes. It is intentionally dense and self-contained: you should not need to fetch other files in the repo to understand the architecture, the constraints, or the authoring contract.
 
 If a human invokes you with a request like "add a Pathfinder 2e ruleset" or "extend the framework to support [system]," start here, then read the specific source files this document references.
 

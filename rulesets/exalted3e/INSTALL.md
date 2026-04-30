@@ -20,7 +20,7 @@ Click the **Ruleset** button. In the dialog:
 
 - **Option A — paste:** copy `rulesets/exalted3e/ruleset.json`, paste it in, click **Save and reload**.
 - **Option B — fetch by URL:**
-  `https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Rulesets/main/rulesets/exalted3e/ruleset.json`
+  `https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/exalted3e/ruleset.json`
 
 After reload, the sheet shows the 9-attribute (Physical / Social / Mental) layout, the 25 abilities, Essence / Motes / Willpower bars, the Health track, and Anima Banner / Stunt Tier selectors.
 

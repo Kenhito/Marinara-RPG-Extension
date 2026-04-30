@@ -82,7 +82,7 @@ Pre-generation injects rules guidance BEFORE the main GM model composes the turn
 ## Recommended companion settings
 
 - **Lorebook:** install `lorebook.json` from this folder so charms, anima, motes, and stunts trigger keyword-based reference injection on every relevant turn.
-- **Custom tracker fields (in the chat's Edit Sheet):** create fields named `Personal Motes`, `Peripheral Motes`, `Willpower`, `Anima`, `Essence`, plus the player's actual attributes and abilities (Dexterity, Melee, etc.). The Marinara-RPG-Rulesets extension reads these field names directly.
+- **Custom tracker fields (in the chat's Edit Sheet):** create fields named `Personal Motes`, `Peripheral Motes`, `Willpower`, `Anima`, `Essence`, plus the player's actual attributes and abilities (Dexterity, Melee, etc.). The Marinara-RPG-Extension extension reads these field names directly.
 - **Difficulty (Marinara's GM screen field):** set to "Demanding" or "Legendary" for an Exalted feel — the agent's per-roll difficulties override per check, but the screen difficulty colors random encounters.
 
 ## Engine compatibility — reputation tags
