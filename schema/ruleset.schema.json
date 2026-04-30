@@ -140,6 +140,36 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "required": ["mode", "modifierFormula", "ladder", "successWithStyle"],
+          "properties": {
+            "mode": { "const": "fate-ladder" },
+            "modifierFormula": {
+              "type": "string",
+              "description": "Plain-language formula for the +modifier (e.g. \"Skill rating\" or \"Approach rating\"). The roll is always 4dF + this modifier."
+            },
+            "ladder": {
+              "type": "array",
+              "minItems": 5,
+              "description": "Fate ladder mapping integer ratings to verbal labels (Mediocre 0, Average 1, ... Legendary 8). Used as display data for the GM agent's narration vocabulary and the sheet renderer; the dice math operates on raw integers.",
+              "items": {
+                "type": "object",
+                "required": ["label", "value"],
+                "additionalProperties": false,
+                "properties": {
+                  "label": { "type": "string", "minLength": 1 },
+                  "value": { "type": "integer" }
+                }
+              }
+            },
+            "successWithStyle": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "The minimum positive margin (rolled total - target) that counts as 'success with style' (Fate Core: 3)."
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },

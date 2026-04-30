@@ -21,6 +21,7 @@
 
 var LS_RULESET     = "marinara-rpg-ruleset";
 var LS_RULESET_URL = "marinara-rpg-ruleset-url";
+var LS_LIBRARY     = "marinara-rpg-ruleset-library";
 var LS_SHEET_PFX   = "mrr-sheet-";
 
 var BUNDLE_SCHEMA  = "mrr-character-bundle";
@@ -37,7 +38,8 @@ var MODES = {
   SINGLE: "single-roll",
   POOL:   "dice-pool",
   D100:   "d100-percentile",
-  PBTA:   "2d6-stat"
+  PBTA:   "2d6-stat",
+  FATE:   "fate-ladder"
 };
 
 var BOTCH_TRIGGER = {
@@ -130,6 +132,47 @@ function fetchRulesetFromUrl(url) {
     lsSet(LS_RULESET, JSON.stringify(rs));
     return rs;
   });
+}
+
+/* ─────  ruleset library (multi-ruleset cache, chatId-independent)  ───── */
+
+function loadLibrary() {
+  var raw = lsGet(LS_LIBRARY);
+  if (!raw) return {};
+  var parsed = safeParse(raw);
+  return (parsed && typeof parsed === "object") ? parsed : {};
+}
+
+function saveLibrary(lib) {
+  lsSet(LS_LIBRARY, JSON.stringify(lib));
+}
+
+/* Add or update a ruleset in the library, keyed by its id. The library is
+   how a user keeps multiple rulesets ready-to-swap (D&D for one campaign,
+   Fate for another) without re-fetching or re-pasting. Skips the write
+   when the existing entry already matches — prevents a wasted lsSet on
+   every extension load when init() seeds the active ruleset. */
+function addToLibrary(rs) {
+  if (!rs || !rs.id) return;
+  var lib = loadLibrary();
+  var existing = lib[rs.id];
+  if (existing && existing.name === rs.name && existing.version === rs.version) return;
+  lib[rs.id] = { name: rs.name, version: rs.version, ruleset: rs };
+  saveLibrary(lib);
+}
+
+function removeFromLibrary(id) {
+  var lib = loadLibrary();
+  delete lib[id];
+  saveLibrary(lib);
+}
+
+function activateFromLibrary(id) {
+  var lib = loadLibrary();
+  var entry = lib[id];
+  if (!entry || !entry.ruleset) return false;
+  lsSet(LS_RULESET, JSON.stringify(entry.ruleset));
+  return true;
 }
 
 function getChatId() {
@@ -904,6 +947,11 @@ function quickRollForSkill(skill) {
     showDice(true);
     var modInput = state.diceEl && state.diceEl.querySelector("[data-mrr-input='mod']");
     if (modInput) modInput.value = String(mod);
+  } else if (mode === MODES.FATE) {
+    var rating = state.sheet.skills[skill.name] || 0;
+    showDice(true);
+    var skillInput = state.diceEl && state.diceEl.querySelector("[data-mrr-input='skill']");
+    if (skillInput) skillInput.value = String(rating);
   }
 }
 
@@ -1101,6 +1149,7 @@ function buildDice() {
   else if (mode === MODES.SINGLE) buildSingleRollWidget();
   else if (mode === MODES.D100)   buildD100Widget();
   else if (mode === MODES.PBTA)   buildPbtaWidget();
+  else if (mode === MODES.FATE)   buildFateWidget();
   else marinara.addElement(state.diceEl, "div", { "class": "mrr-msg mrr-msg--err", textContent: "Unsupported resolution mode: " + mode });
 
   marinara.addElement(state.diceEl, "div", { "class": "mrr-dice__result mrr-dice__result--hidden", id: "mrr-dice-result" });
@@ -1133,6 +1182,13 @@ function buildPbtaWidget() {
   var d = state.diceEl;
   diceRow(d, "Stat mod", "mod", "0");
   diceFooter(d, "Roll 2d6+stat", rollPbta);
+}
+
+function buildFateWidget() {
+  var d = state.diceEl;
+  diceRow(d, "Skill", "skill", "0");
+  diceRow(d, "Target", "target", "2");
+  diceFooter(d, "Roll 4dF + skill", rollFate);
 }
 
 var lastRollText = null;
@@ -1220,6 +1276,49 @@ function rollPbta() {
     { face: a, cls: "mrr-dice__face" },
     { face: b, cls: "mrr-dice__face" }
   ]);
+}
+
+function fateGlyph(v) { return v > 0 ? "+" : (v < 0 ? "-" : "0"); }
+
+function rollFate() {
+  var skill = numFromInput("skill", 0);
+  var target = numFromInput("target", 2);
+  var values = [];
+  var faceLabels = [];
+  var sum = 0;
+  for (var i = 0; i < 4; i++) {
+    var v = Math.floor(Math.random() * 3) - 1;
+    values.push(v);
+    sum += v;
+    faceLabels.push(fateGlyph(v));
+  }
+  var total = sum + skill;
+  var margin = total - target;
+  var sws = state.ruleset.resolution.successWithStyle;
+
+  /* Order matters: the >= sws branch must precede the generic success
+     fallthrough so margins of [1, sws-1] resolve as plain success. */
+  var outcome;
+  var kind;
+  if (margin <= -1) {
+    outcome = "failure"; kind = "fail";
+  } else if (margin === 0) {
+    outcome = "tie"; kind = "tie";
+  } else if (margin >= sws) {
+    outcome = "success with style"; kind = "success";
+  } else {
+    outcome = "success"; kind = "success";
+  }
+  var shifts = (margin > 0 ? "+" : "") + margin + " shift" + (Math.abs(margin) === 1 ? "" : "s");
+  var modPart = skill !== 0 ? (skill > 0 ? "+" + skill : String(skill)) : "";
+  var text = "[fate: 4dF" + modPart + " = " + total + " (" + faceLabels.join(",") + ") vs " + target + " -> " + outcome + " (" + shifts + ")]";
+
+  finalizeRoll(text, kind, values.map(function (v) {
+    var cls = "mrr-dice__face";
+    if (v > 0) cls += " mrr-dice__face--success";
+    else if (v < 0) cls += " mrr-dice__face--one";
+    return { face: fateGlyph(v), cls: cls };
+  }));
 }
 
 function finalizeRoll(text, kind, faces) {
@@ -1348,10 +1447,13 @@ function openDialog() {
       if (err) { setMsg(msg, "Invalid: " + err, "err"); return; }
       lsSet(LS_RULESET, JSON.stringify(parsed));
       if (urlInput && urlInput.value) lsSet(LS_RULESET_URL, urlInput.value);
+      addToLibrary(parsed);
       setMsg(msg, "Saved. Reloading ...", "ok");
       marinara.setTimeout(function () { window.location.reload(); }, RELOAD_DELAY_MS);
     });
   }
+
+  renderLibrarySection(dialog, msg);
 
   marinara.on(state.dialogEl, "click", function (e) {
     if (e.target === state.dialogEl) state.dialogEl.classList.remove("mrr-dialog-backdrop--open");
@@ -1363,6 +1465,52 @@ function setMsg(el, text, kind) {
   el.classList.remove("mrr-msg--hidden");
   el.className = "mrr-msg mrr-msg--" + (kind || "info");
   el.textContent = text;
+}
+
+function renderLibrarySection(dialog, msg) {
+  var lib = loadLibrary();
+  var ids = Object.keys(lib);
+  if (!ids.length) return;
+
+  marinara.addElement(dialog, "h3", { textContent: "Library", "class": "mrr-dialog__lib-title" });
+  marinara.addElement(dialog, "p", {
+    "class": "mrr-dialog__lib-help",
+    textContent: "Saved rulesets on this browser. Switch swaps the active ruleset and reloads."
+  });
+
+  var list = marinara.addElement(dialog, "div", { "class": "mrr-dialog__lib" });
+  if (!list) return;
+
+  var activeId = state.ruleset ? state.ruleset.id : null;
+  ids.sort().forEach(function (id) {
+    var entry = lib[id];
+    var row = marinara.addElement(list, "div", { "class": "mrr-dialog__lib-row" });
+    if (!row) return;
+    var label = entry.name + " v" + entry.version + (id === activeId ? " (active)" : "");
+    marinara.addElement(row, "span", { "class": "mrr-dialog__lib-name", textContent: label });
+
+    if (id !== activeId) {
+      var btnSwitch = marinara.addElement(row, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Switch" });
+      if (btnSwitch) marinara.on(btnSwitch, "click", function () {
+        if (activateFromLibrary(id)) {
+          setMsg(msg, "Activated " + entry.name + ". Reloading ...", "ok");
+          marinara.setTimeout(function () { window.location.reload(); }, RELOAD_DELAY_MS);
+        }
+      });
+    }
+
+    var btnRemove = marinara.addElement(row, "button", { "class": "mrr-char-btn mrr-char-btn--danger", textContent: "x", title: "Remove from library" });
+    if (btnRemove) marinara.on(btnRemove, "click", function () {
+      if (!window.confirm("Remove " + entry.name + " from library? The active ruleset is unaffected.")) return;
+      removeFromLibrary(id);
+      /* Full dialog re-render: library size is small, and rebuilding from
+         scratch keeps the active-id highlight + button states consistent
+         without per-row diffing. */
+      if (state.dialogEl && state.dialogEl.parentNode) state.dialogEl.parentNode.removeChild(state.dialogEl);
+      state.dialogEl = null;
+      openDialog();
+    });
+  });
 }
 
 /* ─────  sync sheet to chat customTrackerFields  ───── */
@@ -1404,6 +1552,10 @@ function init() {
     return;
   }
   state.ruleset = rs;
+  /* Seed the library with the currently active ruleset on first run after
+     the library feature ships, so users who already had a ruleset configured
+     see it in the Library list immediately. */
+  addToLibrary(rs);
   state.chatId  = getChatId();
   migrateLegacySheet(state.chatId);
   state.characters = loadCharacters(state.chatId);

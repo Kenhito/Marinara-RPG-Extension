@@ -481,6 +481,7 @@
 .mrr-dice__result--success { border-color: var(--mrr-success); }
 .mrr-dice__result--fail    { border-color: var(--mrr-fail); }
 .mrr-dice__result--botch   { border-color: var(--mrr-warning); background: rgba(251, 191, 36, 0.10); }
+.mrr-dice__result--tie     { border-color: var(--mrr-warning); }
 
 .mrr-dice__faces {
   display: flex;
@@ -592,6 +593,37 @@
   gap: 6px;
   justify-content: flex-end;
   margin-top: 12px;
+}
+
+.mrr-dialog__lib-title {
+  margin-top: 18px;
+  border-top: 1px solid var(--mrr-border);
+  padding-top: 14px;
+}
+.mrr-dialog__lib-help {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+.mrr-dialog__lib {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.mrr-dialog__lib-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  background: rgba(0, 0, 0, 0.15);
+}
+.mrr-dialog__lib-name {
+  flex: 1;
+  font-family: var(--mrr-mono);
+  font-size: 13px;
 }
 
 .mrr-msg {

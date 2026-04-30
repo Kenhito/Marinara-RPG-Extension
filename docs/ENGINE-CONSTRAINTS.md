@@ -2,7 +2,7 @@
 
 This page is the honest-tradeoff document. It exists because the alternative — confidently telling you the overlay does X when it actually does Y — wastes your time when you discover the gap mid-session.
 
-Verified against Marinara Engine v1.5.5 (April 2026). If a future Marinara release changes any of these, this doc is wrong; please open a PR.
+Verified against Marinara Engine v1.5.6 (April 2026). If a future Marinara release changes any of these, this doc is wrong; please open a PR.
 
 ## What the overlay does
 
@@ -20,14 +20,15 @@ Marinara's existing `game-tag-parser.ts` already parses `[dice: ...]` tags from 
 
 ### Dice rolling — client-side, faithful to the ruleset
 
-The extension's floating dice widget supports four resolution modes:
+The extension's floating dice widget supports five resolution modes:
 
 - **single-roll** (d20 + modifier vs DC) — D&D, Pathfinder.
 - **dice-pool** (Xd10 vs target, with doubles and botch detection) — Exalted, Storyteller.
 - **d100-percentile** (1d100 under skill) — Call of Cthulhu.
 - **2d6-stat with bands** (2d6+stat, 6-/7-9/10+ outcome bands) — PbtA.
+- **fate-ladder** (4dF + skill vs ladder target, with Tie / Success / Success-with-style outcomes) — Fate Core, Fate Accelerated, Fate-of-Cthulhu.
 
-Roll output is mathematically faithful to the ruleset's spec (target, doubles face/successes, botch trigger). The "Send to chat" button writes the formatted tag into the chat input, ready to send.
+Roll output is mathematically faithful to the ruleset's spec (target, doubles face/successes, botch trigger, success-with-style margin). The "Send to chat" button writes the formatted tag into the chat input, ready to send.
 
 ## What the overlay does NOT do
 
@@ -62,6 +63,14 @@ When you click a skill's "roll" button on the sheet, the dice widget pre-fills t
 ### Per-character ruleset context
 
 The overlay treats ruleset selection as a global setting (one ruleset active at a time across all chats). Two simultaneous chats running different rulesets is technically possible — each chat has its own sheet in `localStorage` — but you must remember to switch the active ruleset when you switch chats. A future version could read ruleset selection from a per-chat custom field; PR welcome.
+
+### Reputation tracker schema mismatch (1.5.6 gotcha)
+
+The engine's `/api/game/reputation/update` endpoint validates `action` strings at **max 50 characters** (`packages/server/src/routes/game.routes.ts:3940`), but the GM prompt at `packages/server/src/services/game/gm-prompts.ts:604` instructs the LLM to emit `[reputation: npc="Name" action="..."]` tags without communicating the length limit. Verbose models (Opus, GPT-4-class) routinely emit 100+ character action descriptions and trigger 400 Validation Errors. Symptoms include "connection error" toasts mid-turn and missing reputation updates.
+
+**Workaround in this overlay:** add a sentence to your ruleset's `gm-agent.md` reminding the model: *"When emitting `[reputation: npc=... action=...]` tags, action MUST be 50 characters or fewer. Use short verb phrases."* All three shipped rulesets in this repo include similar guidance.
+
+**Long-term fix:** upstream PR communicating the schema constraint in the engine's GM prompt. Open issue suggested.
 
 ## What you can fix, today, without forking
 

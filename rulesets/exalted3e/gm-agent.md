@@ -84,3 +84,7 @@ Pre-generation injects rules guidance BEFORE the main GM model composes the turn
 - **Lorebook:** install `lorebook.json` from this folder so charms, anima, motes, and stunts trigger keyword-based reference injection on every relevant turn.
 - **Custom tracker fields (in the chat's Edit Sheet):** create fields named `Personal Motes`, `Peripheral Motes`, `Willpower`, `Anima`, `Essence`, plus the player's actual attributes and abilities (Dexterity, Melee, etc.). The Marinara-RPG-Rulesets extension reads these field names directly.
 - **Difficulty (Marinara's GM screen field):** set to "Demanding" or "Legendary" for an Exalted feel — the agent's per-roll difficulties override per check, but the screen difficulty colors random encounters.
+
+## Engine compatibility — reputation tags
+
+Marinara validates `[reputation: npc="Name" action="..."]` action strings at max 50 characters. Use short verb phrases (`helped`, `betrayed trust`, `shared secret`) — not literary descriptions. Anything longer triggers a 400 server error and the reputation update silently fails.

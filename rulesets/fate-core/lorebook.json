@@ -1,0 +1,77 @@
+{
+  "name": "Fate Core Rules Reference",
+  "description": "Keyword-triggered rules reference for the GM agent running a Fate Core game. Each entry surfaces only when its keys appear in recent narration or player input, so the GM gets the right rule at the right moment without inflating every prompt.",
+  "version": "1.0.0",
+  "entries": [
+    {
+      "id": "rules-aspects",
+      "keys": ["aspect", "high concept", "trouble", "concept"],
+      "content": "Aspects are short evocative phrases that describe truths about a character, scene, or situation. PCs have a High Concept (who they are at their core), a Trouble (the recurring complication of their life), and several other character aspects. Aspects are ALWAYS TRUE in the fiction. Spend a Fate Point to invoke an aspect for +2 or a reroll. Compel aspects to drive complications and award Fate Points."
+    },
+    {
+      "id": "rules-fate-points",
+      "keys": ["fate point", "fate points", "refresh"],
+      "content": "Fate Points are the metacurrency of Fate Core. Each player starts a session with Fate Points equal to their Refresh (default 3, lower if they've taken Stunts). Spend 1 Fate Point to: invoke an aspect (+2 to a roll OR reroll all 4 Fate dice), declare a story detail consistent with an aspect, refuse a compel, or activate a Stunt that requires a Fate Point. Earn Fate Points by accepting compels, conceding conflicts, having your aspects work against you, or running out at session end (you reset to Refresh at session start regardless)."
+    },
+    {
+      "id": "rules-fate-dice",
+      "keys": ["fate dice", "4dF", "fudge dice", "fudge"],
+      "content": "Fate dice are six-sided dice with two faces showing +, two showing -, and two showing 0. A roll of 4dF produces a result from -4 to +4 with a strong bell-curve toward 0. The character's skill rating is added: rolled total = sum of 4dF + skill. The total is then compared to a target on the Fate ladder. Each die contributes to the narration — a clutch roll of (+,+,+,0) at total +3 is dramatically different from a (0,0,0,+3) flat result, even though the total is the same."
+    },
+    {
+      "id": "rules-ladder",
+      "keys": ["ladder", "rating", "Mediocre", "Average", "Fair", "Good", "Great", "Superb", "Fantastic", "Epic", "Legendary"],
+      "content": "The Fate ladder maps integer ratings to verbal descriptors: Legendary +8, Epic +7, Fantastic +6, Superb +5, Great +4, Good +3, Fair +2, Average +1, Mediocre 0, Poor -1, Terrible -2. Most starting PCs cap their pyramid at Great (+4) for the apex skill. NPCs are described entirely on the ladder ('a Good Athlete', 'a Fair Investigator'). When setting difficulty, name it on the ladder so players know what they need."
+    },
+    {
+      "id": "rules-outcomes",
+      "keys": ["fail", "tie", "succeed", "success with style", "boost"],
+      "content": "Compare rolled total to target: total < target = fail (or succeed at serious cost); total == target = tie (minor success or success with cost); total > target by 1-2 = success (clean); total >= target + 3 = success with style (clean + free Boost). A Boost is a temporary aspect with one free invocation that vanishes after use. The player names the Boost; the GM should accept reasonable suggestions."
+    },
+    {
+      "id": "rules-actions",
+      "keys": ["overcome", "create an advantage", "advantage", "attack", "defend"],
+      "content": "Fate Core has four basic actions: Overcome (clear an obstacle, accomplish a non-attack task), Create an Advantage (place a useful aspect on the scene/target with a free invocation), Attack (deal stress shifts to a target), Defend (oppose someone else's action against you). Most actions use a single relevant skill vs static target or vs opposing roll. On a tie when creating an advantage, you get a Boost instead of a full new aspect."
+    },
+    {
+      "id": "rules-stress",
+      "keys": ["stress", "physical stress", "mental stress", "stress box", "stress track"],
+      "content": "Each character has a Physical and a Mental stress track of 3 boxes by default. Physique 1-2 grants no extra; Physique 3-4 adds a 4th box; Physique 5+ adds a 5th. Will does the same for Mental stress. To absorb a hit, mark ONE box of value equal to or greater than the shifts taken. Boxes don't stack; one hit, one box. If no box is available, take consequences instead. Stress clears at the end of a scene unless circumstances suggest otherwise."
+    },
+    {
+      "id": "rules-consequences",
+      "keys": ["consequence", "mild consequence", "moderate consequence", "severe consequence", "wounded", "concede"],
+      "content": "Consequences absorb damage by carving lasting narrative cost. Mild Consequence absorbs 2 shifts and adds an aspect such as 'Black Eye' (recovers end-of-scene with action). Moderate Consequence absorbs 4 shifts as 'Cracked Ribs' (recovers next session). Severe Consequence absorbs 6 shifts as 'Promised Revenge' or 'Lost the Eye' (recovers end of arc). Each consequence aspect can be invoked or compelled by anyone. When a character cannot absorb a hit, they are taken out and the attacker dictates outcome — OR the player can Concede the conflict instead, gaining 1 Fate Point per consequence and keeping narrative control of their exit."
+    },
+    {
+      "id": "rules-invoking",
+      "keys": ["invoke", "invoking", "+2", "reroll"],
+      "content": "Invoking an aspect: spend 1 Fate Point and declare which aspect you're invoking and how it applies. Choose +2 to your roll OR reroll all four Fate dice (declare BEFORE seeing results in either case). The aspect must be plausibly relevant — the GM is the arbiter, not the gatekeeper. Free invocations from Create-an-Advantage successes or Boosts work the same way but cost no Fate Points (they're consumed on use)."
+    },
+    {
+      "id": "rules-compels",
+      "keys": ["compel", "compelling", "complication"],
+      "content": "Compelling an aspect: the GM (or another player) describes how a character's aspect creates a complication or temptation given the current scene. The targeted player accepts (and gains 1 Fate Point) or refuses (and pays 1 Fate Point). A good compel is specific to the moment and self-evident: 'Your Curious to a Fault aspect makes ignoring that strange door very hard. Take the compel and we narrate you opening it?' Compels are the GM's primary tool for raising stakes; aim for at least one per scene when the fiction naturally invites it."
+    },
+    {
+      "id": "rules-stunts",
+      "keys": ["stunt", "stunts"],
+      "content": "Stunts are small, character-specific tricks that bend the rules slightly: 'Once per scene, when invoking my High Concept on a Fight roll, gain +3 instead of +2'; 'I get +2 to Investigate when looking through documents in a library.' Each Stunt taken at character creation lowers Refresh by 1 (down to a minimum of 1). Stunts grant either a static bonus, a once-per-scene effect, an alternate use of a skill, or a +1 Stress box. They are written down and shared with the GM."
+    },
+    {
+      "id": "rules-conflicts",
+      "keys": ["conflict", "exchange", "initiative", "combat", "fight scene"],
+      "content": "A Conflict is any high-stakes opposed scene with damage at risk: combat, a debate before the queen, a chase, a courtroom showdown. Initiative is usually highest Notice (or Empathy in social conflicts), then descending; flexible if the fiction suggests. Each side acts once per exchange. Conflicts continue until one side is taken out, concedes, or escapes. Damage uses stress + consequences as above."
+    },
+    {
+      "id": "rules-skills-pyramid",
+      "keys": ["skill pyramid", "pyramid", "skill rating", "skill list"],
+      "content": "Default starting Fate Core PCs use a skill pyramid: 1 skill at Great (+4), 2 at Good (+3), 3 at Fair (+2), 4 at Average (+1). All other skills are Mediocre (+0) by default. Some campaigns use a skill cap higher than Great for cinematic play. The 18 default skills are: Athletics, Burglary, Contacts, Crafts, Deceive, Drive, Empathy, Fight, Investigate, Lore, Notice, Physique, Provoke, Rapport, Resources, Shoot, Stealth, Will. A campaign may add or remove skills with the table's agreement."
+    },
+    {
+      "id": "rules-success-at-cost",
+      "keys": ["success at a cost", "succeed at cost", "fail forward"],
+      "content": "When a player fails a roll on something dramatically important, the GM can offer 'success at a serious cost' instead of a flat fail: the player succeeds at the action they described, but takes a stress hit, accepts a consequence, gives up something they wanted, or introduces a complication. The player can refuse the cost and accept the failure instead. Use this to keep the story moving forward; a flat fail at the climax stalls the table."
+    }
+  ]
+}

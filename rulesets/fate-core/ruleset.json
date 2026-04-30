@@ -1,0 +1,151 @@
+{
+  "id": "fate-core",
+  "name": "Fate Core",
+  "version": "1.0.0",
+  "edition": "Fate Core (Evil Hat, 2013)",
+  "license": "Original mechanics references; ladder labels and Fate dice notation are common to Fate-family games. No verbatim Evil Hat text reproduced. Compatible with the Fate Core SRD (CC-BY 3.0).",
+  "summary": "Narrative-first rules-light system. Resolve actions with 4 Fate dice (4dF, each -1/0/+1) plus a skill rating, compared to a target on the Fate ladder. Fate Points fuel aspect invocations for re-rolls and bonuses; stress and consequences absorb damage at narrative cost.",
+  "dice": {
+    "type": "dF",
+    "notation": "4dF + skill"
+  },
+  "resolution": {
+    "mode": "fate-ladder",
+    "modifierFormula": "Skill rating (Mediocre 0 to Legendary +8)",
+    "ladder": [
+      { "label": "Legendary", "value": 8 },
+      { "label": "Epic", "value": 7 },
+      { "label": "Fantastic", "value": 6 },
+      { "label": "Superb", "value": 5 },
+      { "label": "Great", "value": 4 },
+      { "label": "Good", "value": 3 },
+      { "label": "Fair", "value": 2 },
+      { "label": "Average", "value": 1 },
+      { "label": "Mediocre", "value": 0 },
+      { "label": "Poor", "value": -1 },
+      { "label": "Terrible", "value": -2 }
+    ],
+    "successWithStyle": 3
+  },
+  "difficulties": {
+    "Trivial": { "threshold": 0, "description": "Mediocre — no roll required unless interesting." },
+    "Average": { "threshold": 1, "description": "Average — anyone with a related skill should succeed." },
+    "Fair": { "threshold": 2, "description": "Fair — competent practitioner with some effort." },
+    "Good": { "threshold": 3, "description": "Good — skilled work; failure here is a real possibility." },
+    "Great": { "threshold": 4, "description": "Great — expertise required." },
+    "Superb": { "threshold": 5, "description": "Superb — only the best succeed without aspect support." },
+    "Fantastic": { "threshold": 6, "description": "Fantastic — heroic feat; expect aspect invocations." },
+    "Epic": { "threshold": 7, "description": "Epic — legendary effort." },
+    "Legendary": { "threshold": 8, "description": "Legendary — peak human + something more." }
+  },
+  "attributes": [
+    {
+      "name": "Refresh",
+      "abbreviation": "REF",
+      "min": 1,
+      "max": 5,
+      "default": 3,
+      "description": "Maximum Fate Points the character starts each session with. Each Stunt taken at character creation reduces this by 1; minimum of 1."
+    }
+  ],
+  "skills": [
+    { "name": "Athletics", "min": 0, "max": 8, "default": 0, "description": "Running, jumping, climbing, dodging, athletic feats." },
+    { "name": "Burglary", "min": 0, "max": 8, "default": 0, "description": "Picking locks, disabling security, casing locations." },
+    { "name": "Contacts", "min": 0, "max": 8, "default": 0, "description": "Knowing the right person, social network reach." },
+    { "name": "Crafts", "min": 0, "max": 8, "default": 0, "description": "Building, repairing, working with tools and materials." },
+    { "name": "Deceive", "min": 0, "max": 8, "default": 0, "description": "Lying, disguise, misdirection, false impressions." },
+    { "name": "Drive", "min": 0, "max": 8, "default": 0, "description": "Operating vehicles, chases, stunts behind the wheel." },
+    { "name": "Empathy", "min": 0, "max": 8, "default": 0, "description": "Reading people, sensing motives and lies, recovering Mental stress." },
+    { "name": "Fight", "min": 0, "max": 8, "default": 0, "description": "Hand-to-hand and melee weapon combat." },
+    { "name": "Investigate", "min": 0, "max": 8, "default": 0, "description": "Active research and deliberate examination of evidence." },
+    { "name": "Lore", "min": 0, "max": 8, "default": 0, "description": "Knowledge — academic, occult, technical depending on character concept." },
+    { "name": "Notice", "min": 0, "max": 8, "default": 0, "description": "Passive perception, situational awareness, initiative in conflicts." },
+    { "name": "Physique", "min": 0, "max": 8, "default": 0, "description": "Raw strength and stamina; expands Physical stress track." },
+    { "name": "Provoke", "min": 0, "max": 8, "default": 0, "description": "Goading, intimidating, creating emotional disadvantage on a target." },
+    { "name": "Rapport", "min": 0, "max": 8, "default": 0, "description": "Building friendly connection, persuading honestly, recovering social standing." },
+    { "name": "Resources", "min": 0, "max": 8, "default": 0, "description": "Wealth and material resources; can substitute for time and gear." },
+    { "name": "Shoot", "min": 0, "max": 8, "default": 0, "description": "Ranged attacks — bows, firearms, thrown weapons." },
+    { "name": "Stealth", "min": 0, "max": 8, "default": 0, "description": "Moving unseen, hiding, avoiding pursuit." },
+    { "name": "Will", "min": 0, "max": 8, "default": 0, "description": "Mental toughness and discipline; expands Mental stress track." }
+  ],
+  "derivedStats": [
+    {
+      "name": "Fate Points",
+      "renderAs": "value",
+      "formula": "Refresh at session start; spent and earned during play.",
+      "max": 99
+    },
+    {
+      "name": "Physical Stress",
+      "renderAs": "track",
+      "formula": "3 boxes baseline; Physique 1-2 grants box 3 already; Physique 3+ adds a 4th box; Physique 5+ adds a 5th.",
+      "track": [
+        { "label": "1", "penalty": 0 },
+        { "label": "2", "penalty": 0 },
+        { "label": "3", "penalty": 0 }
+      ]
+    },
+    {
+      "name": "Mental Stress",
+      "renderAs": "track",
+      "formula": "3 boxes baseline; Will 1-2 grants box 3 already; Will 3+ adds a 4th box; Will 5+ adds a 5th.",
+      "track": [
+        { "label": "1", "penalty": 0 },
+        { "label": "2", "penalty": 0 },
+        { "label": "3", "penalty": 0 }
+      ]
+    },
+    {
+      "name": "Mild Consequence",
+      "renderAs": "value",
+      "formula": "Absorbs 2 shifts of stress at the cost of taking on a Mild aspect.",
+      "max": 1
+    },
+    {
+      "name": "Moderate Consequence",
+      "renderAs": "value",
+      "formula": "Absorbs 4 shifts of stress at the cost of taking on a Moderate aspect.",
+      "max": 1
+    },
+    {
+      "name": "Severe Consequence",
+      "renderAs": "value",
+      "formula": "Absorbs 6 shifts of stress at the cost of taking on a Severe aspect.",
+      "max": 1
+    }
+  ],
+  "states": [
+    {
+      "name": "Active Aspect Invocation",
+      "values": [
+        { "label": "None", "description": "No invocation active this exchange." },
+        { "label": "+2 Bonus", "description": "Spent 1 Fate Point to add +2 to a roll." },
+        { "label": "Reroll", "description": "Spent 1 Fate Point to reroll the four Fate dice." },
+        { "label": "Story Declaration", "description": "Spent 1 Fate Point to declare a fact about the scene that fits an aspect." }
+      ]
+    }
+  ],
+  "diceTagFormat": {
+    "template": "[fate: 4dF{+modifier} = {total} ({faces}) vs {target} -> {outcome}{shifts}]",
+    "example": "[fate: 4dF+3 = 5 (+,0,+,-) vs 2 -> success with style (+3 shifts)]"
+  },
+  "sheetSections": ["attributes", "skills", "derived", "states"],
+  "lorebookKeys": [
+    "aspect",
+    "high concept",
+    "trouble",
+    "compel",
+    "invoke",
+    "fate point",
+    "stress",
+    "consequence",
+    "mild",
+    "moderate",
+    "severe",
+    "refresh",
+    "ladder",
+    "create advantage",
+    "boost",
+    "stunt"
+  ]
+}

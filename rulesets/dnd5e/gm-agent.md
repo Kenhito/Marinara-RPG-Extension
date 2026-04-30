@@ -70,3 +70,7 @@ In Marinara's pipeline, `pre_generation` agents inject context BEFORE the main G
 - **Lorebook:** install `lorebook.json` from this folder so spells, classes, and conditions trigger keyword-based reference injection.
 - **Difficulty (Marinara's GM screen field):** set to the campaign's general tone (e.g., "Hard"). The agent's per-roll DCs override on a check-by-check basis.
 - **Connection:** if the agent feels too verbose, swap it to a smaller / faster model — this is a rules brief, not prose.
+
+## Engine compatibility — reputation tags
+
+Marinara validates `[reputation: npc="Name" action="..."]` action strings at max 50 characters. Use short verb phrases (`helped`, `betrayed trust`, `shared secret`) — not literary descriptions. Anything longer triggers a 400 server error and the reputation update silently fails.
