@@ -31,10 +31,24 @@ The extension and schema live one level up at `extension/ruleset-loader.{css,js}
 
 ## Authoring a new bundle (resolution mode already exists)
 
-The fastest path is to copy the closest existing bundle and edit:
+The fastest path is to copy the closest existing bundle and edit.
+
+Linux / macOS:
 
 ```bash
 cp -r rulesets/exalted3e rulesets/your-system
+```
+
+Windows (PowerShell):
+
+```powershell
+Copy-Item -Recurse rulesets/exalted3e rulesets/your-system
+```
+
+Cross-OS via Node:
+
+```bash
+node -e "require('fs').cpSync('rulesets/exalted3e', 'rulesets/your-system', {recursive: true})"
 ```
 
 Then walk through:

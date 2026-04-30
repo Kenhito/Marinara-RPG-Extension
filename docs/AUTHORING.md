@@ -29,11 +29,28 @@ If your system doesn't fit any mode cleanly: pick the closest, encode it as best
 
 ## Step 2 — copy a starting bundle
 
-Pick the existing bundle whose mode matches:
+Pick the existing bundle whose mode matches.
+
+Linux / macOS:
 
 ```bash
 cp -R rulesets/dnd5e rulesets/your-system        # for single-roll
 cp -R rulesets/exalted3e rulesets/your-system    # for dice-pool
+cp -R rulesets/fate-core rulesets/your-system    # for fate-ladder
+```
+
+Windows (PowerShell):
+
+```powershell
+Copy-Item -Recurse rulesets/dnd5e rulesets/your-system        # for single-roll
+Copy-Item -Recurse rulesets/exalted3e rulesets/your-system    # for dice-pool
+Copy-Item -Recurse rulesets/fate-core rulesets/your-system    # for fate-ladder
+```
+
+Or cross-OS via Node:
+
+```bash
+node -e "require('fs').cpSync('rulesets/fate-core', 'rulesets/your-system', {recursive: true})"
 ```
 
 Edit `id`, `name`, `version`, `edition`, `summary`. Make `id` kebab-case and unique.

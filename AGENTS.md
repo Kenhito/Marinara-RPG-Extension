@@ -14,7 +14,7 @@ This repo is a **client-side overlay** for [Marinara Engine](https://github.com/
 
 These constraints are non-negotiable. They were established with the user explicitly. Violating them is a critical failure.
 
-- **NEVER fork Marinara Engine.** This repo is an overlay. Modifications to the upstream Marinara-Engine source (wherever it's cloned on disk — typically `~/Marinara-Engine` or similar) are forbidden. If a feature seems to require engine modification, stop and tell the user — do not modify the engine on your own initiative.
+- **NEVER fork Marinara Engine.** This repo is an overlay. Modifications to the upstream Marinara-Engine source (the path varies by OS and how the user installed it — Linux/macOS users typically clone under `$HOME/Marinara-Engine` or similar; Windows users to `%USERPROFILE%\Marinara-Engine` or wherever they pointed the installer) are forbidden. If a feature seems to require engine modification, stop and tell the user — do not modify the engine on your own initiative.
 - **NEVER submit a PR to Pasta-Devs/Marinara-Engine** without explicit user instruction. PRs are a public action with social cost; the user decides when one is appropriate.
 - **NEVER push to `origin` without explicit user confirmation.** Local commits are fine; `git push` requires a green light. The user owns the public-facing surface.
 - **NEVER claim something is "live" or "deployed" without verifying.** Use `curl` to hit the URL or check `git log` against `origin/main`. "I committed it" is not "it's live."
@@ -308,10 +308,26 @@ If your target system fits one of the five existing resolution modes (single-rol
 
 ### Step 1 — pick the closest existing bundle and copy it
 
+Linux / macOS:
+
 ```bash
 cp -R rulesets/dnd5e rulesets/your-system          # for single-roll
 cp -R rulesets/exalted3e rulesets/your-system      # for dice-pool
 cp -R rulesets/fate-core rulesets/your-system      # for fate-ladder
+```
+
+Windows (PowerShell):
+
+```powershell
+Copy-Item -Recurse rulesets/dnd5e rulesets/your-system          # for single-roll
+Copy-Item -Recurse rulesets/exalted3e rulesets/your-system      # for dice-pool
+Copy-Item -Recurse rulesets/fate-core rulesets/your-system      # for fate-ladder
+```
+
+Or, if you've got Node.js handy and want one command that works everywhere:
+
+```bash
+node -e "require('fs').cpSync('rulesets/fate-core', 'rulesets/your-system', {recursive: true})"
 ```
 
 ### Step 2 — edit `ruleset.json`
@@ -474,9 +490,18 @@ node --check extension/ruleset-loader.js                       # JS syntax
 node -e "new Function('marinara', require('fs').readFileSync('extension/ruleset-loader.js','utf8'))"  # Function-body parse
 ```
 
-If you added a new resolution mode, add a small test under `/tmp/` that exercises `rollX` with deterministic dice (override `Math.random`) across all outcome types your mode produces. The pattern is in `/tmp/mrr-fate-roll-test.js` from the most recent session — copy and adapt.
+If you added a new resolution mode, add a small test that exercises `rollX` with deterministic dice (override `Math.random`) across all outcome types your mode produces. Use `os.tmpdir()` for the test file location so the test is portable across Linux, macOS, and Windows — for example:
 
-If you modified the bundle format (`save/load`), confirm the round-trip test in `/tmp/mrr-roundtrip-test.js` still passes.
+```js
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { writeFileSync } from "node:fs";
+
+const testPath = join(tmpdir(), "mrr-test-" + Date.now() + ".js");
+writeFileSync(testPath, /* test source */);
+```
+
+The test scaffold pattern: stub `localStorage`, `document`, `window`, the `marinara` API object; load the extension via `new Function("marinara", source)(stub)`; force `Math.random` to return values that drive specific dice outcomes; click the dice widget's roll button programmatically; assert on the captured `[your-mode: ...]` tag. Verify each outcome type your mode produces (success, fail, tie, botch — whichever apply). Same scaffold works for the bundle save/load round-trip: simulate two chats with different chatIds, export from one, switch chatIds and import into the other, confirm character data survives.
 
 ## 12. Commit and push protocol
 
