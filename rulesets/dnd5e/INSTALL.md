@@ -1,64 +1,59 @@
 # Install — D&D 5e ruleset
 
-Three pieces to install in Marinara Engine. Order matters: load the extension first so it's listening when you open a Game Mode chat.
+## Quick install (recommended)
 
-## 1. Install the client extension (once per Marinara install)
+**One file import + one bundle install.** Skip step 1 if the framework extension is already installed.
 
-In Marinara Engine, open **Settings → Extensions → Add Extension**.
+### 1. Install the framework extension (once per Marinara install)
 
-- **CSS** — paste the contents of `extension/ruleset-loader.css` (top-level of this repo).
-- **JS**  — paste the contents of `extension/ruleset-loader.js`.
-- Enable the extension.
+In Marinara Engine: **Settings → Extensions → Add Extension** — Marinara's
+Extensions screen accepts file uploads, not pasted text.
 
-You'll see a "Ruleset" button appear in the chat header.
+- **Import** the file `extension/ruleset-loader.js` from this repo. The
+  CSS is embedded — there is no separate stylesheet to upload.
+- Name: `Marinara-RPG-Extension`. Description: anything.
+- Enable.
 
-## 2. Activate the D&D 5e ruleset
+A **Ruleset** button appears in the chat header.
 
-Click the **Ruleset** button in the chat header. In the dialog:
+### 2. Install the D&D 5e bundle
 
-- **Option A — paste:** copy `rulesets/dnd5e/ruleset.json` and paste it into the textarea. Click **Save and reload**.
-- **Option B — fetch by URL:** paste the raw URL into the URL field, click **Fetch URL**, then **Save and reload**:
-  `https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/dnd5e/ruleset.json`
+Click the **Ruleset** button. The dialog has three ways to load a bundle:
 
-After reload, the chat header button reads "Ruleset: Dungeons & Dragons 5th Edition" and your character sheet panel shows the D&D-flavored attributes / skills / states.
+- **Option A — Choose file:** click **Choose file…** and pick
+  `rulesets/dnd5e/bundle.json` from disk. Click **Save and reload**.
+- **Option B — Fetch URL:**
+  `https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/dnd5e/bundle.json`
+- **Option C — Paste:** copy the contents of `bundle.json` into the
+  textarea, click **Save and reload**.
 
-## 3. Install the GM agent prompt
+The installer creates the lorebook ("MRR: D&D 5e Reference (SRD 5.1)") with 15 entries, the custom GM agent ("MRR: D&D 5e Ruleset Override"), and activates the ruleset. The page reloads.
 
-In Marinara Engine: **Settings → Agents → Create Custom Agent**.
-
-- **Name:** D&D 5e Ruleset Override
-- **Phase:** `pre_generation`
-- **Result type:** `context_injection`
-- **Prompt template:** copy the prompt block from `rulesets/dnd5e/gm-agent.md`.
-- **Connection:** any model with strong instruction-following; a small/fast model is fine.
-- Toggle the agent **on** for your Game Mode chat.
-
-## 4. Install the lorebook
-
-In Marinara Engine: **Lorebooks → Import**.
-
-- Import `rulesets/dnd5e/lorebook.json`.
-- In your Game Mode chat's settings, attach this lorebook (per-character or per-chat).
-
-## 5. Sanity check
+## Sanity check
 
 In a fresh Game Mode chat:
 
-1. Click the dice widget icon (or use the **Open dice widget** button on the sheet).
+1. Click the dice widget icon (or **Open dice widget** on the sheet).
 2. Set Modifier = 3, Proficiency = 2, DC = 15. Click **Roll d20**.
 3. You should see something like `[dice: 1d20+3+2 vs DC15 = 19 success (face 14)]`.
-4. Click **Send to chat**. The tag goes into the chat input, ready to send.
-5. The GM agent should pick it up next turn and narrate accordingly.
+4. Click **Send to chat** to drop the tag into the input.
+5. The GM agent picks it up next turn and narrates the d20 result accordingly.
 
 ## Updating
 
-When this repo publishes a new ruleset version:
+Bundle update flow is the same as install — Choose file again, fetch the URL again, or paste the new `bundle.json`. The installer detects the existing managed agent/lorebook by tag/setting and PATCHes rather than duplicating.
 
-- If you used **Fetch URL**, just open the dialog again and click **Fetch URL → Save and reload**.
-- If you pasted the JSON, copy the new version from the repo and paste over the old.
-- Update the lorebook by re-importing it.
-- The agent prompt rarely changes; check the changelog if in doubt.
+## Removing
 
-## Uninstall / deactivate
+Open the Ruleset dialog and click **Uninstall server data** to remove the lorebook and GM agent created by this install. Click **Clear** to wipe the local ruleset cache (returns Marinara's UI to default).
 
-Open the Ruleset dialog and click **Clear**. Reload the page. The default Marinara Game Mode UI returns. The custom agent and lorebook can be disabled in their respective panels.
+## Manual install (legacy / source-of-truth path)
+
+If you'd rather install from source files (e.g., to author your own ruleset against this scaffold), the four-file flow still works:
+
+1. **Settings → Extensions** — import `extension/ruleset-loader.js` (CSS embedded; no separate stylesheet upload).
+2. **Ruleset button** — Choose file / fetch URL / paste `rulesets/dnd5e/ruleset.json`.
+3. **Settings → Agents → Create Custom Agent** — copy the prompt block from `rulesets/dnd5e/gm-agent.md` (Phase: pre_generation, Result type: context_injection).
+4. **Lorebooks → Import** — import `rulesets/dnd5e/lorebook.json`.
+
+The bundle path automates all four steps from one file import.

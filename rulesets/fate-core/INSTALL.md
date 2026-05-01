@@ -1,80 +1,58 @@
-# Installing Fate Core in Marinara Engine
+# Install — Fate Core ruleset
 
-Roughly 10 minutes start to finish. You'll do four things: install the client extension, point it at this ruleset, install the GM agent prompt, install the lorebook.
+## Quick install (recommended)
 
-## Prerequisites
+**One file import + one bundle install.** Skip step 1 if the framework extension is already installed.
 
-- Marinara Engine running locally (tested against v1.5.6).
-- A Game Mode chat already created. The chat's connection should point at a model with strong narrative chops — Claude Sonnet/Opus, GPT-4-class, or a comparable open-weight model. Smaller models can run Fate but lean heavily on the GM agent prompt for structure.
-- This repo cloned somewhere. If you don't have it: `git clone https://github.com/Kenhito/Marinara-RPG-Extension.git`.
+### 1. Install the framework extension (once per Marinara install)
 
-## 1. Install the client extension (one-time, shared across all rulesets)
+In Marinara Engine: **Settings → Extensions → Add Extension** — Marinara's
+Extensions screen accepts file uploads, not pasted text.
 
-Skip this step if you already installed the extension for D&D 5e or Exalted 3e.
+- **Import** the file `extension/ruleset-loader.js` from this repo. The
+  CSS is embedded — there is no separate stylesheet to upload.
+- Name: `Marinara-RPG-Extension`. Description: anything.
+- Enable.
 
-In Marinara, open **Settings → Extensions → New Extension**. Set:
+A **Ruleset** button appears in the chat header.
 
-- **Name:** `Marinara RPG Rulesets`
-- **CSS:** paste the entire contents of `extension/ruleset-loader.css`
-- **JavaScript:** paste the entire contents of `extension/ruleset-loader.js`
-- **Enabled:** on
+### 2. Install the Fate Core bundle
 
-Save. Reload Marinara.
+Click the **Ruleset** button. The dialog has three ways to load a bundle:
 
-## 2. Activate the Fate Core ruleset
+- **Option A — Choose file:** click **Choose file…** and pick
+  `rulesets/fate-core/bundle.json` from disk. Click **Save and reload**.
+- **Option B — Fetch URL:**
+  `https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/fate-core/bundle.json`
+- **Option C — Paste:** copy the contents of `bundle.json` into the
+  textarea, click **Save and reload**.
 
-After the extension is enabled, you'll see a **Ruleset** button in Marinara's header. Click it.
+The installer creates the lorebook ("MRR: Fate Core Rules Reference") with 14 entries, the custom GM agent ("MRR: Fate Core Ruleset Override"), and activates the ruleset. The page reloads.
 
-Two options:
+## Sanity check
 
-- **Paste:** copy the contents of `rulesets/fate-core/ruleset.json` and paste them into the JSON textarea. Click **Save and reload**.
-- **Fetch by URL** (recommended for sharing): in the URL field, paste:
-  ```
-  https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/fate-core/ruleset.json
-  ```
-  Click **Fetch URL**, confirm the parsed name appears, then **Save and reload**.
+In a fresh Game Mode chat:
 
-After reload, the character sheet renders in Fate Core flavor: Refresh attribute, 18 standard Fate Core skills, Fate Points / Stress / Consequences as derived stats. The dice widget switches to **4dF + skill** mode.
+1. Click the dice widget icon. The widget renders the Fate form: Skill rating, Target on the ladder.
+2. Set Skill = +3, Target = 2 (Fair). Click **Roll 4dF**.
+3. You should see `[fate: 4dF+3 = 5 (+,0,+,-) vs 2 -> success with style (+3 shifts)]` (your dice will vary).
+4. Send to chat. The GM agent picks up the outcome and narrates accordingly.
 
-## 3. Install the Fate Core GM agent
+## Updating
 
-In your Game Mode chat, open the **Agents** panel (or **Custom Agents** in chat settings).
+Bundle update flow is the same as install — Choose file again, fetch the URL again, or paste the new `bundle.json`. The installer detects the existing managed agent/lorebook by tag/setting and PATCHes rather than duplicating.
 
-- Create a new custom agent named **Fate GM** (or override the existing GM agent — your call).
-- **Phase:** pre_generation
-- **Result Type:** context_injection
-- **Prompt Template:** paste the entire contents of `rulesets/fate-core/gm-agent.md` into the system prompt field.
-- **Enabled:** on
+## Removing
 
-Save. The agent will inject Fate-Core-specific narration and dice-tag instructions before each turn.
+Open the Ruleset dialog and click **Uninstall server data** to remove the lorebook and GM agent created by this install. Click **Clear** to wipe the local ruleset cache.
 
-## 4. Install the Fate Core lorebook
+## Manual install (legacy / source-of-truth path)
 
-Open Marinara's **Lorebooks** tab. Create a new lorebook named **Fate Core Rules Reference**, or import the JSON directly:
+The four-file flow still works:
 
-- **Import:** click **Import Lorebook**, select `rulesets/fate-core/lorebook.json`. The 14 rules entries load with their keyword triggers.
-- **Manual:** copy each entry's `keys` and `content` from the JSON file into Marinara's lorebook editor.
+1. **Settings → Extensions** — import `extension/ruleset-loader.js` (CSS embedded).
+2. **Ruleset button** — Choose file / fetch URL / paste `rulesets/fate-core/ruleset.json`.
+3. **Settings → Agents → Create Custom Agent** — copy the prompt prose from `rulesets/fate-core/gm-agent.md` (everything after the `---` separator). Phase: pre_generation, Result type: context_injection.
+4. **Lorebooks → Import** — import `rulesets/fate-core/lorebook.json`.
 
-Attach the lorebook to your Fate Core chat. Marinara will surface only the relevant entries per turn based on what the players and GM are talking about.
-
-## 5. Build a character
-
-Click the character sheet, Add a character (`+` button in the sheet header), name them, then:
-
-1. Set **Refresh** (default 3, lower if you're taking Stunts at character creation).
-2. Set the **skill pyramid** — 1 at +4 (Great), 2 at +3 (Good), 3 at +2 (Fair), 4 at +1 (Average), the rest stay at 0 (Mediocre).
-3. Stress and Consequences start empty; they fill during play.
-4. Click **save** in the sheet header to download a JSON backup. Click **Sync sheet to chat fields** so the GM agent can see your stats.
-
-## 6. Play
-
-The dice widget rolls 4dF for you and emits the `[fate: ...]` tag into chat. The GM agent narrates outcomes. Aspects, Fate Points, and consequences are tracked in the sheet but the *meaning* of them lives in the fiction — you and the GM agent decide together when to invoke, compel, and absorb.
-
-If a session is going to span multiple chats (Marinara's chat IDs rotate per game session), use **save** in the sheet header to download your character JSON and **load** it in the new chat to preserve your sheet state.
-
-## Troubleshooting
-
-- **"The GM is rolling d20s instead of Fate dice"** — the agent prompt didn't load. Verify the Fate GM agent is enabled and its template starts with "You are the Game Master for a Fate Core campaign."
-- **"The dice widget shows attack/proficiency fields"** — the wrong ruleset is active. Click the **Ruleset** header button and confirm Fate Core appears under Library.
-- **"My character vanished after starting a new session"** — Marinara's character sheets are keyed to chat ID, which rotates per session. Use the **save** button in the sheet header before ending a session and **load** in the next session's chat. See the top-level README for details.
-- **"The GM keeps writing reputation tags that get rejected"** — known Marinara 1.5.6 issue. The reputation tracker schema caps `action` at 50 chars but the GM prompt doesn't tell the model that. Add a sentence to your Fate GM prompt: *"When emitting `[reputation: npc=... action=...]` tags, action MUST be 50 characters or fewer."*
+The bundle path automates all four steps from one file import.

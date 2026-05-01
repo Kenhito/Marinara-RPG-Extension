@@ -1,15 +1,19 @@
 {
   "name": "marinara-rpg-extension",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Custom RPG rulesets for Marinara Engine's Game Mode (D&D 5e, Exalted 3e, and an authoring system for more).",
+  "description": "Custom RPG rulesets for Marinara Engine's Game Mode (D&D 5e, Exalted 3e, Fate Core, Pathfinder 2e, and an authoring system for more).",
   "type": "module",
   "scripts": {
     "validate-rulesets": "node tools/validate-ruleset.mjs --all",
-    "validate": "node tools/validate-ruleset.mjs"
+    "validate": "node tools/validate-ruleset.mjs",
+    "validate-bundles": "node tools/validate-bundle.mjs --all",
+    "build-bundles": "node tools/build-bundle.mjs --all",
+    "embed-css": "node tools/embed-css.mjs"
   },
   "devDependencies": {
-    "ajv": "^8.17.1"
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
   },
   "license": "MIT",
   "repository": {

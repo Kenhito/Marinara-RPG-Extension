@@ -1,0 +1,724 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.3.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.0.0"
+  },
+  "ruleset": {
+    "id": "exalted3e",
+    "name": "Exalted 3rd Edition",
+    "version": "1.1.0",
+    "edition": "Exalted 3rd Edition Core (2016, Onyx Path)",
+    "license": "Original mechanics references; charm names belong to Onyx Path Publishing. No verbatim Onyx Path text reproduced.",
+    "summary": "Storyteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.",
+    "dice": {
+      "type": "d10",
+      "notation": "Xd10 vs 7"
+    },
+    "resolution": {
+      "mode": "dice-pool",
+      "poolFormula": "Attribute + Ability (+ specialty +1, + stunt up to +2, + Charm dice)",
+      "target": 7,
+      "doubles": {
+        "face": 10,
+        "successes": 2
+      },
+      "botches": {
+        "onFace": 1,
+        "trigger": "any-on-zero-successes"
+      }
+    },
+    "difficulties": {
+      "Routine": {
+        "threshold": 1,
+        "description": "Trivial for a competent character. Often waived."
+      },
+      "Standard": {
+        "threshold": 2,
+        "description": "Default opposed baseline."
+      },
+      "Difficult": {
+        "threshold": 3,
+        "description": "Pushes a skilled mortal."
+      },
+      "Demanding": {
+        "threshold": 4,
+        "description": "Few mortals can do it reliably."
+      },
+      "Legendary": {
+        "threshold": 5,
+        "description": "Peak of mortal-scale achievement; songs are sung."
+      },
+      "Beyond Legendary": {
+        "threshold": 7,
+        "description": "Wyld navigation, First-Age relics, Essence > 5 territory."
+      }
+    },
+    "attributes": [
+      {
+        "name": "Strength",
+        "abbreviation": "STR",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Raw muscle. Lifting, melee damage."
+      },
+      {
+        "name": "Dexterity",
+        "abbreviation": "DEX",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Agility, hand-eye coordination, attack accuracy."
+      },
+      {
+        "name": "Stamina",
+        "abbreviation": "STA",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Endurance, soak, resisting fatigue."
+      },
+      {
+        "name": "Charisma",
+        "abbreviation": "CHA",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Honest charm, leadership, sincere persuasion."
+      },
+      {
+        "name": "Manipulation",
+        "abbreviation": "MAN",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Deceit, guile, indirect influence."
+      },
+      {
+        "name": "Appearance",
+        "abbreviation": "APP",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Beauty / presence; affects attraction and intimidation."
+      },
+      {
+        "name": "Perception",
+        "abbreviation": "PER",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Spotting, hearing, noticing details."
+      },
+      {
+        "name": "Intelligence",
+        "abbreviation": "INT",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Reasoning, learning, recall, abstract thought."
+      },
+      {
+        "name": "Wits",
+        "abbreviation": "WIT",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Reaction speed, on-the-fly thinking, initiative."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Archery",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Athletics",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Awareness",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Brawl",
+        "min": 0,
+        "max": 10,
+        "default": 0,
+        "description": "Includes Martial Arts when the Martial Artist Merit is taken."
+      },
+      {
+        "name": "Bureaucracy",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Craft",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Dodge",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Integrity",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Investigation",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Larceny",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Linguistics",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Lore",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Medicine",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Melee",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Occult",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Performance",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Presence",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Resistance",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Ride",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Sail",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Socialize",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Stealth",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Survival",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Thrown",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "War",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      }
+    ],
+    "derivedStats": [
+      {
+        "name": "Essence",
+        "formula": "Permanent rating, 1-5 for player Solars",
+        "max": 10,
+        "renderAs": "value"
+      },
+      {
+        "name": "Personal Motes",
+        "formula": "Essence x 3 + 10 (Solar)",
+        "maxFormula": "{Essence} * 3 + 10",
+        "renderAs": "bar"
+      },
+      {
+        "name": "Peripheral Motes",
+        "formula": "Essence x 7 + 26 (Solar)",
+        "maxFormula": "{Essence} * 7 + 26",
+        "renderAs": "bar"
+      },
+      {
+        "name": "Willpower",
+        "formula": "Permanent rating, max 10; start 5 for Solars",
+        "max": 10,
+        "renderAs": "bar"
+      },
+      {
+        "name": "Health Track",
+        "formula": "7 levels: -0/-1/-1/-2/-2/-4/Incapacitated. Penalty equals the highest filled box.",
+        "renderAs": "track",
+        "track": [
+          {
+            "label": "-0",
+            "penalty": 0
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-4",
+            "penalty": -4
+          },
+          {
+            "label": "Incapacitated",
+            "penalty": -99
+          }
+        ]
+      },
+      {
+        "name": "Defense (Parry)",
+        "formula": "(Dexterity + Melee) / 2, round up; armor and Charms apply",
+        "renderAs": "value"
+      },
+      {
+        "name": "Defense (Evasion)",
+        "formula": "(Dexterity + Dodge) / 2, round up; armor penalty applies",
+        "renderAs": "value"
+      },
+      {
+        "name": "Resolve",
+        "formula": "(Wits + Integrity) / 2, round up",
+        "renderAs": "value"
+      },
+      {
+        "name": "Guile",
+        "formula": "(Manipulation + Socialize) / 2, round up",
+        "renderAs": "value"
+      },
+      {
+        "name": "Soak (Bashing)",
+        "formula": "Stamina + armor B-soak",
+        "renderAs": "value"
+      },
+      {
+        "name": "Soak (Lethal)",
+        "formula": "(Stamina / 2 round down) + armor L-soak",
+        "renderAs": "value"
+      }
+    ],
+    "states": [
+      {
+        "name": "Anima Banner",
+        "values": [
+          {
+            "label": "Dim",
+            "trigger": "0-4 Peripheral motes spent in one action; only the caste mark glints when motes are spent."
+          },
+          {
+            "label": "Glowing",
+            "trigger": "5-10 Peripheral motes spent in one action; faint nimbus, caste mark steady."
+          },
+          {
+            "label": "Burning",
+            "trigger": "11-15 Peripheral motes spent in one action; bright glow, surrounding flicker."
+          },
+          {
+            "label": "Bonfire",
+            "trigger": "16+ Peripheral motes spent in one action; massive radiance, illuminates the scene."
+          },
+          {
+            "label": "Iconic",
+            "trigger": "Sustained Bonfire or specific Charm triggers; full totemic spirit-shape."
+          }
+        ]
+      },
+      {
+        "name": "Stunt Tier",
+        "values": [
+          {
+            "label": "None",
+            "description": "Plain action description."
+          },
+          {
+            "label": "1-die",
+            "description": "Vivid, environment-aware. Reward: +2 dice OR +1 to a static value."
+          },
+          {
+            "label": "2-die",
+            "description": "Genuinely creative, integrates fiction. Reward: +2 dice OR +2 static, plus 1 mote OR 1 Willpower."
+          },
+          {
+            "label": "3-die",
+            "description": "Spontaneous, table-applauds. Reward: +2 dice OR +3 static, plus 2 motes OR 2 Willpower (can exceed cap). Rare by GM design."
+          }
+        ]
+      }
+    ],
+    "diceTagFormat": {
+      "template": "[dice: {pool}d10 vs 7 -> {successes} successes{tens}{botch}]",
+      "example": "[dice: 8d10 vs 7 -> 5 successes, 2 tens doubled]"
+    },
+    "sheetSections": [
+      "attributes",
+      "skills",
+      "derived",
+      "states",
+      "charms",
+      "inventory",
+      "notes"
+    ],
+    "lorebookKeys": [
+      "charm",
+      "anima",
+      "essence",
+      "mote",
+      "willpower",
+      "stunt",
+      "intimacy",
+      "limit",
+      "caste",
+      "supernal"
+    ]
+  },
+  "gmAgent": {
+    "name": "Exalted 3rd Edition Ruleset Override",
+    "description": "Enforces Exalted 3rd Edition skill resolution and dice formatting in Game Mode narration.",
+    "phase": "pre_generation",
+    "promptTemplate": "You are a rules adjudicator for an Exalted 3rd Edition (2016 Onyx Path core) game running inside Marinara Engine's Game Mode. Your output is a context injection that the main GM model will read BEFORE narrating the next turn. Do not narrate; only emit rules guidance.\n\n# Mechanics you enforce\n\nResolution: roll a pool of d10s equal to (Attribute + Ability). Each die that comes up 7, 8, 9, or 10 is one success. Each 10 counts as TWO successes (the \"tens-double\" rule). Stunts and specialties add dice; Charms can change the rule (e.g., \"double 9s\") or add automatic successes. The check succeeds when the success count meets or exceeds the difficulty.\n\nDifficulty ladder (numeric is canonical; labels are conventional):\n- 1 = Routine\n- 2 = Standard / Average\n- 3 = Difficult\n- 4 = Demanding\n- 5 = Legendary\n- 6+ = Beyond Legendary (Wyld, First-Age relics)\n\nBotch: a roll that produces ZERO successes AND has at least one die showing 1 is a botch — a spectacular failure that introduces narrative complications. Note: 1s do NOT subtract from successes; they only matter when total successes are zero.\n\nExtras (mooks): Extras' 10s do NOT double — their 10s count as one success only. PCs and major NPCs always double.\n\nStunts (the GM grades the player's description, not the player):\n- 1-die stunt = vivid, environment-aware: +2 dice OR +1 to a static value.\n- 2-die stunt = genuinely creative, integrates fiction: +2 dice OR +2 static, AND restore 1 mote OR 1 Willpower.\n- 3-die stunt = spontaneous, table-applauds: +2 dice OR +3 static, AND restore 2 motes OR 2 Willpower (can exceed cap). Rare by design.\n- Dice bonus from stunts caps at +2 regardless of tier.\n\nCombat / out-of-combat economy:\n- Mote regeneration in combat: 5 motes per round, automatically.\n- Willpower: max 10. Spend 1 WP for +1 automatic success OR +1 to a static value (Resolve / Guile / Defense), once per roll, declared before the roll. Regain +1 WP per full night's sleep, +1 WP per scene when upholding a Major/Defining Intimacy through significant hardship.\n- Anima banner intensifies +1 level for every 5 PERIPHERAL motes spent in a single action. Personal motes do NOT flare the anima.\n- Solar Personal mote pool = Essence x 3 + 10. Solar Peripheral mote pool = Essence x 7 + 26.\n\nHealth track: -0 / -1 / -1 / -2 / -2 / -4 / Incapacitated. The penalty in effect equals the HIGHEST filled box and applies to dice pools and most static values.\n\n# Output format the main GM model must use\n\nWhen the player attempts something with uncertain outcome, the GM model emits a dice-pool tag in this exact format inside the narration so the Marinara client can render the result:\n\n[dice: Xd10 vs 7 -> N successes{, M tens doubled}{, BOTCH}] - call: <Attribute> + <Ability> vs difficulty <D>\n\nExample success: \"Komako vaults onto the railing, blade flashing for the disciple's wrist. [dice: 9d10 vs 7 -> 5 successes, 2 tens doubled] - call: Dexterity + Melee vs difficulty 3 - she lands the strike clean.\"\n\nExample botch: \"Komako tries to talk her way past the guard. [dice: 6d10 vs 7 -> 0 successes, BOTCH] - call: Manipulation + Socialize vs difficulty 3 - the guard's eyes narrow; he was there at the gate three months ago.\"\n\nFor mote / willpower spends use:\n[motes: -5 peripheral, anima now Glowing]\n[wp: -1, +1 automatic success]\n[regen: +5 motes (combat round)]\n\nFor Charm activations the player declares, use:\n[charm: <Charm Name>, <cost>, <type>] - then narrate the effect.\n\n# What you (this agent) emit each turn\n\nEmit a short rules brief (<= 250 tokens) that:\n1. Identifies the most likely Attribute + Ability pool the player's stated action calls for, with a suggested difficulty.\n2. Reminds the GM model of the dice-pool tag format above and the tens-double rule.\n3. Surfaces relevant economy state: current motes (personal/peripheral split), Willpower, anima level, health-track penalty.\n4. Flags any active Intimacies, Charms, or stunt opportunities relevant to the action.\n5. If the player explicitly described their action vividly, suggests a stunt tier (1/2/3) with rationale.\n\nIf no roll is needed (clear automatic success or failure, or pure roleplay), state \"No roll required\" with one-sentence reason.\n\nEquipment: the player's sheet tracks items with bonuses (e.g. \"Daiklave +2 Melee dice\"). When the player rolls, their dice widget already folds equipped bonuses into the printed `[dice: ...]` tag. Narrate the gear vividly but do not re-add the bonus to your own math — the tag is authoritative. If the player invokes an item not on their sheet, ask them to add it first.\n\nNever invent rules. Where the 2016 core book is silent, label the call as a GM ruling.",
+    "settings": {}
+  },
+  "lorebook": {
+    "name": "Exalted 3e Reference",
+    "description": "Keyword-triggered reference for Exalted 3rd Edition (2016 Onyx Path core) mechanics: anima, motes, stunts, willpower, sample Solar charms. Original mechanics references; charm names belong to Onyx Path Publishing.",
+    "category": "world",
+    "scanDepth": 4,
+    "tokenBudget": 1800,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "name": "Rule: Dice-pool resolution",
+        "keys": [
+          "roll",
+          "rolls",
+          "check",
+          "test",
+          "dice",
+          "pool",
+          "successes"
+        ],
+        "content": "Resolution: roll a pool of d10s equal to (Attribute + Ability). Each 7, 8, 9, or 10 is one success. Each 10 counts as TWO successes (tens-double). Specialties: +1 die when applicable. Stunts add up to +2 dice (cap regardless of tier). Charms can add dice or change the rule. Difficulty is the success count needed (1=Routine, 2=Standard, 3=Difficult, 4=Demanding, 5=Legendary). Extras (mooks) do NOT double tens.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Botch",
+        "keys": [
+          "botch",
+          "botched",
+          "spectacular failure"
+        ],
+        "content": "Botch: a roll producing zero successes AND at least one die showing 1 is a botch. The GM introduces a complication, not just a miss — the action fails in a memorably bad way. Note: 1s do NOT subtract from successes; they only matter when successes are zero.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Stunts",
+        "keys": [
+          "stunt",
+          "stunted",
+          "vividly",
+          "creative action"
+        ],
+        "content": "Stunts. The GM grades the player's narration: 1-die (vivid, environment-aware) = +2 dice OR +1 static. 2-die (genuinely creative, integrates fiction) = +2 dice OR +2 static, plus 1 mote OR 1 Willpower. 3-die (spontaneous, table-applauds) = +2 dice OR +3 static, plus 2 motes OR 2 Willpower (can exceed cap). Dice bonus caps at +2 across all tiers; the higher tier increases the static bonus and the regen reward.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Anima banner",
+        "keys": [
+          "anima",
+          "anima banner",
+          "caste mark",
+          "iconic"
+        ],
+        "content": "Anima banner. Spending Peripheral motes (NOT Personal) flares the anima: +1 banner level per 5 Peripheral motes spent in a single action. Levels: Dim (caste mark glints when motes spent) -> Glowing (5-10 spent, faint nimbus) -> Burning (11-15, bright glow) -> Bonfire (16+, illuminates the scene) -> Iconic (sustained Bonfire or Charm trigger, full totemic spirit-shape). Anima displays make stealth impossible at higher tiers and have social/magical implications.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Motes (Solar)",
+        "keys": [
+          "mote",
+          "motes",
+          "essence",
+          "spend mote",
+          "personal mote",
+          "peripheral mote",
+          "regenerate"
+        ],
+        "content": "Motes. Solar Personal pool = Essence x 3 + 10 (subtle, no anima flare). Solar Peripheral pool = Essence x 7 + 26 (overt, flares anima). Spend Personal first by default. In combat, regenerate 5 motes per round automatically. Out of combat, mote regen is GM-discretion based on activity (typically 0/4/8 per hour for strenuous/light/restful activity). Essence rating caps Charm prerequisites and pool size.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Willpower",
+        "keys": [
+          "willpower",
+          "wp",
+          "spend willpower"
+        ],
+        "content": "Willpower. Max 10. Solars start at 5. Spend 1 WP for +1 automatic success OR +1 to a static value (Resolve, Guile, Defense), once per roll/contest, declared BEFORE the roll. Also spent to power some Charms and resist mental influence. Regain +1 per full night's sleep (cap permanent rating). Regain +1 per scene when upholding a Major or Defining Intimacy through significant hardship (max 1/scene). Regain +1 (2-die stunt) or +2 (3-die stunt); these CAN exceed permanent rating.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Health track",
+        "keys": [
+          "health",
+          "wound",
+          "wounded",
+          "incapacitated",
+          "damage"
+        ],
+        "content": "Health track: 7 levels — -0, -1, -1, -2, -2, -4, Incapacitated. The wound penalty in effect equals the HIGHEST filled box and applies to most dice pools and static values. Bashing damage at Incapacitated -> KO until end of scene. Lethal/Aggravated at Incapacitated -> unconscious up to 1 day; an Exalt does NOT auto-die. Dying levels = Stamina; while dying, take 1 lethal per action until stabilized or dead.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Intimacies",
+        "keys": [
+          "intimacy",
+          "intimacies",
+          "tie",
+          "principle",
+          "minor intimacy",
+          "major intimacy",
+          "defining intimacy"
+        ],
+        "content": "Intimacies. Emotional/ideological commitments shaping the character's choices and resistance. Two kinds: Ties (toward a person/place/group) and Principles (abstract beliefs). Three intensities: Minor, Major, Defining. They affect Resolve in social influence: a Tie/Principle that supports the influence makes acceptance easier; one that opposes it makes it harder (or impossible without overcoming the Intimacy first). Major/Defining Intimacies are the source of regained Willpower under hardship.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Charm anatomy",
+        "keys": [
+          "charm",
+          "charms",
+          "activate charm",
+          "supplemental",
+          "reflexive",
+          "simple charm",
+          "permanent charm"
+        ],
+        "content": "Charm anatomy. Cost: motes (e.g., 5m), often + Willpower (1wp), sometimes + anima/initiative/health. Type: Simple (uses your action; one Simple per turn), Supplemental (enhances another action; many per round, no stacking same Charm), Reflexive (interrupt-style trigger), Permanent (passive, always-on once bought). Duration: Instant / One scene / Until next [X] / Indefinite / Permanent. Prerequisites: prior Charms in the tree plus an Essence minimum (typically 1-5).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Excellent Strike",
+        "keys": [
+          "excellent strike"
+        ],
+        "content": "Excellent Strike — Solar Melee Charm. Bedrock offensive Charm: adds dice to a Melee attack and makes the attack roll harder for opponents to dodge or parry. Most Solar Melee Charms branch from this in the cascade.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Dipping Swallow Defense",
+        "keys": [
+          "dipping swallow",
+          "dipping swallow defense"
+        ],
+        "content": "Dipping Swallow Defense — Solar Melee Charm, Reflexive. Reflexively wipes most penalties to your Parry against an incoming attack, letting you defend at full effectiveness when surprised or wounded.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Graceful Crane Stance",
+        "keys": [
+          "graceful crane",
+          "graceful crane stance"
+        ],
+        "content": "Graceful Crane Stance — Solar Athletics Charm. Lets the Solar balance perfectly on any surface, no matter how thin, slick, or unstable, for the scene. Walking on rooftops, tightropes, the surface of water (briefly) — no balance check required.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Monkey Leap Technique",
+        "keys": [
+          "monkey leap",
+          "monkey leap technique"
+        ],
+        "content": "Monkey Leap Technique — Solar Athletics Charm. Lets the Solar jump an entire range band (short, medium, long) as a movement action — clearing gaps and walls that mortals would need climbing gear for.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Hardship-Surviving Mendicant Spirit",
+        "keys": [
+          "hardship-surviving",
+          "mendicant spirit",
+          "hardship surviving"
+        ],
+        "content": "Hardship-Surviving Mendicant Spirit — Solar Survival Charm. Negates environmental penalties for the scene: extreme cold, heat, thin air, exhaustion. The Solar pushes through deserts, blizzards, and sleepless weeks at full effectiveness.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Judge's Ear Technique",
+        "keys": [
+          "judge's ear",
+          "judges ear"
+        ],
+        "content": "Judge's Ear Technique — Solar Investigation Charm, Reflexive. When the Solar hears speech, the Charm reflexively reveals whether the words are a lie, a half-truth, or sincere. Does not pierce magical concealment of intent.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Flawless Pickpocketing Technique",
+        "keys": [
+          "flawless pickpocketing",
+          "pickpocket charm"
+        ],
+        "content": "Flawless Pickpocketing Technique — Solar Larceny Charm. Auto-succeeds a touch-range theft against a mundane (non-Charm-defended) target. The mark feels nothing.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Lock-Opening Touch",
+        "keys": [
+          "lock-opening touch",
+          "lock opening touch"
+        ],
+        "content": "Lock-Opening Touch — Solar Larceny Charm. Opens any non-magical lock — door, chest, manacle — at a touch. No tools required, no time spent.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Caste, Favored, Supernal",
+        "keys": [
+          "caste",
+          "favored",
+          "supernal",
+          "dawn caste",
+          "zenith caste",
+          "twilight caste",
+          "night caste",
+          "eclipse caste"
+        ],
+        "content": "Solar PCs choose a Caste (Dawn/Zenith/Twilight/Night/Eclipse), each with 5 Caste Abilities chosen from a fixed pool of 8 caste-flavored options. The PC additionally picks 5 Favored Abilities from anywhere on the list. Caste + Favored Abilities (10 total) get cheaper Charm purchase costs and free Excellency access. One of those 10 is designated Supernal: that Ability is treated as Essence 5 for Charm-prerequisite purposes, allowing capstone Charms in that one Ability from Essence 1.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Extras (mooks)",
+        "keys": [
+          "extra",
+          "extras",
+          "mook",
+          "mooks"
+        ],
+        "content": "Extras (mooks) are simplified opponents. They have a single combined trait (often Drill or quality rating), often die after one Health Level of damage, and their 10s do NOT double on rolls (unlike PCs and major NPCs). Use them when the fiction calls for a crowd of nameless threats; promote any to Battle Group or full opponent if the fiction demands.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      }
+    ]
+  }
+}

@@ -8,137 +8,202 @@
     {
       "id": "dnd5e-class-fighter",
       "name": "Class: Fighter",
-      "keys": ["fighter", "fighters", "second wind", "action surge"],
+      "keys": [
+        "fighter",
+        "fighters",
+        "second wind",
+        "action surge"
+      ],
       "content": "Fighter class. Hit Die: d10. Proficiencies: all armor, all shields, all weapons; STR + CON saves. At level 1 the Fighter gets Second Wind (bonus action: regain 1d10 + level HP, once per short rest) and a chosen Fighting Style. At level 2: Action Surge (one extra action on a turn, once per short rest). At level 5: Extra Attack (attack twice with the Attack action).",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-class-wizard",
       "name": "Class: Wizard",
-      "keys": ["wizard", "wizards", "spellbook", "arcane recovery"],
+      "keys": [
+        "wizard",
+        "wizards",
+        "spellbook",
+        "arcane recovery"
+      ],
       "content": "Wizard class. Hit Die: d6. Proficiencies: daggers, darts, slings, quarterstaffs, light crossbows; INT + WIS saves. Spellcasting: prepares wizard spells from a spellbook each long rest, slots 1st-9th level. Arcane Recovery (once/day on short rest): recover spell slots totaling at most half your wizard level (rounded up), no slot 6th or higher. Ritual Casting: any prepared spell with the ritual tag can be cast as a ritual.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-class-rogue",
       "name": "Class: Rogue",
-      "keys": ["rogue", "rogues", "sneak attack", "cunning action"],
+      "keys": [
+        "rogue",
+        "rogues",
+        "sneak attack",
+        "cunning action"
+      ],
       "content": "Rogue class. Hit Die: d8. Proficiencies: light armor; simple weapons, hand crossbows, longswords, rapiers, shortswords; DEX + INT saves; thieves' tools; four chosen skills (Expertise on two at level 1). Sneak Attack: 1d6 extra damage at level 1 (scales) on a hit when you have advantage or an ally adjacent and don't have disadvantage; once per turn. Cunning Action (level 2): bonus action to Dash, Disengage, or Hide.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-class-cleric",
       "name": "Class: Cleric",
-      "keys": ["cleric", "clerics", "channel divinity", "divine domain"],
+      "keys": [
+        "cleric",
+        "clerics",
+        "channel divinity",
+        "divine domain"
+      ],
       "content": "Cleric class. Hit Die: d8. Proficiencies: light + medium armor + shields; simple weapons; WIS + CHA saves. Spellcasting (WIS): prepares cleric spells daily equal to WIS_mod + cleric level, plus all domain spells always prepared. Divine Domain at level 1 with first Channel Divinity at level 2 (use 1/short rest, scales to 2 at level 6, 3 at level 18).",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-condition-prone",
       "name": "Condition: Prone",
-      "keys": ["prone", "knocked prone", "knock down", "trip"],
+      "keys": [
+        "prone",
+        "knocked prone",
+        "knock down",
+        "trip"
+      ],
       "content": "Prone: A prone creature's only movement option is to crawl, unless it stands up (costing half its movement). It has disadvantage on attack rolls. An attack roll against a prone creature has advantage if the attacker is within 5 ft, and disadvantage otherwise.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-condition-grappled",
       "name": "Condition: Grappled",
-      "keys": ["grapple", "grappled", "grappling"],
+      "keys": [
+        "grapple",
+        "grappled",
+        "grappling"
+      ],
       "content": "Grappled: Speed becomes 0 and cannot benefit from any bonus to speed. Ends if the grappler is incapacitated, or if an effect removes the grappled creature from the grappler's reach (such as being thrown).",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-condition-poisoned",
       "name": "Condition: Poisoned",
-      "keys": ["poisoned", "poison damage", "venom"],
+      "keys": [
+        "poisoned",
+        "poison damage",
+        "venom"
+      ],
       "content": "Poisoned: Disadvantage on attack rolls and ability checks.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-condition-frightened",
       "name": "Condition: Frightened",
-      "keys": ["frightened", "fear effect", "afraid", "panic"],
+      "keys": [
+        "frightened",
+        "fear effect",
+        "afraid",
+        "panic"
+      ],
       "content": "Frightened: Disadvantage on ability checks and attack rolls while the source of fear is in line of sight. Cannot willingly move closer to the source.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-spell-firebolt",
       "name": "Spell: Fire Bolt (cantrip)",
-      "keys": ["fire bolt", "firebolt"],
+      "keys": [
+        "fire bolt",
+        "firebolt"
+      ],
       "content": "Fire Bolt — Evocation cantrip. Casting Time: 1 action. Range: 120 ft. Components: V, S. Duration: instantaneous. Hurl a mote of fire at a creature or object in range. Make a ranged spell attack against the target. On a hit, target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. Damage scales: 2d10 at level 5, 3d10 at 11, 4d10 at 17.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-spell-cure-wounds",
       "name": "Spell: Cure Wounds (1st)",
-      "keys": ["cure wounds", "healing spell"],
+      "keys": [
+        "cure wounds",
+        "healing spell"
+      ],
       "content": "Cure Wounds — Evocation 1st level. Casting Time: 1 action. Range: Touch. Components: V, S. Duration: instantaneous. A creature you touch regains hit points equal to 1d8 + your spellcasting ability modifier. No effect on undead or constructs. At higher levels: +1d8 per slot level above 1st.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-spell-shield",
       "name": "Spell: Shield (1st)",
-      "keys": ["shield spell", "shielded by spell"],
+      "keys": [
+        "shield spell",
+        "shielded by spell"
+      ],
       "content": "Shield — Abjuration 1st level. Casting Time: 1 reaction, taken when you are hit by an attack or targeted by magic missile. Range: self. Components: V, S. Duration: 1 round. +5 bonus to AC, including against the triggering attack, and you take no damage from magic missile.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-spell-fireball",
       "name": "Spell: Fireball (3rd)",
-      "keys": ["fireball"],
+      "keys": [
+        "fireball"
+      ],
       "content": "Fireball — Evocation 3rd level. Casting Time: 1 action. Range: 150 ft. Components: V, S, M (a tiny ball of bat guano and sulfur). Duration: instantaneous. A 20-ft-radius sphere of flame at a point in range. Each creature in the area makes a DEX save (DC = spell save DC). Failed save: 8d6 fire damage. Successful save: half. Ignites unattended flammable objects. At higher levels: +1d6 per slot above 3rd.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-rules-advantage",
       "name": "Rule: Advantage / Disadvantage",
-      "keys": ["advantage", "disadvantage", "with advantage", "with disadvantage"],
+      "keys": [
+        "advantage",
+        "disadvantage",
+        "with advantage",
+        "with disadvantage"
+      ],
       "content": "Advantage: roll the d20 twice, use the higher result. Disadvantage: roll the d20 twice, use the lower result. If both apply, they cancel — roll once normally. Multiple sources of advantage or disadvantage do not stack; presence of any advantage and any disadvantage cancels.",
       "selective": false,
       "constant": true,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-rules-rest",
       "name": "Rule: Short and Long Rest",
-      "keys": ["short rest", "long rest", "hit dice", "spend hit dice"],
+      "keys": [
+        "short rest",
+        "long rest",
+        "hit dice",
+        "spend hit dice"
+      ],
       "content": "Short rest: at least 1 hour of light activity. Spend any number of Hit Dice (each = roll the die + CON_mod, regain that many HP). Long rest: 8 hours, of which up to 2 hours may be light activity, none of it combat or strenuous. Regain all HP and half total Hit Dice (minimum 1). A creature must complete a long rest before benefiting from a second one in the same 24 hours.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "dnd5e-rules-death-saves",
       "name": "Rule: Death Saving Throws",
-      "keys": ["death save", "death saving throw", "stable", "stabilize", "dying"],
+      "keys": [
+        "death save",
+        "death saving throw",
+        "stable",
+        "stabilize",
+        "dying"
+      ],
       "content": "Death saving throws: at the start of your turn at 0 HP, roll d20. 10 or higher: success. Below 10: failure. Three successes: stable (unconscious but no longer dying). Three failures: dead. A natural 20: regain 1 HP. A natural 1: counts as two failures. Taking damage at 0 HP: one automatic failure (or two if the damage is a critical hit, or instant death if the damage equals or exceeds your HP maximum).",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     }
   ]
 }

@@ -8,173 +8,267 @@
     {
       "id": "ex3-rules-resolution",
       "name": "Rule: Dice-pool resolution",
-      "keys": ["roll", "rolls", "check", "test", "dice", "pool", "successes"],
+      "keys": [
+        "roll",
+        "rolls",
+        "check",
+        "test",
+        "dice",
+        "pool",
+        "successes"
+      ],
       "content": "Resolution: roll a pool of d10s equal to (Attribute + Ability). Each 7, 8, 9, or 10 is one success. Each 10 counts as TWO successes (tens-double). Specialties: +1 die when applicable. Stunts add up to +2 dice (cap regardless of tier). Charms can add dice or change the rule. Difficulty is the success count needed (1=Routine, 2=Standard, 3=Difficult, 4=Demanding, 5=Legendary). Extras (mooks) do NOT double tens.",
       "selective": false,
       "constant": true,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-rules-botch",
       "name": "Rule: Botch",
-      "keys": ["botch", "botched", "spectacular failure"],
+      "keys": [
+        "botch",
+        "botched",
+        "spectacular failure"
+      ],
       "content": "Botch: a roll producing zero successes AND at least one die showing 1 is a botch. The GM introduces a complication, not just a miss — the action fails in a memorably bad way. Note: 1s do NOT subtract from successes; they only matter when successes are zero.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-rules-stunts",
       "name": "Rule: Stunts",
-      "keys": ["stunt", "stunted", "vividly", "creative action"],
+      "keys": [
+        "stunt",
+        "stunted",
+        "vividly",
+        "creative action"
+      ],
       "content": "Stunts. The GM grades the player's narration: 1-die (vivid, environment-aware) = +2 dice OR +1 static. 2-die (genuinely creative, integrates fiction) = +2 dice OR +2 static, plus 1 mote OR 1 Willpower. 3-die (spontaneous, table-applauds) = +2 dice OR +3 static, plus 2 motes OR 2 Willpower (can exceed cap). Dice bonus caps at +2 across all tiers; the higher tier increases the static bonus and the regen reward.",
       "selective": false,
       "constant": true,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-rules-anima",
       "name": "Rule: Anima banner",
-      "keys": ["anima", "anima banner", "caste mark", "iconic"],
+      "keys": [
+        "anima",
+        "anima banner",
+        "caste mark",
+        "iconic"
+      ],
       "content": "Anima banner. Spending Peripheral motes (NOT Personal) flares the anima: +1 banner level per 5 Peripheral motes spent in a single action. Levels: Dim (caste mark glints when motes spent) -> Glowing (5-10 spent, faint nimbus) -> Burning (11-15, bright glow) -> Bonfire (16+, illuminates the scene) -> Iconic (sustained Bonfire or Charm trigger, full totemic spirit-shape). Anima displays make stealth impossible at higher tiers and have social/magical implications.",
       "selective": false,
       "constant": true,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-rules-motes",
       "name": "Rule: Motes (Solar)",
-      "keys": ["mote", "motes", "essence", "spend mote", "personal mote", "peripheral mote", "regenerate"],
+      "keys": [
+        "mote",
+        "motes",
+        "essence",
+        "spend mote",
+        "personal mote",
+        "peripheral mote",
+        "regenerate"
+      ],
       "content": "Motes. Solar Personal pool = Essence x 3 + 10 (subtle, no anima flare). Solar Peripheral pool = Essence x 7 + 26 (overt, flares anima). Spend Personal first by default. In combat, regenerate 5 motes per round automatically. Out of combat, mote regen is GM-discretion based on activity (typically 0/4/8 per hour for strenuous/light/restful activity). Essence rating caps Charm prerequisites and pool size.",
       "selective": false,
       "constant": true,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-rules-willpower",
       "name": "Rule: Willpower",
-      "keys": ["willpower", "wp", "spend willpower"],
+      "keys": [
+        "willpower",
+        "wp",
+        "spend willpower"
+      ],
       "content": "Willpower. Max 10. Solars start at 5. Spend 1 WP for +1 automatic success OR +1 to a static value (Resolve, Guile, Defense), once per roll/contest, declared BEFORE the roll. Also spent to power some Charms and resist mental influence. Regain +1 per full night's sleep (cap permanent rating). Regain +1 per scene when upholding a Major or Defining Intimacy through significant hardship (max 1/scene). Regain +1 (2-die stunt) or +2 (3-die stunt); these CAN exceed permanent rating.",
       "selective": false,
       "constant": true,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-rules-health",
       "name": "Rule: Health track",
-      "keys": ["health", "wound", "wounded", "incapacitated", "damage"],
+      "keys": [
+        "health",
+        "wound",
+        "wounded",
+        "incapacitated",
+        "damage"
+      ],
       "content": "Health track: 7 levels — -0, -1, -1, -2, -2, -4, Incapacitated. The wound penalty in effect equals the HIGHEST filled box and applies to most dice pools and static values. Bashing damage at Incapacitated -> KO until end of scene. Lethal/Aggravated at Incapacitated -> unconscious up to 1 day; an Exalt does NOT auto-die. Dying levels = Stamina; while dying, take 1 lethal per action until stabilized or dead.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-rules-intimacies",
       "name": "Rule: Intimacies",
-      "keys": ["intimacy", "intimacies", "tie", "principle", "minor intimacy", "major intimacy", "defining intimacy"],
+      "keys": [
+        "intimacy",
+        "intimacies",
+        "tie",
+        "principle",
+        "minor intimacy",
+        "major intimacy",
+        "defining intimacy"
+      ],
       "content": "Intimacies. Emotional/ideological commitments shaping the character's choices and resistance. Two kinds: Ties (toward a person/place/group) and Principles (abstract beliefs). Three intensities: Minor, Major, Defining. They affect Resolve in social influence: a Tie/Principle that supports the influence makes acceptance easier; one that opposes it makes it harder (or impossible without overcoming the Intimacy first). Major/Defining Intimacies are the source of regained Willpower under hardship.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-rules-charm-anatomy",
       "name": "Rule: Charm anatomy",
-      "keys": ["charm", "charms", "activate charm", "supplemental", "reflexive", "simple charm", "permanent charm"],
+      "keys": [
+        "charm",
+        "charms",
+        "activate charm",
+        "supplemental",
+        "reflexive",
+        "simple charm",
+        "permanent charm"
+      ],
       "content": "Charm anatomy. Cost: motes (e.g., 5m), often + Willpower (1wp), sometimes + anima/initiative/health. Type: Simple (uses your action; one Simple per turn), Supplemental (enhances another action; many per round, no stacking same Charm), Reflexive (interrupt-style trigger), Permanent (passive, always-on once bought). Duration: Instant / One scene / Until next [X] / Indefinite / Permanent. Prerequisites: prior Charms in the tree plus an Essence minimum (typically 1-5).",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-charm-excellent-strike",
       "name": "Charm: Excellent Strike",
-      "keys": ["excellent strike"],
+      "keys": [
+        "excellent strike"
+      ],
       "content": "Excellent Strike — Solar Melee Charm. Bedrock offensive Charm: adds dice to a Melee attack and makes the attack roll harder for opponents to dodge or parry. Most Solar Melee Charms branch from this in the cascade.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-charm-dipping-swallow",
       "name": "Charm: Dipping Swallow Defense",
-      "keys": ["dipping swallow", "dipping swallow defense"],
+      "keys": [
+        "dipping swallow",
+        "dipping swallow defense"
+      ],
       "content": "Dipping Swallow Defense — Solar Melee Charm, Reflexive. Reflexively wipes most penalties to your Parry against an incoming attack, letting you defend at full effectiveness when surprised or wounded.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-charm-graceful-crane",
       "name": "Charm: Graceful Crane Stance",
-      "keys": ["graceful crane", "graceful crane stance"],
+      "keys": [
+        "graceful crane",
+        "graceful crane stance"
+      ],
       "content": "Graceful Crane Stance — Solar Athletics Charm. Lets the Solar balance perfectly on any surface, no matter how thin, slick, or unstable, for the scene. Walking on rooftops, tightropes, the surface of water (briefly) — no balance check required.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-charm-monkey-leap",
       "name": "Charm: Monkey Leap Technique",
-      "keys": ["monkey leap", "monkey leap technique"],
+      "keys": [
+        "monkey leap",
+        "monkey leap technique"
+      ],
       "content": "Monkey Leap Technique — Solar Athletics Charm. Lets the Solar jump an entire range band (short, medium, long) as a movement action — clearing gaps and walls that mortals would need climbing gear for.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-charm-mendicant-spirit",
       "name": "Charm: Hardship-Surviving Mendicant Spirit",
-      "keys": ["hardship-surviving", "mendicant spirit", "hardship surviving"],
+      "keys": [
+        "hardship-surviving",
+        "mendicant spirit",
+        "hardship surviving"
+      ],
       "content": "Hardship-Surviving Mendicant Spirit — Solar Survival Charm. Negates environmental penalties for the scene: extreme cold, heat, thin air, exhaustion. The Solar pushes through deserts, blizzards, and sleepless weeks at full effectiveness.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-charm-judges-ear",
       "name": "Charm: Judge's Ear Technique",
-      "keys": ["judge's ear", "judges ear"],
+      "keys": [
+        "judge's ear",
+        "judges ear"
+      ],
       "content": "Judge's Ear Technique — Solar Investigation Charm, Reflexive. When the Solar hears speech, the Charm reflexively reveals whether the words are a lie, a half-truth, or sincere. Does not pierce magical concealment of intent.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-charm-pickpocket",
       "name": "Charm: Flawless Pickpocketing Technique",
-      "keys": ["flawless pickpocketing", "pickpocket charm"],
+      "keys": [
+        "flawless pickpocketing",
+        "pickpocket charm"
+      ],
       "content": "Flawless Pickpocketing Technique — Solar Larceny Charm. Auto-succeeds a touch-range theft against a mundane (non-Charm-defended) target. The mark feels nothing.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-charm-lock-touch",
       "name": "Charm: Lock-Opening Touch",
-      "keys": ["lock-opening touch", "lock opening touch"],
+      "keys": [
+        "lock-opening touch",
+        "lock opening touch"
+      ],
       "content": "Lock-Opening Touch — Solar Larceny Charm. Opens any non-magical lock — door, chest, manacle — at a touch. No tools required, no time spent.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-rules-caste-favored-supernal",
       "name": "Rule: Caste, Favored, Supernal",
-      "keys": ["caste", "favored", "supernal", "dawn caste", "zenith caste", "twilight caste", "night caste", "eclipse caste"],
+      "keys": [
+        "caste",
+        "favored",
+        "supernal",
+        "dawn caste",
+        "zenith caste",
+        "twilight caste",
+        "night caste",
+        "eclipse caste"
+      ],
       "content": "Solar PCs choose a Caste (Dawn/Zenith/Twilight/Night/Eclipse), each with 5 Caste Abilities chosen from a fixed pool of 8 caste-flavored options. The PC additionally picks 5 Favored Abilities from anywhere on the list. Caste + Favored Abilities (10 total) get cheaper Charm purchase costs and free Excellency access. One of those 10 is designated Supernal: that Ability is treated as Essence 5 for Charm-prerequisite purposes, allowing capstone Charms in that one Ability from Essence 1.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     },
     {
       "id": "ex3-rules-extras",
       "name": "Rule: Extras (mooks)",
-      "keys": ["extra", "extras", "mook", "mooks"],
+      "keys": [
+        "extra",
+        "extras",
+        "mook",
+        "mooks"
+      ],
       "content": "Extras (mooks) are simplified opponents. They have a single combined trait (often Drill or quality rating), often die after one Health Level of damage, and their 10s do NOT double on rolls (unlike PCs and major NPCs). Use them when the fiction calls for a crowd of nameless threats; promote any to Battle Group or full opponent if the fiction demands.",
       "selective": false,
       "constant": false,
-      "position": "before_an"
+      "position": 0
     }
   ]
 }

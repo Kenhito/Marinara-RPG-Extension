@@ -1,0 +1,543 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.3.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.0.0"
+  },
+  "ruleset": {
+    "id": "fate-core",
+    "name": "Fate Core",
+    "version": "1.0.0",
+    "edition": "Fate Core (Evil Hat, 2013)",
+    "license": "Original mechanics references; ladder labels and Fate dice notation are common to Fate-family games. No verbatim Evil Hat text reproduced. Compatible with the Fate Core SRD (CC-BY 3.0).",
+    "summary": "Narrative-first rules-light system. Resolve actions with 4 Fate dice (4dF, each -1/0/+1) plus a skill rating, compared to a target on the Fate ladder. Fate Points fuel aspect invocations for re-rolls and bonuses; stress and consequences absorb damage at narrative cost.",
+    "dice": {
+      "type": "dF",
+      "notation": "4dF + skill"
+    },
+    "resolution": {
+      "mode": "fate-ladder",
+      "modifierFormula": "Skill rating (Mediocre 0 to Legendary +8)",
+      "ladder": [
+        {
+          "label": "Legendary",
+          "value": 8
+        },
+        {
+          "label": "Epic",
+          "value": 7
+        },
+        {
+          "label": "Fantastic",
+          "value": 6
+        },
+        {
+          "label": "Superb",
+          "value": 5
+        },
+        {
+          "label": "Great",
+          "value": 4
+        },
+        {
+          "label": "Good",
+          "value": 3
+        },
+        {
+          "label": "Fair",
+          "value": 2
+        },
+        {
+          "label": "Average",
+          "value": 1
+        },
+        {
+          "label": "Mediocre",
+          "value": 0
+        },
+        {
+          "label": "Poor",
+          "value": -1
+        },
+        {
+          "label": "Terrible",
+          "value": -2
+        }
+      ],
+      "successWithStyle": 3
+    },
+    "difficulties": {
+      "Trivial": {
+        "threshold": 0,
+        "description": "Mediocre — no roll required unless interesting."
+      },
+      "Average": {
+        "threshold": 1,
+        "description": "Average — anyone with a related skill should succeed."
+      },
+      "Fair": {
+        "threshold": 2,
+        "description": "Fair — competent practitioner with some effort."
+      },
+      "Good": {
+        "threshold": 3,
+        "description": "Good — skilled work; failure here is a real possibility."
+      },
+      "Great": {
+        "threshold": 4,
+        "description": "Great — expertise required."
+      },
+      "Superb": {
+        "threshold": 5,
+        "description": "Superb — only the best succeed without aspect support."
+      },
+      "Fantastic": {
+        "threshold": 6,
+        "description": "Fantastic — heroic feat; expect aspect invocations."
+      },
+      "Epic": {
+        "threshold": 7,
+        "description": "Epic — legendary effort."
+      },
+      "Legendary": {
+        "threshold": 8,
+        "description": "Legendary — peak human + something more."
+      }
+    },
+    "attributes": [
+      {
+        "name": "Refresh",
+        "abbreviation": "REF",
+        "min": 1,
+        "max": 5,
+        "default": 3,
+        "description": "Maximum Fate Points the character starts each session with. Each Stunt taken at character creation reduces this by 1; minimum of 1."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Athletics",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Running, jumping, climbing, dodging, athletic feats."
+      },
+      {
+        "name": "Burglary",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Picking locks, disabling security, casing locations."
+      },
+      {
+        "name": "Contacts",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Knowing the right person, social network reach."
+      },
+      {
+        "name": "Crafts",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Building, repairing, working with tools and materials."
+      },
+      {
+        "name": "Deceive",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Lying, disguise, misdirection, false impressions."
+      },
+      {
+        "name": "Drive",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Operating vehicles, chases, stunts behind the wheel."
+      },
+      {
+        "name": "Empathy",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Reading people, sensing motives and lies, recovering Mental stress."
+      },
+      {
+        "name": "Fight",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Hand-to-hand and melee weapon combat."
+      },
+      {
+        "name": "Investigate",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Active research and deliberate examination of evidence."
+      },
+      {
+        "name": "Lore",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Knowledge — academic, occult, technical depending on character concept."
+      },
+      {
+        "name": "Notice",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Passive perception, situational awareness, initiative in conflicts."
+      },
+      {
+        "name": "Physique",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Raw strength and stamina; expands Physical stress track."
+      },
+      {
+        "name": "Provoke",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Goading, intimidating, creating emotional disadvantage on a target."
+      },
+      {
+        "name": "Rapport",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Building friendly connection, persuading honestly, recovering social standing."
+      },
+      {
+        "name": "Resources",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Wealth and material resources; can substitute for time and gear."
+      },
+      {
+        "name": "Shoot",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Ranged attacks — bows, firearms, thrown weapons."
+      },
+      {
+        "name": "Stealth",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Moving unseen, hiding, avoiding pursuit."
+      },
+      {
+        "name": "Will",
+        "min": 0,
+        "max": 8,
+        "default": 0,
+        "description": "Mental toughness and discipline; expands Mental stress track."
+      }
+    ],
+    "derivedStats": [
+      {
+        "name": "Fate Points",
+        "renderAs": "value",
+        "formula": "Refresh at session start; spent and earned during play.",
+        "max": 99
+      },
+      {
+        "name": "Physical Stress",
+        "renderAs": "track",
+        "formula": "3 boxes baseline; Physique 1-2 grants box 3 already; Physique 3+ adds a 4th box; Physique 5+ adds a 5th.",
+        "track": [
+          {
+            "label": "1",
+            "penalty": 0
+          },
+          {
+            "label": "2",
+            "penalty": 0
+          },
+          {
+            "label": "3",
+            "penalty": 0
+          }
+        ]
+      },
+      {
+        "name": "Mental Stress",
+        "renderAs": "track",
+        "formula": "3 boxes baseline; Will 1-2 grants box 3 already; Will 3+ adds a 4th box; Will 5+ adds a 5th.",
+        "track": [
+          {
+            "label": "1",
+            "penalty": 0
+          },
+          {
+            "label": "2",
+            "penalty": 0
+          },
+          {
+            "label": "3",
+            "penalty": 0
+          }
+        ]
+      },
+      {
+        "name": "Mild Consequence",
+        "renderAs": "value",
+        "formula": "Absorbs 2 shifts of stress at the cost of taking on a Mild aspect.",
+        "max": 1
+      },
+      {
+        "name": "Moderate Consequence",
+        "renderAs": "value",
+        "formula": "Absorbs 4 shifts of stress at the cost of taking on a Moderate aspect.",
+        "max": 1
+      },
+      {
+        "name": "Severe Consequence",
+        "renderAs": "value",
+        "formula": "Absorbs 6 shifts of stress at the cost of taking on a Severe aspect.",
+        "max": 1
+      }
+    ],
+    "states": [
+      {
+        "name": "Active Aspect Invocation",
+        "values": [
+          {
+            "label": "None",
+            "description": "No invocation active this exchange."
+          },
+          {
+            "label": "+2 Bonus",
+            "description": "Spent 1 Fate Point to add +2 to a roll."
+          },
+          {
+            "label": "Reroll",
+            "description": "Spent 1 Fate Point to reroll the four Fate dice."
+          },
+          {
+            "label": "Story Declaration",
+            "description": "Spent 1 Fate Point to declare a fact about the scene that fits an aspect."
+          }
+        ]
+      }
+    ],
+    "diceTagFormat": {
+      "template": "[fate: 4dF{+modifier} = {total} ({faces}) vs {target} -> {outcome}{shifts}]",
+      "example": "[fate: 4dF+3 = 5 (+,0,+,-) vs 2 -> success with style (+3 shifts)]"
+    },
+    "sheetSections": [
+      "attributes",
+      "skills",
+      "derived",
+      "states"
+    ],
+    "lorebookKeys": [
+      "aspect",
+      "high concept",
+      "trouble",
+      "compel",
+      "invoke",
+      "fate point",
+      "stress",
+      "consequence",
+      "mild",
+      "moderate",
+      "severe",
+      "refresh",
+      "ladder",
+      "create advantage",
+      "boost",
+      "stunt"
+    ]
+  },
+  "gmAgent": {
+    "name": "Fate Core Ruleset Override",
+    "description": "Enforces Fate Core skill resolution and dice formatting in Game Mode narration.",
+    "phase": "pre_generation",
+    "promptTemplate": "You are the Game Master for a Fate Core campaign. Fate Core is a narrative-first system in which the dice are a tiebreaker, not the engine. Your job is to make the fiction interesting, then resolve uncertainty mechanically when stakes demand it.\n\n## Resolution\n\nWhen a player attempts something interesting where failure has real consequences, call for a check using this exact tag format the client expects:\n\n```\n[fate: 4dF{+modifier} = {total} ({faces}) vs {target} -> {outcome}{shifts}]\n```\n\nConcrete example: `[fate: 4dF+3 = 5 (+,0,+,-) vs 2 -> success with style (+3 shifts)]`\n\nWhere:\n\n- `4dF` = four Fate dice. Each Fate die rolls one of three faces: `-`, `0`, `+` (worth -1, 0, +1).\n- `modifier` = the character's relevant skill rating (Mediocre 0 to Legendary +8).\n- `total` = sum of the four Fate dice plus the modifier.\n- `faces` = the four individual results in order, e.g. `(+,0,+,-)`.\n- `target` = the difficulty rating you set, on the Fate ladder (Mediocre 0, Average 1, Fair 2, Good 3, Great 4, Superb 5, Fantastic 6, Epic 7, Legendary 8).\n- `outcome` = one of `failure`, `tie`, `success`, `success with style`.\n- `shifts` = the absolute margin (e.g. `+3 shifts`, `-2 shifts`). Tie has 0 shifts.\n\nThe client's dice widget will roll Fate dice and emit this tag automatically when the player presses Roll. You should write the tag inline with narration when narrating an NPC action or when the player describes an attempt without invoking the widget.\n\n## The four outcomes\n\n- **Fail (total < target by 1+)** — the action does not succeed. You may offer a *success at a serious cost* — the player succeeds at the stated goal but takes consequence (stress, plot complication, lost time, social fallout). They can also choose to fail outright instead.\n- **Tie (total == target)** — minor success or success-with-cost. Often: the player gets what they wanted *and* a complication, or a partial success the GM frames.\n- **Success (total > target by 1-2)** — clean success, the player gets what they wanted as stated.\n- **Success with Style (total > target by 3+)** — clean success plus a free **boost** (a temporary, single-invocation aspect the player names — \"Off-Balance\", \"Caught Mid-Sentence\", \"Inspired\", etc.).\n\n## The Fate ladder — narrative descriptors\n\nAlways describe checks using ladder labels in narration, not raw numbers, when speaking in-fiction:\n\n- Legendary +8, Epic +7, Fantastic +6, Superb +5, Great +4, Good +3, Fair +2, Average +1, Mediocre 0, Poor -1, Terrible -2.\n\nWhen you set a target, name it: *\"Picking that lock against the magnetic seal will be Great difficulty (+4)\"*. The player then knows what total they need.\n\n## Aspects, Fate Points, and invocations\n\nAspects are short evocative phrases describing characters, scenes, situations, and consequences. They are the **soul of Fate**. Examples: *\"World-Weary Investigator\"*, *\"The Library Smells Wrong\"*, *\"Cracked Ribs\"*. Aspects are always TRUE — what is on the page IS the situation.\n\nPlayers can spend a **Fate Point** to:\n\n- **Invoke** a relevant aspect for **+2 to a roll** OR **a reroll** of all four Fate dice — declare which before resolving.\n- **Declare a story detail** consistent with an aspect (\"There must be a back exit — this is a *Smuggler's Den*\"). The detail becomes true.\n\nYou can spend or award Fate Points by:\n\n- **Compelling** a character's aspect — describe how their *Trouble* or another self-aspect causes a complication, and offer them a Fate Point to accept it. They can refuse by *paying* a Fate Point. Compels are the engine of drama in Fate; use them at least once per scene when situations naturally invite them.\n- Awarding Fate Points when their aspects work against them or when they accept consequences.\n\nTrack each player's Fate Points in the sheet. They reset to **Refresh** at the start of each session (default 3, less if they've taken Stunts).\n\n## Stress and consequences\n\nWhen a character takes a hit (physical, mental, social) they must absorb the **shifts** of damage:\n\n1. **Stress boxes** — fill in one box equal to or greater than the shifts taken. Boxes do not stack; one hit, one box.\n2. **Consequences** — take a Mild (-2 shifts), Moderate (-4), or Severe (-6) consequence. Each adds an aspect describing the consequence (\"Bleeding Forehead\", \"Doubt Whispering\", \"Promised Revenge\"). Each can be invoked against the character by you or the opposition.\n3. **Take Out** — when stress and consequences cannot absorb the hit, the character is *taken out*. The attacker dictates the narrative result (within reason — being killed is rare unless explicitly lethal).\n4. **Concede** — at any point, the player may declare they *concede the conflict*. They lose the conflict but retain narrative agency over their exit, and earn 1 Fate Point per consequence they're carrying.\n\nStress recovers at the end of a scene (usually). Consequences recover with downtime — Mild end-of-scene, Moderate next session, Severe end of arc — and require a justifying narrative action.\n\n## Boosts\n\nFree, single-use aspects gained from creating advantages with style or as side effects of actions. Boosts are \"free invocations\" — the next applicable roll gets +2 OR a reroll, no Fate Point cost, then the boost vanishes. Track them in narration; the player can name them.\n\n## Create an Advantage\n\nA core action separate from attacking. The player rolls a relevant skill vs an opposed roll or static target. On success, they place a new aspect on the scene/target and gain one free invocation. On success with style, two free invocations. Boosts work the same way mechanically.\n\n## Combat (\"conflicts\")\n\nConflicts are combat OR any high-stakes opposed scene (a debate, a chase, a courtroom fight). Track:\n\n- **Initiative** — usually highest Notice goes first, then social order. No initiative dice unless dramatic.\n- **Exchanges** — one round of action per side per exchange. Each character takes one action per exchange (attack, defend, create advantage, overcome).\n- **Defending** — defenders roll against the attacker's roll; the difference is the shifts. Most defenses use Athletics (dodge), Fight (parry), Will (resist mental), Rapport (resist social), Notice (situational awareness).\n\n## Compelling\n\nIf a player's situation **naturally** brings their aspects into conflict — a *Curious to a Fault* character finding a suspicious door, a *Sworn to the Empress* character offered an out-of-bounds shortcut — pause and offer the compel. *\"Your Trouble Curious to a Fault practically pulls you toward that door — accept a Fate Point and we play out you opening it before the others can stop you?\"* If they accept, hand them a point and play it out. If they refuse, they pay a point. Compels keep the table dramatic.\n\n## Tone and pacing\n\n- Be a fan of the player characters. Fate is collaborative; bad things happen, but the *characters* always matter and the narrative belongs to the table.\n- Reward creative aspect invocations. If a player names an aspect you didn't expect, lean in.\n- Don't stack difficulty just because the dice were good last time. Difficulty maps to fictional stakes, not balance.\n- When in doubt about whether to roll: ask if failure would be interesting. If not, don't roll — narrate the success.\n\n## What NOT to do\n\n- Don't track HP or D&D-style attribute scores. There are no STR/DEX/CON in Fate Core; only skills, stress, and consequences.\n- Don't auto-roll for the player when they haven't decided their action. Describe the situation, ask what they do, then call for the check.\n- Don't fabricate Fate-mechanical features (action surge, second wind, advantage from D&D 5e). Stay in the Fate vocabulary.\n- Don't emit `[skill_check: ...]` or `[dice: 1d20+...]` tags — those are other systems' formats. The only resolution tag in Fate is the `[fate: ...]` tag above.\n\n## Engine compatibility — reputation tags\n\nMarinara's engine validates `[reputation: npc=\"Name\" action=\"...\"]` tags with `action` capped at **50 characters**. When you emit reputation updates, action MUST be 50 characters or fewer. Use short verb phrases — `helped`, `betrayed trust`, `shared secret`, `offered shelter`, `deepened bond` — not literary descriptions. Anything longer triggers a server-side 400 and the reputation update silently fails.",
+    "settings": {}
+  },
+  "lorebook": {
+    "name": "Fate Core Rules Reference",
+    "description": "Keyword-triggered rules reference for the GM agent running a Fate Core game. Each entry surfaces only when its keys appear in recent narration or player input, so the GM gets the right rule at the right moment without inflating every prompt.",
+    "category": "world",
+    "scanDepth": 4,
+    "tokenBudget": 1500,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "keys": [
+          "aspect",
+          "high concept",
+          "trouble",
+          "concept"
+        ],
+        "content": "Aspects are short evocative phrases that describe truths about a character, scene, or situation. PCs have a High Concept (who they are at their core), a Trouble (the recurring complication of their life), and several other character aspects. Aspects are ALWAYS TRUE in the fiction. Spend a Fate Point to invoke an aspect for +2 or a reroll. Compel aspects to drive complications and award Fate Points.",
+        "name": "Rules Aspects",
+        "position": 0
+      },
+      {
+        "keys": [
+          "fate point",
+          "fate points",
+          "refresh"
+        ],
+        "content": "Fate Points are the metacurrency of Fate Core. Each player starts a session with Fate Points equal to their Refresh (default 3, lower if they've taken Stunts). Spend 1 Fate Point to: invoke an aspect (+2 to a roll OR reroll all 4 Fate dice), declare a story detail consistent with an aspect, refuse a compel, or activate a Stunt that requires a Fate Point. Earn Fate Points by accepting compels, conceding conflicts, having your aspects work against you, or running out at session end (you reset to Refresh at session start regardless).",
+        "name": "Rules Fate Points",
+        "position": 0
+      },
+      {
+        "keys": [
+          "fate dice",
+          "4dF",
+          "fudge dice",
+          "fudge"
+        ],
+        "content": "Fate dice are six-sided dice with two faces showing +, two showing -, and two showing 0. A roll of 4dF produces a result from -4 to +4 with a strong bell-curve toward 0. The character's skill rating is added: rolled total = sum of 4dF + skill. The total is then compared to a target on the Fate ladder. Each die contributes to the narration — a clutch roll of (+,+,+,0) at total +3 is dramatically different from a (0,0,0,+3) flat result, even though the total is the same.",
+        "name": "Rules Fate Dice",
+        "position": 0
+      },
+      {
+        "keys": [
+          "ladder",
+          "rating",
+          "Mediocre",
+          "Average",
+          "Fair",
+          "Good",
+          "Great",
+          "Superb",
+          "Fantastic",
+          "Epic",
+          "Legendary"
+        ],
+        "content": "The Fate ladder maps integer ratings to verbal descriptors: Legendary +8, Epic +7, Fantastic +6, Superb +5, Great +4, Good +3, Fair +2, Average +1, Mediocre 0, Poor -1, Terrible -2. Most starting PCs cap their pyramid at Great (+4) for the apex skill. NPCs are described entirely on the ladder ('a Good Athlete', 'a Fair Investigator'). When setting difficulty, name it on the ladder so players know what they need.",
+        "name": "Rules Ladder",
+        "position": 0
+      },
+      {
+        "keys": [
+          "fail",
+          "tie",
+          "succeed",
+          "success with style",
+          "boost"
+        ],
+        "content": "Compare rolled total to target: total < target = fail (or succeed at serious cost); total == target = tie (minor success or success with cost); total > target by 1-2 = success (clean); total >= target + 3 = success with style (clean + free Boost). A Boost is a temporary aspect with one free invocation that vanishes after use. The player names the Boost; the GM should accept reasonable suggestions.",
+        "name": "Rules Outcomes",
+        "position": 0
+      },
+      {
+        "keys": [
+          "overcome",
+          "create an advantage",
+          "advantage",
+          "attack",
+          "defend"
+        ],
+        "content": "Fate Core has four basic actions: Overcome (clear an obstacle, accomplish a non-attack task), Create an Advantage (place a useful aspect on the scene/target with a free invocation), Attack (deal stress shifts to a target), Defend (oppose someone else's action against you). Most actions use a single relevant skill vs static target or vs opposing roll. On a tie when creating an advantage, you get a Boost instead of a full new aspect.",
+        "name": "Rules Actions",
+        "position": 0
+      },
+      {
+        "keys": [
+          "stress",
+          "physical stress",
+          "mental stress",
+          "stress box",
+          "stress track"
+        ],
+        "content": "Each character has a Physical and a Mental stress track of 3 boxes by default. Physique 1-2 grants no extra; Physique 3-4 adds a 4th box; Physique 5+ adds a 5th. Will does the same for Mental stress. To absorb a hit, mark ONE box of value equal to or greater than the shifts taken. Boxes don't stack; one hit, one box. If no box is available, take consequences instead. Stress clears at the end of a scene unless circumstances suggest otherwise.",
+        "name": "Rules Stress",
+        "position": 0
+      },
+      {
+        "keys": [
+          "consequence",
+          "mild consequence",
+          "moderate consequence",
+          "severe consequence",
+          "wounded",
+          "concede"
+        ],
+        "content": "Consequences absorb damage by carving lasting narrative cost. Mild Consequence absorbs 2 shifts and adds an aspect such as 'Black Eye' (recovers end-of-scene with action). Moderate Consequence absorbs 4 shifts as 'Cracked Ribs' (recovers next session). Severe Consequence absorbs 6 shifts as 'Promised Revenge' or 'Lost the Eye' (recovers end of arc). Each consequence aspect can be invoked or compelled by anyone. When a character cannot absorb a hit, they are taken out and the attacker dictates outcome — OR the player can Concede the conflict instead, gaining 1 Fate Point per consequence and keeping narrative control of their exit.",
+        "name": "Rules Consequences",
+        "position": 0
+      },
+      {
+        "keys": [
+          "invoke",
+          "invoking",
+          "+2",
+          "reroll"
+        ],
+        "content": "Invoking an aspect: spend 1 Fate Point and declare which aspect you're invoking and how it applies. Choose +2 to your roll OR reroll all four Fate dice (declare BEFORE seeing results in either case). The aspect must be plausibly relevant — the GM is the arbiter, not the gatekeeper. Free invocations from Create-an-Advantage successes or Boosts work the same way but cost no Fate Points (they're consumed on use).",
+        "name": "Rules Invoking",
+        "position": 0
+      },
+      {
+        "keys": [
+          "compel",
+          "compelling",
+          "complication"
+        ],
+        "content": "Compelling an aspect: the GM (or another player) describes how a character's aspect creates a complication or temptation given the current scene. The targeted player accepts (and gains 1 Fate Point) or refuses (and pays 1 Fate Point). A good compel is specific to the moment and self-evident: 'Your Curious to a Fault aspect makes ignoring that strange door very hard. Take the compel and we narrate you opening it?' Compels are the GM's primary tool for raising stakes; aim for at least one per scene when the fiction naturally invites it.",
+        "name": "Rules Compels",
+        "position": 0
+      },
+      {
+        "keys": [
+          "stunt",
+          "stunts"
+        ],
+        "content": "Stunts are small, character-specific tricks that bend the rules slightly: 'Once per scene, when invoking my High Concept on a Fight roll, gain +3 instead of +2'; 'I get +2 to Investigate when looking through documents in a library.' Each Stunt taken at character creation lowers Refresh by 1 (down to a minimum of 1). Stunts grant either a static bonus, a once-per-scene effect, an alternate use of a skill, or a +1 Stress box. They are written down and shared with the GM.",
+        "name": "Rules Stunts",
+        "position": 0
+      },
+      {
+        "keys": [
+          "conflict",
+          "exchange",
+          "initiative",
+          "combat",
+          "fight scene"
+        ],
+        "content": "A Conflict is any high-stakes opposed scene with damage at risk: combat, a debate before the queen, a chase, a courtroom showdown. Initiative is usually highest Notice (or Empathy in social conflicts), then descending; flexible if the fiction suggests. Each side acts once per exchange. Conflicts continue until one side is taken out, concedes, or escapes. Damage uses stress + consequences as above.",
+        "name": "Rules Conflicts",
+        "position": 0
+      },
+      {
+        "keys": [
+          "skill pyramid",
+          "pyramid",
+          "skill rating",
+          "skill list"
+        ],
+        "content": "Default starting Fate Core PCs use a skill pyramid: 1 skill at Great (+4), 2 at Good (+3), 3 at Fair (+2), 4 at Average (+1). All other skills are Mediocre (+0) by default. Some campaigns use a skill cap higher than Great for cinematic play. The 18 default skills are: Athletics, Burglary, Contacts, Crafts, Deceive, Drive, Empathy, Fight, Investigate, Lore, Notice, Physique, Provoke, Rapport, Resources, Shoot, Stealth, Will. A campaign may add or remove skills with the table's agreement.",
+        "name": "Rules Skills Pyramid",
+        "position": 0
+      },
+      {
+        "keys": [
+          "success at a cost",
+          "succeed at cost",
+          "fail forward"
+        ],
+        "content": "When a player fails a roll on something dramatically important, the GM can offer 'success at a serious cost' instead of a flat fail: the player succeeds at the action they described, but takes a stress hit, accepts a consequence, gives up something they wanted, or introduces a complication. The player can refuse the cost and accept the failure instead. Use this to keep the story moving forward; a flat fail at the climax stalls the table.",
+        "name": "Rules Success At Cost",
+        "position": 0
+      }
+    ]
+  }
+}

@@ -59,8 +59,12 @@
   left: 16px;
   top: 80px;
   width: 320px;
+  min-width: 280px;
+  max-width: calc(100vw - 32px);
+  min-height: 200px;
   max-height: 70vh;
   overflow: auto;
+  resize: both;
   z-index: var(--mrr-z-sheet);
 }
 
@@ -130,6 +134,16 @@
 .mrr-char-btn--danger:hover {
   background: rgba(251, 113, 133, 0.30);
   border-color: var(--mrr-fail);
+}
+
+.mrr-char-btn--accent {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+}
+
+.mrr-char-btn--dashed {
+  border-style: dashed;
+  border-color: var(--mrr-accent-dim);
 }
 
 .mrr-draggable-handle { cursor: grab; user-select: none; touch-action: none; }
@@ -526,6 +540,39 @@
 
 .mrr-gear-btn:hover { background: var(--mrr-accent-dim); }
 
+/*  ─────  Header sheet-toggle button (scroll icon)  ───── */
+
+.mrr-sheet-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: 8px;
+  padding: 0;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: 50%;
+  cursor: pointer;
+  font-family: inherit;
+  vertical-align: middle;
+}
+
+.mrr-sheet-toggle-btn:hover { background: var(--mrr-accent-dim); }
+
+.mrr-sheet-toggle-btn--active {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+  border-color: var(--mrr-accent);
+}
+
+.mrr-sheet-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
 .mrr-dialog-backdrop {
   position: fixed;
   inset: 0;
@@ -637,3 +684,149 @@
 .mrr-msg--ok    { background: rgba(110, 231, 183, 0.12); border: 1px solid var(--mrr-success); }
 .mrr-msg--err   { background: rgba(251, 113, 133, 0.12); border: 1px solid var(--mrr-fail); }
 .mrr-msg--info  { background: rgba(212, 168, 255, 0.10); border: 1px solid var(--mrr-accent-dim); }
+
+/*  ─────  Inventory section + item editor  ───── */
+
+.mrr-inv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mrr-inv-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-tint-1);
+}
+
+.mrr-inv-item--equipped {
+  border-color: var(--mrr-accent);
+  background: var(--mrr-tint-2);
+}
+
+.mrr-inv-item__name {
+  font-weight: 500;
+}
+
+.mrr-inv-item__slot {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-inv-item__bonus-summary {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  color: var(--mrr-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mrr-inv-empty {
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+  font-style: italic;
+}
+
+.mrr-item-form__row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0;
+}
+
+.mrr-item-form__row label {
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+  text-align: right;
+}
+
+.mrr-item-form__input,
+.mrr-item-form__select {
+  width: 100%;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.mrr-item-form__textarea {
+  width: 100%;
+  min-height: 50px;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.mrr-bonus-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 6px;
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  background: rgba(0, 0, 0, 0.10);
+}
+
+.mrr-bonus-list__title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-bonus-row {
+  display: grid;
+  grid-template-columns: 2fr 50px 70px 1.2fr auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.mrr-bonus-row__input {
+  width: 100%;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border-strong);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 4px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+/* <option> elements ignore most parent styling on Linux/Chromium and fall back
+   to OS-default (often white bg + inherited near-white text => invisible until
+   highlighted). Explicit colors here force a readable dark dropdown panel. */
+.mrr-bonus-row__input option,
+.mrr-item-form__select option,
+.mrr-item-form__input option {
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+}
+
+/*  ─────  Derived / skill row equipment-bonus suffix  ───── */
+
+.mrr-row__bonus {
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  color: var(--mrr-success);
+  margin-left: 2px;
+}
+
+.mrr-row__bonus--neg { color: var(--mrr-fail); }

@@ -85,7 +85,23 @@ states         array   named UI state selectors — see 4.7
 diceTagFormat  object  required: { template, example } — what GM emits, what extension parses
 sheetSections  array   render order; enum: ["attributes", "skills", "derived", "states", "inventory", "charms", "notes"]
 lorebookKeys   array   suggested trigger keywords for the bundled lorebook
+equipmentSlots         array   advisory list of slot names autocompleted in the inventory UI; items may use slots not in this list (loader does not enforce membership)
+equipmentBonusTargets  array   advisory list of stat names authors should use as bonus targets; matched by exact string against attributes/skills/derivedStats names
 ```
+
+#### Equipment + bonuses (since v0.3.0)
+
+Items live in `state.sheet.inventory[]`, each with shape `{id, name, slot, bonuses[], notes}`. A bonus is `{target, value, kind, tag}` where:
+- `target` is the exact name of an attribute / skill / derivedStat to modify
+- `value` is an integer (positive or negative)
+- `kind` is `"value"` (default — flat numeric, used by derived display & d20 modifier), `"dice"` (added to dice-pool size), or `"successes"` (reserved — used by Charms granting auto-successes; not yet wired into roll math)
+- `tag` is a free narrative label ("accuracy", "soak", "parry") shown in tooltips
+
+Equipping is per-slot: `state.sheet.equipped[slot] = itemId`. The loader's `equippedBonuses(target)` aggregates contributions across every equipped item. Skills' quick-roll button pre-fills the dice widget's "Equipment" input from this aggregation; derived rows render `+N` suffix with hover-tooltip listing contributors.
+
+The slot dropdown / target dropdown in the item form pulls from the active ruleset:
+- Slot input is freeform text + optional `<datalist>` autocomplete from `ruleset.equipmentSlots` (rulesets that don't declare it still get full functionality)
+- Target dropdown is sourced from attributes + skills + derivedStats names plus the optional `equipmentBonusTargets` list
 
 `additionalProperties: false` at top level — unknown fields will be rejected. Do not add extra fields without first amending the schema.
 
@@ -302,6 +318,85 @@ window.mrrDebug.forceSave()    // explicit save trigger
 
 These exist in production builds. Use them for diagnosis when debugging localStorage issues.
 
+## 5b. Install bundles (the v0.3 distribution format)
+
+End users install a ruleset by pasting one **`bundle.json`** file. A bundle wraps the three per-ruleset assets (ruleset, GM agent prompt, lorebook) into a single envelope:
+
+```jsonc
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.3.0",   // optional: refuse install on older extensions
+  "authorId": "yourhandle",          // optional, defaults to "local"; namespaces idempotency
+  "generator": { "name": "...", "version": "..." },  // optional metadata
+  "ruleset":  { /* full ruleset.json content */ },
+  "gmAgent":  {
+    "name": "Display name (will be prefixed MRR: at install)",
+    "description": "...",
+    "phase": "pre_generation",
+    "promptTemplate": "...prose for the LLM, ≥50 chars..."
+  },
+  "lorebook": {
+    "name": "...",
+    "description": "...",
+    "category": "world",
+    "scanDepth": 4,
+    "tokenBudget": 1500,
+    "recursiveScanning": false,
+    "entries": [
+      { "name": "Display name", "content": "...", "keys": ["..."], "position": 0 }
+    ]
+  }
+}
+```
+
+Schema: `schema/bundle.schema.json`. Validate with `node tools/validate-bundle.mjs <path>` (or `npm run validate-bundles` for all three reference bundles).
+
+### How install actually works
+
+When a bundle is loaded into the Ruleset dialog (via Choose file, Fetch URL, or paste), the extension:
+
+1. Validates the bundle (hand-rolled JS validator; produces field-path-aware errors a vibecoder can hand back to their AI).
+2. Writes `bundle.ruleset` to `localStorage.marinara-rpg-ruleset` and seeds the multi-ruleset library.
+3. Calls `marinara.apiFetch("/lorebooks", ...)` to find any lorebook tagged `mrr-managed` + `mrr:<rulesetId>`. If found, PATCH the metadata; else POST a new one.
+4. POSTs the entries to `/api/lorebooks/:id/entries/bulk` with `tag: "mrr-managed"` stamped on each.
+5. Calls `marinara.apiFetch("/agents")` to find any agent with `settings.mrrManaged === true` and `promptTemplate` starting with `[mrr-v1:<authorId>/<rulesetId>]`. If found, PATCH; else POST.
+6. Reloads the page.
+
+The promptTemplate gets the `[mrr-v1:<authorId>/<rulesetId>]` prefix automatically — authors don't add it themselves. This is the idempotency key that lets re-installs find and update the existing agent without duplicating.
+
+### Lorebook entry shape — important
+
+Marinara's API requires `position: integer 0|1|2`, NOT the `"before_an"` strings used by older lorebook export formats. `0 = before character defs (system context)`, `1 = after`, `2 = depth-injected (uses entry.depth)`. The build script (`tools/build-bundle.mjs`) defaults to `0` when source lorebook entries omit position.
+
+The `id` field on source `lorebook.json` entries is **stripped** during bundle build — Marinara assigns its own ids server-side.
+
+### Source files vs bundle files — both are maintained
+
+The repo keeps the four-file source format (`ruleset.json`, `gm-agent.md`, `lorebook.json`, `INSTALL.md`) as the human-editable source of truth. The build script generates `bundle.json` from those:
+
+```bash
+node tools/build-bundle.mjs rulesets/yoursystem    # one ruleset
+node tools/build-bundle.mjs --all                   # all rulesets
+npm run build-bundles                               # same as --all
+```
+
+When editing source files, **rerun the build** to regenerate `bundle.json`. This is currently a manual step; consider it part of the commit when source files change.
+
+For vibecoder authors who can't run a CLI, see [`AUTHORING-PROMPT.md`](AUTHORING-PROMPT.md) — a paste-ready template that turns any chat AI into a bundle generator. Those authors skip the four-file format and produce `bundle.json` directly.
+
+### CSS embedding
+
+`extension/ruleset-loader.js` ships with `extension/ruleset-loader.css` embedded as a JSON-stringified constant between `/* EMBEDDED_CSS_BEGIN */` and `/* EMBEDDED_CSS_END */` markers. After editing CSS:
+
+```bash
+node tools/embed-css.mjs    # or: npm run embed-css
+```
+
+Don't hand-edit the embedded section. The script regenerates it idempotently from the canonical CSS file.
+
+---
+
 ## 6. Authoring a new ruleset (recipe)
 
 If your target system fits one of the five existing resolution modes (single-roll, dice-pool, d100-percentile, 2d6-stat, fate-ladder), you only edit data and prose. No JavaScript changes needed.
@@ -365,7 +460,7 @@ Mirror the structure of `rulesets/fate-core/INSTALL.md` (the most recent and mos
 
 1. Prerequisites (Marinara version, model recommendation).
 2. Install client extension (one-time, shared).
-3. Activate ruleset (paste-or-fetch).
+3. Activate ruleset (Choose file / Fetch URL / paste).
 4. Install GM agent.
 5. Install lorebook.
 6. Build a character.

@@ -72,6 +72,8 @@ Emit a short rules brief (<= 250 tokens) that:
 
 If no roll is needed (clear automatic success or failure, or pure roleplay), state "No roll required" with one-sentence reason.
 
+Equipment: the player's sheet tracks items with bonuses (e.g. "Daiklave +2 Melee dice"). When the player rolls, their dice widget already folds equipped bonuses into the printed `[dice: ...]` tag. Narrate the gear vividly but do not re-add the bonus to your own math — the tag is authoritative. If the player invokes an item not on their sheet, ask them to add it first.
+
 Never invent rules. Where the 2016 core book is silent, label the call as a GM ruling.
 ```
 
@@ -88,3 +90,9 @@ Pre-generation injects rules guidance BEFORE the main GM model composes the turn
 ## Engine compatibility — reputation tags
 
 Marinara validates `[reputation: npc="Name" action="..."]` action strings at max 50 characters. Use short verb phrases (`helped`, `betrayed trust`, `shared secret`) — not literary descriptions. Anything longer triggers a 400 server error and the reputation update silently fails.
+
+## Equipment bonuses
+
+The player's character sheet tracks an inventory of items, each carrying `bonuses` like `Melee +2 dice (accuracy)` or `Defense (Parry) +1`. When an item is equipped, the floating dice widget folds those bonuses into the rolled pool automatically — the printed `[dice: ...]` tag is the source of truth.
+
+You SHOULD narrate the equipment ("the daiklave bites deep", "her breastplate turns the spear-tip"). You MUST NOT recompute or re-add the bonus to your own dice math — the tag the player produced already includes it. If a player describes an item that isn't on their sheet, ask them to add it before invoking it on a roll.

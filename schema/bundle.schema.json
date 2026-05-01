@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Kenhito/Marinara-RPG-Extension/schema/bundle.schema.json",
+  "title": "Marinara-RPG-Extension Ruleset Bundle",
+  "description": "A single-file install bundle that wraps a ruleset, GM agent prompt, and lorebook in one envelope. Pasted into the extension's ruleset dialog to auto-install all three pieces via Marinara's API.",
+  "type": "object",
+  "required": ["schema", "version", "ruleset", "gmAgent", "lorebook"],
+  "properties": {
+    "schema": {
+      "const": "mrr-bundle",
+      "description": "Discriminator the extension uses to route bundle vs plain ruleset paste."
+    },
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Bundle envelope version. Bump for breaking schema changes; readers refuse unknown versions."
+    },
+    "minExtensionVersion": {
+      "type": "string",
+      "description": "Optional. If set, the framework refuses to install when its own version is lower (e.g., \"0.3.0\")."
+    },
+    "authorId": {
+      "type": "string",
+      "description": "Optional namespace for distinguishing same-id rulesets from different authors. Defaults to \"local\". Used in idempotency keys.",
+      "default": "local"
+    },
+    "generator": {
+      "type": "object",
+      "description": "Optional metadata about what tool produced the bundle (helpful for triage).",
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "ruleset": {
+      "type": "object",
+      "description": "Full ruleset.json content. Validated against the ruleset schema separately.",
+      "required": ["id", "name", "version", "dice", "resolution", "attributes", "skills"]
+    },
+    "gmAgent": {
+      "type": "object",
+      "description": "Custom Marinara agent that injects ruleset prose into pre-generation context.",
+      "required": ["name", "promptTemplate"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Display name. Will be prefixed with \"MRR: \" by the installer for grouping."
+        },
+        "description": { "type": "string" },
+        "phase": {
+          "type": "string",
+          "enum": ["pre_generation", "parallel", "post_processing"],
+          "default": "pre_generation"
+        },
+        "promptTemplate": {
+          "type": "string",
+          "minLength": 50,
+          "description": "Prose handed to the LLM as system context before each turn. Will be prefixed with [mrr-v1:<authorId>/<rulesetId>] for idempotent re-install."
+        },
+        "settings": {
+          "type": "object",
+          "description": "Optional agent settings. The installer sets mrrManaged: true and mrrBundleSchema: \"mrr-bundle\" automatically."
+        }
+      }
+    },
+    "lorebook": {
+      "type": "object",
+      "description": "Lorebook + entries auto-imported into Marinara's lorebook database.",
+      "required": ["name", "entries"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": "string" },
+        "category": {
+          "type": "string",
+          "enum": ["world", "character", "npc", "spellbook", "uncategorized"],
+          "default": "world"
+        },
+        "scanDepth": { "type": "integer", "minimum": 0, "default": 4 },
+        "tokenBudget": { "type": "integer", "minimum": 0, "default": 1500 },
+        "recursiveScanning": { "type": "boolean", "default": false },
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "content"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "content": { "type": "string" },
+              "keys": { "type": "array", "items": { "type": "string" } },
+              "secondaryKeys": { "type": "array", "items": { "type": "string" } },
+              "position": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2,
+                "default": 0,
+                "description": "0 = before character defs (system context), 1 = after, 2 = depth-injected (uses depth field)."
+              },
+              "depth": { "type": "integer", "minimum": 0, "default": 4 },
+              "selective": { "type": "boolean", "default": false },
+              "constant": { "type": "boolean", "default": false },
+              "role": { "type": "string", "enum": ["system", "user", "assistant"], "default": "system" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

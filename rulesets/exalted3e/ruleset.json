@@ -1,7 +1,7 @@
 {
   "id": "exalted3e",
   "name": "Exalted 3rd Edition",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "edition": "Exalted 3rd Edition Core (2016, Onyx Path)",
   "license": "Original mechanics references; charm names belong to Onyx Path Publishing. No verbatim Onyx Path text reproduced.",
   "summary": "Storyteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.",

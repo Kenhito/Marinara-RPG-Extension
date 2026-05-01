@@ -325,6 +325,18 @@
       "type": "array",
       "description": "Suggested lorebook trigger keywords the user should ensure are present in the bundled lorebook.json.",
       "items": { "type": "string" }
+    },
+    "equipmentSlots": {
+      "type": "array",
+      "description": "Optional advisory list of equipment slot names the inventory UI will autocomplete against (e.g. [\"weapon\", \"offhand\", \"armor\"]). Items may still use slots not in this list — the loader does not enforce membership.",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "equipmentBonusTargets": {
+      "type": "array",
+      "description": "Optional advisory list of stat names that authors are encouraged to use as bonus targets (e.g. \"Melee\", \"Defense (Parry)\", \"Soak (Bashing)\"). Targets are matched by exact string against attributes, skills, or derivedStats names; the loader does not enforce membership.",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
     }
   }
 }
