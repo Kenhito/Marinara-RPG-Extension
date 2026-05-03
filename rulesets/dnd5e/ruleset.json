@@ -27,7 +27,8 @@
     { "name": "Constitution", "abbreviation": "CON", "min": 1, "max": 30, "default": 10, "description": "Health, stamina, vital force." },
     { "name": "Intelligence", "abbreviation": "INT", "min": 1, "max": 30, "default": 10, "description": "Mental acuity, accuracy of recall, ability to reason." },
     { "name": "Wisdom",       "abbreviation": "WIS", "min": 1, "max": 30, "default": 10, "description": "Awareness, intuition, insight, attunement to surroundings." },
-    { "name": "Charisma",     "abbreviation": "CHA", "min": 1, "max": 30, "default": 10, "description": "Force of personality, persuasiveness, leadership." }
+    { "name": "Charisma",     "abbreviation": "CHA", "min": 1, "max": 30, "default": 10, "description": "Force of personality, persuasiveness, leadership." },
+    { "name": "Level",        "abbreviation": "LVL", "min": 1, "max": 20, "default": 1,  "description": "Character level. Drives Proficiency Bonus per the 5e progression table (+2 at 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, +6 at 17-20). Update Proficiency Bonus manually when crossing a tier." }
   ],
   "skills": [
     { "name": "Acrobatics",     "linkedAttribute": "Dexterity",    "min": 0, "max": 30, "default": 0 },
@@ -49,6 +50,14 @@
     { "name": "Stealth",        "linkedAttribute": "Dexterity",    "min": 0, "max": 30, "default": 0 },
     { "name": "Survival",       "linkedAttribute": "Wisdom",       "min": 0, "max": 30, "default": 0 }
   ],
+  "skillProficiency": {
+    "tiers": [
+      { "code": "U", "label": "Untrained", "rollBonusFormula": "0" },
+      { "code": "T", "label": "Trained",   "rollBonusFormula": "{Proficiency Bonus}" },
+      { "code": "E", "label": "Expertise", "rollBonusFormula": "2 * {Proficiency Bonus}" }
+    ],
+    "default": "U"
+  },
   "derivedStats": [
     { "name": "Hit Points",    "formula": "(class hit die avg) + CON_mod, per level", "renderAs": "bar" },
     { "name": "Armor Class",   "formula": "10 + DEX_mod (or armor formula)",          "renderAs": "value" },

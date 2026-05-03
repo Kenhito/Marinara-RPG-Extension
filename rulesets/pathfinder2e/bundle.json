@@ -96,6 +96,14 @@
         "max": 8,
         "default": 0,
         "description": "Presence, persuasion, force of personality. Adds to social skills (Diplomacy, Deception, Intimidation, Performance, Society) and to spell DCs for Charisma-based casters."
+      },
+      {
+        "name": "Level",
+        "abbreviation": "LVL",
+        "min": 1,
+        "max": 20,
+        "default": 1,
+        "description": "Character level (1-20). Drives the proficiency math for trained-and-above skills: Trained = level + 2, Expert = level + 4, Master = level + 6, Legendary = level + 8."
       }
     ],
     "skills": [
@@ -236,6 +244,16 @@
         "description": "Picking locks, picking pockets, disabling traps. Trained-only: Disable Device, Pick a Lock."
       }
     ],
+    "skillProficiency": {
+      "tiers": [
+        { "code": "U", "label": "Untrained", "rollBonusFormula": "0" },
+        { "code": "T", "label": "Trained",   "rollBonusFormula": "{Level} + 2" },
+        { "code": "E", "label": "Expert",    "rollBonusFormula": "{Level} + 4" },
+        { "code": "M", "label": "Master",    "rollBonusFormula": "{Level} + 6" },
+        { "code": "L", "label": "Legendary", "rollBonusFormula": "{Level} + 8" }
+      ],
+      "default": "U"
+    },
     "derivedStats": [
       {
         "name": "Hit Points",

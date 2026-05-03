@@ -62,6 +62,20 @@
     { "name": "Thrown",       "min": 0, "max": 10, "default": 0 },
     { "name": "War",          "min": 0, "max": 10, "default": 0 }
   ],
+  "skillProficiency": {
+    "tiers": [
+      { "code": "U", "label": "Unskilled", "rollBonusFormula": "0" },
+      { "code": "C", "label": "Caste",     "rollBonusFormula": "0" },
+      { "code": "F", "label": "Favored",   "rollBonusFormula": "0" }
+    ],
+    "default": "U"
+  },
+  "skillSpecialties": {
+    "enabled": true,
+    "valueLabel": "+ dice",
+    "valueKind": "dice",
+    "defaultValue": 1
+  },
   "derivedStats": [
     { "name": "Essence",            "formula": "Permanent rating, 1-5 for player Solars", "max": 10, "renderAs": "value" },
     { "name": "Personal Motes",     "formula": "Essence x 3 + 10 (Solar)",   "maxFormula": "{Essence} * 3 + 10", "renderAs": "bar" },

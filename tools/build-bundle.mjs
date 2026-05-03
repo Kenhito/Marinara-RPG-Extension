@@ -50,12 +50,57 @@ function buildEntry(src) {
   return out;
 }
 
+function titleCase(s) {
+  return s.split(/[-_]/).map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(" ");
+}
+
+function loadAdditionalAgents(rulesetName, rulesetDir) {
+  /* Resolve agent prompts with per-ruleset override precedence:
+     prefer rulesets/<id>/agents/<role>.md, fall back to <repo>/agents/<role>.md.
+     Roles are the union of files in both directories — a per-ruleset override
+     can introduce a role that doesn't exist as a shared baseline, and a shared
+     agent applies to rulesets without overrides. */
+  const sharedDir = resolve(root, "agents");
+  const overrideDir = join(rulesetDir, "agents");
+  const roles = new Set();
+  function collectFrom(dir) {
+    try {
+      for (const f of readdirSync(dir)) {
+        if (f.endsWith(".md")) roles.add(f.replace(/\.md$/, ""));
+      }
+    } catch (e) { /* directory absent — fine */ }
+  }
+  collectFrom(sharedDir);
+  collectFrom(overrideDir);
+  if (roles.size === 0) return [];
+  return Array.from(roles).sort().map(function (role) {
+    const overridePath = join(overrideDir, role + ".md");
+    let md, isOverride;
+    try { md = readFileSync(overridePath, "utf8"); isOverride = true; }
+    catch (e) { md = readFileSync(join(sharedDir, role + ".md"), "utf8"); isOverride = false; }
+    const promptTemplate = extractPromptBlock(md);
+    const firstHeading = (md.match(/^#\s+(.+)$/m) || [])[1] || titleCase(role);
+    const tunedNote = isOverride
+      ? " — tuned for " + rulesetName
+      : " — shared baseline";
+    return {
+      role,
+      name: rulesetName + " — " + firstHeading.replace(/\s+Agent\s*$/i, ""),
+      description: "Focused " + role.replace(/-/g, " ") + " agent for " + rulesetName + tunedNote + ".",
+      phase: "pre_generation",
+      promptTemplate,
+      settings: {}
+    };
+  });
+}
+
 function buildBundle(dir) {
   const ruleset = JSON.parse(readFileSync(join(dir, "ruleset.json"), "utf8"));
   const gmMd = readFileSync(join(dir, "gm-agent.md"), "utf8");
   const lb = JSON.parse(readFileSync(join(dir, "lorebook.json"), "utf8"));
 
   const promptTemplate = extractPromptBlock(gmMd);
+  const additionalAgents = loadAdditionalAgents(ruleset.name, dir);
 
   const bundle = {
     schema: "mrr-bundle",
@@ -71,6 +116,7 @@ function buildBundle(dir) {
       promptTemplate,
       settings: {}
     },
+    additionalAgents,
     lorebook: {
       name: lb.name,
       description: lb.description || "",

@@ -65,6 +65,44 @@
         }
       }
     },
+    "additionalAgents": {
+      "type": "array",
+      "description": "Optional additional pre_generation context_injection agents installed alongside the main gmAgent. Each provides a focused capability (state-reminder, combat-adjudicator, lore-query, npc-bookkeeper, etc). Idempotency: each agent's settings carry mrrAgentRole=<role> so re-install matches by (rulesetId, role).",
+      "items": {
+        "type": "object",
+        "required": ["role", "name", "promptTemplate"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "Stable identifier for this agent within the bundle (e.g. \"state-reminder\", \"combat-adjudicator\"). Used in idempotency keys."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Display name. Prefixed with \"MRR: \" by the installer."
+          },
+          "description": { "type": "string" },
+          "phase": {
+            "type": "string",
+            "enum": ["pre_generation", "parallel", "post_processing"],
+            "default": "pre_generation"
+          },
+          "promptTemplate": {
+            "type": "string",
+            "minLength": 50,
+            "description": "Prose handed to the LLM as system context. Prefixed with [mrr-v1:<authorId>/<rulesetId>:<role>] for idempotent re-install."
+          },
+          "settings": {
+            "type": "object",
+            "description": "Optional agent settings. The installer sets mrrManaged, mrrBundleSchema, mrrRulesetId, mrrAuthorId, mrrAgentRole automatically."
+          }
+        }
+      }
+    },
     "lorebook": {
       "type": "object",
       "description": "Lorebook + entries auto-imported into Marinara's lorebook database.",

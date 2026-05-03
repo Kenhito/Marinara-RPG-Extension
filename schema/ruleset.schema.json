@@ -230,6 +230,66 @@
         }
       }
     },
+    "skillProficiency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tiers"],
+      "description": "Optional per-ruleset training/proficiency tier system. When present, each skill row shows a cycle button advancing through these tiers; the active tier's rollBonusFormula contributes to dice math via the existing formula evaluator. Omit the block entirely (Fate Core) for rulesets that don't use tiers.",
+      "properties": {
+        "tiers": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Ordered list of training tiers. The first tier is the default for new characters unless `default` is set.",
+          "items": {
+            "type": "object",
+            "required": ["code", "label"],
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4,
+                "description": "Short letter code shown on the cycle button (e.g. \"U\", \"T\", \"E\", \"M\", \"L\" for PF2e; \"U\", \"C\", \"F\" for Exalted)."
+              },
+              "label": {
+                "type": "string",
+                "description": "Full tier name shown in the button tooltip (e.g. \"Trained\", \"Caste\")."
+              },
+              "rollBonusFormula": {
+                "type": "string",
+                "description": "Plain formula contributed to dice math when this tier is active. Whitelist: digits, + - * / ( ) and {StatName} placeholders that resolve from attributes / skills / derivedStats. Use \"0\" for narrative-only tiers (Exalted Caste/Favored)."
+              }
+            }
+          }
+        },
+        "default": {
+          "type": "string",
+          "description": "Tier code applied to skills with no saved tier (typically the lowest tier — \"U\" / Untrained / Unskilled). If omitted, the renderer falls back to the first tier in the array."
+        }
+      }
+    },
+    "skillSpecialties": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "description": "Optional named specialty support per skill. When enabled, each skill row gains a +S button to add a sub-row with a name and value; the dice widget surfaces applicable specialties as stackable checkboxes when rolling for the parent skill.",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "valueLabel": {
+          "type": "string",
+          "description": "Human-readable label for what the value represents (e.g. \"+1 die\", \"+1 to roll\"). Shown beside the value stepper."
+        },
+        "valueKind": {
+          "type": "string",
+          "enum": ["dice", "value", "successes"],
+          "description": "How a checked specialty contributes to dice math: \"dice\" adds to the pool size, \"value\" adds to the modifier/skill input, \"successes\" adds auto-successes."
+        },
+        "defaultValue": {
+          "type": "integer",
+          "description": "Default numeric value for a newly-added specialty (Exalted: 1)."
+        }
+      }
+    },
     "derivedStats": {
       "type": "array",
       "description": "Stats computed from attributes/level/etc. Used for HUD readouts.",
