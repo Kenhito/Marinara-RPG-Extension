@@ -5,7 +5,7 @@ Each ruleset folder has its own step-by-step `INSTALL.md`. This page is the orie
 ## What you install, in order
 
 1. **Client extension (once per Marinara install)**
-   `extension/ruleset-loader.css` and `extension/ruleset-loader.js` go into Marinara's **Settings -> Extensions -> Add Extension** as the CSS and JS fields of a single extension. Enable it. The extension starts in dormant mode (no ruleset selected) — it adds a "Ruleset" button to the chat header but otherwise leaves Marinara untouched.
+   `extension/RPG-Extension-GM-Mode.css` and `extension/RPG-Extension-GM-Mode.js` go into Marinara's **Settings -> Extensions -> Add Extension** as the CSS and JS fields of a single extension. Enable it. The extension starts in dormant mode (no ruleset selected) — it adds a "Ruleset" button to the chat header but otherwise leaves Marinara untouched.
 
 2. **Pick a ruleset and activate it**
    Click the **Ruleset** button. Either paste a `ruleset.json` blob into the textarea, or paste a raw URL (e.g. a GitHub `raw.githubusercontent.com` link to one of the rulesets in this repo) and click **Fetch URL**. Click **Save and reload**. The page reloads with the ruleset active.

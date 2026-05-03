@@ -25,7 +25,7 @@ The schema's `resolution.mode` enum has four first-class modes:
 | `d100-percentile` | Call of Cthulhu, BRP-derived   | `skillFormula` |
 | `2d6-stat`        | PbtA (Apocalypse, Dungeon, Monster of the Week) | `modifierFormula`, `bands` |
 
-If your system doesn't fit any mode cleanly: pick the closest, encode it as best you can, and document the gap in your `INSTALL.md`. Feel free to open a PR proposing a fifth mode (and the corresponding widget in `extension/ruleset-loader.js`).
+If your system doesn't fit any mode cleanly: pick the closest, encode it as best you can, and document the gap in your `INSTALL.md`. Feel free to open a PR proposing a fifth mode (and the corresponding widget in `extension/RPG-Extension-GM-Mode.js`).
 
 ## Step 2 — copy a starting bundle
 

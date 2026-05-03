@@ -14,7 +14,7 @@ rulesets/fate-core/
 └── INSTALL.md       # User-facing install walkthrough
 ```
 
-The extension and schema live one level up at `extension/ruleset-loader.{css,js}` and `schema/ruleset.schema.json` and are shared across all rulesets.
+The extension and schema live one level up at `extension/RPG-Extension-GM-Mode.{css,js}` and `schema/ruleset.schema.json` and are shared across all rulesets.
 
 ## Decision tree — before you start
 
@@ -133,7 +133,7 @@ npm run validate-rulesets
 
 ### Step 2 — extension MODES + dispatch + builder + roller
 
-In `extension/ruleset-loader.js`:
+In `extension/RPG-Extension-GM-Mode.js`:
 
 1. **Add a `MODES` entry** — search for `var MODES = {` and add your mode constant. Example: `FATE: "fate-ladder"`.
 2. **Add a dispatch branch** — search for `if      (mode === MODES.POOL)` and add an `else if` for your mode. The dispatcher calls `buildXWidget()`.
@@ -150,7 +150,7 @@ Author the four files (`ruleset.json`, `gm-agent.md`, `lorebook.json`, `INSTALL.
 ### Step 4 — verify
 
 ```bash
-node --check extension/ruleset-loader.js
+node --check extension/RPG-Extension-GM-Mode.js
 npm run validate-rulesets
 ```
 

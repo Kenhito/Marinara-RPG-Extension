@@ -1,6 +1,6 @@
 /*
- * Marinara-RPG-Extension — ruleset-loader.css
- * Companion stylesheet for ruleset-loader.js. Paste this CSS into Marinara
+ * Marinara-RPG-Extension — RPG-Extension-GM-Mode.css
+ * Companion stylesheet for RPG-Extension-GM-Mode.js. Paste this CSS into Marinara
  * Engine -> Settings -> Extensions -> Add Extension -> CSS field.
  *
  * License: MIT
@@ -228,6 +228,110 @@
 }
 
 .mrr-row__roll:hover { background: var(--mrr-accent); color: var(--mrr-on-accent); }
+
+/*  ─────  Skill proficiency tier button + specialty sub-row  ───── */
+
+/* Shared base for the small letter buttons that sit inside the stepper
+   group on each skill row. Kept separate from `.mrr-stepper button` so
+   the stepper can be 18×18 (numeric +/-) while these are 22×18 (single
+   uppercase letter or "+S") without re-spec'ing every property. */
+.mrr-skill-tier-btn,
+.mrr-skill-spec-btn {
+  width: 22px;
+  height: 18px;
+  padding: 0;
+  background: var(--mrr-tint-2);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.mrr-skill-tier-btn { letter-spacing: 0.04em; }
+.mrr-skill-spec-btn { border-style: dashed; border-color: var(--mrr-accent-dim); }
+
+.mrr-skill-tier-btn:hover,
+.mrr-skill-spec-btn:hover { background: var(--mrr-accent-dim); }
+
+/* Tier modifier classes — visual cue for the active tier. The renderer
+   adds `--<code>` for the active tier; codes are ruleset-defined so
+   these mappings cover the common cases (PF2e U/T/E/M/L, Exalted U/C/F,
+   D&D U/T/E). Untrained-equivalent stays at the default tint. */
+.mrr-skill-tier-btn--T,
+.mrr-skill-tier-btn--C { background: var(--mrr-tint-strong); }
+.mrr-skill-tier-btn--E,
+.mrr-skill-tier-btn--F { background: var(--mrr-accent-dim); border-color: var(--mrr-accent-dim); }
+.mrr-skill-tier-btn--M { background: var(--mrr-accent); color: var(--mrr-on-accent); border-color: var(--mrr-accent); }
+.mrr-skill-tier-btn--L {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+  border-color: var(--mrr-accent);
+  box-shadow: 0 0 0 1px var(--mrr-accent-dim);
+}
+
+.mrr-skill-spec-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 2px 18px;
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-tint-1);
+  margin-top: 2px;
+}
+
+.mrr-skill-spec-name {
+  width: 100%;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.mrr-skill-spec-label {
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+  font-family: var(--mrr-mono);
+}
+
+/*  ─────  Dice widget specialty pane  ───── */
+
+.mrr-dice__specs {
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px dashed var(--mrr-accent-dim);
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-tint-1);
+}
+
+.mrr-dice__specs-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--mrr-accent);
+  margin-bottom: 4px;
+}
+
+.mrr-dice__spec-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  cursor: pointer;
+}
+
+.mrr-dice__spec-checkbox {
+  margin: 0;
+  cursor: pointer;
+}
 
 .mrr-stepper {
   display: inline-flex;
@@ -830,3 +934,79 @@
 }
 
 .mrr-row__bonus--neg { color: var(--mrr-fail); }
+
+
+/*  ─────  state-mutator tag visual hiding  ───── */
+/* The state-mutator agent instructs the main model to emit
+   [mrr-state: ...] tags inline at paragraph ends. The extension's
+   chat observer parses + applies them, then wraps each tag in a
+   span.mrr-state-tag for this CSS rule to hide visually. The state
+   change itself has already been applied to localStorage; the tag
+   is purely a wire-format artifact and should not appear in chat. */
+.mrr-state-tag { display: none; }
+
+/*  ─────  state mutation confirmation toast  ───── */
+/* Top-right floating stack of brief notifications shown when the
+   state-mutator agent's tags fire. Each toast confirms one mutation:
+   prefix (HP / Condition / Inventory), change (signed delta or +/- name),
+   and the agent-reported reason. Stacks vertically; auto-dismisses. */
+.mrr-toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.mrr-toast {
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-left: 3px solid var(--mrr-accent);
+  border-radius: var(--mrr-radius-sm);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  box-shadow: var(--mrr-shadow);
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+  pointer-events: auto;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  max-width: 320px;
+}
+
+.mrr-toast--visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.mrr-toast__prefix {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mrr-text-dim);
+  flex-shrink: 0;
+}
+
+.mrr-toast__change {
+  font-family: var(--mrr-mono);
+  font-weight: 700;
+  color: var(--mrr-accent);
+  flex-shrink: 0;
+}
+
+.mrr-toast__reason {
+  color: var(--mrr-text-dim);
+  font-size: 11px;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

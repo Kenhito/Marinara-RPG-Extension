@@ -34,7 +34,7 @@ Exalted 3e, Fate Core, Pathfinder 2e).
   and builder (`npm run build-bundles`).
 - **CSS embedded in the framework JS.** Eliminates the separate CSS paste —
   one JS paste now installs the entire client extension. Rebuild the embedded
-  copy with `npm run embed-css` after editing `ruleset-loader.css`.
+  copy with `npm run embed-css` after editing `RPG-Extension-GM-Mode.css`.
 - **Vibecoder authoring path.** `AUTHORING-PROMPT.md` at repo root is a
   paste-ready prompt template authors hand to any chat AI (claude.ai,
   ChatGPT, Gemini) that returns a valid `bundle.json` for their system. No
@@ -110,7 +110,7 @@ Exalted 3e, Fate Core, Pathfinder 2e).
 
 - **Install docs corrected.** `README.md`, `AUTHORING-PROMPT.md`, and
   the three `rulesets/*/INSTALL.md` files now say "import the
-  `extension/ruleset-loader.js` file" for the framework extension —
+  `extension/RPG-Extension-GM-Mode.js` file" for the framework extension —
   Marinara's Settings → Extensions screen is a file-upload UI, not a
   paste-text UI. Bundle install language now leads with **Choose file…**
   alongside Fetch-URL and paste; "two pastes total" framing replaced

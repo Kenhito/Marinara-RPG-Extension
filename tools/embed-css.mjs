@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * embed-css.mjs — Embed extension/ruleset-loader.css into ruleset-loader.js
+ * embed-css.mjs — Embed extension/RPG-Extension-GM-Mode.css into RPG-Extension-GM-Mode.js
  * as a JSON-stringified constant between EMBEDDED_CSS_BEGIN/END markers.
  *
- * Run after editing ruleset-loader.css so the embedded copy stays in sync.
+ * Run after editing RPG-Extension-GM-Mode.css so the embedded copy stays in sync.
  *
  * Usage: node tools/embed-css.mjs
  */
@@ -13,8 +13,8 @@ import { dirname, resolve } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
-const cssPath = resolve(root, "extension/ruleset-loader.css");
-const jsPath = resolve(root, "extension/ruleset-loader.js");
+const cssPath = resolve(root, "extension/RPG-Extension-GM-Mode.css");
+const jsPath = resolve(root, "extension/RPG-Extension-GM-Mode.js");
 
 const css = readFileSync(cssPath, "utf8");
 const js = readFileSync(jsPath, "utf8");
@@ -34,4 +34,4 @@ if (!pattern.test(js)) {
 }
 
 writeFileSync(jsPath, js.replace(pattern, replacement));
-console.log("Embedded " + css.length + " chars of CSS into ruleset-loader.js");
+console.log("Embedded " + css.length + " chars of CSS into RPG-Extension-GM-Mode.js");

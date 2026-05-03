@@ -34,8 +34,8 @@ These constraints are non-negotiable. They were established with the user explic
 ├── schema/
 │   └── ruleset.schema.json              # JSON Schema (draft 2020-12) for ruleset.json
 ├── extension/
-│   ├── ruleset-loader.js                # the entire client extension (~1660 lines)
-│   └── ruleset-loader.css               # styling for the overlay UI
+│   ├── RPG-Extension-GM-Mode.js                # the entire client extension (~1660 lines)
+│   └── RPG-Extension-GM-Mode.css               # styling for the overlay UI
 ├── tools/
 │   └── validate-ruleset.mjs             # CLI: validates a ruleset.json against the schema
 ├── rulesets/
@@ -238,7 +238,7 @@ Renders as a dropdown selector on the sheet. Each value's `trigger` is for the G
 
 Both fields required if you specify `diceTagFormat`. The `template` documents what the GM model is told to emit; the `example` is a concrete instance the GM model imitates. The extension's roller produces matching tags.
 
-## 5. The extension — `extension/ruleset-loader.js`
+## 5. The extension — `extension/RPG-Extension-GM-Mode.js`
 
 ### 5.1 Runtime contract
 
@@ -387,7 +387,7 @@ For vibecoder authors who can't run a CLI, see [`AUTHORING-PROMPT.md`](AUTHORING
 
 ### CSS embedding
 
-`extension/ruleset-loader.js` ships with `extension/ruleset-loader.css` embedded as a JSON-stringified constant between `/* EMBEDDED_CSS_BEGIN */` and `/* EMBEDDED_CSS_END */` markers. After editing CSS:
+`extension/RPG-Extension-GM-Mode.js` ships with `extension/RPG-Extension-GM-Mode.css` embedded as a JSON-stringified constant between `/* EMBEDDED_CSS_BEGIN */` and `/* EMBEDDED_CSS_END */` markers. After editing CSS:
 
 ```bash
 node tools/embed-css.mjs    # or: npm run embed-css
@@ -471,7 +471,7 @@ Mirror the structure of `rulesets/fate-core/INSTALL.md` (the most recent and mos
 
 ```bash
 npm run validate-rulesets   # validates ALL bundles in rulesets/
-node --check extension/ruleset-loader.js
+node --check extension/RPG-Extension-GM-Mode.js
 ```
 
 Both must pass.
@@ -504,7 +504,7 @@ npm run validate-rulesets
 
 ### Step 2 — extension JavaScript
 
-In `extension/ruleset-loader.js`:
+In `extension/RPG-Extension-GM-Mode.js`:
 
 1. **Add a `MODES` entry** — search for `var MODES = {` and add your mode constant. Example: `FATE: "fate-ladder"`.
 2. **Add a dispatch branch in `buildDice`** — search for `if (mode === MODES.POOL)` and add an `else if` for your mode pointing to your builder.
@@ -519,8 +519,8 @@ Author the four bundle files (Section 6) using your new mode in `resolution.mode
 ### Step 4 — verify
 
 ```bash
-node --check extension/ruleset-loader.js
-node -e "var fs=require('fs'); new Function('marinara', fs.readFileSync('extension/ruleset-loader.js','utf8'))"
+node --check extension/RPG-Extension-GM-Mode.js
+node -e "var fs=require('fs'); new Function('marinara', fs.readFileSync('extension/RPG-Extension-GM-Mode.js','utf8'))"
 npm run validate-rulesets
 ```
 
@@ -581,8 +581,8 @@ Marinara's lorebook surfaces entries to the model only when their `keys` match r
 ```bash
 # All three of these MUST pass:
 npm run validate-rulesets                                      # JSON schema
-node --check extension/ruleset-loader.js                       # JS syntax
-node -e "new Function('marinara', require('fs').readFileSync('extension/ruleset-loader.js','utf8'))"  # Function-body parse
+node --check extension/RPG-Extension-GM-Mode.js                       # JS syntax
+node -e "new Function('marinara', require('fs').readFileSync('extension/RPG-Extension-GM-Mode.js','utf8'))"  # Function-body parse
 ```
 
 If you added a new resolution mode, add a small test that exercises `rollX` with deterministic dice (override `Math.random`) across all outcome types your mode produces. Use `os.tmpdir()` for the test file location so the test is portable across Linux, macOS, and Windows — for example:

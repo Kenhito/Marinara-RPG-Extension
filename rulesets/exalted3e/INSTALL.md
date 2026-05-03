@@ -9,7 +9,7 @@
 In Marinara Engine: **Settings → Extensions → Add Extension** — Marinara's
 Extensions screen accepts file uploads, not pasted text.
 
-- **Import** the file `extension/ruleset-loader.js` from this repo. The
+- **Import** the file `extension/RPG-Extension-GM-Mode.js` from this repo. The
   CSS is embedded — there is no separate stylesheet to upload.
 - Name: `Marinara-RPG-Extension`. Description: anything.
 - Enable.
@@ -60,7 +60,7 @@ Open the Ruleset dialog and click **Uninstall server data** to remove the lorebo
 
 The four-file flow still works:
 
-1. **Settings → Extensions** — import `extension/ruleset-loader.js` (CSS embedded).
+1. **Settings → Extensions** — import `extension/RPG-Extension-GM-Mode.js` (CSS embedded).
 2. **Ruleset button** — Choose file / fetch URL / paste `rulesets/exalted3e/ruleset.json`.
 3. **Settings → Agents → Create Custom Agent** — copy the prompt block from `rulesets/exalted3e/gm-agent.md` (Phase: pre_generation, Result type: context_injection).
 4. **Lorebooks → Import** — import `rulesets/exalted3e/lorebook.json`.

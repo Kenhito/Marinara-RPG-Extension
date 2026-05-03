@@ -80,6 +80,6 @@ Most of the above is a single design decision per gap. If something here matters
 
 2. **Extension API hook for the character creator** would let the overlay show a ruleset-aware creator. Feature request: `marinara.registerCharacterMaker(fn)`. Roughly 100 lines.
 
-3. **Per-chat ruleset selection** is fully overlay-side — can be added in a `ruleset-loader.js` patch that reads `customTrackerFields["__mrr_ruleset"]` first, then falls back to localStorage. ~20 lines.
+3. **Per-chat ruleset selection** is fully overlay-side — can be added in a `RPG-Extension-GM-Mode.js` patch that reads `customTrackerFields["__mrr_ruleset"]` first, then falls back to localStorage. ~20 lines.
 
 The repo is open to PRs for any of these.
