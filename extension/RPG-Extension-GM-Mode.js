@@ -23,6 +23,7 @@ var LS_RULESET       = "marinara-rpg-ruleset";
 var LS_RULESET_URL   = "marinara-rpg-ruleset-url";
 var LS_LIBRARY       = "marinara-rpg-ruleset-library";
 var LS_SHEET_PFX     = "mrr-sheet-";
+var LS_CHARACTER_PFX = "mrr-character-";  // chat-independent character library (post-v0.4.1)
 var LS_SHEET_SIZE    = LS_SHEET_PFX + "size";
 var LS_SHEET_COLLAPSED_PFX = LS_SHEET_PFX + "collapsed-";
 var LS_SPELLBOOK_POS = "mrr-spellbook-pos";
@@ -782,35 +783,60 @@ function getChatId() {
   return null;
 }
 
+/* Legacy chat-scoped sheet key (pre-character-library). Retained as the
+   migration source — loadSheet auto-copies into characterKey() on first
+   load, then never reads from here again. */
 function sheetKey(chatId, characterId) {
   return LS_SHEET_PFX + chatId + "-" + characterId;
 }
 
+/* Character-library key — the post-v0.4.1 home for sheet data. Decoupled
+   from chatId so the same character can be loaded into any chat. */
+function characterKey(characterId) {
+  return LS_CHARACTER_PFX + characterId;
+}
+
 function loadSheet(chatId, ruleset) {
-  if (!chatId || !state.activeCharacterId) {
-    log("loadSheet -> blank: chatId=" + chatId + " active=" + state.activeCharacterId);
+  if (!state.activeCharacterId) {
+    log("loadSheet -> blank: no activeCharacterId");
     return blankSheet(ruleset);
   }
-  var key = sheetKey(chatId, state.activeCharacterId);
+  /* Try the character-library key first. */
+  var key = characterKey(state.activeCharacterId);
   var raw = lsGet(key);
-  if (!raw) {
-    log("loadSheet -> blank: no data for " + key);
-    return blankSheet(ruleset);
-  }
-  var parsed = safeParse(raw);
-  if (!parsed) {
+  if (raw) {
+    var parsed = safeParse(raw);
+    if (parsed) {
+      log("loadSheet hydrated key=" + key + " bytes=" + raw.length);
+      return mergeSheet(blankSheet(ruleset), parsed);
+    }
     warn("loadSheet -> blank: parse failed for " + key);
-    return blankSheet(ruleset);
   }
-  log("loadSheet hydrated key=" + key + " bytes=" + raw.length);
-  return mergeSheet(blankSheet(ruleset), parsed);
+  /* Legacy fallback: chat-scoped sheet from pre-v0.4.1 sessions. Copy it
+     forward to the character-library key on first hit so subsequent loads
+     bypass this branch. The legacy key is left in place for safety until
+     a future cleanup pass removes it. */
+  if (chatId) {
+    var legacyKey = sheetKey(chatId, state.activeCharacterId);
+    var legacyRaw = lsGet(legacyKey);
+    if (legacyRaw) {
+      lsSet(key, legacyRaw);
+      log("loadSheet auto-migrated " + legacyKey + " -> " + key + " bytes=" + legacyRaw.length);
+      var legacyParsed = safeParse(legacyRaw);
+      if (legacyParsed) return mergeSheet(blankSheet(ruleset), legacyParsed);
+      warn("loadSheet: migrated bytes but parse failed for " + legacyKey);
+    }
+  }
+  log("loadSheet -> blank: no data for " + key);
+  return blankSheet(ruleset);
 }
 
 function saveSheet(chatId, sheet) {
-  if (!chatId) { warn("saveSheet skipped: no chatId"); return; }
+  /* chatId arg retained for interface stability; the character-library
+     key is independent of chat now. */
   if (!state.activeCharacterId) { warn("saveSheet skipped: no activeCharacterId"); return; }
   if (!sheet) { warn("saveSheet skipped: no sheet object"); return; }
-  var key = sheetKey(chatId, state.activeCharacterId);
+  var key = characterKey(state.activeCharacterId);
   var payload = JSON.stringify(sheet);
   var ok = lsSet(key, payload);
   if (!ok) { warn("saveSheet: lsSet failed for " + key + " (quota or private mode?)"); return; }
@@ -843,14 +869,49 @@ function flushSave() {
   }
 }
 
+/* Generate a chat-independent character id. Used both for new characters
+   and for migrating legacy bare "player" ids so the post-v0.4.1
+   character-library doesn't collide across chats that all defaulted to
+   the same id. */
+function newCharacterId() {
+  return "char-" + Date.now() + "-" + Math.random().toString(36).slice(2, 11);
+}
+
 function loadCharacters(chatId) {
-  if (!chatId) return [{ id: "player", name: "Player" }];
+  if (!chatId) return [{ id: newCharacterId(), name: "Player" }];
   var raw = lsGet("mrr-chars-" + chatId);
   if (raw) {
     var parsed = safeParse(raw);
-    if (Array.isArray(parsed) && parsed.length) return parsed;
+    if (Array.isArray(parsed) && parsed.length) {
+      /* Migrate any legacy bare "player" ids to fresh uuids and copy
+         the legacy chat-scoped sheet data into the new character-library
+         key. Each historical chat keeps its sheet under a distinct id;
+         no cross-chat collision when two chats both had id="player". */
+      var migrated = false;
+      parsed.forEach(function (c) {
+        if (!c || c.id !== "player") return;
+        var newId = newCharacterId();
+        var legacyKey = sheetKey(chatId, "player");
+        var legacyRaw = lsGet(legacyKey);
+        if (legacyRaw) {
+          lsSet(characterKey(newId), legacyRaw);
+          log("migrated character: " + chatId + "/player -> " + newId + " bytes=" + legacyRaw.length);
+        }
+        c.id = newId;
+        migrated = true;
+      });
+      if (migrated) {
+        lsSet("mrr-chars-" + chatId, JSON.stringify(parsed));
+        /* Fix the active-char pointer too if it was the legacy "player". */
+        var activePtr = lsGet("mrr-active-char-" + chatId);
+        if (activePtr === "player" && parsed[0]) {
+          lsSet("mrr-active-char-" + chatId, parsed[0].id);
+        }
+      }
+      return parsed;
+    }
   }
-  return [{ id: "player", name: "Player" }];
+  return [{ id: newCharacterId(), name: "Player" }];
 }
 
 function saveCharacters() {

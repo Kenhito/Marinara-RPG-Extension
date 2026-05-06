@@ -12,6 +12,13 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+### Added — Step 1 of character-library storage evolution: chat-independent sheet keys (2026-05-06)
+
+- **Sheet data decoupled from `chatId`.** New `characterKey(characterId)` returns `mrr-character-{characterId}` — the post-v0.4.1 home for sheet data. `loadSheet` tries this key first, falls back to the legacy `mrr-sheet-{chatId}-{characterId}` once with auto-migration (copies forward, leaves legacy in place for safety), then blank. `saveSheet` writes only to the character-library key. The `chatId` argument is retained for interface stability but unused in the new path.
+- **`loadCharacters` migrates legacy bare `id: "player"` ids to fresh UUIDs on first load.** Every chat used to default to `id: "player"`, which would collide across chats under the new chat-independent key. Migration: each legacy "player" character gets a fresh `char-{Date.now()}-{random}` id, the chat's character list and `mrr-active-char-{chatId}` pointer update, and the legacy chat-scoped sheet copies forward to `characterKey(newId)`. Each historical chat keeps its own distinct sheet — no data loss, no collision.
+- **What this unlocks:** characters become portable across chats. Foundation for any future "import character into this chat" UI; foundation for Steps 2 (IndexedDB) and 3 (Marinara API mirror) per the roadmap at `~/cc-wiki/Roadmap/marinara-character-library-storage-evolution.md`.
+
+
 ## [0.4.1] - 2026-05-06
 
 Sheet-ergonomics, item lifecycle, and multi-system damage release. Twenty-two iterative rounds of fixes against live in-Marinara playtest, all in service of getting D&D 5e and Exalted 3e to feel correct under the new two-tier inventory + state-mutator + bar UX models. The big themes:
