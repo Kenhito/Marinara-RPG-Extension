@@ -63,6 +63,18 @@
             "modifierFormula": {
               "type": "string",
               "description": "Plain-language formula the GM applies (e.g. \"1d20 + ability_mod + proficiency_bonus\")."
+            },
+            "skillBonusFormula": {
+              "type": "string",
+              "description": "Optional auto-calculated skill (and save) bonus formula for d20-style systems. When set, the sheet replaces the per-skill stepper with the computed bonus. Tokens: {linkedAttribute_mod} (the skill's linked attribute modifier), {tierBonus} (the active proficiency tier's rollBonusFormula evaluated), and any {StatName}. D&D 5e: \"{linkedAttribute_mod} + {tierBonus}\". PF2e: \"{Level} + {linkedAttribute_mod} + {tierBonus}\"."
+            },
+            "spellSaveDcFormula": {
+              "type": "string",
+              "description": "Optional spell save DC formula for d20-style systems. When set, the sheet's Cast button computes the DC and posts it in the [mrr-cast: dc=...] chat tag so the GM agent resolves saves. Token: {spellcastingAttribute_mod} resolves to the casting spell's declared attribute modifier. When omitted, the cast tag posts without a DC and the agent picks one by rule context — the core extension knows no system's DC convention by default. Examples: D&D 5e \"8 + {Proficiency Bonus} + {spellcastingAttribute_mod}\"; PF2e \"10 + {Level} + {spellcastingAttribute_mod}\"."
+            },
+            "attackProficiencyFormula": {
+              "type": "string",
+              "description": "Optional formula for the proficiency contribution to weapon attack rolls when an item is marked attackProficient. When set, the sheet's `atk` button evaluates this formula and pre-fills the dice widget's Proficiency input. When omitted, attacks contribute zero proficiency and the player can type a value manually. The core extension knows no system's proficiency convention by default. Examples: D&D 5e \"{Proficiency Bonus}\"; PF2e (trained tier) \"{Level} + 2\"."
             }
           },
           "additionalProperties": false
@@ -205,6 +217,33 @@
           "min": { "type": "integer" },
           "max": { "type": "integer" },
           "default": { "type": "integer" },
+          "description": { "type": "string" },
+          "modifierFormula": {
+            "type": "string",
+            "description": "Optional auto-calculated modifier for this attribute (D&D ability modifier, PF2e modifier, etc.). Use the magic token {Score} to reference this attribute's own raw value, plus standard {StatName} placeholders for cross-attribute references. Result is floored. Example: \"({Score} - 10) / 2\" for D&D 5e ability modifiers."
+          },
+          "modifierName": {
+            "type": "string",
+            "description": "Optional override for the modifier's name in formula references. Defaults to <name>_mod and <abbreviation>_mod (both auto-exposed). Use this only when neither default name fits."
+          },
+          "aliases": {
+            "type": "array",
+            "description": "Optional alternate names the LLM may use when emitting [mrr-state: field=\"...\"] tags for this attribute. The abbreviation is auto-recognized and does not need to be repeated here.",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "saves": {
+      "type": "array",
+      "description": "Optional saving throws (D&D, PF2e). Each save renders a row whose displayed value is auto-computed from the linked attribute's modifier plus the active proficiency tier. Saves use the same skillProficiency tiers as skills.",
+      "items": {
+        "type": "object",
+        "required": ["name", "linkedAttribute"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "description": "Display name for the save (e.g. \"Strength Save\", \"Fortitude\")." },
+          "linkedAttribute": { "type": "string", "description": "Name of the attribute whose modifier contributes to this save." },
           "description": { "type": "string" }
         }
       }
@@ -226,7 +265,12 @@
           "min": { "type": "integer" },
           "max": { "type": "integer" },
           "default": { "type": "integer" },
-          "description": { "type": "string" }
+          "description": { "type": "string" },
+          "aliases": {
+            "type": "array",
+            "description": "Optional alternate names the LLM may use when emitting [mrr-state: field=\"...\"] tags for this skill.",
+            "items": { "type": "string" }
+          }
         }
       }
     },
@@ -290,6 +334,50 @@
         }
       }
     },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional per-ruleset labels for the two free-text identity fields rendered in the sheet header (race/species/ancestry/exalt-type and class/caste). Defaults are \"Race\" and \"Class\" when this block is omitted.",
+      "properties": {
+        "raceLabel": {
+          "type": "string",
+          "description": "Label for the first identity field (e.g. \"Race\", \"Species\", \"Ancestry\", \"Exalt Type\")."
+        },
+        "classLabel": {
+          "type": "string",
+          "description": "Label for the second identity field (e.g. \"Class\", \"Caste\", \"Concept\", \"Archetype\")."
+        }
+      }
+    },
+    "backgrounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "description": "Optional free-text dot-rated traits beyond attributes and skills (Exalted Backgrounds & Merits, World of Darkness Merits, D&D Feats, etc.). When enabled, the sheet renders a \"backgrounds\" section where the player adds named entries and steps each one's dot value within the configured range.",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "label": {
+          "type": "string",
+          "description": "Section title shown in the UI (e.g. \"Backgrounds & Merits\")."
+        },
+        "min": {
+          "type": "integer",
+          "description": "Minimum dot value for a single background entry (default 0)."
+        },
+        "max": {
+          "type": "integer",
+          "description": "Maximum dot value for a single background entry (default 5)."
+        },
+        "default": {
+          "type": "integer",
+          "description": "Initial dot value for a newly-added background entry (default 0)."
+        },
+        "textOnly": {
+          "type": "boolean",
+          "description": "When true, the section renders name-only rows (no dot value, no stepper). Use for systems whose entries are described, not rated — D&D 5e Feats use this. The user adds a lorebook entry per row to teach the agent the mechanics."
+        }
+      }
+    },
     "derivedStats": {
       "type": "array",
       "description": "Stats computed from attributes/level/etc. Used for HUD readouts.",
@@ -304,9 +392,26 @@
             "description": "Plain-language formula the GM evaluates (e.g. \"Essence x 7 + 26\" for peripheral motes)."
           },
           "max": { "type": "integer" },
+          "default": {
+            "type": "integer",
+            "description": "Optional initial value for this derived stat on a blank sheet. When omitted, derived stats default to 0. Use this for stats whose semantic floor is not zero (D&D \"Level\" defaults to 1, etc.)."
+          },
           "maxFormula": {
             "type": "string",
             "description": "Optional auto-calculated max for renderAs=bar. Use {StatName} placeholders that resolve to the current attribute/skill/derived value (e.g. \"{Essence} * 7 + 26\"). Whitelist: digits, + - * / ( ) and {StatName} only."
+          },
+          "valueFormula": {
+            "type": "string",
+            "description": "Optional auto-calculated current value (autocalc). When present, the sheet displays the computed result and suppresses the manual stepper — the formula IS the override. Same {StatName} placeholder + arithmetic-only whitelist as maxFormula. Example: \"({Dexterity} + {Melee}) / 2\" for Exalted Defense (Parry)."
+          },
+          "rollFormula": {
+            "type": "string",
+            "description": "Optional roll formula. When set on a single-roll-mode ruleset, the derived stat row shows a \"roll\" button that opens the dice widget pre-filled with 1d20 + this formula's value. Use for stats the player rolls directly (Initiative = \"{Dexterity_mod}\", Perception in PF2e = \"{Wisdom_mod} + {tierBonus}\")."
+          },
+          "aliases": {
+            "type": "array",
+            "description": "Optional alternate names the LLM may use when emitting [mrr-state: field=\"...\"] tags. The state-mutator resolver matches case/punctuation-insensitively, so \"Hit Points\" listing aliases [\"hp\", \"HP\"] catches every common variant. Without an alias the agent's natural shorthand stashes on the sheet root and never reaches the bar.",
+            "items": { "type": "string" }
           },
           "renderAs": {
             "type": "string",
@@ -325,6 +430,22 @@
               }
             },
             "description": "For renderAs=track: ordered cells (e.g. Exalted health levels)."
+          },
+          "damageTypes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["id", "label"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+                "label": { "type": "string" },
+                "severity": { "type": "integer" },
+                "description": { "type": "string" }
+              }
+            },
+            "description": "Optional: declares typed damage on a renderAs=track derived stat. Each entry's id is the field name the state-mutator uses (field=\"<id>\" delta=\"<+/-N>\"). Higher severity stacks leftmost on the track. Renderer applies CSS modifier class .<prefix>-track__cell--<id> per typed cell."
           }
         }
       }
@@ -373,13 +494,36 @@
     },
     "sheetSections": {
       "type": "array",
-      "description": "Order of sheet sections rendered by the extension. Recognized values: attributes, skills, derived, states, inventory, charms, notes.",
+      "description": "Order of sheet sections rendered by the extension. Recognized values: attributes, skills, saves, derived, states, conditions, backgrounds, inventory, charms, abilities, notes.",
       "items": {
         "type": "string",
-        "enum": ["attributes", "skills", "derived", "states", "inventory", "charms", "notes"]
+        "enum": ["attributes", "skills", "saves", "derived", "states", "conditions", "backgrounds", "inventory", "charms", "abilities", "notes"]
       },
       "uniqueItems": true,
       "default": ["attributes", "skills", "derived", "states"]
+    },
+    "conditions": {
+      "type": "array",
+      "description": "Optional status condition definitions. When the ruleset declares a list, the sheet renders a Conditions section with an add dropdown of these names plus a free-text option. Each condition can declare which roll categories (attack / save / skill) it imposes disadvantage or grants advantage on; the quickRoll* helpers consult those when opening the dice widget so the player doesn't have to remember every condition's effect.",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "description": "One-line rules summary, surfaced as a tooltip on the condition row and embedded in the agent prompt." },
+          "imposesDisadvantageOn": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["attack", "save", "skill"] },
+            "description": "Roll categories on which this condition imposes disadvantage when active. The dice widget auto-arms disadvantage on the matching category."
+          },
+          "grantsAdvantageOn": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["attack", "save", "skill"] },
+            "description": "Roll categories on which this condition grants advantage when active."
+          }
+        }
+      }
     },
     "lorebookKeys": {
       "type": "array",
@@ -397,6 +541,46 @@
       "description": "Optional advisory list of stat names that authors are encouraged to use as bonus targets (e.g. \"Melee\", \"Defense (Parry)\", \"Soak (Bashing)\"). Targets are matched by exact string against attributes, skills, or derivedStats names; the loader does not enforce membership.",
       "items": { "type": "string", "minLength": 1 },
       "uniqueItems": true
+    },
+    "abilities": {
+      "type": "object",
+      "description": "Optional powers/abilities/charms slot. Drives a per-character spellbook flyout panel that lets players record system-specific powers (D&D spells, Exalted Charms, Fate stunts, etc.) and auto-creates a chat-scoped lorebook entry per ability so the GM agent reads the description when the keyword fires.",
+      "required": ["label", "categories"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "System-appropriate label shown on the main sheet row and on the flyout header (e.g. \"Spellbook\", \"Charms\", \"Stunts\", \"Disciplines\")."
+        },
+        "categories": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Buckets the abilities organize into. Spell levels for d20, ability buckets for Exalted, a single \"Stunts\" entry for Fate, etc.",
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9][a-z0-9-]*$",
+                "description": "Stable identifier (kebab-case). NEVER rename — abilities saved against a categoryId orphan if the id changes."
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "defaultCollapsed": {
+                "type": "boolean",
+                "default": true,
+                "description": "If true (default), the category renders collapsed on first open and the count badge tells the player how many abilities are inside."
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

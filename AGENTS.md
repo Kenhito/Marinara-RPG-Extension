@@ -1,8 +1,45 @@
 # AGENTS.md — Reference for AI coding agents
 
-You are an AI coding agent working on or with the **Marinara-RPG-Extension** repository. This file is your single source of truth. Read it end-to-end before making changes. It is intentionally dense and self-contained: you should not need to fetch other files in the repo to understand the architecture, the constraints, or the authoring contract.
+You are an AI coding agent working on or with the **Marinara-RPG-Extension** repository. This file is your single source of truth for **modifying the framework itself or the shipped reference rulesets**.
+
+> **For AUTHORING A NEW RULESET (e.g., GURPS, Cyberpunk, Mörk Borg, etc.):** the canonical, system-agnostic, self-contained build documentation is at [`releases/v0.4.0/docs-for-ai/`](releases/v0.4.0/docs-for-ai/) — seven numbered Markdown files designed to be fed to any chat AI. Use those for new-ruleset authoring.
+>
+> This file (AGENTS.md) is for the deeper architectural concerns of working ON the framework (extending it with new resolution modes, modifying the extension JS, etc.).
+
+Read this file end-to-end before making changes. It is intentionally dense and self-contained: you should not need to fetch other files in the repo to understand the architecture, the constraints, or the authoring contract.
 
 If a human invokes you with a request like "add a Pathfinder 2e ruleset" or "extend the framework to support [system]," start here, then read the specific source files this document references.
+
+## v0.4.1 changes — important context for any agent working on this repo
+
+Major changes since v0.4.0 (sheet ergonomics, item lifecycle, multi-system damage). All twenty-two rounds are itemized in `CHANGELOG.md` under `[v0.4.1]`; this is the cliff-notes view for anyone porting a new ruleset.
+
+1. **State-mutator inventory tags accept the full dialog field set.** `[mrr-state: action="add" field="inventory" add="X" ...]` now reads optional attrs `slot`, `damage`, `attack_attr`, `attack_proficient` (bool), `use_effect`, `consumable` (bool), `notes`, and `category` (`"equipment"` or `"item"`). Snake-case keys are LLM-friendly inside a tag. Empty strings are treated as "leave alone" so repeated adds with the same name bump quantity and enrich blank fields without clobbering populated ones. Document this in your per-ruleset state-mutator override under `# Inventory schema (full field list — extension-confirmed)`.
+2. **Inventory items are normalized at every load.** `mergeSheet` runs every loaded item through `normalizeInventoryItem(it, idx)` which assigns a deterministic `item-heal-{nameSlug}-{idx}` id and fills missing dialog fields. Pre-fix items (no id, no category) self-heal in place — no migration script needed. Equipment-slot references survive across reloads because the synthetic id is name+index-keyed (stable).
+3. **Damage parser is multi-system.** `parseDamageExpression(s)` returns one of three kinds: `dnd` (NdM[+K] [type], sums dice), `exalted` (`12L`/`12B`/`12A`/`12dL`/`12 Lethal`, rolls Nd10 and counts 7+ as successes per Exalted 3e damage convention — 10s do NOT double on damage), `flat` (`5 fire`, posts the value as-is). All three call sites — `rollWeaponDamage`, `useItem`, `castSpell` (`ability.damageDice`) — route through it. Add new ruleset notations by extending the parser; the call sites stay unchanged.
+4. **Bars always show editable max alongside current.** `renderBar` no longer gates the max input behind `!hasExplicitMax`. For ruleset-capped bars (Exalted Motes via `maxFormula`, anything with literal `max`) the input default-displays the formula/literal value; typing persists to `state.sheet.derivedMax[name]` and overrides. `computeMax()` checks `derivedMax` FIRST so manual edits stick. `refresh()` re-syncs both inputs to current state after every state-mutator delta — fixes the "stale UI confuses the GM agent on next refresh" bug.
+5. **Per-character bar caps via removal of literal `max`.** The exalted3e Willpower derived-stat dropped its `"max": 10` so each character's WP cap is user-set (canonically 5–10 for Solars). When porting a ruleset, only declare a literal `max` if the cap is universal across all characters; otherwise omit it and let `derivedMax` carry per-character values.
+6. **Renderer for `renderAs: "value"` shows "/N" cap inline** when the derived stat has `max` or `maxFormula` declared. Essence reads "5 / 10" instead of bare "5". CSS class: `.mrr-row__cap`.
+7. **Header labels are per-ruleset** via `header.raceLabel` / `header.classLabel`. Exalted ships `"Type"` / `"Caste/Aspect"` (slash works for both Caste-using Exalted types and Aspect-using Dragon-Bloods). D&D ships `"Race"` / `"Class"`. Defaults to "Race"/"Class" when unset.
+
+When in doubt about state-mutator inventory schema or damage notation, check `CHANGELOG.md [v0.4.1]` Round 18 / Round 19 / Round 22 entries — they document the wire format with worked examples.
+
+---
+
+## v0.4 changes — important context for any agent working on this repo
+
+Several major architectural changes since v0.3 that affect how authoring works:
+
+1. **Agents decoupled from bundle.** `tools/build-bundle.mjs` produces `bundle.json` (ruleset + lorebook only). `tools/build-agents.mjs` produces a separate `agents.json` from the per-system `gm-agent.md` plus per-system `agents/<role>.md` overrides plus the shared `agents/<role>.md` baselines. Users install agents through Marinara's Import Agents dialog instead of having them embedded in the bundle.
+2. **System-agnostic agent baselines + per-system overrides.** Five role agents (`state-mutator`, `state-reminder`, `combat-adjudicator`, `lore-query`, `npc-bookkeeper`) have shared baselines at the repo root's `agents/<role>.md`. Per-system overrides at `rulesets/<system>/agents/<role>.md` win when present. The `main` role (gm-agent) is always system-specific.
+3. **Typed damage on tracks.** `damageTypes: [{id, label, severity, description}]` may be declared on `renderAs: "track"` derived stats. The state-mutator routes `field="<typeId>"` to typed counters automatically.
+4. **Sorcery / multi-turn casting.** The `sorcery` ability category is special-cased on lorebook push (entries get `Type: Sorcery` header + `sorcery` keyword tag). State-mutator workflow handles declare → accumulate → unleash with Willpower refund.
+5. **CSP-safe formula evaluator.** `evalFormula` uses a hand-rolled recursive-descent parser (`safeEvalArithmetic`) instead of `new Function` — Marinara pages with strict CSP that blocks `'unsafe-eval'` were silently breaking every formula.
+6. **State-mutator resolver normalization + max-clamp.** Field names are matched case-and-separator-insensitive. Numeric deltas clamp to formula-computed maximums.
+7. **Persisted state-mutator dedupe.** `processedMessageIds` is keyed per-chat in `localStorage["mrr-processed-msgs-<chatId>"]` so hard refresh doesn't replay historic mutations.
+8. **Lorebook install rewritten.** Per-entry POST with delete-then-add for clean re-installs. The bulk endpoint was returning OK while landing zero entries.
+
+Sections 5–8 of this file may reference older behavior. When in doubt, the v0.4.0 release docs at `releases/v0.4.0/docs-for-ai/` are the current truth.
 
 ---
 
@@ -394,6 +431,34 @@ node tools/embed-css.mjs    # or: npm run embed-css
 ```
 
 Don't hand-edit the embedded section. The script regenerates it idempotently from the canonical CSS file.
+
+---
+
+## 5c. Sub-agent install behavior (post-2026-05-04)
+
+The installer treats the bundle's main `gmAgent` and its optional `additionalAgents[]` differently:
+
+**Main `gmAgent`:** installs `enabled: true`. On re-install (PATCH), continues to set `enabled: true`. The main agent is load-bearing — the bundle doesn't work without it.
+
+**Sub-agents in `additionalAgents[]`:** install **`enabled: false` by default.** Bundle authors can opt a specific sub-agent into enabled-on-install by setting `"enabled": true` on the additionalAgents item. The installer reads `ag.enabled === true` from the bundle data; absent or any non-true value → installer creates the agent disabled.
+
+**Toggle preservation on re-install (PATCH):** the install code carries `enabled` only in the CREATE (POST) body, never in the UPDATE (PATCH) body. So if a user enables a sub-agent in Settings → Agents and later re-installs the bundle, their enabled choice survives. Concretely:
+
+```js
+// extension/RPG-Extension-GM-Mode.js (around line 460-490)
+var subBody = { /* full body including enabled: ag.enabled === true */ };
+var subBodyForUpdate = Object.assign({}, subBody);
+delete subBodyForUpdate.enabled;       // preserve user toggle on re-install
+return existingSub
+  ? apiFetch("/agents/" + existingSub.id, { method: "PATCH", body: JSON.stringify(subBodyForUpdate) })
+  : apiFetch("/agents", { method: "POST", body: JSON.stringify(subBody) });
+```
+
+**Schema:** `bundle.schema.json` `additionalAgents` items declare `enabled` as an optional boolean (default false). Additive — existing bundles in production stay valid.
+
+**Lorebook documentation convention:** every bundle that ships sub-agents should also include one lorebook entry titled "Optional Sub-Agents — what they do and how to enable" so the user can ask the chat about them in-engine. The dnd5e/exalted3e/fate-core reference bundles show the canonical content.
+
+**Chat-message observer hardening (post-2026-05-04):** the chat-message `MutationObserver` no longer watches `characterData` mutations (was firing on every keystroke in any input field — the skill's "heavy observer" pitfall). The debounce uses `marinara.setTimeout` plus a monotonic-token cancel pattern instead of raw `setTimeout`/`clearTimeout`, so pending parses cannot fire after the extension is disabled. See `function watchChatMessages()` around line 3065.
 
 ---
 

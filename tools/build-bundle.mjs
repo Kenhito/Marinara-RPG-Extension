@@ -96,27 +96,21 @@ function loadAdditionalAgents(rulesetName, rulesetDir) {
 
 function buildBundle(dir) {
   const ruleset = JSON.parse(readFileSync(join(dir, "ruleset.json"), "utf8"));
-  const gmMd = readFileSync(join(dir, "gm-agent.md"), "utf8");
   const lb = JSON.parse(readFileSync(join(dir, "lorebook.json"), "utf8"));
 
-  const promptTemplate = extractPromptBlock(gmMd);
-  const additionalAgents = loadAdditionalAgents(ruleset.name, dir);
-
+  /* GM-mode bundles ship ruleset + lorebook only as of v0.4. Agents have
+     been decoupled from the bundle and are NOT installed here — GM-mode
+     does not use the MRR-managed agents in practice, and embedding them
+     caused duplicate-agent accumulation across re-installs. The
+     gm-agent.md and per-ruleset agents/ folders are kept on disk for
+     reference and for the RP-mode build pipeline that does ship agents. */
   const bundle = {
     schema: "mrr-bundle",
     version: 1,
-    minExtensionVersion: "0.3.0",
+    minExtensionVersion: "0.4.0",
     authorId: "kenhito",
-    generator: { name: "build-bundle.mjs", version: "1.0.0" },
+    generator: { name: "build-bundle.mjs", version: "1.1.0" },
     ruleset,
-    gmAgent: {
-      name: ruleset.name + " Ruleset Override",
-      description: "Enforces " + ruleset.name + " skill resolution and dice formatting in Game Mode narration.",
-      phase: "pre_generation",
-      promptTemplate,
-      settings: {}
-    },
-    additionalAgents,
     lorebook: {
       name: lb.name,
       description: lb.description || "",

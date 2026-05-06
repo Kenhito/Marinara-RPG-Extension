@@ -1,5 +1,11 @@
 # Authoring Prompt — Build a Marinara-RPG-Extension Ruleset Bundle
 
+> **NEW IN v0.4:** the canonical AI-authoring documentation now lives at [`releases/v0.4.0/docs-for-ai/`](releases/v0.4.0/docs-for-ai/) — seven numbered Markdown files plus example prompts. Use those instead of this single-paste prompt for new ruleset authoring; they cover the system-agnostic agent architecture, typed damage, sorcery/multi-turn casting, the build pipeline, and copy-paste prompts for Claude.ai / ChatGPT / Gemini.
+>
+> This file remains as a pre-v0.4 single-paste template. It still produces a working v0.3-style bundle, but doesn't cover v0.4 features (typed damage, sorcery, agents.json separation). For the current state, start with [`releases/v0.4.0/BUILD-YOUR-OWN-RULESET.md`](releases/v0.4.0/BUILD-YOUR-OWN-RULESET.md).
+
+---
+
 This is a single-paste prompt for vibecoder authors. Copy everything between
 the `=== PROMPT START ===` and `=== PROMPT END ===` markers below into your
 favorite chat AI (claude.ai, ChatGPT, Gemini, Copilot, anything that can read
@@ -73,6 +79,18 @@ not split it across multiple responses. Do not add commentary inside the JSON
 — all explanation goes outside the code block.
 
 === PROMPT END ===
+
+---
+
+## Optional sub-agents (`additionalAgents[]`)
+
+A bundle MAY include up to five focused `pre_generation` sub-agents in `additionalAgents[]`: `state-mutator`, `state-reminder`, `combat-adjudicator`, `lore-query`, `npc-bookkeeper`. Each is a distinct agent with its own promptTemplate and `role`-based idempotency key. The five reference prompts live at `agents/<role>.md` in this repo — copy their content into the bundle's `additionalAgents[].promptTemplate` for parity with what the existing reference bundles ship.
+
+**Install posture (v0.3+):** sub-agents install **disabled by default**. The user opts in per-agent in Marinara → Settings → Agents. If a specific sub-agent is so essential to your bundle that it should fire on first install, set `"enabled": true` on that item in `additionalAgents[]` — the installer reads the field and creates the agent enabled. Use sparingly; every enabled sub-agent costs one model call per turn.
+
+**On re-install (PATCH), the user's enabled-toggle is preserved.** The installer carries `enabled` only on the initial CREATE. So a user who toggled a sub-agent on after install still has it on after re-install of the bundle. Ship the bundle confidently; you're not clobbering user choice.
+
+**Document each sub-agent in the lorebook.** Conventionally, ship one lorebook entry titled "Optional Sub-Agents — what they do and how to enable" that lists each agent's purpose + the Settings → Agents flow. The dnd5e and exalted3e reference bundles in this repo show the canonical content.
 
 ---
 

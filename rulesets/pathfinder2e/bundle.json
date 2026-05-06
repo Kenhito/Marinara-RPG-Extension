@@ -1,7 +1,7 @@
 {
   "schema": "mrr-bundle",
   "version": 1,
-  "minExtensionVersion": "0.3.0",
+  "minExtensionVersion": "0.4.0",
   "authorId": "kenhito",
   "generator": {
     "name": "claude-vibecode",
@@ -20,7 +20,9 @@
     },
     "resolution": {
       "mode": "single-roll",
-      "modifierFormula": "1d20 + ability_mod + proficiency_bonus + item_bonus + circumstance_bonus - status_penalty"
+      "modifierFormula": "1d20 + ability_mod + proficiency_bonus + item_bonus + circumstance_bonus - status_penalty",
+      "skillBonusFormula": "{linkedAttribute_mod} + {tierBonus}",
+      "spellSaveDcFormula": "10 + {Level} + {spellcastingAttribute_mod}"
     },
     "difficulties": {
       "Trivial": {
@@ -55,7 +57,8 @@
         "min": -1,
         "max": 8,
         "default": 0,
-        "description": "Raw physical force. Adds to Athletics, melee attack rolls with non-finesse weapons, and melee damage."
+        "description": "Raw physical force. Adds to Athletics, melee attack rolls with non-finesse weapons, and melee damage.",
+        "modifierFormula": "{Score}"
       },
       {
         "name": "Dexterity",
@@ -63,7 +66,8 @@
         "min": -1,
         "max": 8,
         "default": 0,
-        "description": "Agility, balance, fine motor control. Adds to AC (capped by armor's Dex cap), Reflex saves, ranged attacks, and finesse melee attacks."
+        "description": "Agility, balance, fine motor control. Adds to AC (capped by armor's Dex cap), Reflex saves, ranged attacks, and finesse melee attacks.",
+        "modifierFormula": "{Score}"
       },
       {
         "name": "Constitution",
@@ -71,7 +75,8 @@
         "min": -1,
         "max": 8,
         "default": 0,
-        "description": "Health and endurance. Adds to Hit Points each level and to Fortitude saves."
+        "description": "Health and endurance. Adds to Hit Points each level and to Fortitude saves.",
+        "modifierFormula": "{Score}"
       },
       {
         "name": "Intelligence",
@@ -79,7 +84,8 @@
         "min": -1,
         "max": 8,
         "default": 0,
-        "description": "Memory, reasoning, education. Grants extra trained skills and Lores at character creation; adds to skills like Arcana, Crafting, Society."
+        "description": "Memory, reasoning, education. Grants extra trained skills and Lores at character creation; adds to skills like Arcana, Crafting, Society.",
+        "modifierFormula": "{Score}"
       },
       {
         "name": "Wisdom",
@@ -87,7 +93,8 @@
         "min": -1,
         "max": 8,
         "default": 0,
-        "description": "Awareness, intuition, common sense. Adds to Perception, Will saves, and skills like Medicine, Nature, Religion, Survival."
+        "description": "Awareness, intuition, common sense. Adds to Perception, Will saves, and skills like Medicine, Nature, Religion, Survival.",
+        "modifierFormula": "{Score}"
       },
       {
         "name": "Charisma",
@@ -95,7 +102,8 @@
         "min": -1,
         "max": 8,
         "default": 0,
-        "description": "Presence, persuasion, force of personality. Adds to social skills (Diplomacy, Deception, Intimidation, Performance, Society) and to spell DCs for Charisma-based casters."
+        "description": "Presence, persuasion, force of personality. Adds to social skills (Diplomacy, Deception, Intimidation, Performance, Society) and to spell DCs for Charisma-based casters.",
+        "modifierFormula": "{Score}"
       },
       {
         "name": "Level",
@@ -103,7 +111,8 @@
         "min": 1,
         "max": 20,
         "default": 1,
-        "description": "Character level (1-20). Drives the proficiency math for trained-and-above skills: Trained = level + 2, Expert = level + 4, Master = level + 6, Legendary = level + 8."
+        "description": "Character level (1-20). Drives the proficiency math for trained-and-above skills: Trained = level + 2, Expert = level + 4, Master = level + 6, Legendary = level + 8.",
+        "modifierFormula": "{Score}"
       }
     ],
     "skills": [
@@ -246,11 +255,31 @@
     ],
     "skillProficiency": {
       "tiers": [
-        { "code": "U", "label": "Untrained", "rollBonusFormula": "0" },
-        { "code": "T", "label": "Trained",   "rollBonusFormula": "{Level} + 2" },
-        { "code": "E", "label": "Expert",    "rollBonusFormula": "{Level} + 4" },
-        { "code": "M", "label": "Master",    "rollBonusFormula": "{Level} + 6" },
-        { "code": "L", "label": "Legendary", "rollBonusFormula": "{Level} + 8" }
+        {
+          "code": "U",
+          "label": "Untrained",
+          "rollBonusFormula": "0"
+        },
+        {
+          "code": "T",
+          "label": "Trained",
+          "rollBonusFormula": "{Level} + 2"
+        },
+        {
+          "code": "E",
+          "label": "Expert",
+          "rollBonusFormula": "{Level} + 4"
+        },
+        {
+          "code": "M",
+          "label": "Master",
+          "rollBonusFormula": "{Level} + 6"
+        },
+        {
+          "code": "L",
+          "label": "Legendary",
+          "rollBonusFormula": "{Level} + 8"
+        }
       ],
       "default": "U"
     },
@@ -303,6 +332,13 @@
       {
         "name": "Speed",
         "formula": "Ancestry base speed (typically 25 ft) + bonuses",
+        "renderAs": "value"
+      },
+      {
+        "name": "Level",
+        "formula": "Character level, 1-20.",
+        "max": 20,
+        "default": 1,
         "renderAs": "value"
       }
     ],
@@ -404,8 +440,62 @@
       "attributes",
       "skills",
       "derived",
-      "states"
+      "states",
+      "abilities"
     ],
+    "abilities": {
+      "label": "Spellbook",
+      "categories": [
+        {
+          "id": "cantrip",
+          "label": "Cantrips"
+        },
+        {
+          "id": "rank-1",
+          "label": "1st Rank"
+        },
+        {
+          "id": "rank-2",
+          "label": "2nd Rank"
+        },
+        {
+          "id": "rank-3",
+          "label": "3rd Rank"
+        },
+        {
+          "id": "rank-4",
+          "label": "4th Rank"
+        },
+        {
+          "id": "rank-5",
+          "label": "5th Rank"
+        },
+        {
+          "id": "rank-6",
+          "label": "6th Rank"
+        },
+        {
+          "id": "rank-7",
+          "label": "7th Rank"
+        },
+        {
+          "id": "rank-8",
+          "label": "8th Rank"
+        },
+        {
+          "id": "rank-9",
+          "label": "9th Rank"
+        },
+        {
+          "id": "rank-10",
+          "label": "10th Rank"
+        },
+        {
+          "id": "focus",
+          "label": "Focus Spells"
+        }
+      ]
+    },
     "lorebookKeys": [
       "degrees of success",
       "critical success",
@@ -430,13 +520,11 @@
       "wounded",
       "dying",
       "doomed"
-    ]
-  },
-  "gmAgent": {
-    "name": "Pathfinder 2e Ruleset Override",
-    "description": "Enforces Pathfinder 2nd Edition (Remaster) skill resolution, three-action economy, four degrees of success, and dice formatting for Marinara Game Mode narration.",
-    "phase": "pre_generation",
-    "promptTemplate": "You are a rules adjudicator for a Pathfinder 2nd Edition game (Remaster, 2024) running inside Marinara Engine's Game Mode. Your output is a context injection the main GM model reads BEFORE narrating the next turn. Do not narrate the scene yourself; only emit rules guidance the GM should apply.\n\n# Mechanics you enforce\n\n## Resolution\n\nEvery uncertain action is resolved with a single d20 plus modifiers against a Difficulty Class (DC). The math is:\n\n  d20 + ability_mod + proficiency_bonus + item_bonus + circumstance_bonus - status_penalty - circumstance_penalty - item_penalty\n\nWhere proficiency_bonus equals: Untrained 0; Trained level + 2; Expert level + 4; Master level + 6; Legendary level + 8. Untrained gets ZERO, not -2 (this is post-Remaster). Bonuses and penalties of the same type DO NOT stack — only the highest of each type applies. The four bonus/penalty types are: item, circumstance, status, and untyped (untyped DOES stack).\n\n## The four degrees of success (CRITICAL)\n\nThis is Pathfinder 2e's single most important mechanic and the GM model MUST apply it on every check:\n\n  - Critical Success: rolled total >= DC + 10, OR you rolled a natural 20 and the result was at least a Success.\n  - Success: rolled total >= DC.\n  - Failure: rolled total < DC.\n  - Critical Failure: rolled total <= DC - 10, OR you rolled a natural 1 and the result was at most a Failure.\n\nA natural 20 bumps the degree UP one step (so a Failure becomes a Success, a Success becomes a Critical Success). A natural 1 bumps the degree DOWN one step. Apply the natural-20/1 modification AFTER computing the DC delta. The dice widget the player uses will only emit binary `success` or `failure` in the [dice: ...] tag — YOU must compute the actual degree from the rolled total vs. the DC and narrate accordingly.\n\nMost Pathfinder 2e effects have four-line outcome blocks (Critical Success/Success/Failure/Critical Failure). Always apply the right line — many spells and abilities have dramatically different effects between Success and Critical Success, and between Failure and Critical Failure.\n\n## Three-action economy\n\nOn their turn, each character has 3 actions plus 1 reaction plus any number of free actions. Actions cost 1, 2, or 3 actions. Common single actions: Strike, Stride, Step, Demoralize, Recall Knowledge, Trip, Shove, Grapple, raise a shield. Two-action activities: Sudden Charge, most spells, Treat Wounds. Three-action activities: full-round spells, complex maneuvers.\n\nReactions are limited to once per round and trigger on a specific cue (Attack of Opportunity, Shield Block, etc.). Free actions cost no action cost but most have a trigger or limit.\n\nA turn that uses all 3 actions is the norm. Two single actions plus a 1-action thing left over is fine. A 2-action spell + a Stride is the spellcaster's bread and butter.\n\n## Multiple Attack Penalty (MAP)\n\nThe second attack action on the same turn takes a -5 penalty. The third takes -10. Weapons with the agile trait reduce these penalties to -4 and -8 respectively. The MAP resets at the start of each turn. The MAP applies to the attack roll, NOT to damage, and only to attack-trait actions (Strikes, Trips, Shoves, etc.).\n\nThis is the central tactical pressure of pf2e combat — players must decide whether a third attack is worth the penalty or whether to spend the third action on something else (raise shield, Demoralize, Stride, ready a Bon Mot).\n\n## Saving throws\n\nFortitude (CON-based, physical resistance), Reflex (DEX-based, dodge), Will (WIS-based, mental). Same proficiency math as attacks and skills. Spell DCs vs. saves use the four-degree result table — most spells have all four lines, with Critical Failure often 'doubly bad' (longer duration, extra damage) and Critical Success often 'no effect' rather than half effect.\n\nA basic save is the simplified pattern most damage spells use: Critical Success = no damage, Success = half, Failure = full, Critical Failure = double.\n\n## Hero Points\n\nEach player starts a session with 1 Hero Point and gains more for heroic moments (max 3). Spend 1 Hero Point as a free action to reroll one check (taking the better result), or as a free action to remove the dying condition and stabilize at 0 HP. Award generously for clever play, table moments, and accepting compels — pf2e's Hero Points fuel agency and the GM is empowered to hand them out.\n\n## Recall Knowledge\n\nA single action (Concentrate trait). Roll a relevant Lore, Arcana, Crafting, Nature, Occultism, Religion, or Society check vs. a level-derived DC. Critical Success: learn one piece of accurate info plus context. Success: one accurate piece of info. Failure: nothing useful. Critical Failure: GM gives WRONG information that the character believes. Don't let the player request specific info — they ask 'what do I know about this' and the GM picks the most relevant fact at the degree-of-success.\n\n## Spellcasting\n\nSpells have a rank from 1 to 10. Cantrips are heightened automatically to half the caster's level rounded up. Most spells are 2 actions (the somatic + verbal + targeting ritual). Spell DC = 10 + spellcasting proficiency bonus + key ability mod. Spell attacks roll d20 + spellcasting prof + key ability mod.\n\nA caster has a number of spell slots per spell rank per day. They can prepare or use spontaneous casting depending on tradition. Heightening: most spells get more powerful when cast at higher rank; check the spell's heightened entry.\n\n## DC tables — two separate concepts\n\nLevel-based DCs scale with the level of what's being attempted (creature, spell, situation):\n\n  Level 0 = DC 14, Level 1 = DC 15, Level 2 = DC 16, Level 5 = DC 20, Level 10 = DC 27, Level 15 = DC 34, Level 20 = DC 40.\n\nSimple DCs scale with proficiency tier (independent of level):\n\n  Untrained = DC 10, Trained = DC 15, Expert = DC 20, Master = DC 30, Legendary = DC 40.\n\nUse Simple DCs when no level is meaningful (lockpicking a generic chest). Use Level-Based DCs when a level applies (Recall Knowledge on a level-N creature; resisting a level-N spell; tracking a level-N foe).\n\nDifficulty adjustments stack on top of either table: Easy -2; Hard +2; Very Hard +5; Incredibly Hard +10. The pf2e math is tight — a +1 bonus is meaningful, a +2 is a big deal.\n\n# Output format the main GM model must use\n\nWhen calling for a check, prompt the player using this exact tag the client expects:\n\n  [dice: 1d20{+MOD} vs DC{DC} = {result}]\n\nExample: `[dice: 1d20+9 vs DC20 = 24 success]`. The dice widget will emit binary success/failure; YOU upgrade to crit success/crit failure based on margin (DC ± 10) and natural 20/1 modification.\n\n# What you (this agent) emit each turn\n\nA short context block telling the main GM model:\n  - Whether a check is needed and what skill/save/attack roll.\n  - The DC you've set, with brief justification (level + difficulty band).\n  - The degree-of-success outcomes for that specific situation (all four lines).\n  - Any active conditions on the player or NPC that change the math (off-guard, frightened, etc.).\n  - Reminders about MAP if the player is on their second/third attack.\n\nKeep it terse — the main GM model has its own prose to write. You are the rules engine, not the storyteller.\n\n# What NOT to do\n\n- Don't import D&D 5e shortcuts. There is no 'advantage/disadvantage' in pf2e — there are circumstance bonuses, fortune effects (roll twice, take higher), and misfortune effects (roll twice, take lower). Use those terms.\n- Don't use 'flat-footed' — that's the D&D 5e term and the pre-Remaster pf2e term. The current term is 'off-guard'.\n- Don't penalize Untrained at -2. Untrained is just 0 proficiency bonus (post-Remaster).\n- Don't grant 'expertise' or 'proficiency doubles'. Skills scale by tier (Trained/Expert/Master/Legendary), not by doubled additions.\n- Don't make every NPC roll initiative individually — pf2e usually rolls one initiative for groups of similar enemies.\n- Don't ignore the MAP. It's the entire reason combat has interesting choice.\n- Don't forget the natural 20/1 degree shift. It's the most common rules error.\n\n# Engine compatibility — reputation tags\n\nMarinara's engine validates `[reputation: npc=\"Name\" action=\"...\"]` tags with `action` capped at 50 characters. When you emit reputation updates, action MUST be 50 characters or fewer. Use short verb phrases — `helped`, `betrayed trust`, `shared secret`, `offered shelter`, `deepened bond`, `taught a spell`, `crit-failed lie` — not literary descriptions. Anything longer triggers a server-side 400 and the reputation update silently fails."
+    ],
+    "header": {
+      "raceLabel": "Ancestry",
+      "classLabel": "Class"
+    }
   },
   "lorebook": {
     "name": "Pathfinder 2e Rules Reference",
@@ -448,103 +536,224 @@
     "entries": [
       {
         "name": "Mechanic: Four Degrees of Success",
-        "keys": ["degree of success", "degrees of success", "critical success", "critical failure", "crit success", "crit fail"],
+        "keys": [
+          "degree of success",
+          "degrees of success",
+          "critical success",
+          "critical failure",
+          "crit success",
+          "crit fail"
+        ],
         "content": "Every check resolves to one of four degrees. Critical Success: rolled total >= DC + 10 (or natural 20 bumping a Success up). Success: total >= DC. Failure: total < DC. Critical Failure: total <= DC - 10 (or natural 1 bumping a Failure down). Natural 20 shifts degree up one step; natural 1 shifts down one step (apply AFTER computing the DC delta). Most pf2e abilities have distinct effects on all four lines — never collapse them. Save spells often use the 'basic save' pattern: crit save = no damage, save = half, fail = full, crit fail = double.",
         "position": 0
       },
       {
         "name": "Mechanic: Three-Action Economy",
-        "keys": ["action economy", "three actions", "3 actions", "two actions", "2 actions", "single action", "free action", "reaction"],
+        "keys": [
+          "action economy",
+          "three actions",
+          "3 actions",
+          "two actions",
+          "2 actions",
+          "single action",
+          "free action",
+          "reaction"
+        ],
         "content": "Each turn you have 3 actions, 1 reaction, and any number of free actions. Actions cost 1, 2, or 3. Most attacks (Strike) are 1 action. Most spells are 2 actions. Mode-changing or extended activities take 3 actions. Reactions trigger on a cue (Attack of Opportunity, Shield Block) and reset at the start of your next turn. Free actions cost no action but each has a trigger or per-round limit. Common single actions: Strike, Stride, Step (1 square no trigger), Demoralize, Recall Knowledge, Trip, Shove, Grapple, Raise a Shield, Take Cover.",
         "position": 0
       },
       {
         "name": "Mechanic: Multiple Attack Penalty (MAP)",
-        "keys": ["MAP", "multiple attack penalty", "second attack", "third attack", "agile"],
+        "keys": [
+          "MAP",
+          "multiple attack penalty",
+          "second attack",
+          "third attack",
+          "agile"
+        ],
         "content": "Your 2nd attack action this turn takes -5 to its attack roll; your 3rd takes -10. Weapons with the agile trait reduce these to -4 and -8. MAP resets at the start of each turn and applies only to attack-trait actions (Strike, Trip, Shove, Grapple, Disarm), not to damage. The third attack at -10 almost never lands against an at-level foe — most turns you should spend that third action on Demoralize, Raise a Shield, Stride, or Recall Knowledge instead of a 3rd Strike.",
         "position": 0
       },
       {
         "name": "Mechanic: Proficiency Tiers",
-        "keys": ["proficiency", "untrained", "trained", "expert", "master", "legendary"],
+        "keys": [
+          "proficiency",
+          "untrained",
+          "trained",
+          "expert",
+          "master",
+          "legendary"
+        ],
         "content": "Five proficiency tiers add to checks: Untrained = 0 (no -2 penalty in Remaster), Trained = level + 2, Expert = level + 4, Master = level + 6, Legendary = level + 8. Tiers gate access to special trained-only actions (e.g. Treat Wounds requires trained Medicine; Identify Magic requires trained tradition skill). At higher tiers you also get access to Master- and Legendary-only feats and spells.",
         "position": 0
       },
       {
         "name": "Mechanic: Saving Throws",
-        "keys": ["save", "saving throw", "Fortitude", "Fort save", "Reflex", "Ref save", "Will save"],
+        "keys": [
+          "save",
+          "saving throw",
+          "Fortitude",
+          "Fort save",
+          "Reflex",
+          "Ref save",
+          "Will save"
+        ],
         "content": "Three saves: Fortitude (CON-based, against poison/disease/physical resistance), Reflex (DEX-based, against area effects/dodge), Will (WIS-based, against mental/charm). Each is d20 + ability_mod + proficiency_bonus + item_bonus. Most damage spells use the 'basic save' pattern (crit save = no damage, save = half, fail = full, crit fail = double). Other save effects use unique outcome blocks per spell — read the spell's text.",
         "position": 0
       },
       {
         "name": "Mechanic: Hero Points",
-        "keys": ["hero point", "hero points"],
+        "keys": [
+          "hero point",
+          "hero points"
+        ],
         "content": "Players start each session with 1 Hero Point (cap 3). Spend 1 Hero Point as a free action to either: reroll one check just made, taking the better result; OR remove the dying condition and stabilize at 0 HP. The GM hands out additional Hero Points for clever solutions, table-positive play, dramatic risks, accepting compels, or spending the spotlight on someone else. Hero Points reset at session start; never accumulate across sessions.",
         "position": 0
       },
       {
         "name": "Mechanic: Recall Knowledge",
-        "keys": ["recall knowledge", "knowledge check", "what do I know"],
+        "keys": [
+          "recall knowledge",
+          "knowledge check",
+          "what do I know"
+        ],
         "content": "A single action with the Concentrate trait. Roll the appropriate skill (Lore, Arcana, Crafting, Nature, Occultism, Religion, Society) vs. a level-based DC, usually the creature's or topic's level converted to the standard DC table. Critical Success: one accurate fact plus useful context. Success: one accurate fact (GM picks the most useful for the situation). Failure: no useful info. Critical Failure: GM tells a believable lie that the character thinks is true. Players ask 'what do I know about X' — they don't pre-specify what they want to learn.",
         "position": 0
       },
       {
         "name": "Conditions: Off-Guard, Frightened, Sickened, Stunned, Slowed",
-        "keys": ["off-guard", "off guard", "flat-footed", "frightened", "sickened", "stunned", "slowed"],
+        "keys": [
+          "off-guard",
+          "off guard",
+          "flat-footed",
+          "frightened",
+          "sickened",
+          "stunned",
+          "slowed"
+        ],
         "content": "Off-Guard: -2 circumstance to AC. Triggered by being prone, flanked, hidden from, grabbed, or many maneuvers. (Replaces 5e/old-pf2e 'flat-footed'.) Frightened N: -N status penalty to all checks and DCs; reduces by 1 at end of each turn. Sickened N: -N status to all checks and DCs; spend an action and Fort save to reduce. Stunned N: lose actions equal to N (or up to N) at start of turn; reduce Stunned by actions lost. Slowed N: lose N actions at start of turn (does not stack with Stunned for the lost-action calc — take the worse).",
         "position": 0
       },
       {
         "name": "Conditions: Wounded, Dying, Doomed",
-        "keys": ["wounded", "dying", "doomed", "death", "dropped to 0", "stabilize"],
+        "keys": [
+          "wounded",
+          "dying",
+          "doomed",
+          "death",
+          "dropped to 0",
+          "stabilize"
+        ],
         "content": "Drop to 0 HP and you become Dying 1 (Dying 2 if from a critical hit). On your turn while Dying you make a recovery flat check vs. DC 10 + dying value: crit success reduces dying by 2, success by 1, failure increases by 1, crit failure by 2. At Dying 4 you die. When the dying condition is removed, gain Wounded 1 (or +1 to existing Wounded). Future Dying conditions add your Wounded value to the new Dying value. Doomed N reduces your maximum Dying value by N — at Doomed 4 (or whatever brings max Dying to 0) you die when you would gain dying. Hero Point can spend to remove Dying and stabilize at 0 HP.",
         "position": 0
       },
       {
         "name": "Conditions: Drained, Enfeebled, Stupefied, Clumsy",
-        "keys": ["drained", "enfeebled", "stupefied", "clumsy", "ability damage"],
+        "keys": [
+          "drained",
+          "enfeebled",
+          "stupefied",
+          "clumsy",
+          "ability damage"
+        ],
         "content": "Pf2e doesn't use ability score damage; it uses status conditions. Drained N: -N to CON-based checks and Fort saves; lose N × level HP (max HP also reduced by that amount). Enfeebled N: -N to STR-based rolls and damage. Stupefied N: -N to INT/WIS/CHA checks and to spell DCs and spell attack rolls. Clumsy N: -N to DEX-based rolls and to AC. All four reduce by 1 per day naturally (or on a successful save where applicable).",
         "position": 0
       },
       {
         "name": "Combat: Initiative & Combat Round",
-        "keys": ["initiative", "round", "turn order", "combat starts"],
+        "keys": [
+          "initiative",
+          "round",
+          "turn order",
+          "combat starts"
+        ],
         "content": "Initiative is a single skill check at the start of an encounter — usually Perception, but the GM may call for Stealth (if you're sneaking) or another skill (Deception when feinting at a parley). Higher result acts first. NPCs are usually grouped — the GM rolls one initiative for a squad of similar enemies. Turn structure: each character takes 3 actions in their turn slot, can take their reaction once between turns. The Delay action lets you change your initiative order downward.",
         "position": 0
       },
       {
         "name": "Combat: Attack Rolls & Damage",
-        "keys": ["attack roll", "Strike", "damage", "critical hit", "weapon damage"],
+        "keys": [
+          "attack roll",
+          "Strike",
+          "damage",
+          "critical hit",
+          "weapon damage"
+        ],
         "content": "Strike action: 1 action, roll d20 + ability mod (STR for non-finesse melee, DEX for finesse or ranged) + weapon proficiency + item bonus vs. target's AC. Apply MAP for second/third Strikes. Critical hit (Crit Success on attack) doubles damage and applies the weapon's critical specialization effect. Damage: weapon's listed dice + ability mod (STR for melee; STR for thrown weapons; no ability mod for non-propulsive ranged like crossbows; HALF STR mod for propulsive ranged like composite bows). Many weapons have traits (deadly, fatal, forceful, sweep, etc.) that modify the math.",
         "position": 0
       },
       {
         "name": "Combat: Spellcasting Basics",
-        "keys": ["spell", "spell rank", "spell slot", "cantrip", "heighten", "spell DC", "spell attack"],
+        "keys": [
+          "spell",
+          "spell rank",
+          "spell slot",
+          "cantrip",
+          "heighten",
+          "spell DC",
+          "spell attack"
+        ],
         "content": "Spells have a rank 1-10. Cantrips auto-heighten to half caster level rounded up. Most spells are 2 actions (verbal + somatic + targeting). Spell DC = 10 + spellcasting proficiency bonus + casting ability mod. Spell attack rolls = d20 + spellcasting prof + casting ability. Casting traditions: Arcane (wizards, magus), Divine (clerics, champions), Occult (bards, psychics), Primal (druids, rangers). Slots are per rank per day; lower-rank slots can heighten lower-rank spells. Sustained spells require a 1-action Sustain each subsequent turn.",
         "position": 0
       },
       {
         "name": "Classes: Fighter / Rogue / Wizard / Cleric / Druid / Bard / Ranger / Champion / Barbarian / Sorcerer",
-        "keys": ["Fighter", "Rogue", "Wizard", "Cleric", "Druid", "Bard", "Ranger", "Champion", "Barbarian", "Sorcerer"],
+        "keys": [
+          "Fighter",
+          "Rogue",
+          "Wizard",
+          "Cleric",
+          "Druid",
+          "Bard",
+          "Ranger",
+          "Champion",
+          "Barbarian",
+          "Sorcerer"
+        ],
         "content": "Fighter: 10 HP/level, weapon legend. Best martial proficiency progression in the game. Reactive Strike at level 1. Rogue: 8 HP/level, skill specialist. Sneak Attack 1d6 (scales). High skill bumps. Wizard: 6 HP/level, Int caster. Prepared arcane spells from a spellbook. Curriculum focus. Cleric: 8 HP/level, Wis caster. Prepared divine spells. Channels: Heal/Harm Font. Druid: 8 HP/level, Wis caster. Prepared primal spells. Order specialization (Animal/Leaf/Storm/etc.). Bard: 8 HP/level, Cha caster. Spontaneous occult; Composition cantrip Inspire Courage. Ranger: 10 HP/level, Hunt Prey + class-specific edge (Flurry/Outwit/Precision). Pure martial by default; specific subclass features and feats can grant primal spells but Ranger is NOT a default spellcaster. Champion: 10 HP/level, divine cause + reactive ability tied to your cause's edicts, anathema, and tenets (Remaster removed alignment; causes are now Justice/Liberation/Obedience/Redemption/Grandeur/Iniquity defined by their tenets). Barbarian: 12 HP/level, Rage; instinct (Animal/Dragon/Spirit/etc.). Sorcerer: 6 HP/level, bloodline-driven spontaneous caster, tradition matches bloodline.",
         "position": 0
       },
       {
         "name": "Ancestries: Human / Elf / Dwarf / Halfling / Goblin / Gnome / Orc / Leshy / Tengu / Kobold",
-        "keys": ["ancestry", "Human", "Elf", "Dwarf", "Halfling", "Goblin", "Gnome", "Orc", "Leshy", "Tengu", "Kobold"],
+        "keys": [
+          "ancestry",
+          "Human",
+          "Elf",
+          "Dwarf",
+          "Halfling",
+          "Goblin",
+          "Gnome",
+          "Orc",
+          "Leshy",
+          "Tengu",
+          "Kobold"
+        ],
         "content": "Pf2e replaces 'race' with 'ancestry'. Each grants HP at level 1, base speed, languages, vision, and a heritage choice plus 1 ancestry feat. Human: 8 ancestry HP, 25 ft, Common + 1, versatile heritage options. Elf: 6, 30 ft, low-light/darkvision via heritage, long-lived. Dwarf: 10, 20 ft, darkvision, sturdy. Halfling: 6, 25 ft, keen eyes. Goblin: 6, 25 ft, darkvision, junkyard scavenger flavor. Gnome: 8, 25 ft, low-light, fey-touched. Orc: 10, 25 ft, darkvision, ferocity. Leshy: 8, 25 ft, plant-folk. Tengu: 6, 25 ft, low-light, bird-folk martial heritage. Kobold: 6, 25 ft, draconic heritage. Each has 1d8 (or class-determined) HP per level on top.",
         "position": 0
       },
       {
         "name": "Mechanic: Bonus & Penalty Stacking",
-        "keys": ["bonus", "penalty", "stack", "circumstance", "status", "item"],
+        "keys": [
+          "bonus",
+          "penalty",
+          "stack",
+          "circumstance",
+          "status",
+          "item"
+        ],
         "content": "Pf2e has four bonus/penalty types: item, circumstance, status, and untyped. SAME-TYPE BONUSES DO NOT STACK — only the highest of each type applies. Same-type penalties don't stack either — only the worst applies. Untyped bonuses and penalties always stack. This is what keeps the math tight: even a +1 status from Bless plus a +1 status from Aid does NOT become +2 — only +1 applies. Always tag bonuses by type so the player and GM know what stacks.",
         "position": 0
       },
       {
         "name": "Healing & Recovery",
-        "keys": ["heal", "healing", "Treat Wounds", "rest", "long rest", "Refocus"],
+        "keys": [
+          "heal",
+          "healing",
+          "Treat Wounds",
+          "rest",
+          "long rest",
+          "Refocus"
+        ],
         "content": "Treat Wounds: trained Medicine, 10 minutes per target, DC depends on Medicine proficiency target. Heals 2d8 + extras (more on crit, less on fail; can't be retried on the same target for 1 hour after success, 10 min after failure). 8-hour rest restores HP equal to constitution_mod × level (min 1 × level), removes fatigued, reduces drained/wounded by 1. Refocus is a 10-minute activity that recovers 1 Focus Point (cap is class-dependent). Hero Points reset to 1 at session start, NOT at long rest.",
         "position": 0
       }

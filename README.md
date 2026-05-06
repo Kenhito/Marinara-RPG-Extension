@@ -1,10 +1,37 @@
-# Marinara RPG Rulesets
+# Marinara RPG Rulesets — Game Mode (v0.4.0)
 
-Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara-Engine)'s Game Mode. Run a D10 dice-pool game (Exalted 3e), a d20 game (D&D 5e), a 4dF narrative game (Fate Core), or author your own ruleset — without forking Marinara, without writing TypeScript, without waiting for upstream feature requests.
+Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara-Engine)'s Game Mode. Run a D10 dice-pool game (Exalted 3e), a d20 game (D&D 5e), a 4dF narrative game (Fate Core), or **author your own ruleset for any tabletop RPG** — without forking Marinara, without writing TypeScript, without waiting for upstream feature requests.
+
+## Quick start (5 minutes)
+
+The fastest path: grab the self-contained release at [`releases/v0.4.0/`](releases/v0.4.0/) and follow [`releases/v0.4.0/INSTALL-GUIDE.md`](releases/v0.4.0/INSTALL-GUIDE.md). It includes:
+
+- **The framework JS** to paste into Marinara's Extensions panel
+- **Two complete reference rulesets** (D&D 5e and Exalted 3e) with bundle + agents pre-built, ready to paste
+- **Seven AI-feedable build documents** so you can have ChatGPT, Claude.ai, or any chat AI author a ruleset for any other system (GURPS, Cyberpunk RED, Vampire, Mörk Borg — anything)
+- **Step-by-step install + build guides** in plain language for non-technical users
+
+If you just want to play D&D or Exalted, three pastes and you're done: framework JS into Extensions, bundle into Ruleset dialog, agents.json into Import Agents dialog.
+
+If you want a system the framework doesn't ship, see [`releases/v0.4.0/BUILD-YOUR-OWN-RULESET.md`](releases/v0.4.0/BUILD-YOUR-OWN-RULESET.md) — three options for AI-assisted or manual authoring.
 
 ## What this is
 
 Marinara Engine ships a Game Mode where an AI Game Master runs the table. By default the engine's GM is biased toward d20 / D&D-style mechanics: six attributes (STR/DEX/CON/INT/WIS/CHA), single-roll resolution, DC ladder. This repo adds a thin overlay that lets you swap the GM's mechanical brain (and the player-facing character sheet) for a different RPG system entirely.
+
+The framework is **system-agnostic by design**. Six role agents (main GM + state-mutator, state-reminder, combat-adjudicator, lore-query, npc-bookkeeper) ship with shared baselines that work for any system. Per-system overrides at `rulesets/<system>/agents/<role>.md` tune any role for the specifics of one system without forking the framework. D&D 5e ships with one override; Exalted 3e ships with three. Both systems work end-to-end out of the box.
+
+## What's new in v0.4.0
+
+- **Typed damage** on health-style tracks: declare `damageTypes` and the renderer color-codes each cell, severity-stacks the worst damage leftmost, and gives the state-mutator per-type field names (`field="bashing" delta="+3"`).
+- **Sorcery / multi-turn casting category** in the spellbook. Spells filed under `"sorcery"` get auto-tagged in their lorebook entries, signaling the state-mutator to use multi-turn shape-sorcery flow (declare → accumulate sorcerous motes → unleash with Willpower refund).
+- **Agents decoupled from bundle.** New `tools/build-agents.mjs` produces `agents.json` separately from the bundle. Users import via Marinara's Import Agents dialog (delete-then-replace, no duplicate accumulation). Prompt updates ship without forcing users to reinstall the entire ruleset.
+- **CSP-safe formula evaluator.** The `{StatName}*N+M` parser uses recursive descent instead of `new Function`. Marinara pages with strict CSP that blocks `'unsafe-eval'` now compute bar maxes correctly.
+- **State-mutator field-name normalization** + max-clamp on numeric deltas + persisted dedupe across reloads.
+- **Lorebook install path rewritten** to fix the silent-failure bulk endpoint. Per-entry POST with delete-then-add for clean re-installs.
+- **Self-contained release folder** at `releases/v0.4.0/` with seven AI-feedable build docs, two complete reference systems, and drop-in install files.
+
+See [`CHANGELOG.md`](CHANGELOG.md) for the full list.
 
 ## How it works (in 60 seconds)
 
@@ -118,6 +145,22 @@ For repo maintainability the three pieces also live as separate **source files**
 
 The client extension is shared across rulesets — install it once, switch rulesets via the **Ruleset** button in the chat header. The extension stores every ruleset you've activated in a local **Library** so you can swap between (say) Exalted for one campaign and Fate for another with one click.
 
+## Optional sub-agents (off by default)
+
+Three of the four reference bundles (`dnd5e`, `exalted3e`, `fate-core`) install five **optional** pre-generation sub-agents alongside the main `gmAgent`. They install **disabled by default**; flip individual ones on in **Marinara → Settings → Agents** to opt into specific behaviors. Each sub-agent adds one model call per turn while enabled, so enable only what your campaign needs. (`pathfinder2e` does not yet ship sub-agents.)
+
+| Sub-agent | What it does | Enable when… |
+|---|---|---|
+| `state-mutator` | Tells the GM model to emit hidden `[mrr-state: …]` tags when narrative changes the sheet (HP, conditions, inventory). Extension parses tags, applies the change, shows a toast. | You want narration to drive the sheet automatically. |
+| `state-reminder` | Surfaces a short bulleted list of current PC state (HP, conditions, gear, resources) at the top of every turn. | Long sessions or complex sheets, the model is forgetting your stats. |
+| `combat-adjudicator` | Wakes only in combat; restates initiative, action economy, attack/damage formulas, conditions in the active ruleset's terms. Outputs `"No combat active."` and stops in social/ambient scenes. | You run heavy-mechanics combat encounters. |
+| `lore-query` | Wakes only when the latest user message is a rules question. Answers from the installed lorebook + system RAW. Outputs `"No rules query."` otherwise. | You frequently ask the model rules questions mid-RP. |
+| `npc-bookkeeper` | Tracks active and recently-engaged NPC HP, conditions, tactical state, and telegraphed intentions across turns. Outputs `"No NPCs to track."` when no NPCs are in scene. | Combat/social scenes with multiple named NPCs you want continuity on. |
+
+The same descriptions also live in each system's installed lorebook (under **Optional Sub-Agents**) so they surface in-engine when you ask the GM about them.
+
+To enable: open the gear icon in Marinara, go to **Settings → Agents**, find the agent (named `MRR: <System> — <Role>`), toggle on. The agent persists across chats; toggle off any time.
+
 ## Character data persistence
 
 Marinara's chat IDs rotate per session, and character sheets stored in localStorage are keyed to chat ID — so a fresh chat looks like a brand-new character. The extension adds **save** and **load** buttons to the character sheet header that download all characters in the active chat as a JSON file and re-import them into any other chat. Use save before ending a session and load when starting the next; your sheets, stress, fate points, etc. all carry over.
@@ -138,16 +181,49 @@ If you want true mechanic replacement (e.g. server-rendered Exalted combat with 
 
 ## Authoring your own ruleset
 
-Read **`docs/ADDING-RULESETS.md`** — it walks through the full process using Fate Core as a worked example. The short version:
+### The fast path — vibe-code with a chat AI
 
-1. Copy the closest existing bundle (`exalted3e`, `dnd5e`, or `fate-core`) to a new folder.
-2. Edit `ruleset.json` — your dice, your attributes, your skills, your difficulty ladder, your dice-tag format.
+Open **`AUTHORING-PROMPT.md`**, copy it whole into a chat with a frontier model (Claude, GPT-5, Gemini Pro), and paste it as your system prompt. The prompt directs the AI to read this repo's authoritative source files, then produce a single `bundle.json` for your system. The AI knows what files it needs to consume:
+
+| File | What the AI reads it for |
+|---|---|
+| `schema/bundle.schema.json` | The exact JSON shape required (discriminator `mrr-bundle`, integer `position`, required fields). |
+| `schema/ruleset.schema.json` | Attribute, skill, derived-stat, and resolution-mode constraints. |
+| `docs/ADDING-RULESETS.md` | Full walkthrough using Fate Core as a worked example. |
+| `docs/AUTHORING.md` | Bundle anatomy, eight-step authoring process, common pitfalls. |
+| `docs/ENGINE-CONSTRAINTS.md` | Honest list of what the overlay can and cannot do (combat-modal stays d20-shaped, server-side encounter routes hardcoded, 50-char reputation action cap). |
+| `agents/*.md` | The five optional sub-agent prompt sources (state-mutator, state-reminder, combat-adjudicator, lore-query, npc-bookkeeper). |
+| One reference bundle (`rulesets/dnd5e/bundle.json` for d20, `exalted3e` for dice pool, `fate-core` for fate ladder, `pathfinder2e` for d20 with the three-action economy) | Concrete example of every field populated correctly. |
+
+Hard requirements your AI's output MUST hit:
+
+- **`gmAgent.promptTemplate` ≥ 50 characters** (schema minimum). Realistically aim for 800+ words covering: system identity, dice mechanic, skill list, derived stats, dice-tag format, what to emit each turn.
+- **Integer `position` 0 | 1 | 2** on every lorebook entry (not strings like `"before_an"` — that was the v0.2 footgun, fixed in v0.3).
+- **`schema: "mrr-bundle"`** discriminator literal.
+- **For Game-Mode chats specifically:** keep the 50-character reputation tag action-string cap workaround paragraph in your `gmAgent.promptTemplate` — Marinara validates `[reputation: …]` action strings at 50 chars and silently fails longer ones.
+- **Sub-agents install disabled by default** as of v0.3+. If your bundle ships sub-agents in `additionalAgents[]` that you genuinely want enabled on install, set `"enabled": true` on that item explicitly. Otherwise the user toggles them on per-agent in Settings → Agents.
+- **Character cards:** if you ship one, use the V2 spec (`spec: "chara_card_v2"`, `spec_version: "2.0"`, `data` envelope).
+
+Run `node tools/validate-bundle.mjs rulesets/your-system/bundle.json` after the AI hands back the result to catch shape errors. The validator emits `path/expected/got/hint` records — paste any errors back to the AI for a corrected bundle.
+
+### The developer path — assemble from sources
+
+For a more deliberate authoring loop:
+
+1. Copy the closest existing bundle directory (`rulesets/dnd5e/`, `exalted3e/`, `fate-core/`, or `pathfinder2e/`) to `rulesets/your-system/`.
+2. Edit `ruleset.json` — your dice, attributes, skills, difficulty ladder, dice-tag format.
 3. Run `node tools/validate-ruleset.mjs rulesets/your-system/ruleset.json` to confirm.
 4. Edit `gm-agent.md` to teach the GM your mechanics and dice-tag format.
-5. Build a `lorebook.json` for your system's rules reference.
-6. Write an `INSTALL.md`.
+5. Build `lorebook.json` for your system's rules reference (keyword-triggered entries; integer positions; tune `tokenBudget` to ~1500–2000).
+6. (Optional) Edit `agents/<role>.md` for any sub-agents you want to ship — see the existing five at the repo root's `agents/`.
+7. Write `INSTALL.md` for the per-ruleset install instructions (audience: end users on Marinara).
+8. Run `node tools/build-bundle.mjs rulesets/your-system/` to assemble the inputs into `bundle.json`.
+9. Run `node tools/validate-bundle.mjs rulesets/your-system/bundle.json` to confirm shape.
+10. Test in a real chat with a real model before declaring done.
 
-Five resolution modes are first-class today: `single-roll` (d20-style), `dice-pool` (Exalted, oWoD/nWoD), `d100-percentile` (BRP/CoC), `2d6-stat` (PbtA), `fate-ladder` (Fate Core/FAE). Adding a new mode is documented in `docs/ADDING-RULESETS.md`; opening a PR with a new mode is welcome.
+### Resolution modes available today
+
+`single-roll` (d20-style), `dice-pool` (Exalted, oWoD/nWoD), `d100-percentile` (BRP/CoC), `2d6-stat` (PbtA), `fate-ladder` (Fate Core/FAE). Adding a new mode is documented in `docs/ADDING-RULESETS.md`; PRs welcome.
 
 ## License
 

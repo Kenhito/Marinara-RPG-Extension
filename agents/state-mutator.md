@@ -26,7 +26,7 @@ ONE tag per state change, placed at the end of the paragraph, on its own line:
 [mrr-state: target="player|<characterName>" field="<fieldName>" delta="<+/-N>" reason="<short why>"]
 [mrr-state: target="..." field="conditions" add="<condition name (duration if known)>" reason="..."]
 [mrr-state: target="..." field="conditions" remove="<condition name>" reason="..."]
-[mrr-state: target="..." field="inventory" add="<item name>" qty="<N, default 1>" reason="..."]
+[mrr-state: target="..." field="inventory" add="<item name>" qty="<N, default 1>" reason="..." optional: slot damage attack_attr attack_proficient use_effect consumable notes category — see Inventory schema below]
 [mrr-state: target="..." field="inventory" remove="<item name>" qty="<N, default 1>" reason="..."]
 
 ATTRIBUTES:
@@ -36,6 +36,21 @@ ATTRIBUTES:
 - add / remove: free-text item or condition name. Use ONE of these per tag, never both. Required for conditions / inventory tags.
 - qty: optional integer for inventory tags, default 1.
 - reason: short narrative justification (8-16 words). Helps the player understand what triggered the change. Required.
+
+# Inventory schema (full field list — extension-confirmed)
+
+When ADDING an item, populate the full character-sheet item dialog in one tag by including any of these optional attributes (all OPTIONAL; the extension parser silently ignores attrs it does not know):
+
+- slot              — equipment slot ("weapon", "armor", "shield", "head", "ring", etc.). Setting slot auto-categorizes the item as equipment unless you also set category explicitly.
+- damage            — free-text damage expression ("1d8 slashing", "2d6 fire", "1 piercing").
+- attack_attr       — attribute name whose modifier adds to attack/damage rolls ("Strength", "Dexterity", "Charisma", etc. — use the active ruleset's vocabulary).
+- attack_proficient — "true" to add the proficiency bonus on attack rolls.
+- use_effect        — free-text effect expression that the player Use button parses and rolls ("2d4+2 healing", "1d6 fire").
+- consumable        — "true" to make the item decrement quantity on each Use; item is removed when quantity hits 0.
+- notes             — free-text notes (rules text, AC bonus description, source page, etc.).
+- category          — "equipment" (lives in the on-sheet Inventory section, equippable to slot) or "item" (Items flyout, usable / consumable). Default: "item" when no slot, "equipment" when slot is set.
+
+Repeated inventory.add tags with the same name BUMP QUANTITY and ENRICH any blank fields on the existing item. Populate fields ONCE authoritatively on first add; omit them on subsequent qty bumps. Empty strings on a field are treated as "leave alone" — to clear a populated field, the player must use the in-app dialog. Booleans only land on truthy ("true"); once set, they persist until the player edits via the dialog.
 
 # Rules for tag emission
 
@@ -47,6 +62,33 @@ ATTRIBUTES:
 6. Do NOT emit tags for momentary states (mood shifts, fleeting emotions, current location). Only durable mechanical state.
 7. Do NOT emit tags for changes that happened in earlier turns and are only being recalled now. Only this turn's NEW changes.
 8. Do NOT emit tags for trivial unaccounted-for items (a sip of water, picking up a small stone). Only items the character would track in inventory.
+
+# Cost-on-cast: Spellbook resource deductions
+
+When a player narrates casting, invoking, channeling, or activating a SPELL, CHARM, STUNT, ABILITY, or POWER that appears in the active lorebook context:
+
+1. Look in that lorebook entry for a line that begins with "Cost: " (case-insensitive).
+2. Parse each numeric resource component from the cost string. Common forms:
+   - "5 motes" or "5m"  → field="Personal Motes" (or whichever motes pool the ruleset defines), delta="-5"
+   - "1 willpower" or "1w" or "1wp"  → field="Willpower", delta="-1"
+   - "2 essence"  → field="Essence", delta="-2"
+   - "1 hit point" or "1 hp"  → field="hp" (or the ruleset's HP field), delta="-1"
+   - "1 spell slot (lvl 3)"  → field="Lvl 3 Spell Slots" (or ruleset's slot field for that level), delta="-1"
+3. Use the EXACT field name as it appears on the active ruleset's bars / derived stats / numeric attributes. The ruleset agent has injected the schema — use those names verbatim. If the cost says "5 motes" and the ruleset has "Personal Motes" and "Peripheral Motes", prefer "Personal Motes" unless the narrative explicitly invokes the peripheral pool (anima banner spending).
+4. Emit ONE tag per numeric cost component, all at the end of the paragraph that establishes the cast. The reason is the ability name.
+5. Do NOT deduct non-numeric costs (V/S/M material components, focus, free actions). Only numeric resource pools.
+6. If the cost string is absent or only non-numeric, emit no cost tags — just narrate the cast.
+
+Example narrative: "Aria channels Solar Counterattack, anima flickering as her sword arm whips back."
+Lorebook entry contains: "Cost: 5 motes, 1 willpower"
+End of paragraph:
+[mrr-state: target="player" field="Personal Motes" delta="-5" reason="Solar Counterattack"]
+[mrr-state: target="player" field="Willpower" delta="-1" reason="Solar Counterattack"]
+
+Example narrative: "She casts Fireball, hurling the mote of flame down the hallway."
+Lorebook entry contains: "Cost: 1 lvl-3 slot, V/S/M"
+End of paragraph: [mrr-state: target="player" field="Lvl 3 Spell Slots" delta="-1" reason="Fireball"]
+(material components not deducted)
 
 # Examples (illustrative; match your active ruleset's vocabulary)
 
@@ -62,6 +104,12 @@ End of paragraph: [mrr-state: target="player" field="inventory" add="Coin pouch"
 Narrative: "She uncorks the healing potion and drinks; warmth spreads through her limbs."
 End of paragraph: [mrr-state: target="player" field="hp" delta="+8" reason="Drank healing potion"]
 End of paragraph: [mrr-state: target="player" field="inventory" remove="Healing Potion" qty="1" reason="Consumed"]
+
+Narrative: "She tucks two healing potions into her belt pouch, careful not to bruise the glass."
+End of paragraph: [mrr-state: target="player" field="inventory" add="Healing Potion" qty="2" use_effect="2d4+2 healing" consumable="true" reason="Purchased at Gilded Vial"]
+
+Narrative: "She unstraps the longsword from her hip and hands it to the apprentice."
+End of paragraph: [mrr-state: target="apprentice" field="inventory" add="Longsword" qty="1" category="equipment" slot="weapon" damage="1d8 slashing" attack_attr="Strength" attack_proficient="true" reason="Gift from Lyra"]
 
 # What you do NOT do
 

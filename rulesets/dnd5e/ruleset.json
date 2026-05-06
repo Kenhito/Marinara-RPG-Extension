@@ -11,86 +11,503 @@
   },
   "resolution": {
     "mode": "single-roll",
-    "modifierFormula": "1d20 + ability_mod + (proficient ? proficiency_bonus : 0)"
+    "modifierFormula": "1d20 + ability_mod + (proficient ? proficiency_bonus : 0)",
+    "skillBonusFormula": "{linkedAttribute_mod} + {tierBonus}",
+    "spellSaveDcFormula": "8 + {Proficiency Bonus} + {spellcastingAttribute_mod}",
+    "attackProficiencyFormula": "{Proficiency Bonus}"
   },
   "difficulties": {
-    "Very Easy": { "threshold": 5,  "description": "Trivial; only roll if a fail is interesting." },
-    "Easy":      { "threshold": 10, "description": "An untrained adult can manage on a good day." },
-    "Medium":    { "threshold": 15, "description": "A trained character expects to succeed." },
-    "Hard":      { "threshold": 20, "description": "A trained character with a good attribute may still fail." },
-    "Very Hard": { "threshold": 25, "description": "Possible only with high attribute and proficiency, or magic." },
-    "Nearly Impossible": { "threshold": 30, "description": "Heroic. Stack every advantage." }
+    "Very Easy": {
+      "threshold": 5,
+      "description": "Trivial; only roll if a fail is interesting."
+    },
+    "Easy": {
+      "threshold": 10,
+      "description": "An untrained adult can manage on a good day."
+    },
+    "Medium": {
+      "threshold": 15,
+      "description": "A trained character expects to succeed."
+    },
+    "Hard": {
+      "threshold": 20,
+      "description": "A trained character with a good attribute may still fail."
+    },
+    "Very Hard": {
+      "threshold": 25,
+      "description": "Possible only with high attribute and proficiency, or magic."
+    },
+    "Nearly Impossible": {
+      "threshold": 30,
+      "description": "Heroic. Stack every advantage."
+    }
   },
   "attributes": [
-    { "name": "Strength",     "abbreviation": "STR", "min": 1, "max": 30, "default": 10, "description": "Raw physical power, athletic training, the extent to which you can exert raw physical force." },
-    { "name": "Dexterity",    "abbreviation": "DEX", "min": 1, "max": 30, "default": 10, "description": "Agility, reflexes, balance, poise." },
-    { "name": "Constitution", "abbreviation": "CON", "min": 1, "max": 30, "default": 10, "description": "Health, stamina, vital force." },
-    { "name": "Intelligence", "abbreviation": "INT", "min": 1, "max": 30, "default": 10, "description": "Mental acuity, accuracy of recall, ability to reason." },
-    { "name": "Wisdom",       "abbreviation": "WIS", "min": 1, "max": 30, "default": 10, "description": "Awareness, intuition, insight, attunement to surroundings." },
-    { "name": "Charisma",     "abbreviation": "CHA", "min": 1, "max": 30, "default": 10, "description": "Force of personality, persuasiveness, leadership." },
-    { "name": "Level",        "abbreviation": "LVL", "min": 1, "max": 20, "default": 1,  "description": "Character level. Drives Proficiency Bonus per the 5e progression table (+2 at 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, +6 at 17-20). Update Proficiency Bonus manually when crossing a tier." }
+    {
+      "name": "Strength",
+      "abbreviation": "STR",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Raw physical power, athletic training, the extent to which you can exert raw physical force.",
+      "modifierFormula": "({Score} - 10) / 2"
+    },
+    {
+      "name": "Dexterity",
+      "abbreviation": "DEX",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Agility, reflexes, balance, poise.",
+      "modifierFormula": "({Score} - 10) / 2"
+    },
+    {
+      "name": "Constitution",
+      "abbreviation": "CON",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Health, stamina, vital force.",
+      "modifierFormula": "({Score} - 10) / 2"
+    },
+    {
+      "name": "Intelligence",
+      "abbreviation": "INT",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Mental acuity, accuracy of recall, ability to reason.",
+      "modifierFormula": "({Score} - 10) / 2"
+    },
+    {
+      "name": "Wisdom",
+      "abbreviation": "WIS",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Awareness, intuition, insight, attunement to surroundings.",
+      "modifierFormula": "({Score} - 10) / 2"
+    },
+    {
+      "name": "Charisma",
+      "abbreviation": "CHA",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Force of personality, persuasiveness, leadership.",
+      "modifierFormula": "({Score} - 10) / 2"
+    }
   ],
   "skills": [
-    { "name": "Acrobatics",     "linkedAttribute": "Dexterity",    "min": 0, "max": 30, "default": 0 },
-    { "name": "Animal Handling","linkedAttribute": "Wisdom",       "min": 0, "max": 30, "default": 0 },
-    { "name": "Arcana",         "linkedAttribute": "Intelligence", "min": 0, "max": 30, "default": 0 },
-    { "name": "Athletics",      "linkedAttribute": "Strength",     "min": 0, "max": 30, "default": 0 },
-    { "name": "Deception",      "linkedAttribute": "Charisma",     "min": 0, "max": 30, "default": 0 },
-    { "name": "History",        "linkedAttribute": "Intelligence", "min": 0, "max": 30, "default": 0 },
-    { "name": "Insight",        "linkedAttribute": "Wisdom",       "min": 0, "max": 30, "default": 0 },
-    { "name": "Intimidation",   "linkedAttribute": "Charisma",     "min": 0, "max": 30, "default": 0 },
-    { "name": "Investigation",  "linkedAttribute": "Intelligence", "min": 0, "max": 30, "default": 0 },
-    { "name": "Medicine",       "linkedAttribute": "Wisdom",       "min": 0, "max": 30, "default": 0 },
-    { "name": "Nature",         "linkedAttribute": "Intelligence", "min": 0, "max": 30, "default": 0 },
-    { "name": "Perception",     "linkedAttribute": "Wisdom",       "min": 0, "max": 30, "default": 0 },
-    { "name": "Performance",    "linkedAttribute": "Charisma",     "min": 0, "max": 30, "default": 0 },
-    { "name": "Persuasion",     "linkedAttribute": "Charisma",     "min": 0, "max": 30, "default": 0 },
-    { "name": "Religion",       "linkedAttribute": "Intelligence", "min": 0, "max": 30, "default": 0 },
-    { "name": "Sleight of Hand","linkedAttribute": "Dexterity",    "min": 0, "max": 30, "default": 0 },
-    { "name": "Stealth",        "linkedAttribute": "Dexterity",    "min": 0, "max": 30, "default": 0 },
-    { "name": "Survival",       "linkedAttribute": "Wisdom",       "min": 0, "max": 30, "default": 0 }
+    {
+      "name": "Acrobatics",
+      "linkedAttribute": "Dexterity",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Animal Handling",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Arcana",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Athletics",
+      "linkedAttribute": "Strength",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Deception",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "History",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Insight",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Intimidation",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Investigation",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Medicine",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Nature",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Perception",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Performance",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Persuasion",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Religion",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Sleight of Hand",
+      "linkedAttribute": "Dexterity",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Stealth",
+      "linkedAttribute": "Dexterity",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Survival",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    }
   ],
   "skillProficiency": {
     "tiers": [
-      { "code": "U", "label": "Untrained", "rollBonusFormula": "0" },
-      { "code": "T", "label": "Trained",   "rollBonusFormula": "{Proficiency Bonus}" },
-      { "code": "E", "label": "Expertise", "rollBonusFormula": "2 * {Proficiency Bonus}" }
+      {
+        "code": "U",
+        "label": "Untrained",
+        "rollBonusFormula": "0"
+      },
+      {
+        "code": "T",
+        "label": "Trained",
+        "rollBonusFormula": "{Proficiency Bonus}"
+      },
+      {
+        "code": "E",
+        "label": "Expertise",
+        "rollBonusFormula": "2 * {Proficiency Bonus}"
+      }
     ],
     "default": "U"
   },
   "derivedStats": [
-    { "name": "Hit Points",    "formula": "(class hit die avg) + CON_mod, per level", "renderAs": "bar" },
-    { "name": "Armor Class",   "formula": "10 + DEX_mod (or armor formula)",          "renderAs": "value" },
-    { "name": "Initiative",    "formula": "DEX_mod",                                  "renderAs": "value" },
-    { "name": "Proficiency Bonus", "formula": "+2 at level 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, +6 at 17-20", "renderAs": "value" },
-    { "name": "Speed",         "formula": "Race base (typically 30 ft)",              "renderAs": "value" }
-  ],
-  "states": [
     {
-      "name": "Condition",
-      "values": [
-        { "label": "None" },
-        { "label": "Blinded",      "description": "Auto-fail sight checks; attacks against have advantage; your attacks have disadvantage." },
-        { "label": "Charmed",      "description": "Cannot attack the charmer or target them with harmful effects." },
-        { "label": "Deafened",     "description": "Cannot hear; auto-fail hearing checks." },
-        { "label": "Frightened",   "description": "Disadvantage on checks/attacks while source is in line of sight; cannot move closer." },
-        { "label": "Grappled",     "description": "Speed becomes 0; ends if grappler is incapacitated or you escape." },
-        { "label": "Incapacitated","description": "Cannot take actions or reactions." },
-        { "label": "Invisible",    "description": "Heavily obscured; attacks against have disadvantage; your attacks have advantage." },
-        { "label": "Paralyzed",    "description": "Incapacitated, cannot move or speak; auto-fail STR/DEX saves; attacks against have advantage and crit at melee range." },
-        { "label": "Petrified",    "description": "Transformed to stone; resistance to all damage; immune to poison/disease." },
-        { "label": "Poisoned",     "description": "Disadvantage on attacks and ability checks." },
-        { "label": "Prone",        "description": "Crawl-only movement; disadvantage on attacks; melee attacks against have advantage, ranged attacks have disadvantage." },
-        { "label": "Restrained",   "description": "Speed 0; disadvantage on attacks and DEX saves; attacks against have advantage." },
-        { "label": "Stunned",      "description": "Incapacitated; auto-fail STR and DEX saves; attacks against have advantage." },
-        { "label": "Unconscious",  "description": "Incapacitated and prone; auto-fail STR/DEX saves; attacks within 5 ft auto-crit." }
+      "name": "Hit Points",
+      "formula": "(class hit die avg) + CON_mod, per level",
+      "renderAs": "bar",
+      "aliases": [
+        "hp",
+        "HP",
+        "hitPoints",
+        "hitpoints"
+      ]
+    },
+    {
+      "name": "Armor Class",
+      "formula": "10 + DEX_mod (or armor formula)",
+      "renderAs": "value",
+      "default": 10,
+      "aliases": [
+        "ac",
+        "AC",
+        "armorClass"
+      ]
+    },
+    {
+      "name": "Initiative",
+      "formula": "DEX_mod",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity_mod}",
+      "rollFormula": "{Dexterity_mod}",
+      "aliases": [
+        "init",
+        "initiative"
+      ]
+    },
+    {
+      "name": "Proficiency Bonus",
+      "formula": "+2 at level 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, +6 at 17-20",
+      "renderAs": "value",
+      "valueFormula": "2 + (({Level} - 1) / 4)",
+      "aliases": [
+        "prof",
+        "proficiency",
+        "proficiencyBonus",
+        "PB"
+      ]
+    },
+    {
+      "name": "Speed",
+      "formula": "Race base (typically 30 ft)",
+      "renderAs": "value",
+      "aliases": [
+        "speed",
+        "movement"
+      ]
+    },
+    {
+      "name": "Level",
+      "formula": "Character level, 1-20.",
+      "max": 20,
+      "renderAs": "value",
+      "default": 1,
+      "aliases": [
+        "level",
+        "lvl",
+        "LVL",
+        "characterLevel"
       ]
     }
   ],
+  "states": [],
   "diceTagFormat": {
     "template": "[dice: 1d20{+MOD}{+PROF} vs DC{DC} = {result}]",
     "example": "[dice: 1d20+3+2 vs DC15 = 17 success]"
   },
-  "sheetSections": ["attributes", "skills", "derived", "states", "inventory", "notes"],
-  "lorebookKeys": ["spell", "class", "subclass", "condition", "feat", "race", "background"]
+  "sheetSections": [
+    "attributes",
+    "saves",
+    "skills",
+    "derived",
+    "states",
+    "conditions",
+    "backgrounds",
+    "inventory",
+    "abilities",
+    "notes"
+  ],
+  "lorebookKeys": [
+    "spell",
+    "class",
+    "subclass",
+    "condition",
+    "feat",
+    "race",
+    "background"
+  ],
+  "abilities": {
+    "label": "Spellbook",
+    "categories": [
+      {
+        "id": "cantrip",
+        "label": "Cantrips"
+      },
+      {
+        "id": "level-1",
+        "label": "1st Level"
+      },
+      {
+        "id": "level-2",
+        "label": "2nd Level"
+      },
+      {
+        "id": "level-3",
+        "label": "3rd Level"
+      },
+      {
+        "id": "level-4",
+        "label": "4th Level"
+      },
+      {
+        "id": "level-5",
+        "label": "5th Level"
+      },
+      {
+        "id": "level-6",
+        "label": "6th Level"
+      },
+      {
+        "id": "level-7",
+        "label": "7th Level"
+      },
+      {
+        "id": "level-8",
+        "label": "8th Level"
+      },
+      {
+        "id": "level-9",
+        "label": "9th Level"
+      }
+    ]
+  },
+  "header": {
+    "raceLabel": "Race",
+    "classLabel": "Class"
+  },
+  "backgrounds": {
+    "enabled": true,
+    "label": "Feats",
+    "min": 0,
+    "max": 5,
+    "default": 0,
+    "textOnly": true
+  },
+  "saves": [
+    {
+      "name": "Strength Save",
+      "linkedAttribute": "Strength"
+    },
+    {
+      "name": "Dexterity Save",
+      "linkedAttribute": "Dexterity"
+    },
+    {
+      "name": "Constitution Save",
+      "linkedAttribute": "Constitution"
+    },
+    {
+      "name": "Intelligence Save",
+      "linkedAttribute": "Intelligence"
+    },
+    {
+      "name": "Wisdom Save",
+      "linkedAttribute": "Wisdom"
+    },
+    {
+      "name": "Charisma Save",
+      "linkedAttribute": "Charisma"
+    }
+  ],
+  "conditions": [
+    {
+      "name": "Blinded",
+      "description": "Cannot see; auto-fails sight checks. Attack rolls are at disadvantage and attacks against have advantage.",
+      "imposesDisadvantageOn": [
+        "attack"
+      ]
+    },
+    {
+      "name": "Charmed",
+      "description": "Cannot attack the charmer or target them with harmful abilities. Charmer has advantage on social checks against you."
+    },
+    {
+      "name": "Deafened",
+      "description": "Cannot hear; auto-fails hearing checks."
+    },
+    {
+      "name": "Frightened",
+      "description": "Disadvantage on ability checks and attack rolls while source of fear is in line of sight. Cannot move closer to source.",
+      "imposesDisadvantageOn": [
+        "attack",
+        "skill"
+      ]
+    },
+    {
+      "name": "Grappled",
+      "description": "Speed becomes 0; ends if grappler is incapacitated."
+    },
+    {
+      "name": "Incapacitated",
+      "description": "Cannot take actions or reactions."
+    },
+    {
+      "name": "Invisible",
+      "description": "Heavily obscured for hiding. Attack rolls have advantage; attacks against have disadvantage.",
+      "grantsAdvantageOn": [
+        "attack"
+      ]
+    },
+    {
+      "name": "Paralyzed",
+      "description": "Incapacitated; cannot move or speak. Auto-fails STR and DEX saves. Attacks against have advantage and crit on hit within 5 ft."
+    },
+    {
+      "name": "Petrified",
+      "description": "Transformed to stone; incapacitated; resistance to all damage; immune to poison and disease."
+    },
+    {
+      "name": "Poisoned",
+      "description": "Disadvantage on attack rolls and ability checks.",
+      "imposesDisadvantageOn": [
+        "attack",
+        "skill"
+      ]
+    },
+    {
+      "name": "Prone",
+      "description": "Disadvantage on attack rolls. Attackers within 5 ft have advantage; attackers further away have disadvantage.",
+      "imposesDisadvantageOn": [
+        "attack"
+      ]
+    },
+    {
+      "name": "Restrained",
+      "description": "Speed becomes 0. Disadvantage on attack rolls and DEX saves. Attacks against have advantage.",
+      "imposesDisadvantageOn": [
+        "attack",
+        "save"
+      ]
+    },
+    {
+      "name": "Stunned",
+      "description": "Incapacitated; cannot move; can speak only falteringly. Auto-fails STR and DEX saves. Attacks against have advantage."
+    },
+    {
+      "name": "Unconscious",
+      "description": "Incapacitated; cannot move or speak; drops what it holds; falls prone. Auto-fails STR and DEX saves. Melee attacks within 5 ft crit on hit."
+    },
+    {
+      "name": "Exhausted",
+      "description": "Stack 1-6. Disadvantage on ability checks (level 1+); halved speed (level 2+); disadvantage on attacks and saves (level 3+); HP max halved (level 4+); speed reduced to 0 (level 5+); death (level 6).",
+      "imposesDisadvantageOn": [
+        "skill"
+      ]
+    }
+  ]
 }
