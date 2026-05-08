@@ -74,3 +74,25 @@ In Marinara's pipeline, `pre_generation` agents inject context BEFORE the main G
 ## Engine compatibility — reputation tags
 
 Marinara validates `[reputation: npc="Name" action="..."]` action strings at max 50 characters. Use short verb phrases (`helped`, `betrayed trust`, `shared secret`) — not literary descriptions. Anything longer triggers a 400 server error and the reputation update silently fails.
+
+## State-mutator tags — XP and attunement
+
+In addition to standard `[mrr-state: field="hp" delta="-3"]` numeric-delta tags, two new fields let you adjust D&D-specific sheet state during play:
+
+**Experience and leveling** — increment current XP, or set XP / level / next-threshold absolutely after a milestone:
+
+- `[mrr-state: field="xp" delta="+150" reason="Cleared the kobold warren"]` — adds 150 to current XP
+- `[mrr-state: field="xp" delta="-25" reason="DM milestone correction"]` — subtracts; clamped to 0 (cannot go negative)
+- `[mrr-state: field="xp" current="6500" level="5" next="14000" reason="Levelled up"]` — set the three fields atomically when level changes
+- `[mrr-state: field="xp" current="100" reason="Restored after rule clarification"]` — set only what you mean; omit fields you don't change
+
+XP is non-negative by SRD definition. Mixing `delta=` with absolute fields in one tag is rejected (ambiguous intent). When narrating XP awards mid-session, use `delta`; when narrating a level-up after the cumulative XP crosses a threshold, emit ONE absolute tag updating `current`, `level`, AND `next` together so the sheet's XP card stays consistent.
+
+**Magic item attunement** — toggle the `attuned` flag on a named inventory item (cap of 3 per the SRD attunement rule):
+
+- `[mrr-state: field="attunement" item="Cloak of Protection" attuned="true" reason="Player meditated for the short rest"]`
+- `[mrr-state: field="attunement" item="Cloak of Protection" attuned="false" reason="Removed during scrying"]`
+
+Cap is enforced at write time. A 4th attunement attempt is rejected with a toast and no state change — narrate the player choosing to break an existing attunement first. Item match is case-insensitive on the item's `name` field. The item must already exist in the player's inventory; emit an `[mrr-state: field="inventory" add="..."]` tag first, then attune in a follow-up.
+
+Items with mote commitment or investiture cannot also be attuned (different magic models, mutually exclusive). The parser rejects exclusivity violations with an inline toast — narrate the system mismatch ("the daiklave does not respond to D&D attunement; its motes must be committed instead") rather than silently dropping the change.

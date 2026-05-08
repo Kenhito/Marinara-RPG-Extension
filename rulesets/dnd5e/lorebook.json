@@ -122,7 +122,7 @@
         "fire bolt",
         "firebolt"
       ],
-      "content": "Fire Bolt \u2014 Evocation cantrip. Casting Time: 1 action. Range: 120 ft. Components: V, S. Duration: instantaneous. Hurl a mote of fire at a creature or object in range. Make a ranged spell attack against the target. On a hit, target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. Damage scales: 2d10 at level 5, 3d10 at 11, 4d10 at 17.",
+      "content": "Fire Bolt — Evocation cantrip. Casting Time: 1 action. Range: 120 ft. Components: V, S. Duration: instantaneous. Hurl a mote of fire at a creature or object in range. Make a ranged spell attack against the target. On a hit, target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. Damage scales: 2d10 at level 5, 3d10 at 11, 4d10 at 17.",
       "selective": false,
       "constant": false,
       "position": 0
@@ -134,7 +134,7 @@
         "cure wounds",
         "healing spell"
       ],
-      "content": "Cure Wounds \u2014 Evocation 1st level. Casting Time: 1 action. Range: Touch. Components: V, S. Duration: instantaneous. A creature you touch regains hit points equal to 1d8 + your spellcasting ability modifier. No effect on undead or constructs. At higher levels: +1d8 per slot level above 1st.",
+      "content": "Cure Wounds — Evocation 1st level. Casting Time: 1 action. Range: Touch. Components: V, S. Duration: instantaneous. A creature you touch regains hit points equal to 1d8 + your spellcasting ability modifier. No effect on undead or constructs. At higher levels: +1d8 per slot level above 1st.",
       "selective": false,
       "constant": false,
       "position": 0
@@ -146,7 +146,7 @@
         "shield spell",
         "shielded by spell"
       ],
-      "content": "Shield \u2014 Abjuration 1st level. Casting Time: 1 reaction, taken when you are hit by an attack or targeted by magic missile. Range: self. Components: V, S. Duration: 1 round. +5 bonus to AC, including against the triggering attack, and you take no damage from magic missile.",
+      "content": "Shield — Abjuration 1st level. Casting Time: 1 reaction, taken when you are hit by an attack or targeted by magic missile. Range: self. Components: V, S. Duration: 1 round. +5 bonus to AC, including against the triggering attack, and you take no damage from magic missile.",
       "selective": false,
       "constant": false,
       "position": 0
@@ -157,7 +157,7 @@
       "keys": [
         "fireball"
       ],
-      "content": "Fireball \u2014 Evocation 3rd level. Casting Time: 1 action. Range: 150 ft. Components: V, S, M (a tiny ball of bat guano and sulfur). Duration: instantaneous. A 20-ft-radius sphere of flame at a point in range. Each creature in the area makes a DEX save (DC = spell save DC). Failed save: 8d6 fire damage. Successful save: half. Ignites unattended flammable objects. At higher levels: +1d6 per slot above 3rd.",
+      "content": "Fireball — Evocation 3rd level. Casting Time: 1 action. Range: 150 ft. Components: V, S, M (a tiny ball of bat guano and sulfur). Duration: instantaneous. A 20-ft-radius sphere of flame at a point in range. Each creature in the area makes a DEX save (DC = spell save DC). Failed save: 8d6 fire damage. Successful save: half. Ignites unattended flammable objects. At higher levels: +1d6 per slot above 3rd.",
       "selective": false,
       "constant": false,
       "position": 0
@@ -171,7 +171,7 @@
         "with advantage",
         "with disadvantage"
       ],
-      "content": "Advantage: roll the d20 twice, use the higher result. Disadvantage: roll the d20 twice, use the lower result. If both apply, they cancel \u2014 roll once normally. Multiple sources of advantage or disadvantage do not stack; presence of any advantage and any disadvantage cancels.",
+      "content": "Advantage: roll the d20 twice, use the higher result. Disadvantage: roll the d20 twice, use the lower result. If both apply, they cancel — roll once normally. Multiple sources of advantage or disadvantage do not stack; presence of any advantage and any disadvantage cancels.",
       "selective": false,
       "constant": true,
       "position": 0
@@ -206,8 +206,8 @@
       "position": 0
     },
     {
-      "name": "Optional Sub-Agents \u2014 what they do and how to enable",
-      "content": "The Marinara-RPG ruleset bundle ships five OPTIONAL pre-generation sub-agents that focus the main narration model on specific tasks. They are installed DISABLED by default \u2014 flip them on individually in Marinara's Settings \u2192 Agents panel. Each adds one model call per turn while enabled, so enable only what your campaign needs.\n\nThe five sub-agents:\n\n1. **state-mutator** \u2014 Instructs the narration model to emit hidden `[mrr-state: ...]` tags inside narration when the story changes a character's HP, conditions, or inventory. The extension parses these tags, applies the change to the floating sheet, and shows a confirmation toast. Without this enabled, you have to mutate the sheet by hand. Enable when: you want narration to drive the sheet automatically.\n\n2. **state-reminder** \u2014 Surfaces a short bulleted list of current player character state (HP, conditions, equipped gear, tracked resources) at the top of every turn so the narration model stays mechanically honest between messages. Enable when: long sessions or complex sheets, the model is forgetting your stats.\n\n3. **combat-adjudicator** \u2014 Wakes up only when combat is active. Restates initiative, action economy, attack/damage formulas, and conditions in the active ruleset's terms before each turn. Outputs nothing (literally \"No combat active.\") in social or ambient scenes. Enable when: you run heavy-mechanics combat encounters.\n\n4. **lore-query** \u2014 Wakes up only when the latest user message is a rules question (e.g., \"How does grappling work?\", \"What's the DC for picking a lock?\"). Answers from the installed lorebook + system RAW. Outputs nothing (\"No rules query.\") otherwise. Enable when: you frequently ask the model rules questions mid-RP.\n\n5. **npc-bookkeeper** \u2014 Tracks active and recently-engaged NPC HP, conditions, tactical state, and telegraphed intentions across turns. Outputs nothing (\"No NPCs to track.\") when no NPCs are in scene. Enable when: combat or social scenes with multiple named NPCs you want continuity on.\n\nHow to enable: Marinara \u2192 Settings \u2192 Agents \u2192 find the agent (named like \"MRR: <System> \u2014 <Role>\" for GM-mode, \"MRRP: ...\" for RP-mode) \u2192 toggle on. The agent persists across chats; toggle off any time.",
+      "name": "Optional Sub-Agents — what they do and how to enable",
+      "content": "The Marinara-RPG ruleset bundle ships five OPTIONAL pre-generation sub-agents that focus the main narration model on specific tasks. They are installed DISABLED by default — flip them on individually in Marinara's Settings → Agents panel. Each adds one model call per turn while enabled, so enable only what your campaign needs.\n\nThe five sub-agents:\n\n1. **state-mutator** — Instructs the narration model to emit hidden `[mrr-state: ...]` tags inside narration when the story changes a character's HP, conditions, or inventory. The extension parses these tags, applies the change to the floating sheet, and shows a confirmation toast. Without this enabled, you have to mutate the sheet by hand. Enable when: you want narration to drive the sheet automatically.\n\n2. **state-reminder** — Surfaces a short bulleted list of current player character state (HP, conditions, equipped gear, tracked resources) at the top of every turn so the narration model stays mechanically honest between messages. Enable when: long sessions or complex sheets, the model is forgetting your stats.\n\n3. **combat-adjudicator** — Wakes up only when combat is active. Restates initiative, action economy, attack/damage formulas, and conditions in the active ruleset's terms before each turn. Outputs nothing (literally \"No combat active.\") in social or ambient scenes. Enable when: you run heavy-mechanics combat encounters.\n\n4. **lore-query** — Wakes up only when the latest user message is a rules question (e.g., \"How does grappling work?\", \"What's the DC for picking a lock?\"). Answers from the installed lorebook + system RAW. Outputs nothing (\"No rules query.\") otherwise. Enable when: you frequently ask the model rules questions mid-RP.\n\n5. **npc-bookkeeper** — Tracks active and recently-engaged NPC HP, conditions, tactical state, and telegraphed intentions across turns. Outputs nothing (\"No NPCs to track.\") when no NPCs are in scene. Enable when: combat or social scenes with multiple named NPCs you want continuity on.\n\nHow to enable: Marinara → Settings → Agents → find the agent (named like \"MRR: <System> — <Role>\" for GM-mode, \"MRRP: ...\" for RP-mode) → toggle on. The agent persists across chats; toggle off any time.",
       "keys": [
         "sub-agent",
         "sub agents",
@@ -225,11 +225,26 @@
         "npc-bookkeeper",
         "npc bookkeeper",
         "enable agent",
-        "Settings \u2192 Agents",
+        "Settings → Agents",
         "agent toggle"
       ],
       "position": 1,
       "tokenBudget": 2000
+    },
+    {
+      "name": "Mechanic: Magic Item Attunement",
+      "keys": [
+        "attune",
+        "attuned",
+        "attunement",
+        "magic item",
+        "magic items",
+        "wondrous item",
+        "attune to"
+      ],
+      "content": "Magic item attunement (SRD 5.1). Many magic items require attunement — a one-hour focused process during a short rest — before the wielder can access the item magical properties. A creature can be attuned to at most 3 magic items at once; attempting a 4th attunement requires breaking an existing attunement first. Some items grant their basic effect without attunement (a +1 sword) but lock their full effect behind it (a magic sword that flames on command). Attunement breaks immediately on death, on the item leaving the wearer for 24 hours, or by deliberate choice during a short rest.\n\nState-mutator tag: [mrr-state: field=\"attunement\" item=\"<exact item name>\" attuned=\"true\"] to attune (cap-3 enforced; rejected with toast on overflow). attuned=\"false\" to release. Items must already exist on the player inventory; emit an inventory add tag first if needed.",
+      "position": 0,
+      "tokenBudget": 200
     }
   ]
 }

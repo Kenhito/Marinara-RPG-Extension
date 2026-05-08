@@ -123,4 +123,31 @@ In addition to the existing `[mrr-state: field="hp" delta="-3"]`-style tags, two
 - `[mrr-state: field="intimacies" remove="Loyalty to the Sword Lord"]`
 - `[mrr-state: field="intimacies" text="Loyalty to the Sword Lord" degree="defining"]`
 
+## State-mutator tags — XP pool and mote commitment
+
+Two more fields land Exalted-specific writes during play:
+
+**Experience pool** — Exalted tracks a current/total accumulator (no level/next-threshold formula). Use `delta` for awards; the parser bumps both `current` and `total` simultaneously on positive deltas to mirror the +1 XP button on the sheet (earned XP increments lifetime AND available pool, while spending XP only reduces current):
+
+- `[mrr-state: field="xp" delta="+5" reason="Achieved a stunt-3"]` — earns 5 XP (current AND total go up by 5)
+- `[mrr-state: field="xp" delta="-3" reason="Spent on Athletics"]` — spends 3 XP (only current goes down; total unchanged — that is Exalted's accounting)
+- `[mrr-state: field="xp" current="42" total="80"]` — absolute set when correcting drift
+
+For Exalted, `level` and `next` are unused (no level system). Stick to `current` and `total`. The same parser branch handles both pool-style (Exalted) and formula-style (D&D / PF2e) — the dice mode declared in the ruleset decides which fields are visible on the sheet, but the underlying tag form is the same.
+
+**Mote commitment** — lock motes to an inventory item for as long as it is active (artifacts that require attunement, supernal Charms with persistent effects, atemi committed to a defensive stance). Mote commitment subtracts from one of the two pools — Personal (5-per-Essence motes always available, used for self-sustaining and intimate effects) or Peripheral (the larger reservoir, drawn through the anima banner, used for outward expressions of power):
+
+- `[mrr-state: field="commitment" item="Daiklave of Conquest" motes="5" pool="Personal" reason="Reattuned at sunrise"]`
+- `[mrr-state: field="commitment" item="Daiklave of Conquest" motes="0" reason="Released at sundown"]` — uncommit; restores motes to the pool
+- `[mrr-state: field="commitment" item="Atemi Stance" motes="3" pool="Peripheral"]`
+- `[mrr-state: field="commitment" item="Daiklave" motes="5" pool="Peripheral" reason="Switched commitment from Personal to Peripheral"]` — pool change; restores old commit to old pool, debits new commit from new pool atomically
+
+The parser enforces:
+
+1. **Pool floor.** Refuses commits that would deplete the pool below 0 (with an inline toast). The Exalt has not enough motes — narrate a different choice ("she reaches for the daiklave's motes, but the Essence is already spent — the artifact stays cold").
+2. **Atomic pool change.** Switching pools restores the old commit before debiting the new pool. If the new pool can't absorb the commit, NEITHER leg lands — the sheet is unchanged.
+3. **Exclusivity.** Items with mote commitment cannot also be attuned (D&D model) or invested (PF2e model) on the same sheet. The parser rejects mismatched cross-system commits.
+
+When narrating mote commitment, name the pool explicitly. Players use Personal motes for self-sustaining effects (anima banner, social Charms) and Peripheral for outward expressions of power (combat Charms, artifact Excellencies). The default in the parser if no pool is supplied is "Personal" — but agent narration is clearer if the pool is named.
+
 Use these when the narrative actually changes the character — a Charm shifts an Intimacy's degree, a Resources merit drops because a manse was destroyed, a Defining Tie replaces a Major one as the character's purpose hardens. `degree` is one of `minor`, `major`, `defining`. `kind` is `tie` (with a subject in `target`) or `principle` (no target). The extension applies the change, shows a confirmation toast to the player, and persists the update — you do not need to re-narrate the sheet contents.

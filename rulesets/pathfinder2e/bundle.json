@@ -16,26 +16,86 @@
     "summary": "Pathfinder 2nd Edition is a tightly mathematical d20 fantasy system. A check is 1d20 + ability modifier + proficiency bonus + item bonus vs. a Difficulty Class, with four degrees of success: critical success at +10 over the DC, success at meeting it, failure under it, critical failure at -10 below. The three-action economy and Multiple Attack Penalty give every turn meaningful tactical choice.",
     "commitmentModel": "invested",
     "xpTable": [
-      { "level": 1, "xp": 0 },
-      { "level": 2, "xp": 1000 },
-      { "level": 3, "xp": 2000 },
-      { "level": 4, "xp": 3000 },
-      { "level": 5, "xp": 4000 },
-      { "level": 6, "xp": 5000 },
-      { "level": 7, "xp": 6000 },
-      { "level": 8, "xp": 7000 },
-      { "level": 9, "xp": 8000 },
-      { "level": 10, "xp": 9000 },
-      { "level": 11, "xp": 10000 },
-      { "level": 12, "xp": 11000 },
-      { "level": 13, "xp": 12000 },
-      { "level": 14, "xp": 13000 },
-      { "level": 15, "xp": 14000 },
-      { "level": 16, "xp": 15000 },
-      { "level": 17, "xp": 16000 },
-      { "level": 18, "xp": 17000 },
-      { "level": 19, "xp": 18000 },
-      { "level": 20, "xp": 19000 }
+      {
+        "level": 1,
+        "xp": 0
+      },
+      {
+        "level": 2,
+        "xp": 1000
+      },
+      {
+        "level": 3,
+        "xp": 2000
+      },
+      {
+        "level": 4,
+        "xp": 3000
+      },
+      {
+        "level": 5,
+        "xp": 4000
+      },
+      {
+        "level": 6,
+        "xp": 5000
+      },
+      {
+        "level": 7,
+        "xp": 6000
+      },
+      {
+        "level": 8,
+        "xp": 7000
+      },
+      {
+        "level": 9,
+        "xp": 8000
+      },
+      {
+        "level": 10,
+        "xp": 9000
+      },
+      {
+        "level": 11,
+        "xp": 10000
+      },
+      {
+        "level": 12,
+        "xp": 11000
+      },
+      {
+        "level": 13,
+        "xp": 12000
+      },
+      {
+        "level": 14,
+        "xp": 13000
+      },
+      {
+        "level": 15,
+        "xp": 14000
+      },
+      {
+        "level": 16,
+        "xp": 15000
+      },
+      {
+        "level": 17,
+        "xp": 16000
+      },
+      {
+        "level": 18,
+        "xp": 17000
+      },
+      {
+        "level": 19,
+        "xp": 18000
+      },
+      {
+        "level": 20,
+        "xp": 19000
+      }
     ],
     "dice": {
       "type": "d20",
@@ -778,6 +838,35 @@
           "Refocus"
         ],
         "content": "Treat Wounds: trained Medicine, 10 minutes per target, DC depends on Medicine proficiency target. Heals 2d8 + extras (more on crit, less on fail; can't be retried on the same target for 1 hour after success, 10 min after failure). 8-hour rest restores HP equal to constitution_mod × level (min 1 × level), removes fatigued, reduces drained/wounded by 1. Refocus is a 10-minute activity that recovers 1 Focus Point (cap is class-dependent). Hero Points reset to 1 at session start, NOT at long rest.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Investiture and Worn Items",
+        "keys": [
+          "invest",
+          "invested",
+          "investiture",
+          "worn item",
+          "worn items",
+          "magical worn",
+          "invest in",
+          "10 invested"
+        ],
+        "content": "Investiture is Pathfinder 2e analog of D&D attunement. Worn magic items occupy slots and require a one-action invest activity (or a 10-minute ritual outside combat) to gain their magical effects beyond the mundane (a +1 weapon still grants the weapon bonus when not invested; a Cloak of Resistance grants its save bonus only while invested). A creature can have at most 10 invested worn items at once. Death removes investiture; switching items requires re-investing.\n\nState-mutator tag: [mrr-state: field=\"investiture\" item=\"<exact item name>\" invested=\"true\"] to invest (cap-10 enforced; rejected on overflow). invested=\"false\" to un-invest. Investiture is exclusive with attunement (D&D model) and mote commitment (Exalted model) on the same item — the parser rejects mismatched cross-system commits.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: State-mutator XP Tags",
+        "keys": [
+          "xp",
+          "experience",
+          "level up",
+          "leveled up",
+          "xp award",
+          "xp delta",
+          "experience point"
+        ],
+        "content": "Pathfinder 2e XP follows the formula model — current XP, level, and a per-level next threshold (default 1000 XP per level, configurable via the ruleset xpTable). Awards push current up; reaching next triggers a level-up. The state-mutator parser supports two XP tag forms:\n\n- [mrr-state: field=\"xp\" delta=\"+150\" reason=\"Cleared the goblin warren\"] — incremental award; clamp at 0 on negative deltas.\n- [mrr-state: field=\"xp\" current=\"6500\" level=\"5\" next=\"7000\" reason=\"Levelled up\"] — absolute set when level changes (emit current+level+next together so the sheet card stays consistent).\n\nMixing delta with absolute fields in one tag is rejected (ambiguous). Negative absolute values rejected.",
         "position": 0
       }
     ]
