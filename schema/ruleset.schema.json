@@ -34,6 +34,25 @@
       "type": "string",
       "description": "One-paragraph description of the ruleset's flavor, suitable for the README ruleset list."
     },
+    "commitmentModel": {
+      "type": ["string", "null"],
+      "enum": ["attuned", "invested", "mote", null],
+      "default": null,
+      "description": "Optional declaration of how items in this ruleset are bound to a character to grant their magical / mechanical effects. \"attuned\" — D&D 5e style: each item has an Attuned boolean; cap of 3 attuned items at once. \"invested\" — Pathfinder 2e style: each item has an Invested boolean; cap of 10 invested items at once. \"mote\" — Exalted style: each item has a Mote Commitment integer plus a Personal/Peripheral pool selection; commitment is subtracted from the chosen pool's current value while the item is committed, and restored when uncommitted. null (default) — ruleset has no commitment mechanic; the inventory editor hides the commitment section."
+    },
+    "xpTable": {
+      "type": "array",
+      "description": "Optional ordered array of {level, xp} entries for formula-based XP progression (D&D 5e, PF2e). The XP card uses this to render the next-level threshold and progress bar. Pool-based rulesets (Exalted) omit this; their XP card shows current/total + a +1 button instead.",
+      "items": {
+        "type": "object",
+        "required": ["level", "xp"],
+        "additionalProperties": false,
+        "properties": {
+          "level": { "type": "integer", "minimum": 1 },
+          "xp": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
     "dice": {
       "type": "object",
       "required": ["type", "notation"],
