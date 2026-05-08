@@ -1068,7 +1068,21 @@ function blankSheet(rs) {
        static `max` and no `maxFormula`. Persists separately so taking
        the bar to zero doesn't lose the high-water mark — without this
        D&D HP showed "0 / 10" after damage instead of "0 / 15". */
-    derivedMax: {}
+    derivedMax: {},
+    /* Experience progression. The XP card chooses its layout from
+       ruleset.resolution.mode: "single-roll" rulesets (D&D, PF2e) show
+       level + current + next + progress bar driven by ruleset.xpTable;
+       "dice-pool" rulesets (Exalted) show current + total earned + a
+       +1 button that increments both. Shape is one struct with all
+       fields present; consumers read what their layout needs and the
+       other half is harmless dead data. */
+    xp: { current: 0, level: 1, next: 0, total: 0 },
+    /* Cached commitment counters, kept in sync with inventory item
+       toggles. Read by the item editor for cap enforcement (D&D
+       attuned ≤ 3, PF2e invested ≤ 10) and surfaced in the snapshot
+       so GM agents can see the budget at a glance. */
+    attunedCount: 0,
+    investedCount: 0
   };
   rs.attributes.forEach(function (a) { s.attributes[a.name] = (a["default"] != null ? a["default"] : a.min); });
   rs.skills.forEach(function (k) { s.skills[k.name] = (k["default"] != null ? k["default"] : (k.min != null ? k.min : 0)); });
@@ -1173,6 +1187,29 @@ function normalizeInventoryItem(it, idx) {
   } else {
     it.overwhelming = Math.floor(it.overwhelming);
   }
+  /* Commitment state — driven by ruleset.commitmentModel. Three mutually
+     exclusive shapes:
+       "attuned"  → boolean attuned flag (D&D 5e; cap 3 enforced in editor)
+       "invested" → boolean invested flag (PF2e; cap 10 enforced in editor)
+       "mote"     → integer moteCommitment + Personal/Peripheral motePool
+                    (Exalted; commitment subtracts from the named pool's
+                    current value while set, restored when cleared)
+     All three fields persist on every item regardless of which model the
+     active ruleset uses, so toggling between rulesets at the character
+     level doesn't drop user-entered state. The renderer hides what the
+     active ruleset doesn't expose. */
+  if (typeof it.attuned !== "boolean") it.attuned = false;
+  if (typeof it.invested !== "boolean") it.invested = false;
+  if (typeof it.moteCommitment === "string" && it.moteCommitment) {
+    var pm = parseInt(it.moteCommitment, 10);
+    it.moteCommitment = (!isNaN(pm) && pm >= 0) ? pm : 0;
+  }
+  if (typeof it.moteCommitment !== "number" || it.moteCommitment < 0 || !isFinite(it.moteCommitment) || isNaN(it.moteCommitment)) {
+    it.moteCommitment = 0;
+  } else {
+    it.moteCommitment = Math.floor(it.moteCommitment);
+  }
+  if (it.motePool !== "Personal" && it.motePool !== "Peripheral") it.motePool = "Personal";
   return it;
 }
 
@@ -4301,6 +4338,111 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
   applyEquipmentVisibility();
   if (catSel) marinara.on(catSel, "change", applyEquipmentVisibility);
 
+  /* Commitment section — driven by ruleset.commitmentModel. Three mutually
+     exclusive flavors:
+       "attuned"  (D&D 5e) — checkbox; cap of 3 attuned items at once
+       "invested" (PF2e)   — checkbox; cap of 10 invested items at once
+       "mote"     (Exalted) — non-negative int + Personal/Peripheral pool
+                              select; the int IS the cost the item commits
+                              from the chosen pool while it's set
+     Hidden entirely when the ruleset declares no commitmentModel
+     (commitmentModel: null) so Fate Core and any other no-magic-item
+     rulesets stay clean. Equipment-only — non-equipment items have no
+     concept of being bound to a character to grant magical effects. */
+  var commitmentModel = (state.ruleset && state.ruleset.commitmentModel) || null;
+  var attuneInput = null;
+  var investInput = null;
+  var moteCommitInput = null;
+  var motePoolSel = null;
+  var commitmentRows = [];
+  if (commitmentModel) {
+    var commitTitle = marinara.addElement(dialog, "div", { "class": "mrr-bonus-list__title", textContent: "Magic / Commitment" });
+    if (commitTitle) commitmentRows.push(commitTitle);
+
+    if (commitmentModel === "attuned" || commitmentModel === "invested") {
+      var labelText = commitmentModel === "attuned" ? "Attuned" : "Invested";
+      var capN      = commitmentModel === "attuned" ? 3 : 10;
+      var commitRow = marinara.addElement(dialog, "div", { "class": "mrr-item-form__row" });
+      if (commitRow) {
+        commitmentRows.push(commitRow);
+        marinara.addElement(commitRow, "label", { textContent: labelText });
+        var commitBox = marinara.addElement(commitRow, "input", { type: "checkbox" });
+        if (commitBox) {
+          var prevSet = !!(commitmentModel === "attuned" ? draft.attuned : draft.invested);
+          if (prevSet) commitBox.checked = true;
+          marinara.on(commitBox, "change", function () {
+            /* Cap enforcement runs only when transitioning OFF→ON. Counts
+               every other item already carrying the flag (excluding this
+               draft), and rejects the toggle if the cap is already met.
+               Inline error message reuses the dialog's shared msg div so
+               the failure surfaces near the form instead of in a toast. */
+            if (!commitBox.checked) {
+              if (msg) msg.classList.add("mrr-msg--hidden");
+              return;
+            }
+            var inv = Array.isArray(state.sheet.inventory) ? state.sheet.inventory : [];
+            var inUse = 0;
+            for (var i = 0; i < inv.length; i++) {
+              var other = inv[i];
+              if (!other || other.id === draft.id) continue;
+              if (commitmentModel === "attuned" && other.attuned) inUse += 1;
+              else if (commitmentModel === "invested" && other.invested) inUse += 1;
+            }
+            if (inUse >= capN) {
+              commitBox.checked = false;
+              setMsg(msg, labelText + " cap of " + capN + " reached. Remove another " + labelText.toLowerCase() + " item first.", "err");
+            } else {
+              if (msg) msg.classList.add("mrr-msg--hidden");
+            }
+          });
+        }
+        if (commitmentModel === "attuned") attuneInput = commitBox;
+        else                                investInput = commitBox;
+      }
+    } else if (commitmentModel === "mote") {
+      var moteRow = marinara.addElement(dialog, "div", { "class": "mrr-item-form__row" });
+      if (moteRow) {
+        commitmentRows.push(moteRow);
+        marinara.addElement(moteRow, "label", { textContent: "Mote commit" });
+        moteCommitInput = marinara.addElement(moteRow, "input", {
+          "class": "mrr-item-form__input",
+          type: "number",
+          min: "0",
+          step: "1",
+          value: String(typeof draft.moteCommitment === "number" ? draft.moteCommitment : 0),
+          placeholder: "0"
+        });
+      }
+      var poolRow = marinara.addElement(dialog, "div", { "class": "mrr-item-form__row" });
+      if (poolRow) {
+        commitmentRows.push(poolRow);
+        marinara.addElement(poolRow, "label", { textContent: "Pool" });
+        motePoolSel = marinara.addElement(poolRow, "select", { "class": "mrr-item-form__select" });
+        if (motePoolSel) {
+          ["Personal", "Peripheral"].forEach(function (poolName) {
+            var opt = document.createElement("option");
+            opt.value = poolName; opt.textContent = poolName;
+            if ((draft.motePool || "Personal") === poolName) opt.selected = true;
+            motePoolSel.appendChild(opt);
+          });
+        }
+      }
+    }
+  }
+  /* Equipment-only visibility for the commitment section, kept in sync
+     with the Hardness/Overwhelming rows. Non-equipment items hide the
+     whole section since "Item-category" entries (consumables, scrolls,
+     stored gear) don't bind to a character to grant magical effects in
+     any of the three models above. */
+  function applyCommitmentVisibility() {
+    var isEquipment = (catSel && catSel.value === "equipment");
+    for (var i = 0; i < commitmentRows.length; i++) {
+      commitmentRows[i].style.display = isEquipment ? "" : "none";
+    }
+  }
+  applyCommitmentVisibility();
+  if (catSel) marinara.on(catSel, "change", applyCommitmentVisibility);
+
   marinara.addElement(dialog, "div", { "class": "mrr-bonus-list__title", textContent: "Bonuses" });
   var bonusList = marinara.addElement(dialog, "div", { "class": "mrr-bonus-list" });
   if (!bonusList) return;
@@ -4420,6 +4562,30 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
         draft.hardness = 0;
         draft.overwhelming = 0;
       }
+      /* Commitment fields — populate only the slot the active ruleset's
+         commitmentModel uses; clear the other slots so a model swap at
+         the ruleset level (or the user changing rulesets on this
+         character) doesn't leave ghost commitments around. Non-equipment
+         items zero everything because the section is hidden for them. */
+      if (draft.category === "equipment" && commitmentModel === "attuned") {
+        draft.attuned = !!(attuneInput && attuneInput.checked);
+        draft.invested = false;
+        draft.moteCommitment = 0;
+      } else if (draft.category === "equipment" && commitmentModel === "invested") {
+        draft.invested = !!(investInput && investInput.checked);
+        draft.attuned = false;
+        draft.moteCommitment = 0;
+      } else if (draft.category === "equipment" && commitmentModel === "mote") {
+        var pmc = parseInt(moteCommitInput && moteCommitInput.value, 10);
+        draft.moteCommitment = (!isNaN(pmc) && pmc >= 0) ? pmc : 0;
+        draft.motePool = (motePoolSel && motePoolSel.value === "Peripheral") ? "Peripheral" : "Personal";
+        draft.attuned = false;
+        draft.invested = false;
+      } else {
+        draft.attuned = false;
+        draft.invested = false;
+        draft.moteCommitment = 0;
+      }
       /* Drop any in-progress bonus rows that the user never picked a
          target for. Saves the user from typo-by-omission. */
       draft.bonuses = (draft.bonuses || []).filter(function (b) { return b && b.target; });
@@ -4428,6 +4594,20 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
       var existingIdx = state.sheet.inventory.findIndex(function (it) { return it.id === draft.id; });
       if (existingIdx >= 0) state.sheet.inventory[existingIdx] = draft;
       else state.sheet.inventory.push(draft);
+
+      /* Refresh commitment counters after the write — these are the
+         truth source for the cap-enforcement check on the NEXT item
+         opened, and they ride along in the snapshot to GM agents. */
+      var invAfter = Array.isArray(state.sheet.inventory) ? state.sheet.inventory : [];
+      var ac = 0, ic = 0;
+      for (var k = 0; k < invAfter.length; k++) {
+        var x = invAfter[k];
+        if (!x) continue;
+        if (x.attuned) ac += 1;
+        if (x.invested) ic += 1;
+      }
+      state.sheet.attunedCount = ac;
+      state.sheet.investedCount = ic;
 
       saveSheet(state.chatId, state.sheet);
       close();
