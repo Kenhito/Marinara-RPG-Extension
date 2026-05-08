@@ -7235,6 +7235,13 @@ function applyStateMutation(attrs) {
        add/qty/reason show, the agent's promptTemplate hasn't been
        refreshed via the Import Agents flow. */
     log("state-mutator inventory attrs:", attrs);
+    /* Commitment-field note: this branch creates / removes inventory
+       rows only. Setting attuned / invested / moteCommitment / motePool
+       on a newly-added item is NOT done here — the agent must emit a
+       follow-up [mrr-state: field="attunement|investiture|commitment"
+       item="<name>" ...] tag after the add. Routing those through their
+       own branches preserves cap + exclusivity + pool-budget enforcement
+       at one site instead of duplicating the rules across every path. */
     if (attrs.add) {
       var existing = null;
       for (var i = 0; i < sheet.inventory.length; i++) {
@@ -7389,6 +7396,256 @@ function applyStateMutation(attrs) {
         hit.target = attrs.target;
       }
     } else { return false; }
+    return finalizeMutation(attrs);
+  }
+
+  /* XP — agent-side write-back for the formula and pool models. Two sub-
+     modes: delta="+50" / delta="-25" for incremental XP awards (the
+     workhorse for session-end "you earn N XP" narration), or absolute
+     current/level/next/total for direct sets after milestone narration.
+     Pool-style rulesets (Exalted, dice-pool resolution mode) bump both
+     .current AND .total on positive deltas to mirror the +1 XP button
+     on the sheet — earned XP increments lifetime total. Mixed delta+
+     absolute is ambiguous and rejected. */
+  if (field === "xp") {
+    if (!sheet.xp) sheet.xp = { current: 0, level: 1, next: 0, total: 0 };
+    var hasDelta = (attrs.delta != null);
+    var hasAbsolute = (attrs.current != null || attrs.level != null || attrs.next != null || attrs.total != null);
+    if (hasDelta && hasAbsolute) {
+      warn("state-mutator xp: cannot combine delta with absolute current/level/next/total");
+      return false;
+    }
+    if (hasDelta) {
+      var xpDelta = parseInt(attrs.delta, 10);
+      if (isNaN(xpDelta)) {
+        warn("state-mutator xp: delta '" + attrs.delta + "' is not an integer");
+        return false;
+      }
+      sheet.xp.current = Math.max(0, (sheet.xp.current || 0) + xpDelta);
+      var poolMode = state.ruleset && state.ruleset.resolution && state.ruleset.resolution.mode === "dice-pool";
+      if (poolMode && xpDelta > 0) {
+        sheet.xp.total = Math.max(0, (sheet.xp.total || 0) + xpDelta);
+      }
+      return finalizeMutation(attrs);
+    }
+    if (hasAbsolute) {
+      /* Validate every provided field upfront so a half-update doesn't
+         leave the sheet in a mixed state. Negative absolute values are
+         rejected — XP is non-negative by ruleset definition. */
+      var setKeys = ["current", "level", "next", "total"];
+      var pending = {};
+      for (var sk = 0; sk < setKeys.length; sk++) {
+        var key = setKeys[sk];
+        if (attrs[key] == null) continue;
+        var n = parseInt(attrs[key], 10);
+        if (isNaN(n) || n < 0) {
+          warn("state-mutator xp: " + key + " '" + attrs[key] + "' is not a non-negative integer");
+          return false;
+        }
+        pending[key] = n;
+      }
+      Object.keys(pending).forEach(function (k) { sheet.xp[k] = pending[k]; });
+      return finalizeMutation(attrs);
+    }
+    warn("state-mutator xp: must provide delta=N or absolute current/level/next/total");
+    return false;
+  }
+
+  /* Attunement — D&D 5e cap-3 attune flag on a named inventory item.
+     Cap is enforced from a recount of the inventory (excluding the
+     target item, since re-attuning an already-attuned item must not
+     reject itself). Exclusivity: an attuned item cannot also be
+     invested or hold a mote commitment — those are different magic
+     models and combining them is a tag bug. */
+  if (field === "attunement") {
+    if (!Array.isArray(sheet.inventory)) {
+      warn("state-mutator attunement: no inventory on sheet");
+      return false;
+    }
+    if (typeof attrs.item !== "string" || !attrs.item) {
+      warn("state-mutator attunement: item name required");
+      return false;
+    }
+    if (attrs.attuned !== "true" && attrs.attuned !== "false") {
+      warn("state-mutator attunement: attuned must be 'true' or 'false', got '" + attrs.attuned + "'");
+      return false;
+    }
+    var attLc = String(attrs.item).toLowerCase();
+    var attTarget = null;
+    for (var aix = 0; aix < sheet.inventory.length; aix++) {
+      var aitem = sheet.inventory[aix];
+      if (aitem && typeof aitem.name === "string" && aitem.name.toLowerCase() === attLc) {
+        attTarget = aitem;
+        break;
+      }
+    }
+    if (!attTarget) {
+      warn("state-mutator attunement: no item matches '" + attrs.item + "'");
+      return false;
+    }
+    var wantA = (attrs.attuned === "true");
+    if (wantA) {
+      if (attTarget.invested === true || (typeof attTarget.moteCommitment === "number" && attTarget.moteCommitment > 0)) {
+        warn("state-mutator attunement: '" + attTarget.name + "' has invested/mote commitment — exclusive with attuned");
+        return false;
+      }
+      var aInUse = 0;
+      for (var aci = 0; aci < sheet.inventory.length; aci++) {
+        var ao = sheet.inventory[aci];
+        if (!ao || ao === attTarget) continue;
+        if (ao.attuned) aInUse += 1;
+      }
+      if (aInUse >= 3) {
+        warn("state-mutator attunement: cap of 3 reached, cannot attune '" + attTarget.name + "'");
+        return false;
+      }
+    }
+    attTarget.attuned = wantA;
+    /* Recompute and store the cache for legacy consumers; the snapshot
+       path now ignores this field but keeping it consistent costs nothing. */
+    var newAc = 0;
+    for (var aco = 0; aco < sheet.inventory.length; aco++) {
+      if (sheet.inventory[aco] && sheet.inventory[aco].attuned) newAc += 1;
+    }
+    sheet.attunedCount = newAc;
+    return finalizeMutation(attrs);
+  }
+
+  /* Investiture — PF2e cap-10 invested flag. Same shape as attunement
+     with a higher cap and a different field name. Exclusivity: an
+     invested item cannot also be attuned or hold a mote commitment. */
+  if (field === "investiture") {
+    if (!Array.isArray(sheet.inventory)) {
+      warn("state-mutator investiture: no inventory on sheet");
+      return false;
+    }
+    if (typeof attrs.item !== "string" || !attrs.item) {
+      warn("state-mutator investiture: item name required");
+      return false;
+    }
+    if (attrs.invested !== "true" && attrs.invested !== "false") {
+      warn("state-mutator investiture: invested must be 'true' or 'false', got '" + attrs.invested + "'");
+      return false;
+    }
+    var iLc = String(attrs.item).toLowerCase();
+    var iTarget = null;
+    for (var iix = 0; iix < sheet.inventory.length; iix++) {
+      var iitem = sheet.inventory[iix];
+      if (iitem && typeof iitem.name === "string" && iitem.name.toLowerCase() === iLc) {
+        iTarget = iitem;
+        break;
+      }
+    }
+    if (!iTarget) {
+      warn("state-mutator investiture: no item matches '" + attrs.item + "'");
+      return false;
+    }
+    var wantI = (attrs.invested === "true");
+    if (wantI) {
+      if (iTarget.attuned === true || (typeof iTarget.moteCommitment === "number" && iTarget.moteCommitment > 0)) {
+        warn("state-mutator investiture: '" + iTarget.name + "' has attuned/mote commitment — exclusive with invested");
+        return false;
+      }
+      var iInUse = 0;
+      for (var ici = 0; ici < sheet.inventory.length; ici++) {
+        var io = sheet.inventory[ici];
+        if (!io || io === iTarget) continue;
+        if (io.invested) iInUse += 1;
+      }
+      if (iInUse >= 10) {
+        warn("state-mutator investiture: cap of 10 reached, cannot invest '" + iTarget.name + "'");
+        return false;
+      }
+    }
+    iTarget.invested = wantI;
+    var newIc = 0;
+    for (var ico = 0; ico < sheet.inventory.length; ico++) {
+      if (sheet.inventory[ico] && sheet.inventory[ico].invested) newIc += 1;
+    }
+    sheet.investedCount = newIc;
+    return finalizeMutation(attrs);
+  }
+
+  /* Mote commitment — Exalted's "lock motes for the duration this item
+     is active." Two operating modes: set (motes > 0) and uncommit
+     (motes = 0). Pool change at non-zero motes restores the old commit
+     to the old pool first, then debits the new commit from the new
+     pool — atomic so a failed second leg leaves the sheet unchanged.
+     Exclusivity: an item with moteCommitment > 0 cannot be attuned or
+     invested. The pool-floor check refuses negative pools (i.e., would
+     commit more motes than the player has). */
+  if (field === "commitment") {
+    if (!Array.isArray(sheet.inventory)) {
+      warn("state-mutator commitment: no inventory on sheet");
+      return false;
+    }
+    if (typeof attrs.item !== "string" || !attrs.item) {
+      warn("state-mutator commitment: item name required");
+      return false;
+    }
+    var mNew = parseInt(attrs.motes, 10);
+    if (isNaN(mNew) || mNew < 0) {
+      warn("state-mutator commitment: motes '" + attrs.motes + "' must be a non-negative integer");
+      return false;
+    }
+    var mLc = String(attrs.item).toLowerCase();
+    var mTarget = null;
+    for (var mix = 0; mix < sheet.inventory.length; mix++) {
+      var mitem = sheet.inventory[mix];
+      if (mitem && typeof mitem.name === "string" && mitem.name.toLowerCase() === mLc) {
+        mTarget = mitem;
+        break;
+      }
+    }
+    if (!mTarget) {
+      warn("state-mutator commitment: no item matches '" + attrs.item + "'");
+      return false;
+    }
+    if (mNew > 0) {
+      if (mTarget.attuned === true || mTarget.invested === true) {
+        warn("state-mutator commitment: '" + mTarget.name + "' has attuned/invested — exclusive with mote commitment");
+        return false;
+      }
+    }
+    /* Resolve target pool. Default to existing item.motePool, fall back
+       to "Personal" if neither is supplied or valid. */
+    var newPool = attrs.pool;
+    if (newPool !== "Personal" && newPool !== "Peripheral") {
+      if (mTarget.motePool === "Personal" || mTarget.motePool === "Peripheral") newPool = mTarget.motePool;
+      else newPool = "Personal";
+    }
+    var oldPool = (mTarget.motePool === "Peripheral") ? "Peripheral" : "Personal";
+    var oldMotes = (typeof mTarget.moteCommitment === "number" && mTarget.moteCommitment > 0) ? mTarget.moteCommitment : 0;
+    /* Defensive read of derived. If a pool key isn't on derived (ruleset
+       config issue, not an agent bug), treat its current value as 0
+       and proceed — the negative-floor check will catch nonsense
+       commits, and a log line surfaces the config gap. */
+    if (!sheet.derived) sheet.derived = {};
+    if (typeof sheet.derived[oldPool] !== "number") {
+      log("state-mutator commitment: derived[" + oldPool + "] missing — treating as 0");
+      sheet.derived[oldPool] = 0;
+    }
+    if (typeof sheet.derived[newPool] !== "number") {
+      log("state-mutator commitment: derived[" + newPool + "] missing — treating as 0");
+      sheet.derived[newPool] = 0;
+    }
+    /* Compute the post-mutation pool values without mutating sheet yet,
+       so a negative-floor check can roll back atomically — the
+       restore-old-pool and debit-new-pool legs are linked. */
+    var simOld = sheet.derived[oldPool] + oldMotes;
+    var simNew = (oldPool === newPool ? simOld : sheet.derived[newPool]) - mNew;
+    if (simNew < 0) {
+      warn("state-mutator commitment: would deplete " + newPool + " pool below 0 (need " + mNew + ", have " + (oldPool === newPool ? simOld : sheet.derived[newPool]) + ")");
+      return false;
+    }
+    if (oldPool === newPool) {
+      sheet.derived[oldPool] = simNew;
+    } else {
+      sheet.derived[oldPool] = simOld;
+      sheet.derived[newPool] = simNew;
+    }
+    mTarget.moteCommitment = mNew;
+    mTarget.motePool = newPool;
     return finalizeMutation(attrs);
   }
 
