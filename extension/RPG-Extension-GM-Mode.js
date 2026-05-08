@@ -6260,6 +6260,52 @@ function buildSyncFields(prefix) {
     });
   }
 
+  /* Experience progression — shape depends on resolution.mode. Both
+     formula and pool variants land in the tracker so the GM agent
+     can reference progression directly without re-deriving. */
+  if (state.sheet.xp && typeof state.sheet.xp === "object") {
+    var resModeXp = state.ruleset && state.ruleset.resolution && state.ruleset.resolution.mode;
+    if (resModeXp === "single-roll") {
+      fresh.push({ name: prefix + "XP Level",   value: String(state.sheet.xp.level   || 1) });
+      fresh.push({ name: prefix + "XP Current", value: String(state.sheet.xp.current || 0) });
+      if (typeof state.sheet.xp.next === "number" && state.sheet.xp.next > 0) {
+        fresh.push({ name: prefix + "XP Next", value: String(state.sheet.xp.next) });
+      }
+    } else if (resModeXp === "dice-pool") {
+      fresh.push({ name: prefix + "XP Current",      value: String(state.sheet.xp.current || 0) });
+      fresh.push({ name: prefix + "XP Total Earned", value: String(state.sheet.xp.total   || 0) });
+    }
+  }
+
+  /* Commitment summary — "in use / cap" for boolean models, total
+     mote cost broken down by pool for the Exalted model. Single
+     human-readable field per ruleset since a flat tracker doesn't
+     have room for per-item detail; the GM agent gets the budget
+     view it needs to know whether the player is over-committed. */
+  var commitModelSync = state.ruleset && state.ruleset.commitmentModel;
+  if (commitModelSync) {
+    var invSync = Array.isArray(state.sheet.inventory) ? state.sheet.inventory : [];
+    if (commitModelSync === "attuned") {
+      var ac = (state.sheet.attunedCount != null) ? state.sheet.attunedCount : invSync.filter(function (it) { return it && it.attuned; }).length;
+      fresh.push({ name: prefix + "Attuned", value: String(ac) + " / 3" });
+    } else if (commitModelSync === "invested") {
+      var ic = (state.sheet.investedCount != null) ? state.sheet.investedCount : invSync.filter(function (it) { return it && it.invested; }).length;
+      fresh.push({ name: prefix + "Invested", value: String(ic) + " / 10" });
+    } else if (commitModelSync === "mote") {
+      var personalSpent = 0, peripheralSpent = 0;
+      invSync.forEach(function (it) {
+        if (!it || !it.moteCommitment) return;
+        if (it.motePool === "Peripheral") peripheralSpent += it.moteCommitment;
+        else                              personalSpent   += it.moteCommitment;
+      });
+      var totalSpent = personalSpent + peripheralSpent;
+      fresh.push({
+        name: prefix + "Mote Commitment",
+        value: String(totalSpent) + " motes (Personal: " + personalSpent + ", Peripheral: " + peripheralSpent + ")"
+      });
+    }
+  }
+
   return fresh;
 }
 
@@ -6444,7 +6490,44 @@ function buildSheetForPrompt() {
     lines.push("");
   }
 
+  /* Experience progression. Both layouts emit a single readable line
+     so the agent sees where the character sits without re-deriving
+     from the xp object. Single-roll mode prints level + current/next
+     (which the GM uses to gauge encounter difficulty); pool mode
+     prints current + total earned (which Exalted/Storyteller GMs
+     use to award session XP at appropriate scale). */
+  if (state.sheet.xp && typeof state.sheet.xp === "object") {
+    var resModePrompt = state.ruleset.resolution && state.ruleset.resolution.mode;
+    if (resModePrompt === "single-roll") {
+      var lvlP = state.sheet.xp.level   || 1;
+      var curP = state.sheet.xp.current || 0;
+      var nxtP = state.sheet.xp.next    || 0;
+      lines.push("Experience:");
+      lines.push("- Level: " + lvlP);
+      if (nxtP > 0) {
+        lines.push("- XP: " + curP + " / " + nxtP);
+      } else {
+        lines.push("- XP: " + curP);
+      }
+      lines.push("");
+    } else if (resModePrompt === "dice-pool") {
+      var curPP = state.sheet.xp.current || 0;
+      var totPP = state.sheet.xp.total   || 0;
+      lines.push("Experience:");
+      lines.push("- XP available to spend: " + curPP);
+      lines.push("- Total XP earned (lifetime): " + totPP);
+      lines.push("");
+    }
+  }
+
   if (Array.isArray(state.sheet.inventory) && state.sheet.inventory.length) {
+    /* Inventory rows now include commitment annotations when the
+       active ruleset declares a commitmentModel. Boolean models
+       (attuned/invested) emit a tag; the mote model emits the
+       commitment cost and target pool. The agent uses these to
+       reason about which magical effects are currently live and
+       which sit dormant in the bag. */
+    var commitModelPrompt = state.ruleset.commitmentModel || null;
     lines.push("Inventory:");
     state.sheet.inventory.forEach(function (it) {
       if (!it || !it.name) return;
@@ -6453,9 +6536,48 @@ function buildSheetForPrompt() {
       if (it.damage) parts.push("damage: " + it.damage);
       var equipped = state.sheet.equipped && it.slot && state.sheet.equipped[it.slot] === it.id;
       if (equipped) parts.push("EQUIPPED");
+      if (commitModelPrompt === "attuned" && it.attuned)   parts.push("ATTUNED");
+      if (commitModelPrompt === "invested" && it.invested) parts.push("INVESTED");
+      if (commitModelPrompt === "mote" && it.moteCommitment > 0) {
+        parts.push("committed: " + it.moteCommitment + " mote" + (it.moteCommitment === 1 ? "" : "s") + " (" + (it.motePool || "Personal") + ")");
+      }
       lines.push(parts.join(" "));
     });
     lines.push("");
+  }
+
+  /* Commitment budget summary. Single rollup line for the agent so
+     it can answer "is the player at the cap?" without scanning each
+     inventory row. Boolean models show "in use / cap"; the mote
+     model shows the per-pool spend so the agent can warn before a
+     player commits motes they no longer have. */
+  var commitModelSummary = state.ruleset.commitmentModel || null;
+  if (commitModelSummary && Array.isArray(state.sheet.inventory)) {
+    if (commitModelSummary === "attuned") {
+      var acP = state.sheet.attunedCount != null ? state.sheet.attunedCount : state.sheet.inventory.filter(function (it) { return it && it.attuned; }).length;
+      lines.push("Magic / Commitment:");
+      lines.push("- Items attuned: " + acP + " / 3 (D&D attunement cap)");
+      lines.push("");
+    } else if (commitModelSummary === "invested") {
+      var icP = state.sheet.investedCount != null ? state.sheet.investedCount : state.sheet.inventory.filter(function (it) { return it && it.invested; }).length;
+      lines.push("Magic / Commitment:");
+      lines.push("- Items invested: " + icP + " / 10 (PF2e investiture cap)");
+      lines.push("");
+    } else if (commitModelSummary === "mote") {
+      var personalP = 0, peripheralP = 0;
+      state.sheet.inventory.forEach(function (it) {
+        if (!it || !it.moteCommitment) return;
+        if (it.motePool === "Peripheral") peripheralP += it.moteCommitment;
+        else                              personalP   += it.moteCommitment;
+      });
+      if (personalP > 0 || peripheralP > 0) {
+        lines.push("Magic / Commitment:");
+        lines.push("- Mote commitment (Exalted): " + (personalP + peripheralP) + " motes total");
+        if (personalP > 0)   lines.push("  · Personal pool: " + personalP);
+        if (peripheralP > 0) lines.push("  · Peripheral pool: " + peripheralP);
+        lines.push("");
+      }
+    }
   }
 
   /* State-mutator field reference. The state-mutator agent emits
