@@ -27,6 +27,7 @@ var LS_CHARACTER_PFX = "mrr-character-";  // chat-independent character library 
 var LS_SHEET_SIZE    = LS_SHEET_PFX + "size";
 var LS_SHEET_COLLAPSED_PFX = LS_SHEET_PFX + "collapsed-";
 var LS_SPELLBOOK_POS = "mrr-spellbook-pos";
+var LS_INTIMACIES_POS = "mrr-intimacies-pos";
 var LS_SPELLBOOK_LB_PFX = "mrr-spellbook-lb-";   // appended with chatId
 var LS_PROCESSED_MSGS_PFX = "mrr-processed-msgs-"; // appended with chatId — set of message ids whose state-mutator tags have already applied; persisted so hard-refresh doesn't re-apply historic mutations
 var MRR_TAG_SPELLBOOK = "mrr-spellbook";
@@ -45,7 +46,7 @@ var MRR_PROMPT_PFX   = "[mrr-v1:";
 var EMBED_STYLE_ID   = "mrr-embedded-style";
 
 /* EMBEDDED_CSS_BEGIN */
-var EMBEDDED_CSS = "/*\n * Marinara-RPG-Extension — RPG-Extension-GM-Mode.css\n * Companion stylesheet for RPG-Extension-GM-Mode.js. Paste this CSS into Marinara\n * Engine -> Settings -> Extensions -> Add Extension -> CSS field.\n *\n * License: MIT\n * Source:  https://github.com/Kenhito/Marinara-RPG-Extension\n */\n\n:root {\n  --mrr-bg:           rgba(20, 16, 28, 0.92);\n  --mrr-bg-elev:      rgba(40, 32, 56, 0.92);\n  --mrr-border:       rgba(255, 255, 255, 0.10);\n  --mrr-border-strong:rgba(255, 255, 255, 0.20);\n  --mrr-text:         #f5f0ff;\n  --mrr-text-dim:     rgba(245, 240, 255, 0.65);\n  --mrr-accent:       #d4a8ff;\n  --mrr-accent-dim:   rgba(212, 168, 255, 0.30);\n  --mrr-success:      #6ee7b7;\n  --mrr-fail:         #fb7185;\n  --mrr-warning:      #fbbf24;\n  --mrr-on-accent:    #1a0f2a;\n  --mrr-on-fail:      #1a0f0f;\n  --mrr-tint-1:       rgba(255, 255, 255, 0.04);\n  --mrr-tint-2:       rgba(255, 255, 255, 0.06);\n  --mrr-tint-strong:  rgba(255, 255, 255, 0.20);\n  --mrr-radius:       8px;\n  --mrr-radius-sm:    4px;\n  --mrr-pad:          10px;\n  --mrr-gap:          6px;\n  --mrr-shadow:       0 8px 24px rgba(0, 0, 0, 0.35);\n  --mrr-mono:         ui-monospace, \"Cascadia Code\", \"Fira Code\", Menlo, Monaco, monospace;\n  --mrr-z-sheet:      9997;\n  --mrr-z-dice:       9998;\n  --mrr-z-dialog:     9999;\n}\n\n.mrr-hidden { display: none !important; }\n.mrr-msg--hidden,\n.mrr-dice__result--hidden { display: none; }\n\n/*  ─────  Sheet panel (replaces the hidden built-in attribute panel) ───── */\n\n.mrr-sheet {\n  display: flex;\n  flex-direction: column;\n  gap: var(--mrr-gap);\n  background: var(--mrr-bg);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  margin: var(--mrr-gap) 0;\n  color: var(--mrr-text);\n  font-size: 13px;\n}\n\n.mrr-sheet--floating {\n  position: fixed;\n  left: 16px;\n  top: 80px;\n  width: 320px;\n  min-width: 280px;\n  max-width: calc(100vw - 32px);\n  min-height: 200px;\n  max-height: 70vh;\n  overflow: auto;\n  resize: both;\n  z-index: var(--mrr-z-sheet);\n}\n\n.mrr-sheet__header {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  border-bottom: 1px solid var(--mrr-border);\n  padding-bottom: 6px;\n  margin-bottom: 4px;\n}\n\n.mrr-sheet__title-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  width: 100%;\n}\n\n.mrr-sheet__title {\n  font-weight: 600;\n  letter-spacing: 0.02em;\n  color: var(--mrr-accent);\n}\n\n.mrr-sheet__meta {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n}\n\n.mrr-sheet__char-row {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n\n/* Identity row — sits below the character switcher, holds two label+input\n   pairs whose labels are ruleset-driven (Race+Class for D&D, Ancestry+\n   Class for PF2e, Exalt Type+Caste for Exalted, Concept+Trouble for Fate).\n   Inputs flex to share the row evenly; labels stay tight and dim. */\n.mrr-sheet__identity-row {\n  display: grid;\n  grid-template-columns: auto 1fr auto 1fr;\n  align-items: center;\n  gap: 4px 6px;\n  margin-top: 2px;\n}\n\n.mrr-sheet__id-label {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  white-space: nowrap;\n}\n\n.mrr-sheet__id-input {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n.mrr-sheet__id-input:focus {\n  outline: none;\n  border-color: var(--mrr-accent);\n}\n\n.mrr-sheet__char-label {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-char-select {\n  flex: 1;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-char-btn {\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-size: 11px;\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-char-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-char-btn--danger:hover {\n  background: rgba(251, 113, 133, 0.30);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-char-btn--accent {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n}\n\n.mrr-char-btn--dashed {\n  border-style: dashed;\n  border-color: var(--mrr-accent-dim);\n}\n\n.mrr-draggable-handle { cursor: grab; user-select: none; touch-action: none; }\n.mrr-draggable-handle:active { cursor: grabbing; }\n\n.mrr-section {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 8px;\n  background: var(--mrr-bg-elev);\n}\n\n.mrr-section__title {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n  margin-bottom: 2px;\n}\n\n.mrr-group {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  margin-bottom: 6px;\n}\n\n.mrr-group__label {\n  font-size: 10px;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n  margin-top: 4px;\n}\n\n.mrr-row {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 4px;\n  border-radius: var(--mrr-radius-sm);\n}\n\n.mrr-row:hover {\n  background: var(--mrr-tint-1);\n}\n\n.mrr-row--compact {\n  grid-template-columns: 1fr auto auto;\n}\n\n.mrr-row__name {\n  font-weight: 500;\n}\n\n.mrr-row__abbr {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-row__value {\n  min-width: 32px;\n  text-align: right;\n  font-family: var(--mrr-mono);\n}\n\n/* Editable numeric input — replaces the historical value <span> on every\n   numeric sheet row (attributes, skills, derived, backgrounds, custom\n   skills, bar current values). Visually flush with the surrounding row;\n   the user types directly. The browser's native number-input spinners\n   are suppressed because the +/- stepper next to the field already\n   provides the same affordance and double controls are visual noise. */\n.mrr-row__value--editable {\n  width: 48px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 4px;\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  text-align: right;\n  -moz-appearance: textfield;\n}\n.mrr-row__value--editable:focus {\n  outline: none;\n  border-color: var(--mrr-accent);\n  background: var(--mrr-bg);\n}\n.mrr-row__value--editable::-webkit-outer-spin-button,\n.mrr-row__value--editable::-webkit-inner-spin-button {\n  -webkit-appearance: none;\n  margin: 0;\n}\n\n/* Condition row inline effect summary — small, dim, italic so it\n   reads as metadata next to the condition name without competing for\n   the row's primary attention. */\n.mrr-condition-effect {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  font-style: italic;\n  flex: 1;\n  margin-left: 6px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n/* Advantage / disadvantage toggle row in the d20 dice widget. */\n.mrr-dice__adv-row {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  margin: 4px 0;\n}\n.mrr-dice__adv-row label {\n  flex: 0 0 80px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n.mrr-adv-btn {\n  flex: 1;\n  padding: 4px 8px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  font-family: inherit;\n  font-size: 11px;\n  cursor: pointer;\n}\n.mrr-adv-btn:hover { background: var(--mrr-accent-dim); }\n.mrr-adv-btn--active {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n\n/* \"/\" separator that sits between the editable current and editable\n   max inputs on bars without an engine-declared cap (D&D HP, etc.).\n   Dimmed because it's a visual cue, not a control. */\n.mrr-bar__sep {\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  color: var(--mrr-text-dim);\n  padding: 0 2px;\n}\n\n/* Auto-calculated derived stat — value computed from `valueFormula` every\n   time the stat context changes. Read-only by design; the formula IS the\n   override path. Subtle accent stripe on the left distinguishes it from\n   manually-entered values without screaming for attention. */\n.mrr-row__value--autocalc {\n  min-width: 32px;\n  text-align: right;\n  font-family: var(--mrr-mono);\n  color: var(--mrr-accent);\n  border-left: 2px solid var(--mrr-accent-dim);\n  padding-left: 6px;\n}\n\n.mrr-row__roll {\n  font-size: 11px;\n  padding: 2px 6px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-accent-dim);\n  border: 1px solid var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-row__roll:hover { background: var(--mrr-accent); color: var(--mrr-on-accent); }\n\n/*  ─────  Skill proficiency tier button + specialty sub-row  ───── */\n\n/* Shared base for the small letter buttons that sit inside the stepper\n   group on each skill row. Kept separate from `.mrr-stepper button` so\n   the stepper can be 18×18 (numeric +/-) while these are 22×18 (single\n   uppercase letter or \"+S\") without re-spec'ing every property. */\n.mrr-skill-tier-btn,\n.mrr-skill-spec-btn {\n  width: 22px;\n  height: 18px;\n  padding: 0;\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  font-weight: 700;\n  line-height: 1;\n}\n\n.mrr-skill-tier-btn { letter-spacing: 0.04em; }\n.mrr-skill-spec-btn { border-style: dashed; border-color: var(--mrr-accent-dim); }\n\n.mrr-skill-tier-btn:hover,\n.mrr-skill-spec-btn:hover { background: var(--mrr-accent-dim); }\n\n/* Tier modifier classes — visual cue for the active tier. The renderer\n   adds `--<code>` for the active tier; codes are ruleset-defined so\n   these mappings cover the common cases (PF2e U/T/E/M/L, Exalted U/C/F,\n   D&D U/T/E). Untrained-equivalent stays at the default tint. */\n.mrr-skill-tier-btn--T,\n.mrr-skill-tier-btn--C { background: var(--mrr-tint-strong); }\n.mrr-skill-tier-btn--E,\n.mrr-skill-tier-btn--F { background: var(--mrr-accent-dim); border-color: var(--mrr-accent-dim); }\n.mrr-skill-tier-btn--M { background: var(--mrr-accent); color: var(--mrr-on-accent); border-color: var(--mrr-accent); }\n.mrr-skill-tier-btn--L {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n  box-shadow: 0 0 0 1px var(--mrr-accent-dim);\n}\n\n.mrr-skill-spec-row {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto auto;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 4px 2px 18px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  margin-top: 2px;\n}\n\n.mrr-skill-spec-name {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 11px;\n}\n\n/* Custom skill / lore row — inherits the specialty layout but adds an\n   attribute selector between the name and the value so user-added skills\n   can declare which attribute they roll under. The select stays compact\n   so the row's grid columns line up with the existing specialty rows. */\n.mrr-custom-skill-row { grid-template-columns: 1fr auto auto auto auto auto; }\n.mrr-custom-skill-attr {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 4px;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n}\n\n.mrr-skill-spec-label {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n}\n\n/*  ─────  Dice widget specialty pane  ───── */\n\n.mrr-dice__specs {\n  margin-top: 8px;\n  padding: 6px 8px;\n  border: 1px dashed var(--mrr-accent-dim);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-dice__specs-title {\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n  margin-bottom: 4px;\n}\n\n.mrr-dice__spec-row {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 0;\n  cursor: pointer;\n}\n\n.mrr-dice__spec-checkbox {\n  margin: 0;\n  cursor: pointer;\n}\n\n.mrr-stepper {\n  display: inline-flex;\n  gap: 2px;\n}\n\n.mrr-stepper button {\n  width: 18px;\n  height: 18px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--mrr-tint-2);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  padding: 0;\n  line-height: 1;\n}\n\n.mrr-stepper button:hover { background: var(--mrr-accent-dim); }\n.mrr-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }\n\n/*  ─────  Derived stats  ───── */\n\n.mrr-derived {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-derived__formula {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-bar {\n  position: relative;\n  height: 14px;\n  background: var(--mrr-tint-2);\n  border-radius: var(--mrr-radius-sm);\n  overflow: hidden;\n}\n\n.mrr-bar__fill {\n  position: absolute;\n  inset: 0;\n  background: linear-gradient(90deg, var(--mrr-accent-dim), var(--mrr-accent));\n  width: 0;\n  transition: width 0.18s ease-out;\n}\n\n.mrr-bar__label {\n  position: relative;\n  z-index: 1;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  text-align: center;\n  line-height: 14px;\n  color: var(--mrr-text);\n  text-shadow: 0 0 2px rgba(0,0,0,0.6);\n}\n\n.mrr-track {\n  display: flex;\n  gap: 3px;\n  flex-wrap: wrap;\n}\n\n.mrr-track__cell {\n  min-width: 38px;\n  padding: 2px 6px;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  text-align: center;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  cursor: pointer;\n  user-select: none;\n}\n\n.mrr-track__cell--filled {\n  background: var(--mrr-fail);\n  color: var(--mrr-on-fail);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-track__cell--active {\n  outline: 2px solid var(--mrr-warning);\n}\n\n.mrr-track__cell--extra {\n  border-style: dashed;\n  border-color: var(--mrr-accent-dim);\n}\n\n/*  ─────  Damage-type tones  ─────\n    Used by rulesets that declare damageTypes on a track-renderAs derived\n    stat (Exalted, WoD, anything Storyteller-flavored). Bashing is mild\n    (warning yellow), Lethal is severe (fail red, same hue as legacy\n    single-fill), Aggravated is dire (deep maroon — meant to read as\n    'something supernatural just hit you'). The renderer overlays the\n    damage-type label (B/L/A) on the cell when filled. */\n.mrr-track__cell--bashing {\n  background: var(--mrr-warning);\n  color: #1a0f0f;\n  border-color: var(--mrr-warning);\n}\n.mrr-track__cell--lethal {\n  background: var(--mrr-fail);\n  color: var(--mrr-on-fail);\n  border-color: var(--mrr-fail);\n}\n.mrr-track__cell--aggravated {\n  background: #5a1a1a;\n  color: #f5f0ff;\n  border-color: #7a2a2a;\n  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);\n}\n\n.mrr-track-ctrl {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 4px;\n  margin-top: 4px;\n}\n\n.mrr-track-ctrl__label {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  margin-right: 2px;\n}\n\n.mrr-track-add-btn {\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 6px;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  cursor: pointer;\n}\n\n.mrr-track-add-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-track-add-btn--danger:hover {\n  background: rgba(251, 113, 133, 0.30);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-saved-indicator {\n  font-size: 10px;\n  color: var(--mrr-success);\n  font-family: var(--mrr-mono);\n  margin-left: 6px;\n  white-space: nowrap;\n}\n\n/*  ─────  States (anima banner / stunt tier / D&D conditions)  ───── */\n\n.mrr-state {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 6px;\n  padding: 4px 0;\n}\n\n.mrr-state__name { font-weight: 500; }\n\n.mrr-state__select {\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n/*  ─────  Floating dice widget  ───── */\n\n.mrr-dice {\n  position: fixed;\n  top: 80px;\n  right: 16px;\n  width: 280px;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  box-shadow: var(--mrr-shadow);\n  z-index: var(--mrr-z-dice);\n  font-size: 13px;\n  display: none;\n}\n\n.mrr-dice--open { display: block; }\n\n.mrr-dice__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  margin-bottom: 6px;\n  padding-bottom: 6px;\n  border-bottom: 1px solid var(--mrr-border);\n}\n\n.mrr-dice__title {\n  font-weight: 600;\n  color: var(--mrr-accent);\n}\n\n.mrr-dice__close {\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text-dim);\n  font-size: 18px;\n  cursor: pointer;\n  line-height: 1;\n}\n\n.mrr-dice__row {\n  display: flex;\n  gap: 6px;\n  align-items: center;\n  margin: 4px 0;\n}\n\n.mrr-dice__row label {\n  flex: 0 0 80px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-dice__input {\n  flex: 1;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: var(--mrr-mono);\n  font-size: 13px;\n  width: 100%;\n}\n\n.mrr-dice__btn {\n  width: 100%;\n  margin-top: 6px;\n  padding: 6px 10px;\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border: 0;\n  border-radius: var(--mrr-radius-sm);\n  font-weight: 600;\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-dice__btn:hover { filter: brightness(1.1); }\n\n.mrr-dice__btn--secondary {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n}\n\n.mrr-dice__btn--row-spaced { margin-top: 4px; }\n\n.mrr-dice__result {\n  margin-top: 8px;\n  padding: 8px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  white-space: pre-wrap;\n}\n\n.mrr-dice__result--success { border-color: var(--mrr-success); }\n.mrr-dice__result--fail    { border-color: var(--mrr-fail); }\n.mrr-dice__result--botch   { border-color: var(--mrr-warning); background: rgba(251, 191, 36, 0.10); }\n.mrr-dice__result--tie     { border-color: var(--mrr-warning); }\n\n.mrr-dice__faces {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 3px;\n  margin-top: 6px;\n}\n\n.mrr-dice__face {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 22px;\n  height: 22px;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-dice__face--success { background: var(--mrr-accent-dim); border-color: var(--mrr-accent); }\n.mrr-dice__face--double  { background: var(--mrr-accent); color: var(--mrr-on-accent); }\n.mrr-dice__face--one     { background: rgba(251, 113, 133, 0.20); border-color: var(--mrr-fail); }\n\n/*  ─────  Header gear button + dialog  ───── */\n\n.mrr-gear-btn {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  margin-left: 8px;\n  padding: 4px 8px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-gear-btn:hover { background: var(--mrr-accent-dim); }\n\n/*  ─────  Header sheet-toggle button (scroll icon)  ───── */\n\n.mrr-sheet-toggle-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 32px;\n  height: 32px;\n  margin-left: 8px;\n  padding: 0;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: 50%;\n  cursor: pointer;\n  font-family: inherit;\n  vertical-align: middle;\n}\n\n.mrr-sheet-toggle-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-sheet-toggle-btn--active {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n\n.mrr-sheet-toggle-btn svg {\n  width: 18px;\n  height: 18px;\n  display: block;\n}\n\n.mrr-dialog-backdrop {\n  position: fixed;\n  inset: 0;\n  background: rgba(0, 0, 0, 0.55);\n  z-index: var(--mrr-z-dialog);\n  display: none;\n  align-items: center;\n  justify-content: center;\n}\n\n.mrr-dialog-backdrop--open { display: flex; }\n\n.mrr-dialog {\n  width: min(560px, 92vw);\n  max-height: 80vh;\n  overflow: auto;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: 16px;\n  box-shadow: var(--mrr-shadow);\n}\n\n.mrr-dialog h3 {\n  margin: 0 0 8px;\n  color: var(--mrr-accent);\n  font-size: 16px;\n}\n\n.mrr-dialog p {\n  color: var(--mrr-text-dim);\n  font-size: 12px;\n  margin: 4px 0 8px;\n}\n\n.mrr-dialog textarea {\n  width: 100%;\n  min-height: 220px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 8px;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  resize: vertical;\n}\n\n.mrr-dialog__row {\n  display: flex;\n  gap: 6px;\n  align-items: center;\n  margin: 8px 0;\n}\n\n.mrr-dialog__label {\n  flex: 0 0 50px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-dialog__buttons {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px;\n  justify-content: flex-end;\n  margin-top: 12px;\n}\n\n.mrr-dialog__lib-title {\n  margin-top: 18px;\n  border-top: 1px solid var(--mrr-border);\n  padding-top: 14px;\n}\n.mrr-dialog__lib-help {\n  font-size: 12px;\n  opacity: 0.8;\n  margin-top: 4px;\n}\n.mrr-dialog__lib {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  margin-top: 8px;\n}\n.mrr-dialog__lib-row {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding: 6px 8px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: rgba(0, 0, 0, 0.15);\n}\n.mrr-dialog__lib-name {\n  flex: 1;\n  font-family: var(--mrr-mono);\n  font-size: 13px;\n}\n\n.mrr-msg {\n  margin-top: 6px;\n  padding: 6px 8px;\n  border-radius: var(--mrr-radius-sm);\n  font-size: 12px;\n  font-family: var(--mrr-mono);\n}\n\n.mrr-msg--ok    { background: rgba(110, 231, 183, 0.12); border: 1px solid var(--mrr-success); }\n.mrr-msg--err   { background: rgba(251, 113, 133, 0.12); border: 1px solid var(--mrr-fail); }\n.mrr-msg--info  { background: rgba(212, 168, 255, 0.10); border: 1px solid var(--mrr-accent-dim); }\n\n/*  ─────  Inventory section + item editor  ───── */\n\n.mrr-inv-list {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-inv-item {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto auto;\n  align-items: center;\n  gap: 6px;\n  padding: 4px 6px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-inv-item--equipped {\n  border-color: var(--mrr-accent);\n  background: var(--mrr-tint-2);\n}\n\n.mrr-inv-item__name {\n  font-weight: 500;\n}\n\n.mrr-inv-item__slot {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n}\n\n/* Damage cell on a weapon row — visually distinct from the slot tag so a\n   skim of the inventory tells the player at a glance which items hit\n   and how much. Color picks up the warning hue (the cue for \"this is\n   the violent thing\"). */\n.mrr-inv-item__damage {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-warning);\n  white-space: nowrap;\n}\n\n.mrr-inv-item__bonus-summary {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-accent);\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.mrr-inv-empty {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  font-style: italic;\n}\n\n.mrr-item-form__row {\n  display: grid;\n  grid-template-columns: 70px 1fr;\n  align-items: center;\n  gap: 12px;\n  margin: 6px 0;\n}\n\n.mrr-item-form__row label {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  text-align: right;\n}\n\n.mrr-item-form__input,\n.mrr-item-form__select {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-item-form__textarea {\n  width: 100%;\n  min-height: 50px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: inherit;\n  font-size: 12px;\n  resize: vertical;\n}\n\n.mrr-bonus-list {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  margin-top: 4px;\n  padding: 6px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: rgba(0, 0, 0, 0.10);\n}\n\n.mrr-bonus-list__title {\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-bonus-row {\n  display: grid;\n  grid-template-columns: 2fr 50px 70px 1.2fr auto;\n  align-items: center;\n  gap: 4px;\n}\n\n.mrr-bonus-row__input {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 4px;\n  font-family: inherit;\n  font-size: 11px;\n}\n\n/* <option> elements ignore most parent styling on Linux/Chromium and fall back\n   to OS-default (often white bg + inherited near-white text => invisible until\n   highlighted). Explicit colors here force a readable dark dropdown panel. */\n.mrr-bonus-row__input option,\n.mrr-item-form__select option,\n.mrr-item-form__input option {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n}\n\n/*  ─────  Derived / skill row equipment-bonus suffix  ───── */\n\n.mrr-row__bonus {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-success);\n  margin-left: 2px;\n}\n\n.mrr-row__bonus--neg { color: var(--mrr-fail); }\n\n/*  ─────  Derived value cap suffix (\"/ max\")  ───── */\n\n.mrr-row__cap {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  margin-left: 2px;\n  white-space: nowrap;\n}\n\n\n/*  ─────  state-mutator tag visual hiding  ───── */\n/* The state-mutator agent instructs the main model to emit\n   [mrr-state: ...] tags inline at paragraph ends. The extension's\n   chat observer parses + applies them, then wraps each tag in a\n   span.mrr-state-tag for this CSS rule to hide visually. The state\n   change itself has already been applied to localStorage; the tag\n   is purely a wire-format artifact and should not appear in chat. */\n.mrr-state-tag { display: none; }\n\n/*  ─────  state mutation confirmation toast  ───── */\n/* Top-right floating stack of brief notifications shown when the\n   state-mutator agent's tags fire. Each toast confirms one mutation:\n   prefix (HP / Condition / Inventory), change (signed delta or +/- name),\n   and the agent-reported reason. Stacks vertically; auto-dismisses. */\n.mrr-toast-container {\n  position: fixed;\n  top: 16px;\n  right: 16px;\n  z-index: 10000;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  pointer-events: none;\n}\n\n.mrr-toast {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-left: 3px solid var(--mrr-accent);\n  border-radius: var(--mrr-radius-sm);\n  padding: 8px 12px;\n  font-family: inherit;\n  font-size: 12px;\n  box-shadow: var(--mrr-shadow);\n  opacity: 0;\n  transform: translateX(20px);\n  transition: opacity 0.25s ease-out, transform 0.25s ease-out;\n  pointer-events: auto;\n  display: flex;\n  gap: 8px;\n  align-items: baseline;\n  max-width: 320px;\n}\n\n.mrr-toast--visible {\n  opacity: 1;\n  transform: translateX(0);\n}\n\n.mrr-toast__prefix {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n  color: var(--mrr-text-dim);\n  flex-shrink: 0;\n}\n\n.mrr-toast__change {\n  font-family: var(--mrr-mono);\n  font-weight: 700;\n  color: var(--mrr-accent);\n  flex-shrink: 0;\n}\n\n.mrr-toast__reason {\n  color: var(--mrr-text-dim);\n  font-size: 11px;\n  font-style: italic;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n/*  ─────  Spellbook flyout (third floating panel, system-labeled)  ───── */\n/* Per-ruleset abilities/charms/stunts panel. Toggled from the main sheet's\n   spellbook row; renders one collapsible category section per\n   ruleset.abilities.categories[]. Position persists to mrr-spellbook-pos\n   (per-extension, not per-chat). Z-index sits between sheet and dice so\n   the dice widget can overlap it on roll. */\n\n.mrr-spellbook {\n  position: fixed;\n  top: 80px;\n  left: 360px;\n  width: 320px;\n  max-height: 70vh;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  box-shadow: var(--mrr-shadow);\n  z-index: 9996;\n  font-size: 13px;\n  display: none;\n  flex-direction: column;\n  overflow: hidden;\n}\n\n.mrr-spellbook--open { display: flex; }\n\n.mrr-spellbook__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  margin-bottom: 6px;\n  padding-bottom: 6px;\n  border-bottom: 1px solid var(--mrr-border);\n  cursor: grab;\n  user-select: none;\n}\n\n.mrr-spellbook__header:active { cursor: grabbing; }\n\n.mrr-spellbook__title {\n  font-weight: 600;\n  color: var(--mrr-accent);\n}\n\n.mrr-spellbook__body {\n  flex: 1;\n  overflow-y: auto;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-spellbook-row {\n  cursor: default;\n}\n\n.mrr-spellbook-row__btn {\n  width: 100%;\n  text-align: left;\n}\n\n.mrr-spellbook-cat {\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  padding: 4px 6px;\n}\n\n.mrr-spellbook-cat__head {\n  width: 100%;\n  background: transparent;\n  color: var(--mrr-text);\n  border: 0;\n  padding: 4px 2px;\n  font-family: inherit;\n  font-size: 12px;\n  font-weight: 600;\n  text-align: left;\n  cursor: pointer;\n  letter-spacing: 0.04em;\n}\n\n.mrr-spellbook-cat__head:hover { color: var(--mrr-accent); }\n\n.mrr-spellbook-cat__list {\n  display: flex;\n  flex-direction: column;\n  gap: 3px;\n  margin-top: 4px;\n}\n\n.mrr-spellbook-cat--collapsed .mrr-spellbook-cat__list,\n.mrr-spellbook-cat--collapsed .mrr-spellbook-cat__add {\n  display: none;\n}\n\n.mrr-spellbook-cat__add {\n  margin-top: 4px;\n}\n\n.mrr-spellbook-ab {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto;\n  align-items: center;\n  gap: 4px;\n  padding: 2px 4px;\n  background: var(--mrr-bg-elev);\n  border-radius: var(--mrr-radius-sm);\n  border: 1px solid var(--mrr-border);\n}\n\n.mrr-spellbook-ab__name {\n  font-weight: 500;\n  font-size: 12px;\n}\n\n.mrr-spellbook-ab__cost {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  white-space: nowrap;\n}\n";
+var EMBEDDED_CSS = "/*\n * Marinara-RPG-Extension — RPG-Extension-GM-Mode.css\n * Companion stylesheet for RPG-Extension-GM-Mode.js. Paste this CSS into Marinara\n * Engine -> Settings -> Extensions -> Add Extension -> CSS field.\n *\n * License: MIT\n * Source:  https://github.com/Kenhito/Marinara-RPG-Extension\n */\n\n:root {\n  --mrr-bg:           rgba(20, 16, 28, 0.92);\n  --mrr-bg-elev:      rgba(40, 32, 56, 0.92);\n  --mrr-border:       rgba(255, 255, 255, 0.10);\n  --mrr-border-strong:rgba(255, 255, 255, 0.20);\n  --mrr-text:         #f5f0ff;\n  --mrr-text-dim:     rgba(245, 240, 255, 0.65);\n  --mrr-accent:       #d4a8ff;\n  --mrr-accent-dim:   rgba(212, 168, 255, 0.30);\n  --mrr-success:      #6ee7b7;\n  --mrr-fail:         #fb7185;\n  --mrr-warning:      #fbbf24;\n  --mrr-on-accent:    #1a0f2a;\n  --mrr-on-fail:      #1a0f0f;\n  --mrr-tint-1:       rgba(255, 255, 255, 0.04);\n  --mrr-tint-2:       rgba(255, 255, 255, 0.06);\n  --mrr-tint-strong:  rgba(255, 255, 255, 0.20);\n  --mrr-radius:       8px;\n  --mrr-radius-sm:    4px;\n  --mrr-pad:          10px;\n  --mrr-gap:          6px;\n  --mrr-shadow:       0 8px 24px rgba(0, 0, 0, 0.35);\n  --mrr-mono:         ui-monospace, \"Cascadia Code\", \"Fira Code\", Menlo, Monaco, monospace;\n  --mrr-z-sheet:      9997;\n  --mrr-z-dice:       9998;\n  --mrr-z-dialog:     9999;\n}\n\n.mrr-hidden { display: none !important; }\n.mrr-msg--hidden,\n.mrr-dice__result--hidden { display: none; }\n\n/*  ─────  Sheet panel (replaces the hidden built-in attribute panel) ───── */\n\n.mrr-sheet {\n  display: flex;\n  flex-direction: column;\n  gap: var(--mrr-gap);\n  background: var(--mrr-bg);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  margin: var(--mrr-gap) 0;\n  color: var(--mrr-text);\n  font-size: 13px;\n}\n\n.mrr-sheet--floating {\n  position: fixed;\n  left: 16px;\n  top: 80px;\n  width: 320px;\n  min-width: 280px;\n  max-width: calc(100vw - 32px);\n  min-height: 200px;\n  max-height: 70vh;\n  overflow: auto;\n  resize: both;\n  z-index: var(--mrr-z-sheet);\n}\n\n.mrr-sheet__header {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  border-bottom: 1px solid var(--mrr-border);\n  padding-bottom: 6px;\n  margin-bottom: 4px;\n}\n\n.mrr-sheet__title-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  width: 100%;\n}\n\n.mrr-sheet__title {\n  font-weight: 600;\n  letter-spacing: 0.02em;\n  color: var(--mrr-accent);\n}\n\n.mrr-sheet__meta {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n}\n\n.mrr-sheet__char-row {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n\n/* Identity row — sits below the character switcher, holds two label+input\n   pairs whose labels are ruleset-driven (Race+Class for D&D, Ancestry+\n   Class for PF2e, Exalt Type+Caste for Exalted, Concept+Trouble for Fate).\n   Inputs flex to share the row evenly; labels stay tight and dim. */\n.mrr-sheet__identity-row {\n  display: grid;\n  grid-template-columns: auto 1fr auto 1fr;\n  align-items: center;\n  gap: 4px 6px;\n  margin-top: 2px;\n}\n\n.mrr-sheet__id-label {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  white-space: nowrap;\n}\n\n.mrr-sheet__id-input {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n.mrr-sheet__id-input:focus {\n  outline: none;\n  border-color: var(--mrr-accent);\n}\n\n.mrr-sheet__char-label {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-char-select {\n  flex: 1;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-char-btn {\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-size: 11px;\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-char-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-char-btn--danger:hover {\n  background: rgba(251, 113, 133, 0.30);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-char-btn--accent {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n}\n\n.mrr-char-btn--dashed {\n  border-style: dashed;\n  border-color: var(--mrr-accent-dim);\n}\n\n.mrr-draggable-handle { cursor: grab; user-select: none; touch-action: none; }\n.mrr-draggable-handle:active { cursor: grabbing; }\n\n.mrr-section {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 8px;\n  background: var(--mrr-bg-elev);\n}\n\n.mrr-section__title {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n  margin-bottom: 2px;\n}\n\n.mrr-group {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  margin-bottom: 6px;\n}\n\n.mrr-group__label {\n  font-size: 10px;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n  margin-top: 4px;\n}\n\n.mrr-row {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 4px;\n  border-radius: var(--mrr-radius-sm);\n}\n\n.mrr-row:hover {\n  background: var(--mrr-tint-1);\n}\n\n.mrr-row--compact {\n  grid-template-columns: 1fr auto auto;\n}\n\n.mrr-row__name {\n  font-weight: 500;\n}\n\n.mrr-row__abbr {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-row__value {\n  min-width: 32px;\n  text-align: right;\n  font-family: var(--mrr-mono);\n}\n\n/* Editable numeric input — replaces the historical value <span> on every\n   numeric sheet row (attributes, skills, derived, backgrounds, custom\n   skills, bar current values). Visually flush with the surrounding row;\n   the user types directly. The browser's native number-input spinners\n   are suppressed because the +/- stepper next to the field already\n   provides the same affordance and double controls are visual noise. */\n.mrr-row__value--editable {\n  width: 48px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 4px;\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  text-align: right;\n  -moz-appearance: textfield;\n}\n.mrr-row__value--editable:focus {\n  outline: none;\n  border-color: var(--mrr-accent);\n  background: var(--mrr-bg);\n}\n.mrr-row__value--editable::-webkit-outer-spin-button,\n.mrr-row__value--editable::-webkit-inner-spin-button {\n  -webkit-appearance: none;\n  margin: 0;\n}\n\n/* Condition row inline effect summary — small, dim, italic so it\n   reads as metadata next to the condition name without competing for\n   the row's primary attention. */\n.mrr-condition-effect {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  font-style: italic;\n  flex: 1;\n  margin-left: 6px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n/* Advantage / disadvantage toggle row in the d20 dice widget. */\n.mrr-dice__adv-row {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  margin: 4px 0;\n}\n.mrr-dice__adv-row label {\n  flex: 0 0 80px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n.mrr-adv-btn {\n  flex: 1;\n  padding: 4px 8px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  font-family: inherit;\n  font-size: 11px;\n  cursor: pointer;\n}\n.mrr-adv-btn:hover { background: var(--mrr-accent-dim); }\n.mrr-adv-btn--active {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n\n/* \"/\" separator that sits between the editable current and editable\n   max inputs on bars without an engine-declared cap (D&D HP, etc.).\n   Dimmed because it's a visual cue, not a control. */\n.mrr-bar__sep {\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  color: var(--mrr-text-dim);\n  padding: 0 2px;\n}\n\n/* Auto-calculated derived stat — value computed from `valueFormula` every\n   time the stat context changes. Read-only by design; the formula IS the\n   override path. Subtle accent stripe on the left distinguishes it from\n   manually-entered values without screaming for attention. */\n.mrr-row__value--autocalc {\n  min-width: 32px;\n  text-align: right;\n  font-family: var(--mrr-mono);\n  color: var(--mrr-accent);\n  border-left: 2px solid var(--mrr-accent-dim);\n  padding-left: 6px;\n}\n\n.mrr-row__roll {\n  font-size: 11px;\n  padding: 2px 6px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-accent-dim);\n  border: 1px solid var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-row__roll:hover { background: var(--mrr-accent); color: var(--mrr-on-accent); }\n\n/*  ─────  Skill proficiency tier button + specialty sub-row  ───── */\n\n/* Shared base for the small letter buttons that sit inside the stepper\n   group on each skill row. Kept separate from `.mrr-stepper button` so\n   the stepper can be 18×18 (numeric +/-) while these are 22×18 (single\n   uppercase letter or \"+S\") without re-spec'ing every property. */\n.mrr-skill-tier-btn,\n.mrr-skill-spec-btn {\n  width: 22px;\n  height: 18px;\n  padding: 0;\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  font-weight: 700;\n  line-height: 1;\n}\n\n.mrr-skill-tier-btn { letter-spacing: 0.04em; }\n.mrr-skill-spec-btn { border-style: dashed; border-color: var(--mrr-accent-dim); }\n\n.mrr-skill-tier-btn:hover,\n.mrr-skill-spec-btn:hover { background: var(--mrr-accent-dim); }\n\n/* Tier modifier classes — visual cue for the active tier. The renderer\n   adds `--<code>` for the active tier; codes are ruleset-defined so\n   these mappings cover the common cases (PF2e U/T/E/M/L, Exalted U/C/F,\n   D&D U/T/E). Untrained-equivalent stays at the default tint. */\n.mrr-skill-tier-btn--T,\n.mrr-skill-tier-btn--C { background: var(--mrr-tint-strong); }\n.mrr-skill-tier-btn--E,\n.mrr-skill-tier-btn--F { background: var(--mrr-accent-dim); border-color: var(--mrr-accent-dim); }\n.mrr-skill-tier-btn--M { background: var(--mrr-accent); color: var(--mrr-on-accent); border-color: var(--mrr-accent); }\n.mrr-skill-tier-btn--L {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n  box-shadow: 0 0 0 1px var(--mrr-accent-dim);\n}\n\n.mrr-skill-spec-row {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto auto;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 4px 2px 18px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  margin-top: 2px;\n}\n\n.mrr-skill-spec-name {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 11px;\n}\n\n/* Custom skill / lore row — inherits the specialty layout but adds an\n   attribute selector between the name and the value so user-added skills\n   can declare which attribute they roll under. The select stays compact\n   so the row's grid columns line up with the existing specialty rows. */\n.mrr-custom-skill-row { grid-template-columns: 1fr auto auto auto auto auto; }\n.mrr-custom-skill-attr {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 4px;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n}\n\n.mrr-skill-spec-label {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n}\n\n/*  ─────  Dice widget specialty pane  ───── */\n\n.mrr-dice__specs {\n  margin-top: 8px;\n  padding: 6px 8px;\n  border: 1px dashed var(--mrr-accent-dim);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-dice__specs-title {\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n  margin-bottom: 4px;\n}\n\n.mrr-dice__spec-row {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 0;\n  cursor: pointer;\n}\n\n.mrr-dice__spec-checkbox {\n  margin: 0;\n  cursor: pointer;\n}\n\n.mrr-stepper {\n  display: inline-flex;\n  gap: 2px;\n}\n\n.mrr-stepper button {\n  width: 18px;\n  height: 18px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--mrr-tint-2);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  padding: 0;\n  line-height: 1;\n}\n\n.mrr-stepper button:hover { background: var(--mrr-accent-dim); }\n.mrr-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }\n\n/*  ─────  Derived stats  ───── */\n\n.mrr-derived {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-derived__formula {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-bar {\n  position: relative;\n  height: 14px;\n  background: var(--mrr-tint-2);\n  border-radius: var(--mrr-radius-sm);\n  overflow: hidden;\n}\n\n.mrr-bar__fill {\n  position: absolute;\n  inset: 0;\n  background: linear-gradient(90deg, var(--mrr-accent-dim), var(--mrr-accent));\n  width: 0;\n  transition: width 0.18s ease-out;\n}\n\n.mrr-bar__label {\n  position: relative;\n  z-index: 1;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  text-align: center;\n  line-height: 14px;\n  color: var(--mrr-text);\n  text-shadow: 0 0 2px rgba(0,0,0,0.6);\n}\n\n.mrr-track {\n  display: flex;\n  gap: 3px;\n  flex-wrap: wrap;\n}\n\n.mrr-track__cell {\n  min-width: 38px;\n  padding: 2px 6px;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  text-align: center;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  cursor: pointer;\n  user-select: none;\n}\n\n.mrr-track__cell--filled {\n  background: var(--mrr-fail);\n  color: var(--mrr-on-fail);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-track__cell--active {\n  outline: 2px solid var(--mrr-warning);\n}\n\n.mrr-track__cell--extra {\n  border-style: dashed;\n  border-color: var(--mrr-accent-dim);\n}\n\n/*  ─────  Damage-type tones  ─────\n    Used by rulesets that declare damageTypes on a track-renderAs derived\n    stat (Exalted, WoD, anything Storyteller-flavored). Bashing is mild\n    (warning yellow), Lethal is severe (fail red, same hue as legacy\n    single-fill), Aggravated is dire (deep maroon — meant to read as\n    'something supernatural just hit you'). The renderer overlays the\n    damage-type label (B/L/A) on the cell when filled. */\n.mrr-track__cell--bashing {\n  background: var(--mrr-warning);\n  color: #1a0f0f;\n  border-color: var(--mrr-warning);\n}\n.mrr-track__cell--lethal {\n  background: var(--mrr-fail);\n  color: var(--mrr-on-fail);\n  border-color: var(--mrr-fail);\n}\n.mrr-track__cell--aggravated {\n  background: #5a1a1a;\n  color: #f5f0ff;\n  border-color: #7a2a2a;\n  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);\n}\n\n.mrr-track-ctrl {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 4px;\n  margin-top: 4px;\n}\n\n.mrr-track-ctrl__label {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  margin-right: 2px;\n}\n\n.mrr-track-add-btn {\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 6px;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  cursor: pointer;\n}\n\n.mrr-track-add-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-track-add-btn--danger:hover {\n  background: rgba(251, 113, 133, 0.30);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-saved-indicator {\n  font-size: 10px;\n  color: var(--mrr-success);\n  font-family: var(--mrr-mono);\n  margin-left: 6px;\n  white-space: nowrap;\n}\n\n/*  ─────  States (anima banner / stunt tier / D&D conditions)  ───── */\n\n.mrr-state {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 6px;\n  padding: 4px 0;\n}\n\n.mrr-state__name { font-weight: 500; }\n\n.mrr-state__select {\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n/*  ─────  Floating dice widget  ───── */\n\n.mrr-dice {\n  position: fixed;\n  top: 80px;\n  right: 16px;\n  width: 280px;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  box-shadow: var(--mrr-shadow);\n  z-index: var(--mrr-z-dice);\n  font-size: 13px;\n  display: none;\n}\n\n.mrr-dice--open { display: block; }\n\n.mrr-dice__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  margin-bottom: 6px;\n  padding-bottom: 6px;\n  border-bottom: 1px solid var(--mrr-border);\n}\n\n.mrr-dice__title {\n  font-weight: 600;\n  color: var(--mrr-accent);\n}\n\n.mrr-dice__close {\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text-dim);\n  font-size: 18px;\n  cursor: pointer;\n  line-height: 1;\n}\n\n.mrr-dice__row {\n  display: flex;\n  gap: 6px;\n  align-items: center;\n  margin: 4px 0;\n}\n\n.mrr-dice__row label {\n  flex: 0 0 80px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-dice__input {\n  flex: 1;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: var(--mrr-mono);\n  font-size: 13px;\n  width: 100%;\n}\n\n.mrr-dice__btn {\n  width: 100%;\n  margin-top: 6px;\n  padding: 6px 10px;\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border: 0;\n  border-radius: var(--mrr-radius-sm);\n  font-weight: 600;\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-dice__btn:hover { filter: brightness(1.1); }\n\n.mrr-dice__btn--secondary {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n}\n\n.mrr-dice__btn--row-spaced { margin-top: 4px; }\n\n.mrr-dice__result {\n  margin-top: 8px;\n  padding: 8px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  white-space: pre-wrap;\n}\n\n.mrr-dice__result--success { border-color: var(--mrr-success); }\n.mrr-dice__result--fail    { border-color: var(--mrr-fail); }\n.mrr-dice__result--botch   { border-color: var(--mrr-warning); background: rgba(251, 191, 36, 0.10); }\n.mrr-dice__result--tie     { border-color: var(--mrr-warning); }\n\n.mrr-dice__faces {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 3px;\n  margin-top: 6px;\n}\n\n.mrr-dice__face {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 22px;\n  height: 22px;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-dice__face--success { background: var(--mrr-accent-dim); border-color: var(--mrr-accent); }\n.mrr-dice__face--double  { background: var(--mrr-accent); color: var(--mrr-on-accent); }\n.mrr-dice__face--one     { background: rgba(251, 113, 133, 0.20); border-color: var(--mrr-fail); }\n\n/*  ─────  Header gear button + dialog  ───── */\n\n.mrr-gear-btn {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  margin-left: 8px;\n  padding: 4px 8px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-gear-btn:hover { background: var(--mrr-accent-dim); }\n\n/*  ─────  Header sheet-toggle button (scroll icon)  ───── */\n\n.mrr-sheet-toggle-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 32px;\n  height: 32px;\n  margin-left: 8px;\n  padding: 0;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: 50%;\n  cursor: pointer;\n  font-family: inherit;\n  vertical-align: middle;\n}\n\n.mrr-sheet-toggle-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-sheet-toggle-btn--active {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n\n.mrr-sheet-toggle-btn svg {\n  width: 18px;\n  height: 18px;\n  display: block;\n}\n\n.mrr-dialog-backdrop {\n  position: fixed;\n  inset: 0;\n  background: rgba(0, 0, 0, 0.55);\n  z-index: var(--mrr-z-dialog);\n  display: none;\n  align-items: center;\n  justify-content: center;\n}\n\n.mrr-dialog-backdrop--open { display: flex; }\n\n.mrr-dialog {\n  width: min(560px, 92vw);\n  max-height: 80vh;\n  overflow: auto;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: 16px;\n  box-shadow: var(--mrr-shadow);\n}\n\n.mrr-dialog h3 {\n  margin: 0 0 8px;\n  color: var(--mrr-accent);\n  font-size: 16px;\n}\n\n.mrr-dialog p {\n  color: var(--mrr-text-dim);\n  font-size: 12px;\n  margin: 4px 0 8px;\n}\n\n.mrr-dialog textarea {\n  width: 100%;\n  min-height: 220px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 8px;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  resize: vertical;\n}\n\n.mrr-dialog__row {\n  display: flex;\n  gap: 6px;\n  align-items: center;\n  margin: 8px 0;\n}\n\n.mrr-dialog__label {\n  flex: 0 0 50px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-dialog__buttons {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px;\n  justify-content: flex-end;\n  margin-top: 12px;\n}\n\n.mrr-dialog__lib-title {\n  margin-top: 18px;\n  border-top: 1px solid var(--mrr-border);\n  padding-top: 14px;\n}\n.mrr-dialog__lib-help {\n  font-size: 12px;\n  opacity: 0.8;\n  margin-top: 4px;\n}\n.mrr-dialog__lib {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  margin-top: 8px;\n}\n.mrr-dialog__lib-row {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding: 6px 8px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: rgba(0, 0, 0, 0.15);\n}\n.mrr-dialog__lib-name {\n  flex: 1;\n  font-family: var(--mrr-mono);\n  font-size: 13px;\n}\n\n.mrr-msg {\n  margin-top: 6px;\n  padding: 6px 8px;\n  border-radius: var(--mrr-radius-sm);\n  font-size: 12px;\n  font-family: var(--mrr-mono);\n}\n\n.mrr-msg--ok    { background: rgba(110, 231, 183, 0.12); border: 1px solid var(--mrr-success); }\n.mrr-msg--err   { background: rgba(251, 113, 133, 0.12); border: 1px solid var(--mrr-fail); }\n.mrr-msg--info  { background: rgba(212, 168, 255, 0.10); border: 1px solid var(--mrr-accent-dim); }\n\n/*  ─────  Inventory section + item editor  ───── */\n\n.mrr-inv-list {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-inv-item {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto auto;\n  align-items: center;\n  gap: 6px;\n  padding: 4px 6px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-inv-item--equipped {\n  border-color: var(--mrr-accent);\n  background: var(--mrr-tint-2);\n}\n\n.mrr-inv-item__name {\n  font-weight: 500;\n}\n\n.mrr-inv-item__slot {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n}\n\n/* Damage cell on a weapon row — visually distinct from the slot tag so a\n   skim of the inventory tells the player at a glance which items hit\n   and how much. Color picks up the warning hue (the cue for \"this is\n   the violent thing\"). */\n.mrr-inv-item__damage {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-warning);\n  white-space: nowrap;\n}\n\n.mrr-inv-item__bonus-summary {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-accent);\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.mrr-inv-empty {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  font-style: italic;\n}\n\n.mrr-item-form__row {\n  display: grid;\n  grid-template-columns: 70px 1fr;\n  align-items: center;\n  gap: 12px;\n  margin: 6px 0;\n}\n\n.mrr-item-form__row label {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  text-align: right;\n}\n\n.mrr-item-form__input,\n.mrr-item-form__select {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-item-form__textarea {\n  width: 100%;\n  min-height: 50px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: inherit;\n  font-size: 12px;\n  resize: vertical;\n}\n\n.mrr-bonus-list {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  margin-top: 4px;\n  padding: 6px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: rgba(0, 0, 0, 0.10);\n}\n\n.mrr-bonus-list__title {\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-bonus-row {\n  display: grid;\n  grid-template-columns: 2fr 50px 70px 1.2fr auto;\n  align-items: center;\n  gap: 4px;\n}\n\n.mrr-bonus-row__input {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 4px;\n  font-family: inherit;\n  font-size: 11px;\n}\n\n/* <option> elements ignore most parent styling on Linux/Chromium and fall back\n   to OS-default (often white bg + inherited near-white text => invisible until\n   highlighted). Explicit colors here force a readable dark dropdown panel. */\n.mrr-bonus-row__input option,\n.mrr-item-form__select option,\n.mrr-item-form__input option {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n}\n\n/*  ─────  Derived / skill row equipment-bonus suffix  ───── */\n\n.mrr-row__bonus {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-success);\n  margin-left: 2px;\n}\n\n.mrr-row__bonus--neg { color: var(--mrr-fail); }\n\n/*  ─────  Derived value cap suffix (\"/ max\")  ───── */\n\n.mrr-row__cap {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  margin-left: 2px;\n  white-space: nowrap;\n}\n\n\n/*  ─────  state-mutator tag visual hiding  ───── */\n/* The state-mutator agent instructs the main model to emit\n   [mrr-state: ...] tags inline at paragraph ends. The extension's\n   chat observer parses + applies them, then wraps each tag in a\n   span.mrr-state-tag for this CSS rule to hide visually. The state\n   change itself has already been applied to localStorage; the tag\n   is purely a wire-format artifact and should not appear in chat. */\n.mrr-state-tag { display: none; }\n\n/*  ─────  state mutation confirmation toast  ───── */\n/* Top-right floating stack of brief notifications shown when the\n   state-mutator agent's tags fire. Each toast confirms one mutation:\n   prefix (HP / Condition / Inventory), change (signed delta or +/- name),\n   and the agent-reported reason. Stacks vertically; auto-dismisses. */\n.mrr-toast-container {\n  position: fixed;\n  top: 16px;\n  right: 16px;\n  z-index: 10000;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  pointer-events: none;\n}\n\n.mrr-toast {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-left: 3px solid var(--mrr-accent);\n  border-radius: var(--mrr-radius-sm);\n  padding: 8px 12px;\n  font-family: inherit;\n  font-size: 12px;\n  box-shadow: var(--mrr-shadow);\n  opacity: 0;\n  transform: translateX(20px);\n  transition: opacity 0.25s ease-out, transform 0.25s ease-out;\n  pointer-events: auto;\n  display: flex;\n  gap: 8px;\n  align-items: baseline;\n  max-width: 320px;\n}\n\n.mrr-toast--visible {\n  opacity: 1;\n  transform: translateX(0);\n}\n\n.mrr-toast__prefix {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n  color: var(--mrr-text-dim);\n  flex-shrink: 0;\n}\n\n.mrr-toast__change {\n  font-family: var(--mrr-mono);\n  font-weight: 700;\n  color: var(--mrr-accent);\n  flex-shrink: 0;\n}\n\n.mrr-toast__reason {\n  color: var(--mrr-text-dim);\n  font-size: 11px;\n  font-style: italic;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n/*  ─────  Spellbook flyout (third floating panel, system-labeled)  ───── */\n/* Per-ruleset abilities/charms/stunts panel. Toggled from the main sheet's\n   spellbook row; renders one collapsible category section per\n   ruleset.abilities.categories[]. Position persists to mrr-spellbook-pos\n   (per-extension, not per-chat). Z-index sits between sheet and dice so\n   the dice widget can overlap it on roll. */\n\n.mrr-spellbook {\n  position: fixed;\n  top: 80px;\n  left: 360px;\n  width: 320px;\n  max-height: 70vh;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  box-shadow: var(--mrr-shadow);\n  z-index: 9996;\n  font-size: 13px;\n  display: none;\n  flex-direction: column;\n  overflow: hidden;\n}\n\n.mrr-spellbook--open { display: flex; }\n\n.mrr-spellbook__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  margin-bottom: 6px;\n  padding-bottom: 6px;\n  border-bottom: 1px solid var(--mrr-border);\n  cursor: grab;\n  user-select: none;\n}\n\n.mrr-spellbook__header:active { cursor: grabbing; }\n\n.mrr-spellbook__title {\n  font-weight: 600;\n  color: var(--mrr-accent);\n}\n\n.mrr-spellbook__body {\n  flex: 1;\n  overflow-y: auto;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-spellbook-row {\n  cursor: default;\n}\n\n.mrr-spellbook-row__btn {\n  width: 100%;\n  text-align: left;\n}\n\n.mrr-spellbook-cat {\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  padding: 4px 6px;\n}\n\n.mrr-spellbook-cat__head {\n  width: 100%;\n  background: transparent;\n  color: var(--mrr-text);\n  border: 0;\n  padding: 4px 2px;\n  font-family: inherit;\n  font-size: 12px;\n  font-weight: 600;\n  text-align: left;\n  cursor: pointer;\n  letter-spacing: 0.04em;\n}\n\n.mrr-spellbook-cat__head:hover { color: var(--mrr-accent); }\n\n.mrr-spellbook-cat__list {\n  display: flex;\n  flex-direction: column;\n  gap: 3px;\n  margin-top: 4px;\n}\n\n.mrr-spellbook-cat--collapsed .mrr-spellbook-cat__list,\n.mrr-spellbook-cat--collapsed .mrr-spellbook-cat__add {\n  display: none;\n}\n\n.mrr-spellbook-cat__add {\n  margin-top: 4px;\n}\n\n.mrr-spellbook-ab {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto;\n  align-items: center;\n  gap: 4px;\n  padding: 2px 4px;\n  background: var(--mrr-bg-elev);\n  border-radius: var(--mrr-radius-sm);\n  border: 1px solid var(--mrr-border);\n}\n\n.mrr-spellbook-ab__name {\n  font-weight: 500;\n  font-size: 12px;\n}\n\n.mrr-spellbook-ab__cost {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  white-space: nowrap;\n}\n\n/*  ─────  Chip primitive  ─────────────────────────────────────────────────\n    Small inline pill used for status-flavored item details: Hardness,\n    Overwhelming, intimacy kind. Tints lean on existing CSS variables so\n    the palette stays consistent. */\n.mrr-chip {\n  display: inline-flex;\n  align-items: center;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  line-height: 1;\n  padding: 2px 6px;\n  border-radius: 999px;\n  border: 1px solid var(--mrr-border);\n  background: var(--mrr-tint-1);\n  color: var(--mrr-text-dim);\n  white-space: nowrap;\n}\n\n.mrr-chip--hardness {\n  color: #b9d8ff;\n  border-color: rgba(133, 173, 220, 0.45);\n  background: rgba(80, 120, 180, 0.18);\n}\n\n.mrr-chip--overwhelming {\n  color: #ffd0a8;\n  border-color: rgba(220, 140, 80, 0.45);\n  background: rgba(180, 90, 40, 0.20);\n}\n\n.mrr-chip--intimacy-kind {\n  cursor: pointer;\n  background: var(--mrr-tint-2);\n  border-color: var(--mrr-border-strong);\n  color: var(--mrr-text);\n  font-weight: 600;\n  letter-spacing: 0.04em;\n}\n\n.mrr-chip--intimacy-kind-tie {\n  color: var(--mrr-accent);\n  border-color: var(--mrr-accent-dim);\n}\n\n.mrr-chip--intimacy-kind-principle {\n  color: var(--mrr-success);\n  border-color: rgba(110, 231, 183, 0.45);\n  background: rgba(110, 231, 183, 0.10);\n}\n\n/*  ─────  Intimacies flyout panel  ────────────────────────────────────────\n    Shares the .mrr-spellbook structural classes so position, header,\n    body scroll, and category collapse all \"just work.\" Only the layout\n    of an individual intimacy row is custom: a two-line grid with the\n    kind chip + degree dropdown + delete on the first line and the text\n    input on the second so the field is wide enough to read. */\n.mrr-intimacies { /* inherits .mrr-spellbook positioning + open class */ }\n\n.mrr-intimacy-group {\n  /* inherits .mrr-spellbook-cat */\n}\n\n.mrr-intimacy-group--defining .mrr-spellbook-cat__head {\n  color: var(--mrr-accent);\n}\n\n.mrr-intimacy-row {\n  display: grid;\n  grid-template-columns: auto 1fr auto auto;\n  align-items: center;\n  gap: 4px;\n  padding: 4px;\n  background: var(--mrr-bg-elev);\n  border-radius: var(--mrr-radius-sm);\n  border: 1px solid var(--mrr-border);\n}\n\n.mrr-intimacy-row__text {\n  grid-column: 1 / -1;\n  width: 100%;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: inherit;\n  font-size: 12px;\n  order: 2;\n}\n\n.mrr-intimacy-row > .mrr-chip--intimacy-kind { order: 1; }\n\n.mrr-intimacy-row__degree {\n  order: 3;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 4px;\n  font-family: inherit;\n  font-size: 11px;\n}\n\n.mrr-intimacy-row__target {\n  order: 4;\n  grid-column: 1 / -1;\n  width: 100%;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 3px 6px;\n  font-family: inherit;\n  font-size: 11px;\n  font-style: italic;\n}\n\n.mrr-intimacy-row > .mrr-char-btn--danger { order: 5; }\n\n.mrr-intimacies__top-add {\n  width: 100%;\n  margin-bottom: 4px;\n}\n";
 /* EMBEDDED_CSS_END */
 
 var BUNDLE_SCHEMA  = "mrr-character-bundle";
@@ -1056,6 +1057,11 @@ function blankSheet(rs) {
     backgrounds: [],
     abilities: {},
     abilityCollapse: {},
+    /* Intimacies — Exalted's narrative-driven tie/principle list. Stored as
+       array of { id, kind: "tie"|"principle", text, degree: "minor"|"major"|"defining", target }.
+       Collapse map mirrors abilityCollapse: per-degree boolean, default true (collapsed). */
+    intimacies: [],
+    intimacyCollapse: {},
     identity: { race: "", "class": "" },
     customSkills: [],
     /* User-entered max for derived bar stats whose ruleset declares no
@@ -1107,6 +1113,19 @@ function applyItemAttrs(it, attrs) {
   if (attrs.consumable === "true" || attrs.consumable === true) it.consumable = true;
   if (typeof attrs.notes === "string" && attrs.notes) it.notes = attrs.notes;
   if (attrs.category === "equipment" || attrs.category === "item") it.category = attrs.category;
+  /* Hardness / Overwhelming (Exalted-driven, ruleset-agnostic data shape).
+     Hardness gates Overwhelming: when an attack's post-soak raw damage is
+     less than the defender's Hardness, the damage is reduced to the
+     attacker's Overwhelming value. Both are non-negative integers; a 0
+     value means "no special handling" and is hidden in the UI. */
+  if (attrs.hardness != null) {
+    var h = parseInt(attrs.hardness, 10);
+    if (!isNaN(h) && h >= 0) it.hardness = h;
+  }
+  if (attrs.overwhelming != null) {
+    var o = parseInt(attrs.overwhelming, 10);
+    if (!isNaN(o) && o >= 0) it.overwhelming = o;
+  }
   return it;
 }
 
@@ -1132,6 +1151,48 @@ function normalizeInventoryItem(it, idx) {
   if (typeof it.useEffect !== "string") it.useEffect = "";
   if (typeof it.consumable !== "boolean") it.consumable = false;
   if (typeof it.notes !== "string") it.notes = "";
+  /* Hardness / Overwhelming default to 0 (= "not applicable / hidden in UI").
+     Coerce numeric strings ("3") to numbers; reject NaN, infinity, and
+     negative values. Both are integers — fractional Hardness/Overwhelming
+     has no canon meaning. */
+  if (typeof it.hardness === "string" && it.hardness) {
+    var ph = parseInt(it.hardness, 10);
+    it.hardness = (!isNaN(ph) && ph >= 0) ? ph : 0;
+  }
+  if (typeof it.hardness !== "number" || it.hardness < 0 || !isFinite(it.hardness) || isNaN(it.hardness)) {
+    it.hardness = 0;
+  } else {
+    it.hardness = Math.floor(it.hardness);
+  }
+  if (typeof it.overwhelming === "string" && it.overwhelming) {
+    var po = parseInt(it.overwhelming, 10);
+    it.overwhelming = (!isNaN(po) && po >= 0) ? po : 0;
+  }
+  if (typeof it.overwhelming !== "number" || it.overwhelming < 0 || !isFinite(it.overwhelming) || isNaN(it.overwhelming)) {
+    it.overwhelming = 0;
+  } else {
+    it.overwhelming = Math.floor(it.overwhelming);
+  }
+  return it;
+}
+
+/* Normalize an intimacy entry to the standard shape. Used by mergeSheet
+   (load-time heal of legacy / state-mutator-added entries) and by the
+   intimacy add helper so a freshly created intimacy is safe to render
+   immediately. Idempotent — re-running on an already-normalized entry
+   is a no-op except for filling in a missing id. */
+function normalizeIntimacy(it, idx) {
+  if (!it || typeof it !== "object") return it;
+  if (typeof it.text !== "string") it.text = "";
+  if (it.kind !== "tie" && it.kind !== "principle") it.kind = "tie";
+  if (it.degree !== "minor" && it.degree !== "major" && it.degree !== "defining") it.degree = "minor";
+  if (typeof it.target !== "string") it.target = "";
+  if (typeof it.id !== "string" || !it.id) {
+    /* Deterministic id matching the inventory pattern so re-merging the
+       same payload yields stable ids across reloads. */
+    var slug = (it.text || "unnamed").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    it.id = "intimacy-heal-" + (slug || "x") + "-" + (typeof idx === "number" ? idx : 0);
+  }
   return it;
 }
 
@@ -1241,6 +1302,23 @@ function mergeSheet(base, override) {
     Object.keys(override.abilityCollapse).forEach(function (catId) {
       var v = override.abilityCollapse[catId];
       if (typeof v === "boolean") base.abilityCollapse[catId] = v;
+    });
+  }
+  /* Intimacies — Exalted-system list of ties/principles at minor/major/
+     defining intensity. Heal legacy / agent-added entries through the
+     normalizer so id, kind, text, degree, and target all have safe
+     defaults. Drop entries that aren't plain objects. Old saves
+     predating this field default to []. */
+  if (Array.isArray(override.intimacies)) {
+    base.intimacies = override.intimacies
+      .filter(function (it) { return it && typeof it === "object"; })
+      .map(function (it, idx) { return normalizeIntimacy(it, idx); });
+  }
+  if (override.intimacyCollapse && typeof override.intimacyCollapse === "object" && !Array.isArray(override.intimacyCollapse)) {
+    base.intimacyCollapse = {};
+    Object.keys(override.intimacyCollapse).forEach(function (degree) {
+      var v = override.intimacyCollapse[degree];
+      if (typeof v === "boolean") base.intimacyCollapse[degree] = v;
     });
   }
   /* Identity (race/species/ancestry/exalt-type + class/caste) — free text.
@@ -1468,6 +1546,282 @@ function removeBackground(idx) {
   arr.splice(idx, 1);
   saveSheet(state.chatId, state.sheet);
   renderSheet();
+}
+
+/* ─────  intimacies (Exalted ties + principles)  ─────────────────────────
+   Mirrors the spellbook (charms) flyout pattern: a compact button on the
+   sheet that opens its own floating panel, which groups entries into
+   collapsible Minor / Major / Defining sections. Each entry edits in
+   place with debounce-save so typing doesn't lose focus. The panel is
+   distinct from the spellbook so both can be open simultaneously. */
+
+var INTIMACY_DEGREES = [
+  { id: "minor",    label: "Minor"    },
+  { id: "major",    label: "Major"    },
+  { id: "defining", label: "Defining" }
+];
+
+function generateIntimacyId() {
+  return "intimacy-" + Date.now() + "-" + Math.random().toString(36).slice(2, 11);
+}
+
+function totalIntimacyCount() {
+  if (!state.sheet || !Array.isArray(state.sheet.intimacies)) return 0;
+  return state.sheet.intimacies.length;
+}
+
+function intimaciesByDegree(degreeId) {
+  if (!state.sheet || !Array.isArray(state.sheet.intimacies)) return [];
+  return state.sheet.intimacies.filter(function (it) { return it && it.degree === degreeId; });
+}
+
+function addIntimacy(degreeId, kindId, focusAfterRender) {
+  if (!state.sheet) return null;
+  if (!Array.isArray(state.sheet.intimacies)) state.sheet.intimacies = [];
+  var degree = (degreeId === "minor" || degreeId === "major" || degreeId === "defining")
+    ? degreeId : "minor";
+  var kind = (kindId === "tie" || kindId === "principle") ? kindId : "tie";
+  var entry = normalizeIntimacy({
+    id: generateIntimacyId(),
+    kind: kind,
+    text: "",
+    degree: degree,
+    target: ""
+  }, state.sheet.intimacies.length);
+  state.sheet.intimacies.push(entry);
+  saveSheet(state.chatId, state.sheet);
+  /* Re-render panel + main sheet (the latter to bump the count badge). */
+  renderIntimaciesPanelContents();
+  renderSheet();
+  if (state.intimaciesOpen) showIntimacies(true); /* re-add open class after sheet rerender swap */
+  if (focusAfterRender) {
+    /* Focus the text input on the newly-created row, end-of-frame so the
+       DOM is committed. Identifier match keyed on entry.id so a re-render
+       still finds the right input. */
+    setTimeout(function () {
+      if (!state.intimaciesEl) return;
+      var input = state.intimaciesEl.querySelector('input[data-intimacy-id="' + entry.id + '"]');
+      if (input && typeof input.focus === "function") input.focus();
+    }, 0);
+  }
+  return entry;
+}
+
+function removeIntimacy(id) {
+  if (!state.sheet || !Array.isArray(state.sheet.intimacies)) return;
+  var idx = -1;
+  for (var i = 0; i < state.sheet.intimacies.length; i++) {
+    if (state.sheet.intimacies[i] && state.sheet.intimacies[i].id === id) { idx = i; break; }
+  }
+  if (idx === -1) return;
+  state.sheet.intimacies.splice(idx, 1);
+  saveSheet(state.chatId, state.sheet);
+  renderIntimaciesPanelContents();
+  renderSheet();
+  if (state.intimaciesOpen) showIntimacies(true);
+}
+
+/* Sheet section row: a single button that opens / toggles the flyout. */
+function renderIntimaciesSection(parent) {
+  var sec = marinara.addElement(parent, "div", { "class": "mrr-section mrr-spellbook-row" });
+  if (!sec) return;
+  var btn = marinara.addElement(sec, "button", {
+    "class": "mrr-char-btn mrr-char-btn--dashed mrr-spellbook-row__btn",
+    type: "button",
+    textContent: "Intimacies (" + totalIntimacyCount() + ")"
+  });
+  if (btn) marinara.on(btn, "click", function () { showIntimacies(!state.intimaciesOpen); });
+}
+
+function buildIntimaciesPanel() {
+  if (state.intimaciesEl) return state.intimaciesEl;
+  state.intimaciesEl = marinara.addElement(document.body, "div", { "class": "mrr-spellbook mrr-intimacies" });
+  if (!state.intimaciesEl) return null;
+
+  var header = marinara.addElement(state.intimaciesEl, "div", { "class": "mrr-spellbook__header" });
+  if (header) {
+    marinara.addElement(header, "span", { "class": "mrr-spellbook__title", textContent: "Intimacies — " + state.ruleset.name });
+    var close = marinara.addElement(header, "button", { "class": "mrr-dice__close", innerHTML: "&times;" });
+    if (close) marinara.on(close, "click", function () { showIntimacies(false); });
+    makeDraggable(state.intimaciesEl, header, LS_INTIMACIES_POS);
+  }
+
+  marinara.addElement(state.intimaciesEl, "div", { "class": "mrr-spellbook__body" });
+  return state.intimaciesEl;
+}
+
+function showIntimacies(open) {
+  if (open) {
+    if (!state.intimaciesEl) buildIntimaciesPanel();
+    if (state.intimaciesEl) {
+      state.intimaciesEl.classList.add("mrr-spellbook--open");
+      state.intimaciesOpen = true;
+      renderIntimaciesPanelContents();
+    }
+  } else {
+    if (state.intimaciesEl) state.intimaciesEl.classList.remove("mrr-spellbook--open");
+    state.intimaciesOpen = false;
+  }
+}
+
+function renderIntimaciesPanelContents() {
+  if (!state.intimaciesEl) return;
+  var body = state.intimaciesEl.querySelector(".mrr-spellbook__body");
+  if (!body) return;
+  body.textContent = "";
+
+  if (!state.sheet) return;
+  if (!Array.isArray(state.sheet.intimacies)) state.sheet.intimacies = [];
+  if (!state.sheet.intimacyCollapse || typeof state.sheet.intimacyCollapse !== "object") {
+    state.sheet.intimacyCollapse = {};
+  }
+
+  /* Top "+ Add Intimacy" creates a Minor tie by default — same shape the
+     state-mutator add path produces when `degree` and `kind` are omitted,
+     so on-screen and agent-driven adds match. */
+  var topAdd = marinara.addElement(body, "button", {
+    "class": "mrr-char-btn mrr-char-btn--dashed mrr-intimacies__top-add",
+    type: "button",
+    textContent: "+ Add Intimacy"
+  });
+  if (topAdd) marinara.on(topAdd, "click", function () { addIntimacy("minor", "tie", true); });
+
+  INTIMACY_DEGREES.forEach(function (deg) {
+    renderIntimacyDegreeGroup(body, deg);
+  });
+}
+
+function renderIntimacyDegreeGroup(body, degree) {
+  var sec = marinara.addElement(body, "div", { "class": "mrr-spellbook-cat mrr-intimacy-group mrr-intimacy-group--" + degree.id });
+  if (!sec) return;
+
+  var entries = intimaciesByDegree(degree.id);
+  var collapsed = (degree.id in state.sheet.intimacyCollapse)
+    ? !!state.sheet.intimacyCollapse[degree.id]
+    : true;
+  if (collapsed) sec.classList.add("mrr-spellbook-cat--collapsed");
+
+  var head = marinara.addElement(sec, "button", {
+    "class": "mrr-spellbook-cat__head",
+    type: "button",
+    textContent: degree.label + " " + entries.length
+  });
+  if (head) marinara.on(head, "click", function () {
+    var nowCollapsed = sec.classList.toggle("mrr-spellbook-cat--collapsed");
+    state.sheet.intimacyCollapse[degree.id] = nowCollapsed;
+    saveSheet(state.chatId, state.sheet);
+  });
+
+  var list = marinara.addElement(sec, "div", { "class": "mrr-spellbook-cat__list" });
+  if (!list) return;
+  entries.forEach(function (it) { renderIntimacyRow(list, it); });
+
+  var addBtn = marinara.addElement(sec, "button", {
+    "class": "mrr-char-btn mrr-char-btn--dashed mrr-spellbook-cat__add",
+    type: "button",
+    textContent: "+ Add " + degree.label
+  });
+  if (addBtn) marinara.on(addBtn, "click", function () { addIntimacy(degree.id, "tie", true); });
+}
+
+function renderIntimacyRow(list, entry) {
+  var row = marinara.addElement(list, "div", { "class": "mrr-intimacy-row" });
+  if (!row) return;
+
+  /* Kind chip — click to toggle tie <-> principle. Visual styling
+     differs by kind (handled in CSS) so a glance distinguishes them. */
+  var kindBtn = marinara.addElement(row, "button", {
+    "class": "mrr-chip mrr-chip--intimacy-kind mrr-chip--intimacy-kind-" + (entry.kind || "tie"),
+    type: "button",
+    textContent: entry.kind === "principle" ? "Principle" : "Tie",
+    title: "Click to toggle Tie / Principle"
+  });
+  if (kindBtn) marinara.on(kindBtn, "click", function () {
+    entry.kind = (entry.kind === "tie") ? "principle" : "tie";
+    saveSheet(state.chatId, state.sheet);
+    renderIntimaciesPanelContents();
+  });
+
+  /* Text input — full width on its own line within the row. Debounce-save
+     250ms identical to renderBackgroundRow so typing stays focused. */
+  var textInput = marinara.addElement(row, "input", {
+    "class": "mrr-intimacy-row__text",
+    type: "text",
+    placeholder: entry.kind === "principle"
+      ? "principle (e.g. 'Justice protects the powerless')"
+      : "tie (e.g. 'Loyalty to the Sword Lord')",
+    value: entry.text || ""
+  });
+  if (textInput) {
+    textInput.setAttribute("data-intimacy-id", entry.id);
+    var saveTimer = null;
+    marinara.on(textInput, "input", function () {
+      entry.text = textInput.value;
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () { saveSheet(state.chatId, state.sheet); }, 250);
+    });
+    marinara.on(textInput, "blur", function () {
+      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+      saveSheet(state.chatId, state.sheet);
+    });
+    marinara.on(textInput, "click", function (e) {
+      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+    });
+  }
+
+  /* Degree dropdown — moving an entry between degrees re-renders the
+     panel so it lands in the right group visually. */
+  var degSel = marinara.addElement(row, "select", { "class": "mrr-intimacy-row__degree" });
+  if (degSel) {
+    INTIMACY_DEGREES.forEach(function (d) {
+      var opt = document.createElement("option");
+      opt.value = d.id; opt.textContent = d.label;
+      if (d.id === (entry.degree || "minor")) opt.selected = true;
+      degSel.appendChild(opt);
+    });
+    marinara.on(degSel, "change", function () {
+      var v = degSel.value;
+      if (v !== "minor" && v !== "major" && v !== "defining") return;
+      entry.degree = v;
+      saveSheet(state.chatId, state.sheet);
+      renderIntimaciesPanelContents();
+    });
+  }
+
+  /* Target — only meaningful for ties (a principle has no external
+     subject). Hidden for principles to avoid implying it should be
+     filled. Debounce-save 250ms like the text input. */
+  if (entry.kind === "tie") {
+    var targetInput = marinara.addElement(row, "input", {
+      "class": "mrr-intimacy-row__target",
+      type: "text",
+      placeholder: "target name",
+      value: entry.target || ""
+    });
+    if (targetInput) {
+      var tSaveTimer = null;
+      marinara.on(targetInput, "input", function () {
+        entry.target = targetInput.value;
+        if (tSaveTimer) clearTimeout(tSaveTimer);
+        tSaveTimer = setTimeout(function () { saveSheet(state.chatId, state.sheet); }, 250);
+      });
+      marinara.on(targetInput, "blur", function () {
+        if (tSaveTimer) { clearTimeout(tSaveTimer); tSaveTimer = null; }
+        saveSheet(state.chatId, state.sheet);
+      });
+      marinara.on(targetInput, "click", function (e) {
+        if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+      });
+    }
+  }
+
+  var delBtn = marinara.addElement(row, "button", {
+    "class": "mrr-char-btn mrr-char-btn--danger",
+    type: "button",
+    textContent: "x",
+    title: "Remove this intimacy"
+  });
+  if (delBtn) marinara.on(delBtn, "click", function () { removeIntimacy(entry.id); });
 }
 
 /* CSP-safe arithmetic evaluator. Recursive-descent parser for + - * / ( ),
@@ -1846,6 +2200,7 @@ function renderSheet() {
     else if (sec === "derived") renderDerived(state.mountEl);
     else if (sec === "states") renderStates(state.mountEl);
     else if (sec === "conditions") renderConditions(state.mountEl);
+    else if (sec === "intimacies") renderIntimaciesSection(state.mountEl);
     else if (sec === "backgrounds") renderBackgrounds(state.mountEl);
     else if (sec === "inventory") renderInventory(state.mountEl);
     else if (sec === "abilities") renderAbilitiesSection(state.mountEl);
@@ -3525,6 +3880,25 @@ function renderInventory(parent) {
         });
       }
 
+      /* Hardness / Overwhelming chips. Hidden when 0 (the "no special
+         handling" sentinel) so they only appear on items where the
+         numbers actually matter — typically armor (Hardness) and
+         high-tier weapons / Charms (Overwhelming) in Exalted. */
+      if (typeof item.hardness === "number" && item.hardness > 0) {
+        marinara.addElement(row, "span", {
+          "class": "mrr-chip mrr-chip--hardness",
+          textContent: "Hardness " + item.hardness,
+          title: "Hardness " + item.hardness + " — incoming damage below this floor reduces to the attacker's Overwhelming"
+        });
+      }
+      if (typeof item.overwhelming === "number" && item.overwhelming > 0) {
+        marinara.addElement(row, "span", {
+          "class": "mrr-chip mrr-chip--overwhelming",
+          textContent: "Overwhelming " + item.overwhelming,
+          title: "Overwhelming " + item.overwhelming + " — minimum damage this weapon always lands, even against soak/Hardness"
+        });
+      }
+
       var summarySpan = marinara.addElement(row, "span", { "class": "mrr-inv-item__bonus-summary", textContent: formatBonuses(item.bonuses, false) });
       if (summarySpan) summarySpan.title = formatBonuses(item.bonuses, true);
 
@@ -3889,6 +4263,44 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
   var profInput = marinara.addElement(profRow, "input", { type: "checkbox" });
   if (profInput && draft.attackProficient) profInput.checked = true;
 
+  /* Hardness / Overwhelming. Equipment-only — the fields stay hidden on
+     plain (non-equipment) items because they have no meaning there.
+     Hardness is the "armor / Charm shield" floor that gates incoming
+     damage; Overwhelming is the floor a weapon always lands. Both are
+     non-negative integers; 0 means "no special handling" and the chip
+     is hidden on the inventory card. The category dropdown's change
+     handler toggles visibility live so the user sees the right inputs
+     as they switch the type. */
+  var hardRow = marinara.addElement(dialog, "div", { "class": "mrr-item-form__row mrr-item-form__row--equipment-only" });
+  marinara.addElement(hardRow, "label", { textContent: "Hardness" });
+  var hardInput = marinara.addElement(hardRow, "input", {
+    "class": "mrr-item-form__input",
+    type: "number",
+    min: "0",
+    step: "1",
+    value: String(typeof draft.hardness === "number" ? draft.hardness : 0),
+    placeholder: "0"
+  });
+
+  var overRow = marinara.addElement(dialog, "div", { "class": "mrr-item-form__row mrr-item-form__row--equipment-only" });
+  marinara.addElement(overRow, "label", { textContent: "Overwhelming" });
+  var overInput = marinara.addElement(overRow, "input", {
+    "class": "mrr-item-form__input",
+    type: "number",
+    min: "0",
+    step: "1",
+    value: String(typeof draft.overwhelming === "number" ? draft.overwhelming : 0),
+    placeholder: "0"
+  });
+
+  function applyEquipmentVisibility() {
+    var isEquipment = (catSel && catSel.value === "equipment");
+    if (hardRow) hardRow.style.display = isEquipment ? "" : "none";
+    if (overRow) overRow.style.display = isEquipment ? "" : "none";
+  }
+  applyEquipmentVisibility();
+  if (catSel) marinara.on(catSel, "change", applyEquipmentVisibility);
+
   marinara.addElement(dialog, "div", { "class": "mrr-bonus-list__title", textContent: "Bonuses" });
   var bonusList = marinara.addElement(dialog, "div", { "class": "mrr-bonus-list" });
   if (!bonusList) return;
@@ -3994,6 +4406,20 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
       draft.category = (catSel && catSel.value === "item") ? "item" : "equipment";
       draft.useEffect = (useInput && useInput.value || "").trim();
       draft.consumable = !!(consInput && consInput.checked);
+      /* Hardness / Overwhelming persist only on equipment. On a non-
+         equipment item the fields are hidden in the dialog; we still
+         clear them to 0 here so toggling category later doesn't leave
+         stale numbers around. parseInt with || 0 covers blank, NaN,
+         and negative-by-typo. */
+      if (draft.category === "equipment") {
+        var ph = parseInt(hardInput && hardInput.value, 10);
+        draft.hardness = (!isNaN(ph) && ph >= 0) ? ph : 0;
+        var po = parseInt(overInput && overInput.value, 10);
+        draft.overwhelming = (!isNaN(po) && po >= 0) ? po : 0;
+      } else {
+        draft.hardness = 0;
+        draft.overwhelming = 0;
+      }
       /* Drop any in-progress bonus rows that the user never picked a
          target for. Saves the user from typo-by-omission. */
       draft.bonuses = (draft.bonuses || []).filter(function (b) { return b && b.target; });
@@ -5979,6 +6405,34 @@ function formatMutationLabel(attrs) {
     var q = parseInt(attrs.qty, 10); if (!q || q < 1) q = 1;
     prefix = "Inventory";
     change = attrs.add ? "+ " + q + "× " + attrs.add : (attrs.remove ? "− " + q + "× " + attrs.remove : "?");
+  } else if (attrs.field === "backgrounds") {
+    prefix = "Background";
+    if (attrs.add) {
+      var addRating = parseInt(attrs.rating, 10);
+      change = "+ " + attrs.add + (isNaN(addRating) ? "" : " (" + addRating + ")");
+    } else if (attrs.remove) {
+      change = "− " + attrs.remove;
+    } else if (attrs.name && attrs.delta != null) {
+      var dBg = parseInt(attrs.delta, 10);
+      if (isNaN(dBg)) dBg = 0;
+      change = attrs.name + " " + (dBg >= 0 ? "+" : "") + dBg;
+    } else {
+      change = "?";
+    }
+  } else if (attrs.field === "intimacies") {
+    prefix = "Intimacy";
+    if (attrs.add) {
+      change = "+ " + attrs.add + (attrs.degree ? " [" + attrs.degree + "]" : "");
+    } else if (attrs.remove) {
+      change = "− " + attrs.remove;
+    } else if (attrs.text) {
+      var bits = [];
+      if (attrs.degree) bits.push(attrs.degree);
+      if (attrs.kind) bits.push(attrs.kind);
+      change = attrs.text + (bits.length ? " → " + bits.join(", ") : "");
+    } else {
+      change = "?";
+    }
   } else {
     prefix = (attrs.field || "stat").toUpperCase();
     var d = parseInt(attrs.delta, 10);
@@ -6219,6 +6673,123 @@ function applyStateMutation(attrs) {
           if (sheet.inventory[j].quantity <= 0) sheet.inventory.splice(j, 1);
           break;
         }
+      }
+    } else { return false; }
+    return finalizeMutation(attrs);
+  }
+
+  /* Backgrounds / merits / feats — same data shape as the on-sheet section.
+     Three modes: add (or upsert when name already exists with rating),
+     remove (first match by lowercased name), and delta-by-name (apply
+     a signed integer to an existing entry's value, clamped to the
+     ruleset's declared backgrounds.min / .max). Symmetric with how
+     conditions and inventory work — agent never has to know whether an
+     entry exists; tag attempts the right thing for both. */
+  if (field === "backgrounds") {
+    if (!Array.isArray(sheet.backgrounds)) sheet.backgrounds = [];
+    if (attrs.add) {
+      var existingBg = null;
+      for (var bgix = 0; bgix < sheet.backgrounds.length; bgix++) {
+        var bgEntry = sheet.backgrounds[bgix];
+        if (bgEntry && typeof bgEntry.name === "string" && bgEntry.name.toLowerCase() === String(attrs.add).toLowerCase()) {
+          existingBg = bgEntry; break;
+        }
+      }
+      if (existingBg) {
+        var ratingNum = parseInt(attrs.rating, 10);
+        if (!isNaN(ratingNum)) existingBg.value = ratingNum;
+      } else {
+        var newRating = parseInt(attrs.rating, 10);
+        sheet.backgrounds.push({ name: String(attrs.add), value: isNaN(newRating) ? 0 : newRating });
+      }
+    } else if (attrs.remove) {
+      var rem = String(attrs.remove).toLowerCase();
+      var idxBg = -1;
+      for (var bgi = 0; bgi < sheet.backgrounds.length; bgi++) {
+        var bg = sheet.backgrounds[bgi];
+        if (bg && typeof bg.name === "string" && bg.name.toLowerCase() === rem) { idxBg = bgi; break; }
+      }
+      if (idxBg === -1) {
+        warn("state-mutator backgrounds: no match for '" + attrs.remove + "'");
+        return false;
+      }
+      sheet.backgrounds.splice(idxBg, 1);
+    } else if (attrs.name && attrs.delta != null) {
+      var deltaBg = parseInt(attrs.delta, 10);
+      if (isNaN(deltaBg)) return false;
+      var matchBg = null;
+      for (var bgj = 0; bgj < sheet.backgrounds.length; bgj++) {
+        var bgm = sheet.backgrounds[bgj];
+        if (bgm && typeof bgm.name === "string" && bgm.name.toLowerCase() === String(attrs.name).toLowerCase()) {
+          matchBg = bgm; break;
+        }
+      }
+      if (!matchBg) {
+        warn("state-mutator backgrounds delta: no match for '" + attrs.name + "'");
+        return false;
+      }
+      var bgMin = (state.ruleset.backgrounds && typeof state.ruleset.backgrounds.min === "number") ? state.ruleset.backgrounds.min : 0;
+      var bgMax = (state.ruleset.backgrounds && typeof state.ruleset.backgrounds.max === "number") ? state.ruleset.backgrounds.max : 99;
+      matchBg.value = Math.max(bgMin, Math.min(bgMax, (matchBg.value || 0) + deltaBg));
+    } else { return false; }
+    return finalizeMutation(attrs);
+  }
+
+  /* Intimacies — Exalted's narrative tie/principle list. Five modes:
+     add (push new entry), remove (first text-match, lowercased), update
+     degree by text (find then set), update kind by text (find then
+     toggle/set). Defaults match the on-screen + Add path: kind="tie",
+     degree="minor". Optional target landed when kind === "tie". */
+  if (field === "intimacies") {
+    if (!Array.isArray(sheet.intimacies)) sheet.intimacies = [];
+
+    function findIntimacyByText(t) {
+      if (typeof t !== "string" || !t) return null;
+      var lc = t.toLowerCase();
+      for (var ii = 0; ii < sheet.intimacies.length; ii++) {
+        var ie = sheet.intimacies[ii];
+        if (ie && typeof ie.text === "string" && ie.text.toLowerCase() === lc) return ie;
+      }
+      return null;
+    }
+
+    if (attrs.add) {
+      var addText = String(attrs.add);
+      var inKind = (attrs.kind === "principle") ? "principle" : "tie";
+      var inDeg = (attrs.degree === "major" || attrs.degree === "defining") ? attrs.degree : "minor";
+      var inTarget = (inKind === "tie" && typeof attrs.target === "string") ? attrs.target : "";
+      var newEntry = normalizeIntimacy({
+        id: generateIntimacyId(),
+        kind: inKind,
+        text: addText,
+        degree: inDeg,
+        target: inTarget
+      }, sheet.intimacies.length);
+      sheet.intimacies.push(newEntry);
+    } else if (attrs.remove) {
+      var removeMatch = findIntimacyByText(String(attrs.remove));
+      if (!removeMatch) {
+        warn("state-mutator intimacies: no match for '" + attrs.remove + "'");
+        return false;
+      }
+      var rmIdx = sheet.intimacies.indexOf(removeMatch);
+      if (rmIdx === -1) return false;
+      sheet.intimacies.splice(rmIdx, 1);
+    } else if (attrs.text && (attrs.degree || attrs.kind)) {
+      var hit = findIntimacyByText(String(attrs.text));
+      if (!hit) {
+        warn("state-mutator intimacies update: no match for text '" + attrs.text + "'");
+        return false;
+      }
+      if (attrs.degree === "minor" || attrs.degree === "major" || attrs.degree === "defining") {
+        hit.degree = attrs.degree;
+      }
+      if (attrs.kind === "tie" || attrs.kind === "principle") {
+        hit.kind = attrs.kind;
+        if (hit.kind !== "tie") hit.target = "";
+      }
+      if (typeof attrs.target === "string" && hit.kind === "tie") {
+        hit.target = attrs.target;
       }
     } else { return false; }
     return finalizeMutation(attrs);

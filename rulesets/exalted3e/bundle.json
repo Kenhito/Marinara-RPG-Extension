@@ -597,6 +597,7 @@
       "states",
       "abilities",
       "charms",
+      "intimacies",
       "backgrounds",
       "inventory",
       "notes"
@@ -609,6 +610,11 @@
       "willpower",
       "stunt",
       "intimacy",
+      "intimacies",
+      "tie",
+      "principle",
+      "hardness",
+      "overwhelming",
       "limit",
       "caste",
       "supernal"
@@ -1051,6 +1057,42 @@
         ],
         "position": 1,
         "tokenBudget": 2000
+      },
+      {
+        "name": "Rule: Hardness",
+        "keys": [
+          "hardness",
+          "Hardness"
+        ],
+        "content": "Hardness is a damage floor on armor and certain Charms or supernatural defenses. When an attack's post-soak raw damage total is LESS THAN the defender's Hardness, the damage is reduced to the attacker's weapon Overwhelming value (rather than what the soak would otherwise produce). Hardness does NOT add to soak; it is a separate threshold. Mortal armor in Exalted typically has 0 Hardness; Essence-charged Charms and artifact armor grant Hardness 1+. Higher-Essence Charms can confer Hardness ratings of 5, 7, or higher.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Overwhelming damage",
+        "keys": [
+          "overwhelming",
+          "Overwhelming"
+        ],
+        "content": "Overwhelming is the minimum levels of damage a weapon or attack always inflicts, even when soak or Hardness would otherwise reduce it lower. Default Overwhelming for unarmed and light weapons is 1; medium weapons 2; heavy weapons 3; many artifact weapons 4-5. When you compute final damage: roll soak versus damage as normal, but the result can never drop below the attacker's Overwhelming. When Hardness blocks (raw damage < Hardness), the floor that lands is exactly Overwhelming. Charms and artifact qualities can raise an attack's Overwhelming value.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Intimacies (Ties and Principles)",
+        "keys": [
+          "intimacy",
+          "intimacies",
+          "tie",
+          "principle",
+          "defining intimacy"
+        ],
+        "content": "Intimacies are an Exalt's emotional and ideological anchors. Two kinds: TIES (a strong feeling toward an external subject — person, place, organization, idea) and PRINCIPLES (an internal credo or belief). Three intensity degrees: MINOR (a soft preference), MAJOR (a real commitment that shapes behavior), DEFINING (an identity-level conviction). Defining Intimacies provide outright immunity to Decision-Influence social attacks that contradict them; Major Intimacies can be invoked to resist such attacks at higher Willpower cost; Minor Intimacies bend in play. Story actions that align with an Intimacy regain Willpower; betraying a Defining Intimacy can trigger Limit gain or breakdown for the Solar Exalted. Intimacies evolve through play and certain Charms can shift their degree or replace them.",
+        "selective": false,
+        "constant": false,
+        "position": 0
       }
     ]
   }

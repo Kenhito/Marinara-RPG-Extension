@@ -12,6 +12,16 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+### Added — Exalted: Hardness, Overwhelming, Intimacies, GM-mutable backgrounds + intimacies (2026-05-06)
+
+- **Hardness on inventory items.** New non-negative integer field `hardness` on every inventory item. Defaults to 0 (chip hidden). Surfaces as a `Hardness N` chip on the inventory card and a "Hardness" numeric input in the equipment-edit dialog. Heals on legacy saves via `normalizeInventoryItem`.
+- **Overwhelming on inventory items.** Companion field `overwhelming` (also non-negative integer). Surfaces as `Overwhelming N` chip and "Overwhelming" dialog input. Both fields are equipment-only in the dialog — non-equipment items hide the inputs and clear the values to 0 on save.
+- **Intimacies sheet section + flyout panel (Exalted).** New `renderIntimaciesSection` mirrors the Charms/Spellbook flyout pattern. Floating panel groups entries into Minor / Major / Defining collapsible sections (state in `state.sheet.intimacyCollapse[degree]`, default closed). Each row: kind chip (Tie ⇄ Principle, click to toggle), debounce-saved text input, degree dropdown, optional target field (Tie only), Delete button. Per-degree `+ Add <Degree>` buttons plus a top-level `+ Add Intimacy`. State on sheet: `intimacies: []`, `intimacyCollapse: {}`. Healed on legacy saves via `mergeSheet`.
+- **State-mutator: backgrounds.** GM agent can now adjust the on-sheet Backgrounds & Merits via `[mrr-state: field="backgrounds" ...]` tags: `add="Name" rating="N"`, `remove="Name"`, or `name="Name" delta="±N"` (clamped to ruleset min/max). Symmetric with the existing conditions/inventory branches; goes through `finalizeMutation`/`showMutationToast` and respects `processedMessageIds` idempotency.
+- **State-mutator: intimacies.** Companion branch: `[mrr-state: field="intimacies" add="text" degree="..." kind="..." target="..."]`, `remove="text"`, or `text="text" degree="..."` / `kind="..."` to update an existing entry in place. Defaults: `kind="tie"`, `degree="minor"`. Removing a kind toggle off `tie` clears the target.
+- **Lorebook entries (Exalted).** Three new keyword-triggered entries explain Hardness, Overwhelming damage, and Intimacies (Ties + Principles + Minor/Major/Defining degrees) in canon terms.
+- **`gm-agent.md` (Exalted).** New sections teach the agent the four state-mutator tag combinations and remind it to honor Hardness vs Overwhelming when narrating combat outcomes.
+
 ### Added — Step 1 of character-library storage evolution: chat-independent sheet keys (2026-05-06)
 
 - **Sheet data decoupled from `chatId`.** New `characterKey(characterId)` returns `mrr-character-{characterId}` — the post-v0.4.1 home for sheet data. `loadSheet` tries this key first, falls back to the legacy `mrr-sheet-{chatId}-{characterId}` once with auto-migration (copies forward, leaves legacy in place for safety), then blank. `saveSheet` writes only to the character-library key. The `chatId` argument is retained for interface stability but unused in the new path.

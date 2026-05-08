@@ -1325,3 +1325,127 @@
   color: var(--mrr-text-dim);
   white-space: nowrap;
 }
+
+/*  ─────  Chip primitive  ─────────────────────────────────────────────────
+    Small inline pill used for status-flavored item details: Hardness,
+    Overwhelming, intimacy kind. Tints lean on existing CSS variables so
+    the palette stays consistent. */
+.mrr-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--mrr-border);
+  background: var(--mrr-tint-1);
+  color: var(--mrr-text-dim);
+  white-space: nowrap;
+}
+
+.mrr-chip--hardness {
+  color: #b9d8ff;
+  border-color: rgba(133, 173, 220, 0.45);
+  background: rgba(80, 120, 180, 0.18);
+}
+
+.mrr-chip--overwhelming {
+  color: #ffd0a8;
+  border-color: rgba(220, 140, 80, 0.45);
+  background: rgba(180, 90, 40, 0.20);
+}
+
+.mrr-chip--intimacy-kind {
+  cursor: pointer;
+  background: var(--mrr-tint-2);
+  border-color: var(--mrr-border-strong);
+  color: var(--mrr-text);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.mrr-chip--intimacy-kind-tie {
+  color: var(--mrr-accent);
+  border-color: var(--mrr-accent-dim);
+}
+
+.mrr-chip--intimacy-kind-principle {
+  color: var(--mrr-success);
+  border-color: rgba(110, 231, 183, 0.45);
+  background: rgba(110, 231, 183, 0.10);
+}
+
+/*  ─────  Intimacies flyout panel  ────────────────────────────────────────
+    Shares the .mrr-spellbook structural classes so position, header,
+    body scroll, and category collapse all "just work." Only the layout
+    of an individual intimacy row is custom: a two-line grid with the
+    kind chip + degree dropdown + delete on the first line and the text
+    input on the second so the field is wide enough to read. */
+.mrr-intimacies { /* inherits .mrr-spellbook positioning + open class */ }
+
+.mrr-intimacy-group {
+  /* inherits .mrr-spellbook-cat */
+}
+
+.mrr-intimacy-group--defining .mrr-spellbook-cat__head {
+  color: var(--mrr-accent);
+}
+
+.mrr-intimacy-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--mrr-bg-elev);
+  border-radius: var(--mrr-radius-sm);
+  border: 1px solid var(--mrr-border);
+}
+
+.mrr-intimacy-row__text {
+  grid-column: 1 / -1;
+  width: 100%;
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  order: 2;
+}
+
+.mrr-intimacy-row > .mrr-chip--intimacy-kind { order: 1; }
+
+.mrr-intimacy-row__degree {
+  order: 3;
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 4px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.mrr-intimacy-row__target {
+  order: 4;
+  grid-column: 1 / -1;
+  width: 100%;
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 3px 6px;
+  font-family: inherit;
+  font-size: 11px;
+  font-style: italic;
+}
+
+.mrr-intimacy-row > .mrr-char-btn--danger { order: 5; }
+
+.mrr-intimacies__top-add {
+  width: 100%;
+  margin-bottom: 4px;
+}

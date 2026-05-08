@@ -494,10 +494,10 @@
     },
     "sheetSections": {
       "type": "array",
-      "description": "Order of sheet sections rendered by the extension. Recognized values: attributes, skills, saves, derived, states, conditions, backgrounds, inventory, charms, abilities, notes.",
+      "description": "Order of sheet sections rendered by the extension. Recognized values: attributes, skills, saves, derived, states, conditions, backgrounds, inventory, charms, intimacies, abilities, notes.",
       "items": {
         "type": "string",
-        "enum": ["attributes", "skills", "saves", "derived", "states", "conditions", "backgrounds", "inventory", "charms", "abilities", "notes"]
+        "enum": ["attributes", "skills", "saves", "derived", "states", "conditions", "backgrounds", "inventory", "charms", "intimacies", "abilities", "notes"]
       },
       "uniqueItems": true,
       "default": ["attributes", "skills", "derived", "states"]

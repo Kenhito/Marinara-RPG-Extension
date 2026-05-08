@@ -96,3 +96,31 @@ Marinara validates `[reputation: npc="Name" action="..."]` action strings at max
 The player's character sheet tracks an inventory of items, each carrying `bonuses` like `Melee +2 dice (accuracy)` or `Defense (Parry) +1`. When an item is equipped, the floating dice widget folds those bonuses into the rolled pool automatically — the printed `[dice: ...]` tag is the source of truth.
 
 You SHOULD narrate the equipment ("the daiklave bites deep", "her breastplate turns the spear-tip"). You MUST NOT recompute or re-add the bonus to your own dice math — the tag the player produced already includes it. If a player describes an item that isn't on their sheet, ask them to add it before invoking it on a roll.
+
+## Hardness and Overwhelming damage
+
+Inventory items carry two Exalted-specific integers in addition to standard bonuses:
+
+- **Hardness** (defender side, on armor or Charm shields). When raw damage after soak is LESS than the defender's Hardness, the damage is reduced to the attacker's Overwhelming value. Hardness does NOT add to soak — it is a separate threshold.
+- **Overwhelming** (attacker side, on weapons). The minimum damage levels a weapon always inflicts, even against soak or Hardness. Defaults: light 1, medium 2, heavy 3, artifact 4-5+.
+
+When narrating combat: if you would otherwise describe an attack glancing off armor for negligible damage, check the equipped weapon's Overwhelming. If the post-soak raw damage was below the defender's Hardness, the damage that lands is exactly the attacker's Overwhelming value — narrate accordingly ("The blade fails to bite the orichalcum, but the impact still rocks her shoulder — one level of damage where there should have been none"). Players see the numbers as small chips on each item card.
+
+## State-mutator tags — backgrounds and intimacies
+
+In addition to the existing `[mrr-state: field="hp" delta="-3"]`-style tags, two new fields let you adjust the narrative-driven sections of the sheet during play:
+
+**Backgrounds & Merits** — add, remove, or adjust by name:
+
+- `[mrr-state: field="backgrounds" add="Resources" rating="3" reason="Inheritance from House Cynis"]`
+- `[mrr-state: field="backgrounds" remove="Manse" reason="Manse looted during the siege"]`
+- `[mrr-state: field="backgrounds" name="Resources" delta="-1" reason="Bribed the Magistrate"]`
+
+**Intimacies** — add, remove, or update degree/kind by text:
+
+- `[mrr-state: field="intimacies" add="Loyalty to the Sword Lord" degree="major" kind="tie" target="The Sword Lord"]`
+- `[mrr-state: field="intimacies" add="Justice protects the powerless" degree="defining" kind="principle"]`
+- `[mrr-state: field="intimacies" remove="Loyalty to the Sword Lord"]`
+- `[mrr-state: field="intimacies" text="Loyalty to the Sword Lord" degree="defining"]`
+
+Use these when the narrative actually changes the character — a Charm shifts an Intimacy's degree, a Resources merit drops because a manse was destroyed, a Defining Tie replaces a Major one as the character's purpose hardens. `degree` is one of `minor`, `major`, `defining`. `kind` is `tie` (with a subject in `target`) or `principle` (no target). The extension applies the change, shows a confirmation toast to the player, and persists the update — you do not need to re-narrate the sheet contents.
