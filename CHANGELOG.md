@@ -12,6 +12,33 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+### Added — Phase 2 UI port: state-mutator write-back + mote-pool plumbing (2026-05-08)
+
+Phase 2 of the multi-session UI port. Closes the read/write asymmetry Phase 1 left open: agents could SEE the new XP and commitment state but couldn't MODIFY it. Phase 2 wires the write path on three surfaces — agent tags, inventory dialog, and item delete — so every mutation route honors the same caps and pool budget.
+
+- **State-mutator parser — five new field branches.** `applyStateMutation` in `extension/RPG-Extension-GM-Mode.js` gains branches for:
+  - `[mrr-state: field="xp" delta="±N"]` and absolute `current/level/next/total` (pool-style rulesets bump both `current` and `total` on positive delta; mixed delta+absolute rejected as ambiguous)
+  - `[mrr-state: field="attunement" item="Name" attuned="true|false"]` (cap-3 enforced at write time; exclusivity check against invested + mote commitment)
+  - `[mrr-state: field="investiture" item="Name" invested="true|false"]` (cap-10; mirror exclusivity)
+  - `[mrr-state: field="commitment" item="Name" motes=N pool="Personal|Peripheral"]` (atomic pool change, negative-floor refusal, exclusivity vs attuned/invested)
+  All branches surface error toasts via `warn()` on rejection and route success through `finalizeMutation` for the existing saveSheet → renderSheet → mutationLog → toast pipeline.
+
+- **Cache fix on snapshot read sites.** `buildSyncFields` and `buildSheetForPrompt` no longer short-circuit on the `state.sheet.attunedCount` / `investedCount` caches. All four read sites recompute from inventory each call so an agent-side write that bypasses `openItemDialog` (the Phase 2.B parser) still produces correct counts in the next snapshot fire. Cache fields stay on disk for legacy consumers but are no longer trusted.
+
+- **Delete-time mote restore.** `deleteItem` now restores committed motes to `state.sheet.derived[motePool]` before persisting. Removing an Exalted item with `moteCommitment > 0` previously leaked those motes — the field went to GC but the pool subtraction stayed forever. Phase 2 closes that.
+
+- **Mote-pool live decrement on item save.** The `openItemDialog` save handler (mote model) now propagates `moteCommitment` + `motePool` deltas to `state.sheet.derived[motePool]` atomically. Pool change (Personal → Peripheral) restores the old commit to the old pool first, then debits the new commit from the new pool. Negative-floor check refuses commits that would deplete a pool below 0 — the inline message slot surfaces the error and the dialog keeps the prior commitment.
+
+- **Agent docs — `gm-agent.md` (D&D 5e + Exalted 3e).** New `## State-mutator tags` sections teaching the narration model when to emit `xp`, `attunement`, and `commitment` tags. D&D's section covers the cap-3 attunement rule and the formula-style XP behavior; Exalted's section covers the pool-style XP accounting (delta bumps `current` AND `total`) and the two-pool mote commitment model.
+
+- **Lorebook entries — D&D 5e + Exalted 3e + PF2e.** Keyword-triggered context injections so the agent can answer "how does attunement work?" / "what's mote commitment?" / "how does PF2e investiture work?" using SRD-aligned content. Each entry includes the corresponding state-mutator tag form so the agent doesn't have to consult `gm-agent.md` to remember the syntax. PF2e gets two entries (investiture + state-mutator XP tags) because PF2e's bundle.json embeds the lorebook directly without a sibling `gm-agent.md`.
+
+- **Three pool writers, one pattern.** All three derived[motePool]-mutating paths — `deleteItem`, `openItemDialog` save handler, and the new `applyStateMutation` commitment branch — follow the same restore-old + debit-new pattern with negative-floor refusal. Side-effect ordering is consistent so a future cross-path interaction (delete-an-item-with-motes immediately after a state-mutator commit) does the right thing.
+
+- **Engine functions still untouched.** `statContext`, `equippedBonuses`, `tierForSkill`, `resolveTierBonus` — sacred this phase too.
+
+- **Deferred** (continuing the multi-session port, tracked in `MEMORY/WORK/20260508-marinara-ui-port/ISA.md`): the bigger work — design-token migration to oklch + Geist fonts, full `renderSheet` rewrite from `panel-frame.jsx`, item-bonus schema upgrade `{target,value,kind}` → `{stat,delta}`. Decision point for next session: tokens first (CSS-only, shallower) or renderer first (JS, deeper but unblocks the rest).
+
 ### Added — Phase 1 UI port: commitmentModel + XP card + snapshot extension (2026-05-08)
 
 First Phase of the multi-session UI port that merges the Claude-Design prototype at `~/projects/claude-design-updates/` into both extensions. Phase 1 ships the data plumbing, the visible XP card, and the agent-facing snapshot. Subsequent phases will translate the rest of the React/JSX prototype (panel-frame, dialog system, full token migration) into the existing vanilla-JS form.
