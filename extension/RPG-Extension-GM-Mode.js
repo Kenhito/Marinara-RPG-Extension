@@ -4368,12 +4368,51 @@ function toggleEquip(item) {
 
 function deleteItem(id) {
   if (!Array.isArray(state.sheet.inventory)) return;
+  /* Find the item BEFORE splicing so we can: (a) restore committed
+     motes to the named Exalted pool, and (b) recompute attunedCount /
+     investedCount caches for downstream consumers. The four canonical
+     read sites (buildSyncFields + buildSheetForPrompt × attuned/invested)
+     now recompute from inventory directly, but keeping the cache fields
+     consistent on disk costs nothing and protects against future
+     consumers we haven't enumerated. */
+  var removed = null;
+  for (var ri = 0; ri < state.sheet.inventory.length; ri++) {
+    if (state.sheet.inventory[ri] && state.sheet.inventory[ri].id === id) {
+      removed = state.sheet.inventory[ri];
+      break;
+    }
+  }
   state.sheet.inventory = state.sheet.inventory.filter(function (it) { return it.id !== id; });
   if (state.sheet.equipped) {
     Object.keys(state.sheet.equipped).forEach(function (slot) {
       if (state.sheet.equipped[slot] === id) delete state.sheet.equipped[slot];
     });
   }
+  /* Mote-pool restore: deleting an Exalted item with motes locked away
+     hands those motes back to the named pool. Defensive read-back —
+     skip silently if the sheet's derived map doesn't have the named
+     pool (ruleset-config issue, not a delete-time concern). */
+  if (removed && typeof removed.moteCommitment === "number" && removed.moteCommitment > 0) {
+    var poolKey = removed.motePool === "Peripheral" ? "Peripheral" : "Personal";
+    if (state.sheet.derived && typeof state.sheet.derived[poolKey] === "number") {
+      state.sheet.derived[poolKey] = state.sheet.derived[poolKey] + removed.moteCommitment;
+    } else {
+      log("deleteItem: motes restored skipped — no derived[" + poolKey + "] on sheet");
+    }
+  }
+  /* Recompute counter caches from the updated inventory so any consumer
+     still reading the cache (legacy code, not-yet-migrated branches)
+     sees the post-delete truth. */
+  var inv = state.sheet.inventory;
+  var ac = 0, ic = 0;
+  for (var ci = 0; ci < inv.length; ci++) {
+    var it = inv[ci];
+    if (!it) continue;
+    if (it.attuned) ac += 1;
+    if (it.invested) ic += 1;
+  }
+  state.sheet.attunedCount = ac;
+  state.sheet.investedCount = ic;
   saveSheet(state.chatId, state.sheet);
 }
 
@@ -6355,10 +6394,15 @@ function buildSyncFields(prefix) {
   if (commitModelSync) {
     var invSync = Array.isArray(state.sheet.inventory) ? state.sheet.inventory : [];
     if (commitModelSync === "attuned") {
-      var ac = (state.sheet.attunedCount != null) ? state.sheet.attunedCount : invSync.filter(function (it) { return it && it.attuned; }).length;
+      /* Always recompute from inventory — the attunedCount cache is
+         updated by openItemDialog + deleteItem but the agent state-
+         mutator may write attunement fields without going through
+         them, so a single source of truth (the inventory itself)
+         keeps every consumer honest. */
+      var ac = invSync.filter(function (it) { return it && it.attuned; }).length;
       fresh.push({ name: prefix + "Attuned", value: String(ac) + " / 3" });
     } else if (commitModelSync === "invested") {
-      var ic = (state.sheet.investedCount != null) ? state.sheet.investedCount : invSync.filter(function (it) { return it && it.invested; }).length;
+      var ic = invSync.filter(function (it) { return it && it.invested; }).length;
       fresh.push({ name: prefix + "Invested", value: String(ic) + " / 10" });
     } else if (commitModelSync === "mote") {
       var personalSpent = 0, peripheralSpent = 0;
@@ -6623,12 +6667,15 @@ function buildSheetForPrompt() {
   var commitModelSummary = state.ruleset.commitmentModel || null;
   if (commitModelSummary && Array.isArray(state.sheet.inventory)) {
     if (commitModelSummary === "attuned") {
-      var acP = state.sheet.attunedCount != null ? state.sheet.attunedCount : state.sheet.inventory.filter(function (it) { return it && it.attuned; }).length;
+      /* Always recompute from inventory so agents that wrote attuned via
+         state-mutator without going through the cap-enforcing item dialog
+         still see correct counts in the snapshot. */
+      var acP = state.sheet.inventory.filter(function (it) { return it && it.attuned; }).length;
       lines.push("Magic / Commitment:");
       lines.push("- Items attuned: " + acP + " / 3 (D&D attunement cap)");
       lines.push("");
     } else if (commitModelSummary === "invested") {
-      var icP = state.sheet.investedCount != null ? state.sheet.investedCount : state.sheet.inventory.filter(function (it) { return it && it.invested; }).length;
+      var icP = state.sheet.inventory.filter(function (it) { return it && it.invested; }).length;
       lines.push("Magic / Commitment:");
       lines.push("- Items invested: " + icP + " / 10 (PF2e investiture cap)");
       lines.push("");
