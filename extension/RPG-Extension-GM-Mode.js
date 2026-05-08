@@ -89,7 +89,6 @@ var state = {
   dialogEl:          null,
   itemDialogEl:      null,
   abilityDialogEl:   null,
-  agentMgrDialogEl:  null,
   gearEl:            null,
   toggleEl:          null,
   spellbookEl:       null,
@@ -578,34 +577,6 @@ function installBundle(bundle, progressCb) {
    ruleset id. The local ruleset cache is left in place — Clear handles that
    separately. Same match strategy as install: settings flags on the agent,
    tag array on the lorebook. */
-/* List every agent the extension previously installed, grouped by
-   mrrRulesetId. Returns a Promise resolving to a map
-   { rulesetId: [{id, name, role, authorId, enabled}, ...] }
-   so the manage-agents UI can display + bulk-delete. Includes both the
-   main GM-style agent (no role) and any additionalAgents (with role).
-   Pre-existing duplicates (whether from older install code or authorId
-   drift) all show up and can be removed. */
-function listManagedAgentsByRuleset() {
-  return apiFetch("/agents").then(function (agents) {
-    var groups = {};
-    if (!Array.isArray(agents)) return groups;
-    agents.forEach(function (a) {
-      var s = parseAgentSettings(a);
-      if (s.mrrManaged !== true) return;
-      var rid = s.mrrRulesetId || "(unknown)";
-      if (!groups[rid]) groups[rid] = [];
-      groups[rid].push({
-        id: a.id,
-        name: a.name,
-        role: s.mrrAgentRole || null,
-        authorId: s.mrrAuthorId || null,
-        enabled: a.enabled === true || a.enabled === "true"
-      });
-    });
-    return groups;
-  });
-}
-
 /* The engine's DELETE endpoints (/agents/:id, /lorebooks/:id,
    /lorebooks/:lbId/entries/:entryId, etc.) all return 204 No Content with
    an empty body. marinara.apiFetch always calls res.json() unconditionally
@@ -645,96 +616,6 @@ function apiPostRaw(path, body) {
       throw err;
     });
   });
-}
-
-function deleteManagedAgents(ids, progressCb) {
-  function progress(msg) { if (progressCb) progressCb(msg); }
-  if (!Array.isArray(ids) || !ids.length) return Promise.resolve(0);
-  progress("Deleting " + ids.length + " agent(s)...");
-  return ids.reduce(function (chain, id) {
-    return chain.then(function () { return apiDeleteRaw("/agents/" + id); });
-  }, Promise.resolve()).then(function () { return ids.length; });
-}
-
-function openAgentManagerDialog() {
-  if (state.agentMgrDialogEl && state.agentMgrDialogEl.parentNode) {
-    state.agentMgrDialogEl.parentNode.removeChild(state.agentMgrDialogEl);
-    state.agentMgrDialogEl = null;
-  }
-  var backdrop = marinara.addElement(document.body, "div", { "class": "mrr-dialog-backdrop mrr-dialog-backdrop--open" });
-  if (!backdrop) return;
-  state.agentMgrDialogEl = backdrop;
-  var dialog = marinara.addElement(backdrop, "div", { "class": "mrr-dialog" });
-  if (!dialog) { document.body.removeChild(backdrop); state.agentMgrDialogEl = null; return; }
-
-  marinara.addElement(dialog, "h3", { textContent: "Manage MRR Agents" });
-  marinara.addElement(dialog, "p", {
-    textContent: "Every agent the extension created is listed below, grouped by ruleset. Use this to clean up duplicate agents accumulated from prior installs."
-  });
-  var msg = marinara.addElement(dialog, "div", { "class": "mrr-msg mrr-msg--info", textContent: "Loading..." });
-  var list = marinara.addElement(dialog, "div", { "class": "mrr-dialog__lib" });
-  var buttons = marinara.addElement(dialog, "div", { "class": "mrr-dialog__buttons" });
-  var refreshBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Refresh" });
-  var closeBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn", textContent: "Close" });
-
-  function close() {
-    if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
-    if (state.agentMgrDialogEl === backdrop) state.agentMgrDialogEl = null;
-  }
-  marinara.on(backdrop, "click", function (e) { if (e.target === backdrop) close(); });
-  if (closeBtn) marinara.on(closeBtn, "click", close);
-
-  function refresh() {
-    if (msg) { msg.textContent = "Loading..."; msg.className = "mrr-msg mrr-msg--info"; }
-    if (list) list.textContent = "";
-    listManagedAgentsByRuleset().then(function (groups) {
-      var rids = Object.keys(groups).sort();
-      if (!rids.length) {
-        if (msg) { msg.textContent = "No managed agents found. You're clean."; msg.className = "mrr-msg mrr-msg--ok"; }
-        return;
-      }
-      if (msg) { msg.textContent = rids.length + " ruleset group(s) found."; msg.className = "mrr-msg mrr-msg--info"; }
-      rids.forEach(function (rid) {
-        var members = groups[rid];
-        var row = marinara.addElement(list, "div", { "class": "mrr-dialog__lib-row" });
-        if (!row) return;
-        var label = rid + " — " + members.length + " agent" + (members.length === 1 ? "" : "s");
-        marinara.addElement(row, "span", { "class": "mrr-dialog__lib-name", textContent: label });
-        var detailBtn = marinara.addElement(row, "button", { "class": "mrr-char-btn", type: "button", textContent: "Show" });
-        var delBtn = marinara.addElement(row, "button", { "class": "mrr-char-btn mrr-char-btn--danger", type: "button", textContent: "Delete all" });
-
-        if (detailBtn) marinara.on(detailBtn, "click", function () {
-          var lines = members.map(function (m) {
-            var roleLabel = m.role ? "[" + m.role + "]" : "[gm]";
-            var statusLabel = m.enabled ? " (enabled)" : " (disabled)";
-            return roleLabel + " " + (m.name || "(unnamed)") + statusLabel + "  id=" + m.id;
-          });
-          window.alert(rid + ":\n\n" + lines.join("\n"));
-        });
-
-        if (delBtn) marinara.on(delBtn, "click", function () {
-          if (!window.confirm("Delete ALL " + members.length + " agent(s) under \"" + rid + "\"?\n\nThis cannot be undone. The local ruleset cache is NOT affected.")) return;
-          delBtn.disabled = true;
-          if (msg) { msg.textContent = "Deleting " + rid + "..."; msg.className = "mrr-msg mrr-msg--info"; }
-          var ids = members.map(function (m) { return m.id; });
-          deleteManagedAgents(ids, function (s) { if (msg) msg.textContent = s; })
-            .then(function (n) {
-              if (msg) { msg.textContent = "Deleted " + n + " agent(s) under " + rid + "."; msg.className = "mrr-msg mrr-msg--ok"; }
-              refresh();
-            })
-            .catch(function (e) {
-              if (msg) { msg.textContent = "Delete failed: " + (e && e.message || e); msg.className = "mrr-msg mrr-msg--err"; }
-              delBtn.disabled = false;
-            });
-        });
-      });
-    }).catch(function (e) {
-      if (msg) { msg.textContent = "Load failed: " + (e && e.message || e); msg.className = "mrr-msg mrr-msg--err"; }
-    });
-  }
-
-  if (refreshBtn) marinara.on(refreshBtn, "click", refresh);
-  refresh();
 }
 
 function uninstallBundleArtifacts(rulesetId, authorId, progressCb) {
@@ -5283,7 +5164,6 @@ function openDialog() {
 
   var buttons = marinara.addElement(dialog, "div", { "class": "mrr-dialog__buttons" });
   if (buttons) {
-    var btnAgentMgr  = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Manage agents" });
     var btnFetch     = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Fetch URL" });
     var btnFile      = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Choose file..." });
     var btnClear     = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Clear" });
@@ -5305,10 +5185,6 @@ function openDialog() {
           : "ruleset " + (parsed.name || "?") + " v" + (parsed.version || "?");
         setMsg(msg, "Loaded " + label + " from file — click Save to activate.", "ok");
       });
-    });
-
-    if (btnAgentMgr) marinara.on(btnAgentMgr, "click", function () {
-      openAgentManagerDialog();
     });
 
     if (btnUninstall) marinara.on(btnUninstall, "click", function () {
