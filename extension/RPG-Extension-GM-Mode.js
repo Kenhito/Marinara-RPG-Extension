@@ -4864,8 +4864,41 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
         draft.moteCommitment = 0;
       } else if (draft.category === "equipment" && commitmentModel === "mote") {
         var pmc = parseInt(moteCommitInput && moteCommitInput.value, 10);
-        draft.moteCommitment = (!isNaN(pmc) && pmc >= 0) ? pmc : 0;
-        draft.motePool = (motePoolSel && motePoolSel.value === "Peripheral") ? "Peripheral" : "Personal";
+        var newMotes = (!isNaN(pmc) && pmc >= 0) ? pmc : 0;
+        var newPool = (motePoolSel && motePoolSel.value === "Peripheral") ? "Peripheral" : "Personal";
+        /* Mote-pool live decrement (Phase 2.C). When the user changes
+           moteCommitment or motePool via the dialog, the change must
+           propagate to state.sheet.derived[motePool] — Phase 1 stored
+           the data field but didn't wire the pool delta. Math: restore
+           the old commit to the old pool, then debit the new commit
+           from the new pool. Compute both legs first, refuse if the
+           result would deplete a pool below 0, and apply atomically
+           only on success. */
+        var oldMotes = (existing && typeof existing.moteCommitment === "number" && existing.moteCommitment > 0) ? existing.moteCommitment : 0;
+        var oldPool = (existing && existing.motePool === "Peripheral") ? "Peripheral" : "Personal";
+        if (!state.sheet.derived) state.sheet.derived = {};
+        if (typeof state.sheet.derived[oldPool] !== "number") state.sheet.derived[oldPool] = 0;
+        if (typeof state.sheet.derived[newPool] !== "number") state.sheet.derived[newPool] = 0;
+        var simOldM = state.sheet.derived[oldPool] + oldMotes;
+        var simNewM = (oldPool === newPool ? simOldM : state.sheet.derived[newPool]) - newMotes;
+        if (simNewM < 0) {
+          /* Refuse the commitment change. Revert draft.moteCommitment
+             and motePool to the existing values so the rest of the
+             save (notes, slot, bonuses) goes through but the pool
+             stays in its prior consistent state. */
+          setMsg(msg, "Cannot commit " + newMotes + " motes to " + newPool + " — would deplete the pool below 0. Save kept previous commitment.", "err");
+          draft.moteCommitment = oldMotes;
+          draft.motePool = oldPool;
+        } else {
+          if (oldPool === newPool) {
+            state.sheet.derived[oldPool] = simNewM;
+          } else {
+            state.sheet.derived[oldPool] = simOldM;
+            state.sheet.derived[newPool] = simNewM;
+          }
+          draft.moteCommitment = newMotes;
+          draft.motePool = newPool;
+        }
         draft.attuned = false;
         draft.invested = false;
       } else {
