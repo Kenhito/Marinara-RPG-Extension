@@ -10369,6 +10369,76 @@ function processChatMessage(node) {
   hideStateTagsInElement(node);
 }
 
+/* ─── Overlay state-mutator capture (deterministic backup for narrator drop) ───
+   The State Mutator overlay agent emits valid [mrr-state: ...] tags as part
+   of its overlay output, which Marinara logs via console.log as
+   `[Agent] ✓ MRR: ... State Mutator (mrr-overlay-...) — Ns {text: "..."}`.
+   That overlay text is consumed only as next-turn prompt context for the
+   narrator; it never lands in chat DOM, so processChatMessage above never
+   sees it. If the narrator drops the tags (paraphrases as prose, asserts
+   they "already fired", etc.) the player's sheet shows zero change. To
+   make sheet writes deterministic regardless of narrator follow-through,
+   we wrap console.log to detect the State Mutator overlay's completion
+   line, extract its text, and feed it directly to parseStateTags +
+   applyStateMutation. Per-text idempotency hash prevents double-apply
+   if the same overlay output is logged twice in a session. The narrator
+   path remains active too — the existing processChatMessage idempotency
+   set (processedMessageIds) prevents the narrator's echoed tags from
+   double-applying on top of the overlay capture. */
+
+var overlayMutatorCaptureInstalled = false;
+var overlayMutatorOriginalLog = null;
+var overlayProcessedHashes = Object.create(null);
+
+function hashOverlayText(text) {
+  if (!text) return "";
+  return (state.chatId || "no-chat") + "::" + text.length + "::" + text.slice(0, 64) + "::" + text.slice(-32);
+}
+
+function processOverlayMutatorOutput(text) {
+  if (!text || typeof text !== "string") return;
+  if (text.indexOf("[mrr-state:") === -1) return;
+  var hash = hashOverlayText(text);
+  if (overlayProcessedHashes[hash]) return;
+  overlayProcessedHashes[hash] = true;
+  var tags = parseStateTags(text);
+  if (!tags.length) return;
+  var applied = 0;
+  for (var i = 0; i < tags.length; i++) {
+    if (applyStateMutation(tags[i].attrs)) applied++;
+  }
+  log("overlay-mutator: applied " + applied + "/" + tags.length + " mutation(s) from State Mutator overlay (parser-side capture)");
+}
+
+function installOverlayMutatorCapture() {
+  if (overlayMutatorCaptureInstalled) return;
+  overlayMutatorCaptureInstalled = true;
+  overlayMutatorOriginalLog = console.log.bind(console);
+  console.log = function () {
+    try {
+      var args = arguments;
+      if (args.length >= 2 && typeof args[0] === "string"
+          && args[0].indexOf("[Agent]") !== -1
+          && args[0].indexOf("State Mutator") !== -1) {
+        var resultObj = args[args.length - 1];
+        if (resultObj && typeof resultObj === "object" && typeof resultObj.text === "string") {
+          processOverlayMutatorOutput(resultObj.text);
+        }
+      }
+    } catch (e) { /* never let our interceptor break logging */ }
+    return overlayMutatorOriginalLog.apply(console, arguments);
+  };
+  marinara.onCleanup(function () {
+    if (overlayMutatorOriginalLog) {
+      console.log = overlayMutatorOriginalLog;
+      overlayMutatorOriginalLog = null;
+    }
+    overlayMutatorCaptureInstalled = false;
+    overlayProcessedHashes = Object.create(null);
+  });
+  log("overlay-mutator: console.log capture installed");
+}
+
 function watchChatMessages() {
   /* Marinara streams tokens as the model generates, so the same message
      element keeps mutating. Debounce per-message-id by ~1.5s so we only
@@ -10488,6 +10558,7 @@ function init() {
   watchRouteChanges();
   watchLifecycleSaves();
   watchChatMessages();
+  installOverlayMutatorCapture();
   exposeDebug();
   log("activated ruleset " + rs.id + " v" + rs.version + " on chat " + (state.chatId || "(none)") + " as " + state.activeCharacterId);
   /* Initial sync to chat customTrackerFields so the overlay agents see

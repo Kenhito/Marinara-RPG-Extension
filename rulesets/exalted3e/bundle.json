@@ -1094,6 +1094,24 @@
         "selective": false,
         "constant": false,
         "position": 0
+      },
+      {
+        "name": "Mechanic: Mote Commitment",
+        "keys": [
+          "commit motes",
+          "mote commitment",
+          "personal motes",
+          "peripheral motes",
+          "mote pool",
+          "atemi",
+          "attune artifact",
+          "attuned artifact",
+          "committed motes"
+        ],
+        "content": "Mote commitment locks a portion of the Exalt Essence pool to sustain a persistent effect — an attuned artifact, an active Charm with a Reflexively Maintained duration, an atemi committed to a defensive stance. Motes spent this way are unavailable for any other use until commitment is released. Two pools: Personal (small, always-available, 5/Essence rating motes for self-sustaining effects) and Peripheral (larger, refilled by drawing on the anima banner — outward expressions of power). Commitment subtracts from the named pool; release restores. Pool floor is 0 — the Exalt cannot commit motes they do not have. Switching commitment between pools (Personal → Peripheral) restores the old commit to the old pool first, then debits the new commit from the new pool atomically.\n\nState-mutator tag: [mrr-state: field=\"commitment\" item=\"<artifact name>\" motes=\"<int>\" pool=\"Personal|Peripheral\"]. motes=\"0\" releases. Pool floor and exclusivity (mote-committed items cannot be attuned/invested) are enforced at parse time; rejection surfaces as a toast and leaves the sheet unchanged.",
+        "position": 0,
+        "selective": false,
+        "constant": false
       }
     ]
   }
