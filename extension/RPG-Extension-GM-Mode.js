@@ -9219,8 +9219,24 @@ function buildSheetForPrompt() {
   pushFieldRef("derived",    state.ruleset.derivedStats);
   pushFieldRef("attributes", state.ruleset.attributes);
   pushFieldRef("skills",     state.ruleset.skills);
+  /* Phase 5 — Special canonical field names. Without these in the
+     reference, the agent guesses field names from snapshot display
+     labels (e.g. "XP available to spend") and the parser stashes the
+     write on sheet root. */
+  refLines.push("- xp (use field=\"xp\" with delta=\"+50\" or absolute current/level/next/total — NOT the display label \"XP available to spend\")");
+  if (Array.isArray(state.sheet.intimacies) || (state.ruleset.id === "exalted3e")) {
+    refLines.push("- intimacies (use field=\"intimacies\" with add=\"text\" kind=\"tie|principle\" degree=\"minor|major|defining\" target=\"name\"; remove=\"text\"; or update via text=... + degree/kind)");
+  }
+  var commitMod = state.ruleset.commitmentModel;
+  if (commitMod === "attuned") {
+    refLines.push("- attunement (use field=\"attunement\" item=\"<item name>\" attuned=\"true|false\" — D&D cap 3)");
+  } else if (commitMod === "invested") {
+    refLines.push("- investiture (use field=\"investiture\" item=\"<item name>\" invested=\"true|false\" — PF2e cap 10)");
+  } else if (commitMod === "mote") {
+    refLines.push("- commitment (use field=\"commitment\" item=\"<item name>\" motes=\"N\" pool=\"Personal|Peripheral\" — Exalted mote commit)");
+  }
   if (refLines.length) {
-    lines.push("State-mutator field reference (use these names in [mrr-state: field=\"...\"] tags):");
+    lines.push("State-mutator field reference (use these EXACT names — not display labels — in [mrr-state: field=\"...\"] tags):");
     Array.prototype.push.apply(lines, refLines);
     lines.push("");
   }
@@ -9712,6 +9728,53 @@ function finalizeMutation(attrs) {
 function applyStateMutation(attrs) {
   if (!state.sheet || !state.ruleset) return false;
   var sheet = state.sheet;
+  /* Phase 5 — alias-resolve display labels back to canonical field
+     names. Without this, agents that read the snapshot may emit field=
+     using the label they saw (e.g. "XP available to spend") and the
+     parser stashes the write on sheet root with no visible effect. */
+  var rawField = attrs.field;
+  var lcField = (typeof rawField === "string") ? rawField.trim().toLowerCase() : "";
+  var fieldAliases = {
+    "xp available to spend": "xp",
+    "xp available": "xp",
+    "xp": "xp",
+    "experience": "xp",
+    "experience points": "xp",
+    "total xp earned (lifetime)": "xp",
+    "total xp earned": "xp",
+    "total xp": "xp",
+    "intimacy": "intimacies",
+    "intimacies": "intimacies",
+    "attune": "attunement",
+    "attunement": "attunement",
+    "attuned": "attunement",
+    "invest": "investiture",
+    "invested": "investiture",
+    "investiture": "investiture",
+    "commit": "commitment",
+    "commitment": "commitment",
+    "mote commitment": "commitment",
+    "mote commit": "commitment"
+  };
+  if (lcField && fieldAliases[lcField] && fieldAliases[lcField] !== rawField) {
+    log("state-mutator: alias-resolved field '" + rawField + "' to canonical '" + fieldAliases[lcField] + "'");
+    attrs.field = fieldAliases[lcField];
+  }
+  /* XP-write recovery: bare value=N → current=N (or total=N if the
+     original alias was a "total" label). The xp absolute branch requires
+     current/level/next/total, not value. */
+  if (attrs.field === "xp" && attrs.value != null
+      && attrs.current == null && attrs.level == null
+      && attrs.next == null && attrs.total == null
+      && attrs.delta == null) {
+    if (lcField && lcField.indexOf("total") !== -1) {
+      attrs.total = attrs.value;
+    } else {
+      attrs.current = attrs.value;
+    }
+    log("state-mutator: xp value=" + attrs.value + " mapped to " +
+        (lcField.indexOf("total") !== -1 ? "total" : "current"));
+  }
   var field = attrs.field;
 
   if (field === "conditions") {
