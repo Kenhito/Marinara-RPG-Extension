@@ -12,6 +12,24 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+### Added — Phase 3.6 UI port: inventory (equipment) + abilities (charms/spells) migrated behind feature flag (2026-05-08)
+
+Final body slice. With `state.sheet.useNewRenderer === true`, **all ten** sheet sections now render through Phase-3 wrappers — Attributes (3.3), Derived (3.4), Damage Track (3.4), Saves (3.4), Skills (3.5), States (3.5), Conditions (3.5), Backgrounds (3.5), Intimacies (3.5 entry button + 3.5 fixes), Inventory (this slice), Abilities/Charms (this slice). Item-editor dialog, Spellbook flyout, Intimacies flyout, and Items flyout panels remain classic — each is a separate flyout subsystem deferred to fine-tuning sessions.
+
+- **`mrrP3RenderInventorySection(parent)`** — Phase-3 section frame around the equipment list, using a newly-extracted `renderInventoryList(parent)` helper. Helper was lifted out of classic `renderInventory` so the body of the equipment list is rendered identically inside either a classic `.mrr-section` parent (flag-OFF) or a Phase-3 `.mrr-p3-section__body` parent (flag-ON). Avoids the double-section-header pattern that would otherwise appear if the wrapper called classic `renderInventory` wholesale. All inventory functionality preserved verbatim: equipment-only filter, equip toggle, atk/dmg roll buttons, Edit dialog (`openItemDialog`), delete confirmation, "+ Add equipment", "Open items" flyout.
+
+- **`renderInventoryList(parent)`** — refactored from classic `renderInventory`'s inline body. Classic still calls it from the same place, producing the same DOM as before. This is a soft anti-criteria edit (classic `renderInventory` body was modified to delegate) — but the produced output is byte-identical, so the flag-OFF path is preserved verbatim.
+
+- **`mrrP3RenderAbilitiesSection(parent)`** — same pattern as Phase 3.5's Intimacies wrapper: Phase-3 section frame containing a single button "[label] (N)" that opens the existing classic spellbook flyout via `showSpellbook(true)`. Uses ruleset-declared label (Charms for Exalted, Spells for D&D etc.). Section omitted entirely when ruleset declares no abilities (Fate Core).
+
+- **Section dispatch swap** — two lines in `mrrP3RenderSheet`: `inventory` → `mrrP3RenderInventorySection`, `abilities` → `mrrP3RenderAbilitiesSection`.
+
+- **Engine + classic helpers untouched** — `statContext`, `equippedBonuses`, `tierForSkill`, `resolveTierBonus` unchanged. Classic `renderInventory` body refactored to delegate (DOM byte-identical); `renderAbilitiesSection`, `openItemDialog`, `showSpellbook`, `buildSpellbook`, `renderSpellbookContents` etc. all untouched.
+
+- **No new CSS this slice** — wrappers reuse the Phase-3 section frame from 3.1 plus existing classic `.mrr-inv-list` / `.mrr-inv-item` / `.mrr-char-btn` row chrome inside.
+
+- **All 10 sections now Phase-3 framed under flag** — sheet body migration is functionally complete. Remaining flag-ON polish work (fine-tuning pass, deferred): item-editor dialog → `mrrP3CreatePanel`, Spellbook flyout → `mrrP3CreatePanel`, Intimacies flyout → `mrrP3CreatePanel`, Items flyout → `mrrP3CreatePanel`. The factory shipped in 3.2 finally has callers waiting in 3.7+.
+
 ### Added — Phase 3.5 UI port: skills + states + conditions + backgrounds + intimacies migrated behind feature flag (2026-05-08)
 
 Marathon slice. With `state.sheet.useNewRenderer === true`, the Phase-3 sheet now renders **eight** sections via Phase-3 wrappers — Attributes (3.3), Derived (3.4), Saves (3.4), Skills, States, Conditions, Backgrounds, and Intimacies. Only Inventory (item-editor flyout) and Abilities/Charms (charm tree) remain on the classic helpers; those need dedicated flyout-migration sessions and are deferred to Phase 3.6+.

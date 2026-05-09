@@ -3443,8 +3443,8 @@ function mrrP3RenderSheet() {
     else if (sec === "conditions") mrrP3RenderConditionsSection(state.mountEl);
     else if (sec === "intimacies") mrrP3RenderIntimaciesSection(state.mountEl);
     else if (sec === "backgrounds") mrrP3RenderBackgroundsSection(state.mountEl);
-    else if (sec === "inventory") renderInventory(state.mountEl);
-    else if (sec === "abilities") renderAbilitiesSection(state.mountEl);
+    else if (sec === "inventory") mrrP3RenderInventorySection(state.mountEl);
+    else if (sec === "abilities") mrrP3RenderAbilitiesSection(state.mountEl);
   });
   if (!attrsRendered && Array.isArray(state.ruleset.attributes) && state.ruleset.attributes.length) {
     mrrP3RenderAttributesSection(state.mountEl);
@@ -4190,7 +4190,50 @@ function mrrP3RenderIntimaciesSection(parent) {
   });
 }
 
-/* End Phase 3.2 + 3.3 + 3.4 + 3.5 cutover plumbing. */
+/* Phase 3.6 — InventorySection wrapper. Calls the renderInventoryList
+   helper extracted from classic renderInventory (so the produced DOM
+   is byte-identical to the classic body without double-framing it
+   inside a Phase-3 section). All inventory functionality preserved:
+   add equipment dialog, edit dialog, equip toggle, atk/dmg buttons,
+   delete confirmation, Open Items flyout. */
+function mrrP3RenderInventorySection(parent) {
+  if (!parent) return;
+  mrrP3RenderSection(parent, {
+    id: "inventory-p3",
+    title: "EQUIPMENT",
+    defaultOpen: true
+  }, function (body) {
+    renderInventoryList(body);
+  });
+}
+
+/* Phase 3.6 — AbilitiesSection wrapper. Same pattern as Intimacies:
+   Phase-3 section frame containing a single button that opens the
+   classic spellbook flyout. Ruleset config (getAbilitiesConfig)
+   provides the section label — Charms for Exalted, Spells for D&D
+   etc. Section omitted when ruleset declares no abilities. */
+function mrrP3RenderAbilitiesSection(parent) {
+  if (!parent || !state.ruleset) return;
+  if (typeof getAbilitiesConfig !== "function") return;
+  var cfg = getAbilitiesConfig();
+  if (!cfg) return;
+  if (typeof showSpellbook !== "function" || typeof totalAbilityCount !== "function") return;
+  var label = String(cfg.label || "ABILITIES").toUpperCase();
+  mrrP3RenderSection(parent, {
+    id: "abilities-p3",
+    title: label,
+    defaultOpen: true
+  }, function (body) {
+    var btn = marinara.addElement(body, "button", {
+      type: "button",
+      "class": "mrr-char-btn mrr-char-btn--dashed",
+      textContent: cfg.label + " (" + totalAbilityCount() + ")"
+    });
+    if (btn) marinara.on(btn, "click", function () { showSpellbook(!state.spellbookOpen); });
+  });
+}
+
+/* End Phase 3.2 + 3.3 + 3.4 + 3.5 + 3.6 cutover plumbing. */
 
 function renderSheet() {
   if (!state.ruleset) return;
@@ -5910,8 +5953,16 @@ function renderInventory(parent) {
   var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
   if (!sec) return;
   marinara.addElement(sec, "div", { "class": "mrr-section__title", textContent: "Equipment" });
+  renderInventoryList(sec);
+}
 
-  var list = marinara.addElement(sec, "div", { "class": "mrr-inv-list" });
+/* Equipment list body — split from renderInventory so the Phase-3
+   wrapper (mrrP3RenderInventorySection) can render the same content
+   inside a Phase-3 section frame without producing a double-section
+   header. Classic renderInventory still calls this with its own
+   .mrr-section parent; the produced DOM is byte-identical. */
+function renderInventoryList(parent) {
+  var list = marinara.addElement(parent, "div", { "class": "mrr-inv-list" });
   if (!list) return;
 
   function rebuild() {
