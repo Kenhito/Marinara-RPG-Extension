@@ -3772,17 +3772,17 @@ function mrrP3RenderDerivedTrack(parent, d) {
   mrrP3RenderDamageTrack(parent, {
     track: { name: d.name, levels: levels, filled: filled },
     onCellClick: function (idx) {
-      /* Phase 4 — cell click CYCLES through severity per the primitive's
-         documented title text "click cycles B→L→A→clear". types is sorted
-         severity-DESC (A first, B last). Cycle: empty → lightest (B) →
-         next-up (L) → next-up (A) → clear. Implementation: if filled,
-         heal current type AND if not at max severity also take the
-         next-up type. If at max severity, just heal (clear). */
+      /* Phase 4 — click ESCALATES damage. types is sorted severity-DESC
+         (A first, B last). Click takes one MORE damage at the next
+         severity tier (empty→B, B→L, L→A). No heal-on-click — the
+         Heal-worst / Heal-all buttons are the only heal path. At
+         max severity (A), click clears (heal-A; only escape valve so
+         a player who maxed out can wind back without using the heal
+         buttons explicitly). */
       if (!types) return;
       var dmg = ensureTypedTrack(d.name, types);
       var f = filled[idx];
       if (!f || !f.type) {
-        /* Empty cell → take lightest type (last in severity-desc array). */
         var lightest = types[types.length - 1];
         if (lightest) dmg[lightest.id] = (dmg[lightest.id] || 0) + 1;
       } else {
@@ -3793,12 +3793,11 @@ function mrrP3RenderDerivedTrack(parent, d) {
           if (types[ci].id === hitType.id) { curIdx = ci; break; }
         }
         if (curIdx === -1) return;
-        /* Heal one of the current type. */
-        dmg[hitType.id] = Math.max(0, (dmg[hitType.id] || 0) - 1);
-        /* If not at most-severe (curIdx > 0), upgrade by taking one
-           of next-more-severe (curIdx - 1). At most-severe (curIdx
-           === 0, i.e. Aggravated), just heal. */
-        if (curIdx > 0) {
+        if (curIdx === 0) {
+          /* At most-severe (Aggravated) — only escape valve: heal one. */
+          dmg[hitType.id] = Math.max(0, (dmg[hitType.id] || 0) - 1);
+        } else {
+          /* Escalate: take one of next-more-severe. Don't heal current. */
           var nextType = types[curIdx - 1];
           if (nextType) dmg[nextType.id] = (dmg[nextType.id] || 0) + 1;
         }
