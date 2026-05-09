@@ -485,13 +485,22 @@
       },
       {
         "name": "Soak (Lethal)",
-        "formula": "(Stamina / 2 round down) + armor L-soak",
+        "formula": "Stamina + armor L-soak (Exalts use FULL Stamina; mortals use Stamina/2 rounded down)",
         "renderAs": "value",
-        "valueFormula": "{Stamina} / 2",
+        "valueFormula": "{Stamina}",
         "aliases": [
           "soakLethal",
           "lethalSoak",
           "lSoak"
+        ]
+      },
+      {
+        "name": "Hardness",
+        "formula": "Highest equipped armor's Hardness rating + Charm/magic Hardness bonuses (set base manually; armor and Charms appear as +N suffix from item bonuses targeting \"Hardness\")",
+        "renderAs": "value",
+        "default": 0,
+        "aliases": [
+          "hardness"
         ]
       },
       {

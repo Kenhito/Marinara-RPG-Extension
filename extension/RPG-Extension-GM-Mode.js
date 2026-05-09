@@ -8986,9 +8986,22 @@ function buildSheetForPrompt() {
   }
 
   if (Object.keys(state.sheet.derived || {}).length) {
-    lines.push("Derived Stats:");
+    lines.push("Derived Stats (totals include equipped-item bonuses; \"base\" = autocalc/manual value before armor/charm bonuses):");
     Object.keys(state.sheet.derived).forEach(function (n) {
-      lines.push("- " + n + ": " + state.sheet.derived[n]);
+      var base = state.sheet.derived[n];
+      var basenum = (typeof base === "number") ? base : (parseInt(base, 10) || 0);
+      var b = equippedBonuses(n);
+      var bonus = (b && typeof b.value === "number") ? b.value : 0;
+      if (bonus !== 0) {
+        var total = basenum + bonus;
+        var sign = bonus > 0 ? "+" : "";
+        var contribs = (b.contributors && b.contributors.length)
+          ? " [" + b.contributors.map(function (c) { return c.name + " " + (c.value > 0 ? "+" : "") + c.value; }).join(", ") + "]"
+          : "";
+        lines.push("- " + n + ": " + total + " (base " + basenum + " " + sign + bonus + " from equipment" + contribs + ")");
+      } else {
+        lines.push("- " + n + ": " + basenum);
+      }
     });
     lines.push("");
   }
