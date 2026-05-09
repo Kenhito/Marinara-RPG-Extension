@@ -9637,7 +9637,7 @@ function resolveDamageType(field) {
     for (var j = 0; j < types.length; j++) {
       var dt = types[j];
       if (normalizeFieldKey(dt.id) === target || normalizeFieldKey(dt.label) === target) {
-        return { trackName: d.name, typeId: dt.id, types: types };
+        return { trackName: d.name, typeId: dt.id, types: types, derived: d };
       }
     }
   }
@@ -10240,14 +10240,61 @@ function applyStateMutation(attrs) {
 
   /* Typed-damage path. If the field names a damage type declared on a
      track-renderAs derived stat (Exalted bashing/lethal/aggravated),
-     mutate that type's counter. Migration: a legacy numeric track value
-     gets folded into the lightest type before mutation lands. */
+     mutate that type — but write to the Phase-4 per-cell state (cells
+     array) rather than the legacy typed-counter, since the renderer
+     reads cells. New entries fill empty cells from left; removals
+     clear rightmost cells of that type first to preserve the user's
+     most-escalated cells. syncTrackCellsToTyped keeps the legacy
+     typed-counter in sync downstream. */
   var dmg = resolveDamageType(field);
   if (dmg) {
-    var damage = ensureTypedTrack(dmg.trackName, dmg.types);
-    var dCurrent = (typeof damage[dmg.typeId] === "number") ? damage[dmg.typeId] : 0;
-    var dNext = hasAbsolute ? absoluteValue : (dCurrent + delta);
-    damage[dmg.typeId] = Math.max(0, dNext);
+    var derivedObj = dmg.derived;
+    var rulesetCellCount = Array.isArray(derivedObj.track) ? derivedObj.track.length : 0;
+    var extraCellCount = (sheet.extraTrack && Array.isArray(sheet.extraTrack[dmg.trackName]))
+      ? sheet.extraTrack[dmg.trackName].length : 0;
+    var totalLen = rulesetCellCount + extraCellCount;
+    if (totalLen <= 0) {
+      log("state-mutator typed-damage: derived '" + dmg.trackName + "' has no cells declared");
+      return false;
+    }
+    var cells = ensureTrackCells(derivedObj, totalLen);
+    var typeForLabel = null;
+    for (var ti = 0; ti < dmg.types.length; ti++) {
+      if (dmg.types[ti].id === dmg.typeId) { typeForLabel = dmg.types[ti]; break; }
+    }
+    if (!typeForLabel) return false;
+    var label = typeForLabel.label;
+    /* Count current cells of this type. */
+    var currentCount = 0;
+    for (var cci = 0; cci < cells.length; cci++) {
+      if (cells[cci] === label) currentCount += 1;
+    }
+    var targetCount = hasAbsolute ? absoluteValue : (currentCount + delta);
+    if (targetCount < 0) targetCount = 0;
+    var diff = targetCount - currentCount;
+    if (diff > 0) {
+      /* Add `diff` cells of this type, filling empty cells left-to-right. */
+      for (var ai = 0; ai < cells.length && diff > 0; ai++) {
+        if (cells[ai] == null) {
+          cells[ai] = label;
+          diff -= 1;
+        }
+      }
+      /* If track is full, the overflow is silently dropped (matches the
+         classic typed-counter overflow semantics — tracked but unrendered). */
+    } else if (diff < 0) {
+      /* Remove |diff| cells of this type, rightmost first. */
+      var toRemove = -diff;
+      for (var ri = cells.length - 1; ri >= 0 && toRemove > 0; ri--) {
+        if (cells[ri] === label) {
+          cells[ri] = null;
+          toRemove -= 1;
+        }
+      }
+    }
+    /* Sync typed-counter from cells so the snapshot + classic renderer
+       see the new totals on the post-mutation render. */
+    syncTrackCellsToTyped(derivedObj);
     return finalizeMutation(attrs);
   }
 
