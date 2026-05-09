@@ -3772,15 +3772,36 @@ function mrrP3RenderDerivedTrack(parent, d) {
   mrrP3RenderDamageTrack(parent, {
     track: { name: d.name, levels: levels, filled: filled },
     onCellClick: function (idx) {
+      /* Phase 4 — cell click CYCLES through severity per the primitive's
+         documented title text "click cycles B→L→A→clear". types is sorted
+         severity-DESC (A first, B last). Cycle: empty → lightest (B) →
+         next-up (L) → next-up (A) → clear. Implementation: if filled,
+         heal current type AND if not at max severity also take the
+         next-up type. If at max severity, just heal (clear). */
       if (!types) return;
       var dmg = ensureTypedTrack(d.name, types);
       var f = filled[idx];
-      if (f && f.type) {
-        var hitType = typeByLabel[f.type];
-        if (hitType) dmg[hitType.id] = Math.max(0, (dmg[hitType.id] || 0) - 1);
-      } else {
+      if (!f || !f.type) {
+        /* Empty cell → take lightest type (last in severity-desc array). */
         var lightest = types[types.length - 1];
         if (lightest) dmg[lightest.id] = (dmg[lightest.id] || 0) + 1;
+      } else {
+        var hitType = typeByLabel[f.type];
+        if (!hitType) return;
+        var curIdx = -1;
+        for (var ci = 0; ci < types.length; ci++) {
+          if (types[ci].id === hitType.id) { curIdx = ci; break; }
+        }
+        if (curIdx === -1) return;
+        /* Heal one of the current type. */
+        dmg[hitType.id] = Math.max(0, (dmg[hitType.id] || 0) - 1);
+        /* If not at most-severe (curIdx > 0), upgrade by taking one
+           of next-more-severe (curIdx - 1). At most-severe (curIdx
+           === 0, i.e. Aggravated), just heal. */
+        if (curIdx > 0) {
+          var nextType = types[curIdx - 1];
+          if (nextType) dmg[nextType.id] = (dmg[nextType.id] || 0) + 1;
+        }
       }
       saveSheet(state.chatId, state.sheet);
       renderSheet();
@@ -4282,13 +4303,26 @@ function mrrP3RenderBackgroundsSection(parent) {
    the existing classic flyout panel (renderIntimaciesPanelContents et
    al.). Full flyout migration deferred to Phase 3.6+. */
 function mrrP3RenderIntimaciesSection(parent) {
-  if (!parent || !state.ruleset) return;
-  if (typeof totalIntimacyCount !== "function" || typeof showIntimacies !== "function") return;
+  /* Phase 4 — diagnostic logging to surface why the section may not be
+     rendering for the user. */
+  log("mrrP3RenderIntimaciesSection ENTRY: parent=" + (!!parent) +
+      " ruleset=" + (!!state.ruleset) +
+      " totalIntimacyCount=" + (typeof totalIntimacyCount) +
+      " showIntimacies=" + (typeof showIntimacies));
+  if (!parent || !state.ruleset) {
+    warn("mrrP3RenderIntimaciesSection: early-return on parent/ruleset guard");
+    return;
+  }
+  if (typeof totalIntimacyCount !== "function" || typeof showIntimacies !== "function") {
+    warn("mrrP3RenderIntimaciesSection: early-return on helper-function guard");
+    return;
+  }
   mrrP3RenderSection(parent, {
     id: "intimacies-p3",
     title: "INTIMACIES",
     defaultOpen: true
   }, function (body) {
+    log("mrrP3RenderIntimaciesSection BODY: rendering button, count=" + totalIntimacyCount());
     var btn = marinara.addElement(body, "button", {
       type: "button",
       "class": "mrr-char-btn mrr-char-btn--dashed",
