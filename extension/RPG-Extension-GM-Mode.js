@@ -2497,13 +2497,24 @@ function mrrP3RenderSection(parent, opts, bodyFn) {
   body.style.flexDirection = "column";
   body.style.gap = "8px";
   /* Click handler attached BEFORE bodyFn so a bodyFn exception
-     doesn't strand the user on a section they can't toggle. */
+     doesn't strand the user on a section they can't toggle. Toggle
+     in-place via class + inline display rather than calling
+     renderSheet — full DOM rebuild loses scroll position (the user-
+     reported "page jumps to top" issue) AND fires the agent-prompt
+     sync pipeline on every click. CSS-only toggle keeps the user's
+     scroll position and the section state persists via saveSheet
+     for the sectionCollapse map. */
   head.addEventListener("click", function () {
     if (!id) return;
     if (!state.sheet.sectionCollapse) state.sheet.sectionCollapse = {};
-    state.sheet.sectionCollapse[id] = open; /* outgoing-open becomes new collapsed flag */
+    open = !open;
+    state.sheet.sectionCollapse[id] = !open; /* stored flag is "collapsed" */
+    if (card.classList) {
+      if (open) card.classList.add("mrr-p3-section--open");
+      else card.classList.remove("mrr-p3-section--open");
+    }
+    body.style.display = open ? "flex" : "none";
     saveSheet(state.chatId, state.sheet);
-    renderSheet();
   });
   if (typeof bodyFn === "function") {
     try {
@@ -3878,7 +3889,12 @@ function mrrP3RenderSkillsSection(parent) {
 }
 
 function mrrP3RenderCustomSkillRow(parent, sk, idx) {
-  var row = marinara.addElement(parent, "div", { "class": "mrr-p3-row mrr-p3-row--custom-skill" });
+  /* Use classic .mrr-skill-spec-row.mrr-custom-skill-row for layout —
+     .mrr-p3-row is a CSS grid with no template defined for custom-skill
+     variant, so children stack vertically. Classic classes are flex-row
+     and already styled for this exact shape (name + attr select + value
+     + remove). */
+  var row = marinara.addElement(parent, "div", { "class": "mrr-skill-spec-row mrr-custom-skill-row" });
   if (!row) return;
   var nameInput = marinara.addElement(row, "input", {
     "class": "mrr-skill-spec-name",
@@ -3959,9 +3975,11 @@ function mrrP3RenderStatesSection(parent) {
   }, function (body) {
     var stateValues = state.sheet.states || {};
     state.ruleset.states.forEach(function (st) {
-      var row = marinara.addElement(body, "div", { "class": "mrr-p3-row mrr-p3-row--state" });
+      /* Classic .mrr-state row class is flex-row; .mrr-p3-row would be
+         grid with no template, stacking name + select vertically. */
+      var row = marinara.addElement(body, "div", { "class": "mrr-state" });
       if (!row) return;
-      marinara.addElement(row, "span", { "class": "mrr-p3-row__name", textContent: st.name });
+      marinara.addElement(row, "span", { "class": "mrr-state__name", textContent: st.name });
       var sel = marinara.addElement(row, "select", { "class": "mrr-state__select" });
       if (!sel) return;
       st.values.forEach(function (v) {
