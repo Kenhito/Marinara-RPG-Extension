@@ -3623,11 +3623,16 @@ function mrrP3RenderDerivedSection(parent) {
 
 /* Bridge classic bar state onto mrrP3RenderBar. Max precedence mirrors
    classic renderBar: derivedMax override > maxFormula > literal max >
-   Math.max(DEFAULT_BAR_MAX, current) for fresh sheets. */
+   Math.max(DEFAULT_BAR_MAX, current) for fresh sheets.
+   Phase 4 — registers a barRefresher that re-computes max + current
+   in-place when refreshAllBars fires (classic renderValue commits +
+   any other dependency change). Without this, Exalted's Personal /
+   Peripheral Motes maxes stay stale when Essence is changed via the
+   Derived section's classic renderValue path. */
 function mrrP3RenderDerivedBar(parent, d) {
   var current = state.sheet.derived[d.name] || 0;
   var max = mrrP3ComputeBarMax(d);
-  mrrP3RenderBar(parent, {
+  var result = mrrP3RenderBar(parent, {
     name: d.name,
     current: current,
     max: max,
@@ -3643,6 +3648,20 @@ function mrrP3RenderDerivedBar(parent, d) {
       renderSheet();
     }
   });
+  if (result && result.bar) {
+    var barRef = result.bar;
+    barRefreshers.push(function () {
+      if (!barRef || !barRef.parentNode) return;
+      var newMax = mrrP3ComputeBarMax(d);
+      var newCurrent = state.sheet.derived[d.name] || 0;
+      var pct = (newMax > 0) ? Math.max(0, Math.min(100, (newCurrent / newMax) * 100)) : 0;
+      var fillEl = barRef.querySelector(".mrr-p3-bar__fill");
+      if (fillEl) fillEl.style.width = pct + "%";
+      var inputs = barRef.querySelectorAll(".mrr-p3-bar__val-input");
+      if (inputs && inputs.length >= 1 && inputs[0]) inputs[0].value = String(newCurrent);
+      if (inputs && inputs.length >= 2 && inputs[1]) inputs[1].value = String(newMax);
+    });
+  }
 }
 
 function mrrP3ComputeBarMax(d) {
@@ -3667,20 +3686,37 @@ function mrrP3ComputeBarMax(d) {
    Exalted Take-B/L/A) NOT migrated — primitive doesn't expose them, this
    is a JSX-prototype UX choice not a regression. */
 function mrrP3RenderDerivedTrack(parent, d) {
-  var rulesetCells = d.track || [];
-  var extras = (state.sheet.extraTrack && state.sheet.extraTrack[d.name])
-    ? state.sheet.extraTrack[d.name] : [];
-  var allCells = rulesetCells.concat(extras);
+  /* Phase 4 — health-track ordering fix. Classic renderTrack tags each
+     cell, then sorts by penalty descending (best first, Incapacitated
+     last) so extra Ox-Body cells slot in by penalty rather than tacking
+     on at the end. Wrapper now mirrors that. */
+  var ruleEntries = (d.track || []).map(function (c) { return { cell: c, extra: false }; });
+  var extraEntries = (state.sheet.extraTrack && state.sheet.extraTrack[d.name])
+    ? state.sheet.extraTrack[d.name].map(function (c) { return { cell: c, extra: true }; })
+    : [];
+  var tagged = ruleEntries.concat(extraEntries);
+  tagged.sort(function (a, b) { return (b.cell.penalty || 0) - (a.cell.penalty || 0); });
+  var allCells = tagged.map(function (e) { return e.cell; });
   var levels = allCells.map(function (c) { return c.label; });
   var types = damageTypesFor(d);
   var damage = types ? ensureTypedTrack(d.name, types) : null;
+
+  /* Phase 4 — type-label fix. Primitive expects f.type as the SHORT
+     letter ("B"/"L"/"A") to drive .mrr-p3-cell--<type> CSS and the
+     summary counts. Ruleset's damageType objects have id="bashing"
+     (long form) and label="B" (short form). Use label here and map
+     back to id when mutating typed counters. */
+  var typeByLabel = {};
+  if (types) {
+    for (var ti = 0; ti < types.length; ti++) typeByLabel[types[ti].label] = types[ti];
+  }
 
   var filled = [];
   if (types && damage) {
     for (var i = 0; i < types.length; i++) {
       var t = types[i];
       var n = damage[t.id] || 0;
-      for (var k = 0; k < n; k++) filled.push({ type: t.id });
+      for (var k = 0; k < n; k++) filled.push({ type: t.label });
     }
   }
   /* Pad to length so primitive iterates every cell with empty slots after
@@ -3696,7 +3732,8 @@ function mrrP3RenderDerivedTrack(parent, d) {
       var dmg = ensureTypedTrack(d.name, types);
       var f = filled[idx];
       if (f && f.type) {
-        dmg[f.type] = Math.max(0, (dmg[f.type] || 0) - 1);
+        var hitType = typeByLabel[f.type];
+        if (hitType) dmg[hitType.id] = Math.max(0, (dmg[hitType.id] || 0) - 1);
       } else {
         var lightest = types[types.length - 1];
         if (lightest) dmg[lightest.id] = (dmg[lightest.id] || 0) + 1;
@@ -4265,12 +4302,32 @@ function mrrP3RenderAbilitiesSection(parent) {
 function renderSheet() {
   if (!state.ruleset) return;
 
+  /* Phase 4 — preserve internal scroll across rebuild. addBackground /
+     addCustomSkill / addCondition / addSpecialty / addIntimacy / addItem
+     all call renderSheet, which removes the old mountEl and creates a
+     fresh one. Without this, the user sees the sheet jump to the top of
+     attributes after every add — the bouncing-to-top complaint that's
+     persisted across multiple iterations. Capture before, restore after
+     via rAF so the new DOM has had a chance to lay out. */
+  var savedScrollTop = (state.mountEl && typeof state.mountEl.scrollTop === "number")
+    ? state.mountEl.scrollTop : 0;
+  function restoreScroll() {
+    if (!state.mountEl || !savedScrollTop) return;
+    var el = state.mountEl;
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(function () { try { el.scrollTop = savedScrollTop; } catch (e) {} });
+    } else {
+      try { el.scrollTop = savedScrollTop; } catch (e) {}
+    }
+  }
+
   /* Phase 3.3 dispatch: when the user has flipped the experimental
      renderer flag, route to the new path. The classic body below
      stays as the fallback; future sessions migrate one section at
      a time, keeping both paths shippable. */
   if (state.sheet && state.sheet.useNewRenderer === true && typeof mrrP3RenderSheet === "function") {
     mrrP3RenderSheet();
+    restoreScroll();
     return;
   }
 
@@ -4368,6 +4425,9 @@ function renderSheet() {
      preference. Re-apply so character-switch / rename / bundle-import
      paths don't accidentally pop the sheet open. */
   applyCollapsed(state.collapsed);
+
+  /* Phase 4 — restore scroll position after the rebuild settles. */
+  restoreScroll();
 }
 
 function renderSheetHeader(parent) {
