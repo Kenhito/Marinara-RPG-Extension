@@ -1689,6 +1689,25 @@ function renderIntimaciesSection(parent) {
   if (btn) marinara.on(btn, "click", function () { showIntimacies(!state.intimaciesOpen); });
 }
 
+/* Phase 3.7 — Phase-3 intimacies flyout via mrrP3CreatePanel. */
+function mrrP3BuildIntimaciesPanel() {
+  if (state.intimaciesEl) return state.intimaciesEl;
+  if (typeof mrrP3CreatePanel !== "function") return null;
+  var p = mrrP3CreatePanel(document.body, {
+    storageKey: "mrr-p3-intimacies-pos",
+    title: "Intimacies — " + state.ruleset.name,
+    defaultPos: { x: 360, y: 80 },
+    defaultSize: { w: 460, h: 600 },
+    className: "mrr-intimacies",
+    onClose: function () { showIntimacies(false); }
+  });
+  if (!p || !p.panel || !p.body) return null;
+  if (p.body.classList) p.body.classList.add("mrr-spellbook__body");
+  p.panel.style.display = "none";
+  state.intimaciesEl = p.panel;
+  return state.intimaciesEl;
+}
+
 function buildIntimaciesPanel() {
   if (state.intimaciesEl) return state.intimaciesEl;
   state.intimaciesEl = marinara.addElement(document.body, "div", { "class": "mrr-spellbook mrr-intimacies" });
@@ -1707,15 +1726,23 @@ function buildIntimaciesPanel() {
 }
 
 function showIntimacies(open) {
+  var useNew = state.sheet && state.sheet.useNewRenderer === true;
   if (open) {
-    if (!state.intimaciesEl) buildIntimaciesPanel();
+    if (!state.intimaciesEl) {
+      if (useNew && typeof mrrP3BuildIntimaciesPanel === "function") mrrP3BuildIntimaciesPanel();
+      else buildIntimaciesPanel();
+    }
     if (state.intimaciesEl) {
       state.intimaciesEl.classList.add("mrr-spellbook--open");
+      state.intimaciesEl.style.display = "flex";
       state.intimaciesOpen = true;
       renderIntimaciesPanelContents();
     }
   } else {
-    if (state.intimaciesEl) state.intimaciesEl.classList.remove("mrr-spellbook--open");
+    if (state.intimaciesEl) {
+      state.intimaciesEl.classList.remove("mrr-spellbook--open");
+      state.intimaciesEl.style.display = "none";
+    }
     state.intimaciesOpen = false;
   }
 }
@@ -6105,6 +6132,24 @@ function renderInventoryList(parent) {
 
 /* ─────  Items flyout (consumables, scrolls, mundane gear)  ───── */
 
+/* Phase 3.7 — Phase-3 itembag flyout via mrrP3CreatePanel. */
+function mrrP3BuildItemBag() {
+  if (state.itemBagEl) return state.itemBagEl;
+  if (typeof mrrP3CreatePanel !== "function") return null;
+  var p = mrrP3CreatePanel(document.body, {
+    storageKey: "mrr-p3-itembag-pos",
+    title: "Items — " + state.ruleset.name,
+    defaultPos: { x: 360, y: 80 },
+    defaultSize: { w: 420, h: 600 },
+    onClose: function () { showItemBag(false); }
+  });
+  if (!p || !p.panel || !p.body) return null;
+  if (p.body.classList) p.body.classList.add("mrr-spellbook__body");
+  p.panel.style.display = "none";
+  state.itemBagEl = p.panel;
+  return state.itemBagEl;
+}
+
 function buildItemBag() {
   if (state.itemBagEl) return state.itemBagEl;
   state.itemBagEl = marinara.addElement(document.body, "div", { "class": "mrr-spellbook" });
@@ -6123,15 +6168,23 @@ function buildItemBag() {
 }
 
 function showItemBag(open) {
+  var useNew = state.sheet && state.sheet.useNewRenderer === true;
   if (open) {
-    if (!state.itemBagEl) buildItemBag();
+    if (!state.itemBagEl) {
+      if (useNew && typeof mrrP3BuildItemBag === "function") mrrP3BuildItemBag();
+      else buildItemBag();
+    }
     if (state.itemBagEl) {
       state.itemBagEl.classList.add("mrr-spellbook--open");
+      state.itemBagEl.style.display = "flex";
       state.itemBagOpen = true;
       renderItemBagContents();
     }
   } else {
-    if (state.itemBagEl) state.itemBagEl.classList.remove("mrr-spellbook--open");
+    if (state.itemBagEl) {
+      state.itemBagEl.classList.remove("mrr-spellbook--open");
+      state.itemBagEl.style.display = "none";
+    }
     state.itemBagOpen = false;
   }
 }
@@ -6898,17 +6951,54 @@ function showSpellbook(open) {
     state.spellbookOpen = false;
     return;
   }
+  var useNew = state.sheet && state.sheet.useNewRenderer === true;
   if (open) {
-    if (!state.spellbookEl) buildSpellbook();
+    if (!state.spellbookEl) {
+      if (useNew && typeof mrrP3BuildSpellbook === "function") mrrP3BuildSpellbook();
+      else buildSpellbook();
+    }
     if (state.spellbookEl) {
+      /* Set both class (classic) AND inline display (Phase-3 panel)
+         — inline wins where present, class drives the classic CSS
+         visibility gate. */
       state.spellbookEl.classList.add("mrr-spellbook--open");
+      state.spellbookEl.style.display = "flex";
       state.spellbookOpen = true;
       renderSpellbookContents();
     }
   } else {
-    if (state.spellbookEl) state.spellbookEl.classList.remove("mrr-spellbook--open");
+    if (state.spellbookEl) {
+      state.spellbookEl.classList.remove("mrr-spellbook--open");
+      state.spellbookEl.style.display = "none";
+    }
     state.spellbookOpen = false;
   }
+}
+
+/* Phase 3.7 — Phase-3 spellbook flyout build using mrrP3CreatePanel.
+   Parallel to classic buildSpellbook; chosen by showSpellbook based
+   on useNewRenderer. Reuses renderSpellbookContents by adding the
+   .mrr-spellbook__body class to the factory's body so the existing
+   querySelector still works. */
+function mrrP3BuildSpellbook() {
+  if (state.spellbookEl) return state.spellbookEl;
+  if (typeof mrrP3CreatePanel !== "function") return null;
+  var cfg = (typeof getAbilitiesConfig === "function") ? getAbilitiesConfig() : null;
+  var titleText = (cfg && cfg.label ? cfg.label : "Spellbook") + " — " + state.ruleset.name;
+  var p = mrrP3CreatePanel(document.body, {
+    storageKey: "mrr-p3-spellbook-pos",
+    title: titleText,
+    defaultPos: { x: 360, y: 80 },
+    defaultSize: { w: 420, h: 640 },
+    onClose: function () { showSpellbook(false); }
+  });
+  if (!p || !p.panel || !p.body) return null;
+  if (p.body.classList) p.body.classList.add("mrr-spellbook__body");
+  /* Hide on build; show* toggles via inline display (works for both
+     paths since inline overrides .mrr-p3-panel's display: flex default). */
+  p.panel.style.display = "none";
+  state.spellbookEl = p.panel;
+  return state.spellbookEl;
 }
 
 function buildSpellbook() {
