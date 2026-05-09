@@ -1625,11 +1625,21 @@
  * ═══════════════════════════════════════════════════════════════ */
 
 .mrr-p3-section {
+  /* display:flex + column makes the card a flex container AND fixes
+     the flex-item height collapse: when this card is itself a flex
+     item of .mrr-sheet (which is column flex), Chrome computes its
+     intrinsic min-height as 0 if the card isn't a flex container,
+     which causes head + body to render outside the card's painted
+     bounds. Matching the existing .mrr-section pattern (also column
+     flex) keeps the card sized to its children. overflow:hidden
+     dropped — children have padding so they don't bleed past the
+     rounded corners. */
+  display: flex;
+  flex-direction: column;
   background: var(--mrr-bg-elev);
   border: 1px solid var(--mrr-border);
   border-radius: var(--mrr-radius);
   margin-bottom: 8px;
-  overflow: hidden;
 }
 .mrr-p3-section__head {
   padding: 12px;
