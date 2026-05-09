@@ -1454,10 +1454,7 @@ function mergeSheet(base, override) {
       return typeof c === "string" && c;
     });
   }
-  /* Phase 4 — per-cell damage track persistence. The Phase-3 wrapper
-     uses this for in-place cell escalation. Each entry is a string
-     ("B" / "L" / "A") or null. Migration from typed-counter happens
-     lazily in ensureTrackCells when no per-cell array exists. */
+  /* Phase 4 — per-cell damage track persistence. */
   if (override.trackCells && typeof override.trackCells === "object" && !Array.isArray(override.trackCells)) {
     base.trackCells = {};
     Object.keys(override.trackCells).forEach(function (name) {
@@ -1466,6 +1463,27 @@ function mergeSheet(base, override) {
       base.trackCells[name] = arr.map(function (v) {
         return (typeof v === "string" && v) ? v : null;
       });
+    });
+  }
+  /* Phase 5 — V20 disciplines plumbing. Per-category score (1-10
+     rating per discipline) and user-added custom categories (bloodline
+     disciplines like Daimoinon). Both keyed by category id so they
+     survive ruleset switches gracefully. */
+  if (override.abilityCategoryScores && typeof override.abilityCategoryScores === "object"
+      && !Array.isArray(override.abilityCategoryScores)) {
+    base.abilityCategoryScores = {};
+    Object.keys(override.abilityCategoryScores).forEach(function (catId) {
+      var v = override.abilityCategoryScores[catId];
+      if (typeof v === "number" && isFinite(v)) {
+        base.abilityCategoryScores[catId] = Math.max(0, Math.min(10, Math.floor(v)));
+      }
+    });
+  }
+  if (Array.isArray(override.customAbilityCategories)) {
+    base.customAbilityCategories = override.customAbilityCategories.filter(function (c) {
+      return c && typeof c === "object" && typeof c.id === "string" && typeof c.label === "string";
+    }).map(function (c) {
+      return { id: c.id, label: c.label };
     });
   }
   return base;
@@ -7280,6 +7298,18 @@ function renderSpellbookContents() {
     renderSpellbookCategory(body, cat);
   });
 
+  /* Phase 5 — custom user-added categories (V20 bloodline disciplines).
+     state.sheet.customAbilityCategories = [{id, label}]. Render after
+     ruleset categories with a delete button so users can remove a
+     custom category they added in error. */
+  if (Array.isArray(state.sheet.customAbilityCategories)) {
+    state.sheet.customAbilityCategories.forEach(function (cat) {
+      if (!cat || !cat.id) return;
+      declaredIds[cat.id] = true;
+      renderSpellbookCategory(body, cat, null, true /* isCustom */);
+    });
+  }
+
   /* Orphan abilities — categoryIds that were saved but no longer exist on
      the active ruleset (ruleset switch mid-chat). Render under a synthetic
      "Uncategorized" bucket so the data is recoverable rather than silently
@@ -7295,9 +7325,30 @@ function renderSpellbookContents() {
     });
     renderSpellbookCategory(body, pseudoCat, orphans);
   }
+
+  /* Phase 5 — "+ Add custom" button at the bottom of the panel.
+     Prompts for a name (e.g. "Daimoinon" for a bloodline discipline)
+     and pushes a new custom category. Re-renders. */
+  var addCustomBtn = marinara.addElement(body, "button", {
+    "class": "mrr-char-btn mrr-char-btn--dashed",
+    type: "button",
+    textContent: "+ Add " + (cfg.label || "Category")
+  });
+  if (addCustomBtn) marinara.on(addCustomBtn, "click", function () {
+    var name = window.prompt("Name for the new " + (cfg.label || "category").toLowerCase() + ":");
+    if (!name || !name.trim()) return;
+    if (!Array.isArray(state.sheet.customAbilityCategories)) state.sheet.customAbilityCategories = {};
+    var nameTrim = name.trim();
+    var slug = nameTrim.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    var newId = "custom-" + (slug || "unnamed") + "-" + Date.now().toString(36);
+    if (!Array.isArray(state.sheet.customAbilityCategories)) state.sheet.customAbilityCategories = [];
+    state.sheet.customAbilityCategories.push({ id: newId, label: nameTrim });
+    saveSheet(state.chatId, state.sheet);
+    renderSpellbookContents();
+  });
 }
 
-function renderSpellbookCategory(body, cat, orphanCategoryIds) {
+function renderSpellbookCategory(body, cat, orphanCategoryIds, isCustom) {
   var sec = marinara.addElement(body, "div", { "class": "mrr-spellbook-cat" });
   if (!sec) return;
 
@@ -7310,7 +7361,14 @@ function renderSpellbookCategory(body, cat, orphanCategoryIds) {
     : true;
   if (collapsed) sec.classList.add("mrr-spellbook-cat--collapsed");
 
-  var head = marinara.addElement(sec, "button", {
+  /* Phase 5 — per-category score (V20 disciplines: 1-10 rating). Shown
+     in the head row when the ruleset has dice-pool resolution mode AND
+     this isn't an orphan bucket. Score range from cfg.scoreMin/Max if
+     declared (default 0-10). State at state.sheet.abilityCategoryScores
+     [cat.id]. */
+  var headRow = marinara.addElement(sec, "div", { "class": "mrr-spellbook-cat__head-row" });
+  if (!headRow) return;
+  var head = marinara.addElement(headRow, "button", {
     "class": "mrr-spellbook-cat__head",
     type: "button",
     textContent: cat.label + " " + count
@@ -7319,13 +7377,65 @@ function renderSpellbookCategory(body, cat, orphanCategoryIds) {
     state.sheet.abilityCollapse[cat.id] = !state.sheet.abilityCollapse[cat.id]
       ? false
       : true;
-    /* Toggle: read current effective state, flip, persist. The default-true
-       fallback above means an unset key behaves as collapsed; flipping it
-       sets it explicitly. */
     var nowCollapsed = sec.classList.toggle("mrr-spellbook-cat--collapsed");
     state.sheet.abilityCollapse[cat.id] = nowCollapsed;
     saveSheet(state.chatId, state.sheet);
   });
+
+  var isPoolMode = state.ruleset && state.ruleset.resolution
+      && state.ruleset.resolution.mode === "dice-pool";
+  if (isPoolMode && !orphanCategoryIds) {
+    if (!state.sheet.abilityCategoryScores || typeof state.sheet.abilityCategoryScores !== "object") {
+      state.sheet.abilityCategoryScores = {};
+    }
+    var curScore = state.sheet.abilityCategoryScores[cat.id];
+    if (typeof curScore !== "number") curScore = 0;
+    var scoreInput = marinara.addElement(headRow, "input", {
+      "class": "mrr-spellbook-cat__score",
+      type: "number",
+      min: "0",
+      max: "10",
+      step: "1",
+      title: "Rating (0-10)"
+    });
+    if (scoreInput) {
+      scoreInput.value = String(curScore);
+      marinara.on(scoreInput, "click", function (e) {
+        if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+      });
+      marinara.on(scoreInput, "change", function () {
+        var n = parseInt(scoreInput.value, 10);
+        if (isNaN(n) || n < 0) n = 0;
+        if (n > 10) n = 10;
+        state.sheet.abilityCategoryScores[cat.id] = n;
+        saveSheet(state.chatId, state.sheet);
+      });
+    }
+  }
+
+  /* Phase 5 — custom-category delete button. Only on user-added cats. */
+  if (isCustom) {
+    var delCatBtn = marinara.addElement(headRow, "button", {
+      "class": "mrr-char-btn mrr-char-btn--danger",
+      type: "button",
+      textContent: "×",
+      title: "Remove this custom " + (cat.label || "category")
+    });
+    if (delCatBtn) marinara.on(delCatBtn, "click", function (e) {
+      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+      if (!window.confirm("Remove " + (cat.label || "category") + " and all its abilities?")) return;
+      if (Array.isArray(state.sheet.customAbilityCategories)) {
+        state.sheet.customAbilityCategories = state.sheet.customAbilityCategories.filter(function (c) {
+          return c && c.id !== cat.id;
+        });
+      }
+      if (state.sheet.abilities) delete state.sheet.abilities[cat.id];
+      if (state.sheet.abilityCategoryScores) delete state.sheet.abilityCategoryScores[cat.id];
+      if (state.sheet.abilityCollapse) delete state.sheet.abilityCollapse[cat.id];
+      saveSheet(state.chatId, state.sheet);
+      renderSpellbookContents();
+    });
+  }
 
   var list = marinara.addElement(sec, "div", { "class": "mrr-spellbook-cat__list" });
   if (!list) return;
@@ -7358,18 +7468,27 @@ function renderAbilityRow(list, ab, catId) {
   marinara.addElement(row, "span", { "class": "mrr-spellbook-ab__name", textContent: ab.name || "(unnamed)" });
   marinara.addElement(row, "span", { "class": "mrr-spellbook-ab__cost", textContent: ab.costText || "" });
 
-  /* Cast button — appears only on abilities with cast-time data
-     (damageDice OR a save target OR a spellcasting attribute). */
+  /* Cast button — for single-roll mode appears with cast-time data
+     (damageDice / saveAttribute / spellcastingAttribute). For dice-pool
+     mode (V20 disciplines, Exalted charms) ALWAYS appears so the player
+     can announce a discipline activation in chat with name + cost. */
   var hasCastData = !!(ab.damageDice || ab.saveAttribute || ab.spellcastingAttribute);
-  if (hasCastData && state.ruleset && state.ruleset.resolution
-      && state.ruleset.resolution.mode === MODES.SINGLE) {
+  var isPoolModeRow = state.ruleset && state.ruleset.resolution
+      && state.ruleset.resolution.mode === "dice-pool";
+  if (state.ruleset && state.ruleset.resolution &&
+      ((state.ruleset.resolution.mode === MODES.SINGLE && hasCastData) || isPoolModeRow)) {
     var castBtn = marinara.addElement(row, "button", {
       "class": "mrr-char-btn mrr-char-btn--accent",
       type: "button",
       textContent: "Cast",
-      title: "Compute DC, roll damage, post chat tag for the GM to resolve"
+      title: isPoolModeRow
+        ? "Announce activation in chat with name + cost"
+        : "Compute DC, roll damage, post chat tag for the GM to resolve"
     });
-    if (castBtn) marinara.on(castBtn, "click", function () { castSpell(ab); });
+    if (castBtn) marinara.on(castBtn, "click", function () {
+      if (isPoolModeRow) castAbilityPool(ab, catId);
+      else castSpell(ab);
+    });
   }
 
   var editBtn = marinara.addElement(row, "button", { "class": "mrr-char-btn", type: "button", textContent: "Edit" });
@@ -7380,6 +7499,64 @@ function renderAbilityRow(list, ab, catId) {
     if (!window.confirm("Delete \"" + (ab.name || ab.id) + "\"?")) return;
     deleteAbility(catId, ab.id);
   });
+}
+
+/* Phase 5 — dice-pool cast. Used by V20 disciplines + Exalted charms.
+   Posts a chat tag announcing the activation with name + cost so the
+   GM can see the player invoked it. No DC, no damage roll — the
+   discipline's effect is freeform-narrative and the cost (e.g. blood
+   points for V20 disciplines, mote cost for Exalted charms) is the
+   authoritative resource expenditure. */
+function castAbilityPool(ability, catId) {
+  if (!ability || !state.ruleset) return;
+  var name = String(ability.name || "ability");
+  var cost = String(ability.costText || "");
+  var catLabel = "";
+  if (catId) {
+    var cfg = (typeof getAbilitiesConfig === "function") ? getAbilitiesConfig() : null;
+    if (cfg && Array.isArray(cfg.categories)) {
+      for (var i = 0; i < cfg.categories.length; i++) {
+        if (cfg.categories[i].id === catId) { catLabel = cfg.categories[i].label; break; }
+      }
+    }
+    if (!catLabel && Array.isArray(state.sheet.customAbilityCategories)) {
+      for (var j = 0; j < state.sheet.customAbilityCategories.length; j++) {
+        if (state.sheet.customAbilityCategories[j].id === catId) {
+          catLabel = state.sheet.customAbilityCategories[j].label; break;
+        }
+      }
+    }
+  }
+  /* Per-category score (V20 discipline rating). Included in the tag
+     so the GM agent can read the player's discipline level without
+     opening the sheet. */
+  var rating = "";
+  if (catId && state.sheet.abilityCategoryScores
+      && typeof state.sheet.abilityCategoryScores[catId] === "number") {
+    rating = String(state.sheet.abilityCategoryScores[catId]);
+  }
+  var parts = ['[mrr-cast: name="' + name.replace(/"/g, '\\"') + '"'];
+  if (catLabel) parts.push('discipline="' + catLabel.replace(/"/g, '\\"') + '"');
+  if (rating)   parts.push('rating="' + rating + '"');
+  if (cost)     parts.push('cost="' + cost.replace(/"/g, '\\"') + '"');
+  parts[parts.length - 1] += ']';
+  var tag = parts.join(" ");
+  /* Post via the same chat-injection path the dice widget uses for
+     [roll: ...] tags. finalizeRoll handles message-assembly + the
+     processed-msg-id bookkeeping so the state-mutator parser doesn't
+     re-apply the tag on the next pass. Pass null faces (no dice). */
+  if (typeof finalizeRoll === "function") {
+    finalizeRoll(tag, "narrate", []);
+  } else if (typeof injectIntoChat === "function") {
+    injectIntoChat(tag);
+  } else {
+    /* Last-resort fallback — copy the tag to clipboard so the user can
+       paste manually. Unlikely path; both helpers above ship in core. */
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(tag);
+    }
+    log("castAbilityPool: no chat-injection helper found; tag in console: " + tag);
+  }
 }
 
 /* Compute the spell save DC and emit the cast + damage chat tags. */
