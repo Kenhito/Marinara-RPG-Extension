@@ -12,6 +12,24 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+### Added — Phase 3.4 UI port: derived (bars + damage track) + saves migrated behind feature flag (2026-05-08)
+
+Third slice of the multi-session renderSheet rewrite. With `state.sheet.useNewRenderer === true`, the Phase-3 sheet now renders three full sections via the Phase 3.1 primitives — Attributes (shipped in 3.3), Derived (bars + damage track, this slice), and Saves (this slice). Every other section still routes through classic helpers; the flag-OFF default is unchanged.
+
+- **`mrrP3RenderDerivedSection(parent)`** — iterates `state.ruleset.derivedStats` and dispatches per `renderAs`. Bar entries call `mrrP3RenderBar` via the new `mrrP3RenderDerivedBar` bridge; track entries call `mrrP3RenderDamageTrack` via the new `mrrP3RenderDerivedTrack` bridge; non-bar/non-track entries fall through to classic `renderValue` (parent-agnostic — safe to call from any container). State contracts preserved verbatim: `state.sheet.derived[name]`, `state.sheet.derivedMax[name]`, typed-damage `state.sheet.track[name]`, `state.sheet.extraTrack[name]`. Mutations trigger full `renderSheet` re-render — Phase-3 path resets `barRefreshers` AND `derivedBonusRefreshers` at its head (lines ~3380–3381) so refresher cleanup is automatic.
+
+- **`mrrP3RenderDerivedBar(parent, d)` + `mrrP3ComputeBarMax(d)`** — bar-state bridge. Max precedence mirrors classic: `derivedMax[name]` override > `maxFormula` evaluated on `statContext()` > literal `max` > `Math.max(DEFAULT_BAR_MAX, current)` for fresh sheets. v1 retreats: bar bonus pill (`.mrr-row__bonus`) and roll button for derived stats with `rollFormula` are NOT migrated — primitive doesn't expose them; revisit in a future slice.
+
+- **`mrrP3RenderDerivedTrack(parent, d)`** — typed-damage bridge. Severity-descending fill: types sorted A,L,B (high→low) so the leftmost cells carry the worst damage. Cell click semantic: filled cell heals that type, empty cell takes the lightest type — matches classic `renderTrack` single-click fallback. `onAddBox` extends `state.sheet.extraTrack[name]` with `{label, penalty}`; `onRemoveBox` pops the last entry; `onHeal("worst")` drops one of the highest-severity damage in the typed counter, `onHeal("all")` zeros every type. v1 retreat: classic Exalted-style Take-B/L/A buttons NOT migrated — primitive doesn't expose them, this is a JSX-prototype UX choice not a regression.
+
+- **`mrrP3RenderSavesSection(parent)`** — iterates `state.ruleset.saves` and builds Phase-3 SaveRows via `mrrP3RenderSaveRow`. Tier state shared with skill-proficiency map (`state.sheet.skillProficiency[save.name]` — same key `cycleTier` mutates at line ~1539); wrapper writes the same key on tier-cycle. Total bonus computed via the same math classic `refreshSaveBonus` uses (`skillBonusFormula` substitution OR `attrMod + tierBonus` fallback). Roll callback delegates to existing `quickRollForSave(save)`; primitive's `onRoll` args ignored since `quickRollForSave` self-computes from the save object.
+
+- **Section dispatch swap** — in `mrrP3RenderSheet`, the "saves" branch becomes `mrrP3RenderSavesSection`; the "derived" branch becomes `mrrP3RenderDerivedSection`. Two-line edit. Classic `renderSheet` body untouched — flag-OFF still routes through `renderSaves` / `renderDerived`.
+
+- **Engine functions untouched** — `statContext`, `equippedBonuses`, `tierForSkill`, `resolveTierBonus` unchanged. Classic `renderDerived` / `renderBar` / `renderTrack` / `renderSaves` function bodies unchanged.
+
+- **No CSS additions this slice** — primitives shipped in 3.1 already include `.mrr-p3-bar`, `.mrr-p3-bar--damage`, `.mrr-p3-track`, `.mrr-p3-cell--{B,L,A}`, `.mrr-p3-track-tools`, `.mrr-p3-row--save`, `.mrr-p3-save__bonus`. CSS file unchanged.
+
 ### Added — Phase 3.2 + 3.3 UI port: panel-frame factory + renderer cutover behind feature flag (2026-05-08)
 
 Second slice of the multi-session renderSheet rewrite. Panel-frame chrome translated from `~/projects/claude-design-updates/panel-frame.jsx`, and a parallel `mrrP3RenderSheet` lands behind a `state.sheet.useNewRenderer` flag so users can opt into the new path while the classic renderer remains the default. Initial cutover migrates only the Attributes section to the Phase 3.1 primitives; every other section still routes through the classic helpers.

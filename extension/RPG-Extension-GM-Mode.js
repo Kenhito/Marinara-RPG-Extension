@@ -3426,8 +3426,8 @@ function mrrP3RenderSheet() {
       attrsRendered = true;
     }
     else if (sec === "skills") renderSkills(state.mountEl);
-    else if (sec === "saves") renderSaves(state.mountEl);
-    else if (sec === "derived") renderDerived(state.mountEl);
+    else if (sec === "saves") mrrP3RenderSavesSection(state.mountEl);
+    else if (sec === "derived") mrrP3RenderDerivedSection(state.mountEl);
     else if (sec === "states") renderStates(state.mountEl);
     else if (sec === "conditions") renderConditions(state.mountEl);
     else if (sec === "intimacies") renderIntimaciesSection(state.mountEl);
@@ -3536,7 +3536,225 @@ function mrrP3RenderAttributesSection(parent) {
   });
 }
 
-/* End Phase 3.2 + 3.3 cutover plumbing. */
+/* Phase 3.4 — DerivedSection wrapper. Iterates state.ruleset.derivedStats
+   and dispatches per renderAs onto the Phase-3.1 mrrP3RenderBar /
+   mrrP3RenderDamageTrack primitives. Non-bar/non-track derived stats
+   fall through to classic renderValue (parent-agnostic — uses derived.*
+   and state.sheet.derived[name], no closure dependency on the classic
+   renderDerived caller). State contracts preserved verbatim:
+   state.sheet.derived[name], state.sheet.derivedMax[name], typed-damage
+   state.sheet.track[name] (number-or-typed-object), state.sheet.extraTrack.
+   Mutations trigger full renderSheet — Phase-3 path resets barRefreshers
+   AND derivedBonusRefreshers (mrrP3RenderSheet head) so re-render cleanup
+   is automatic. v1 retreats: bar bonus pill (.mrr-row__bonus) and roll
+   button for derived stats with rollFormula are NOT migrated — primitive
+   doesn't expose them; revisit Phase 3.5+. */
+function mrrP3RenderDerivedSection(parent) {
+  if (!parent || !state.ruleset) return;
+  if (!Array.isArray(state.ruleset.derivedStats) || !state.ruleset.derivedStats.length) return;
+  mrrP3RenderSection(parent, {
+    id: "derived-p3",
+    title: "DERIVED",
+    defaultOpen: true
+  }, function (body) {
+    state.ruleset.derivedStats.forEach(function (d) {
+      if (d.renderAs === "bar") {
+        mrrP3RenderDerivedBar(body, d);
+      } else if (d.renderAs === "track" && Array.isArray(d.track)) {
+        mrrP3RenderDerivedTrack(body, d);
+      } else {
+        renderValue(body, d);
+      }
+    });
+  });
+}
+
+/* Bridge classic bar state onto mrrP3RenderBar. Max precedence mirrors
+   classic renderBar: derivedMax override > maxFormula > literal max >
+   Math.max(DEFAULT_BAR_MAX, current) for fresh sheets. */
+function mrrP3RenderDerivedBar(parent, d) {
+  var current = state.sheet.derived[d.name] || 0;
+  var max = mrrP3ComputeBarMax(d);
+  mrrP3RenderBar(parent, {
+    name: d.name,
+    current: current,
+    max: max,
+    onCurrent: function (v) {
+      state.sheet.derived[d.name] = v;
+      saveSheet(state.chatId, state.sheet);
+      renderSheet();
+    },
+    onMax: function (v) {
+      if (!state.sheet.derivedMax) state.sheet.derivedMax = {};
+      state.sheet.derivedMax[d.name] = v;
+      saveSheet(state.chatId, state.sheet);
+      renderSheet();
+    }
+  });
+}
+
+function mrrP3ComputeBarMax(d) {
+  if (state.sheet.derivedMax && typeof state.sheet.derivedMax[d.name] === "number"
+      && state.sheet.derivedMax[d.name] > 0) {
+    return state.sheet.derivedMax[d.name];
+  }
+  if (d.maxFormula) {
+    var v = evalFormula(d.maxFormula, statContext());
+    if (v != null && v > 0) return Math.floor(v);
+  }
+  if (d.max != null) return d.max;
+  var current = state.sheet.derived[d.name] || 0;
+  return Math.max(DEFAULT_BAR_MAX, current);
+}
+
+/* Bridge classic typed-damage state onto mrrP3RenderDamageTrack. Severity-
+   descending fill: types is sorted A,L,B (high→low) so the leftmost cells
+   carry the worst damage. Cell click semantic: filled cell heals that
+   type, empty cell takes lightest type — matches classic renderTrack
+   single-cell-click fallback (line ~4882). Take-per-type buttons (classic
+   Exalted Take-B/L/A) NOT migrated — primitive doesn't expose them, this
+   is a JSX-prototype UX choice not a regression. */
+function mrrP3RenderDerivedTrack(parent, d) {
+  var rulesetCells = d.track || [];
+  var extras = (state.sheet.extraTrack && state.sheet.extraTrack[d.name])
+    ? state.sheet.extraTrack[d.name] : [];
+  var allCells = rulesetCells.concat(extras);
+  var levels = allCells.map(function (c) { return c.label; });
+  var types = damageTypesFor(d);
+  var damage = types ? ensureTypedTrack(d.name, types) : null;
+
+  var filled = [];
+  if (types && damage) {
+    for (var i = 0; i < types.length; i++) {
+      var t = types[i];
+      var n = damage[t.id] || 0;
+      for (var k = 0; k < n; k++) filled.push({ type: t.id });
+    }
+  }
+  /* Pad to length so primitive iterates every cell with empty slots after
+     filled ones. Overflow damage stays in the typed counter but doesn't
+     paint past the last cell — matches classic semantics. */
+  while (filled.length < allCells.length) filled.push(null);
+  if (filled.length > allCells.length) filled = filled.slice(0, allCells.length);
+
+  mrrP3RenderDamageTrack(parent, {
+    track: { name: d.name, levels: levels, filled: filled },
+    onCellClick: function (idx) {
+      if (!types) return;
+      var dmg = ensureTypedTrack(d.name, types);
+      var f = filled[idx];
+      if (f && f.type) {
+        dmg[f.type] = Math.max(0, (dmg[f.type] || 0) - 1);
+      } else {
+        var lightest = types[types.length - 1];
+        if (lightest) dmg[lightest.id] = (dmg[lightest.id] || 0) + 1;
+      }
+      saveSheet(state.chatId, state.sheet);
+      renderSheet();
+    },
+    onAddBox: function (label) {
+      var penalty = parseInt(String(label), 10);
+      if (isNaN(penalty)) penalty = 0;
+      if (!state.sheet.extraTrack) state.sheet.extraTrack = {};
+      if (!state.sheet.extraTrack[d.name]) state.sheet.extraTrack[d.name] = [];
+      state.sheet.extraTrack[d.name].push({ label: String(label), penalty: penalty });
+      saveSheet(state.chatId, state.sheet);
+      renderSheet();
+    },
+    onRemoveBox: function () {
+      if (!state.sheet.extraTrack || !state.sheet.extraTrack[d.name]
+          || !state.sheet.extraTrack[d.name].length) return;
+      state.sheet.extraTrack[d.name].pop();
+      saveSheet(state.chatId, state.sheet);
+      renderSheet();
+    },
+    onHeal: function (mode) {
+      if (!types) return;
+      var dmg = ensureTypedTrack(d.name, types);
+      if (mode === "all") {
+        for (var i = 0; i < types.length; i++) dmg[types[i].id] = 0;
+      } else {
+        for (var j = 0; j < types.length; j++) {
+          if ((dmg[types[j].id] || 0) > 0) {
+            dmg[types[j].id] -= 1;
+            break;
+          }
+        }
+      }
+      saveSheet(state.chatId, state.sheet);
+      renderSheet();
+    }
+  });
+}
+
+/* Phase 3.4 — SavesSection wrapper. Iterates state.ruleset.saves and
+   builds Phase-3 SaveRows. Tier state shared with skill-proficiency map
+   (state.sheet.skillProficiency[save.name] — same key cycleTier mutates
+   at line ~1539). Total bonus computed via the same math classic
+   refreshSaveBonus uses (skillBonusFormula substitution OR attrMod +
+   tierBonus fallback). Roll callback delegates to existing
+   quickRollForSave; primitive's onRoll args ignored since
+   quickRollForSave self-computes from the save object. */
+function mrrP3RenderSavesSection(parent) {
+  if (!parent || !state.ruleset) return;
+  var saves = Array.isArray(state.ruleset.saves) ? state.ruleset.saves : [];
+  if (!saves.length) return;
+
+  var prof = state.ruleset.skillProficiency;
+  var tiersList = (prof && Array.isArray(prof.tiers)) ? prof.tiers : [];
+  var tiers = tiersList.map(function (t) { return t.code; });
+  var tierLabel = {};
+  tiersList.forEach(function (t) { tierLabel[t.code] = t.label; });
+  var skillFormula = state.ruleset.resolution && state.ruleset.resolution.skillBonusFormula;
+
+  mrrP3RenderSection(parent, {
+    id: "saves-p3",
+    title: "SAVING THROWS",
+    defaultOpen: true
+  }, function (body) {
+    saves.forEach(function (sv) {
+      var ctx = statContext();
+      var t = tierForSkill(sv.name);
+      var tierBonus = (t && t.rollBonusFormula) ? evalFormula(t.rollBonusFormula, ctx) : 0;
+      if (tierBonus == null) tierBonus = 0;
+      var attrMod = 0;
+      if (sv.linkedAttribute) {
+        var modKey = sv.linkedAttribute + "_mod";
+        if (typeof ctx[modKey] === "number") attrMod = ctx[modKey];
+      }
+      var totalBonus;
+      if (skillFormula) {
+        var subbed = String(skillFormula)
+          .replace(/\{linkedAttribute_mod\}/g, String(attrMod))
+          .replace(/\{tierBonus\}/g, String(tierBonus));
+        var v = evalFormula(subbed, ctx);
+        totalBonus = (typeof v === "number" && isFinite(v)) ? Math.floor(v) : 0;
+      } else {
+        totalBonus = attrMod + tierBonus;
+      }
+
+      mrrP3RenderSaveRow(body, {
+        save: { name: sv.name, attr: sv.linkedAttribute },
+        tier: t ? t.code : "",
+        tiers: tiers,
+        tierLabel: tierLabel,
+        attrMod: attrMod,
+        totalBonus: totalBonus,
+        onTier: function (nextCode) {
+          if (!state.sheet.skillProficiency) state.sheet.skillProficiency = {};
+          state.sheet.skillProficiency[sv.name] = nextCode;
+          saveSheet(state.chatId, state.sheet);
+          renderSheet();
+        },
+        onRoll: function () {
+          quickRollForSave(sv);
+        }
+      });
+    });
+  });
+}
+
+/* End Phase 3.2 + 3.3 + 3.4 cutover plumbing. */
 
 function renderSheet() {
   if (!state.ruleset) return;
