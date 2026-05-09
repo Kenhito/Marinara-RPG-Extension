@@ -10211,14 +10211,32 @@ function applyStateMutation(attrs) {
     return finalizeMutation(attrs);
   }
 
-  /* Numeric delta path. Resolve the field against the sheet's typed
-     numeric maps (derived / attributes / skills). Exact match first,
-     normalized fallback so AI-emitted variants ("hp" / "HP",
-     "peripheralMotes" / "Peripheral Motes") still hit the canonical
-     Title-Case key the ruleset declared. */
-  if (attrs.delta == null) return false;
-  var delta = parseInt(attrs.delta, 10);
-  if (isNaN(delta)) return false;
+  /* Numeric path. Resolve the field against the sheet's typed numeric
+     maps (derived / attributes / skills). Exact match first, normalized
+     fallback so AI-emitted variants ("hp" / "HP", "peripheralMotes" /
+     "Peripheral Motes") still hit the canonical Title-Case key the
+     ruleset declared.
+     Phase 5 — supports BOTH delta="+N" (incremental) AND absolute writes
+     via current=N / value=N / set=N (e.g. agent doing a full pool
+     refresh after a "rest" / "recover all motes" narration). Without
+     the absolute path, the agent's pool-reset to max-values silently
+     no-ops because the function used to require delta and rejected. */
+  var hasDelta = (attrs.delta != null);
+  var hasAbsolute = (attrs.current != null || attrs.value != null || attrs.set != null);
+  if (!hasDelta && !hasAbsolute) return false;
+  var delta = 0;
+  var absoluteValue = null;
+  if (hasDelta) {
+    delta = parseInt(attrs.delta, 10);
+    if (isNaN(delta)) return false;
+  }
+  if (hasAbsolute) {
+    var rawAbs = (attrs.current != null) ? attrs.current
+               : (attrs.value   != null) ? attrs.value
+               : attrs.set;
+    absoluteValue = parseInt(rawAbs, 10);
+    if (isNaN(absoluteValue)) return false;
+  }
 
   /* Typed-damage path. If the field names a damage type declared on a
      track-renderAs derived stat (Exalted bashing/lethal/aggravated),
@@ -10228,7 +10246,8 @@ function applyStateMutation(attrs) {
   if (dmg) {
     var damage = ensureTypedTrack(dmg.trackName, dmg.types);
     var dCurrent = (typeof damage[dmg.typeId] === "number") ? damage[dmg.typeId] : 0;
-    damage[dmg.typeId] = Math.max(0, dCurrent + delta);
+    var dNext = hasAbsolute ? absoluteValue : (dCurrent + delta);
+    damage[dmg.typeId] = Math.max(0, dNext);
     return finalizeMutation(attrs);
   }
 
@@ -10237,7 +10256,7 @@ function applyStateMutation(attrs) {
     var bucket = sheet[resolved.map];
     var current = (typeof bucket[resolved.key] === "number") ? bucket[resolved.key] : 0;
     var max = resolvedFieldMax(resolved.map, resolved.key);
-    var next = current + delta;
+    var next = hasAbsolute ? absoluteValue : (current + delta);
     if (typeof max === "number") next = Math.min(max, next);
     bucket[resolved.key] = Math.max(0, next);
     return finalizeMutation(attrs);
@@ -10259,7 +10278,7 @@ function applyStateMutation(attrs) {
   }
   var leaf = pathParts[pathParts.length - 1];
   var rootCurrent = (typeof node[leaf] === "number") ? node[leaf] : 0;
-  node[leaf] = Math.max(0, rootCurrent + delta);
+  node[leaf] = hasAbsolute ? Math.max(0, absoluteValue) : Math.max(0, rootCurrent + delta);
   return finalizeMutation(attrs);
 }
 
