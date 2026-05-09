@@ -6576,11 +6576,14 @@ function deleteItem(id) {
     });
   }
   /* Mote-pool restore: deleting an Exalted item with motes locked away
-     hands those motes back to the named pool. Defensive read-back —
-     skip silently if the sheet's derived map doesn't have the named
+     hands those motes back to the named pool. The derived-stat key is
+     the FULL ruleset name ("Personal Motes" / "Peripheral Motes"); the
+     item.motePool field stores only the short form. Defensive read-back
+     — skip silently if the sheet's derived map doesn't have the named
      pool (ruleset-config issue, not a delete-time concern). */
   if (removed && typeof removed.moteCommitment === "number" && removed.moteCommitment > 0) {
-    var poolKey = removed.motePool === "Peripheral" ? "Peripheral" : "Personal";
+    var poolShort = removed.motePool === "Peripheral" ? "Peripheral" : "Personal";
+    var poolKey = poolShort + " Motes";
     if (state.sheet.derived && typeof state.sheet.derived[poolKey] === "number") {
       state.sheet.derived[poolKey] = state.sheet.derived[poolKey] + removed.moteCommitment;
     } else {
@@ -7073,19 +7076,28 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
         var newPool = (motePoolSel && motePoolSel.value === "Peripheral") ? "Peripheral" : "Personal";
         /* Mote-pool live decrement (Phase 2.C). When the user changes
            moteCommitment or motePool via the dialog, the change must
-           propagate to state.sheet.derived[motePool] — Phase 1 stored
-           the data field but didn't wire the pool delta. Math: restore
-           the old commit to the old pool, then debit the new commit
-           from the new pool. Compute both legs first, refuse if the
-           result would deplete a pool below 0, and apply atomically
-           only on success. */
+           propagate to state.sheet.derived[<pool> + " Motes"] — Phase 1
+           stored the data field but didn't wire the pool delta. Math:
+           restore the old commit to the old pool, then debit the new
+           commit from the new pool. Compute both legs first, refuse if
+           the result would deplete a pool below 0, and apply atomically
+           only on success.
+
+           IMPORTANT key naming: item.motePool stores the short form
+           ("Personal" / "Peripheral") for cap math + UI labels, but the
+           derived-stat key on state.sheet.derived is the FULL ruleset
+           name ("Personal Motes" / "Peripheral Motes"). They MUST be
+           translated; reads against the short form silently hit a
+           phantom key starting at 0 and refuse every commit. */
         var oldMotes = (existing && typeof existing.moteCommitment === "number" && existing.moteCommitment > 0) ? existing.moteCommitment : 0;
         var oldPool = (existing && existing.motePool === "Peripheral") ? "Peripheral" : "Personal";
+        var oldPoolKey = oldPool + " Motes";
+        var newPoolKey = newPool + " Motes";
         if (!state.sheet.derived) state.sheet.derived = {};
-        if (typeof state.sheet.derived[oldPool] !== "number") state.sheet.derived[oldPool] = 0;
-        if (typeof state.sheet.derived[newPool] !== "number") state.sheet.derived[newPool] = 0;
-        var simOldM = state.sheet.derived[oldPool] + oldMotes;
-        var simNewM = (oldPool === newPool ? simOldM : state.sheet.derived[newPool]) - newMotes;
+        if (typeof state.sheet.derived[oldPoolKey] !== "number") state.sheet.derived[oldPoolKey] = 0;
+        if (typeof state.sheet.derived[newPoolKey] !== "number") state.sheet.derived[newPoolKey] = 0;
+        var simOldM = state.sheet.derived[oldPoolKey] + oldMotes;
+        var simNewM = (oldPoolKey === newPoolKey ? simOldM : state.sheet.derived[newPoolKey]) - newMotes;
         if (simNewM < 0) {
           /* Refuse the commitment change. Revert draft.moteCommitment
              and motePool to the existing values so the rest of the
@@ -7095,11 +7107,11 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
           draft.moteCommitment = oldMotes;
           draft.motePool = oldPool;
         } else {
-          if (oldPool === newPool) {
-            state.sheet.derived[oldPool] = simNewM;
+          if (oldPoolKey === newPoolKey) {
+            state.sheet.derived[oldPoolKey] = simNewM;
           } else {
-            state.sheet.derived[oldPool] = simOldM;
-            state.sheet.derived[newPool] = simNewM;
+            state.sheet.derived[oldPoolKey] = simOldM;
+            state.sheet.derived[newPoolKey] = simNewM;
           }
           draft.moteCommitment = newMotes;
           draft.motePool = newPool;
@@ -10183,41 +10195,45 @@ function applyStateMutation(attrs) {
       }
     }
     /* Resolve target pool. Default to existing item.motePool, fall back
-       to "Personal" if neither is supplied or valid. */
+       to "Personal" if neither is supplied or valid. item.motePool stores
+       the short form ("Personal" / "Peripheral"); the derived-stat key
+       on sheet.derived is the full ruleset name with " Motes" suffix. */
     var newPool = attrs.pool;
     if (newPool !== "Personal" && newPool !== "Peripheral") {
       if (mTarget.motePool === "Personal" || mTarget.motePool === "Peripheral") newPool = mTarget.motePool;
       else newPool = "Personal";
     }
     var oldPool = (mTarget.motePool === "Peripheral") ? "Peripheral" : "Personal";
+    var oldPoolKey = oldPool + " Motes";
+    var newPoolKey = newPool + " Motes";
     var oldMotes = (typeof mTarget.moteCommitment === "number" && mTarget.moteCommitment > 0) ? mTarget.moteCommitment : 0;
     /* Defensive read of derived. If a pool key isn't on derived (ruleset
        config issue, not an agent bug), treat its current value as 0
        and proceed — the negative-floor check will catch nonsense
        commits, and a log line surfaces the config gap. */
     if (!sheet.derived) sheet.derived = {};
-    if (typeof sheet.derived[oldPool] !== "number") {
-      log("state-mutator commitment: derived[" + oldPool + "] missing — treating as 0");
-      sheet.derived[oldPool] = 0;
+    if (typeof sheet.derived[oldPoolKey] !== "number") {
+      log("state-mutator commitment: derived[" + oldPoolKey + "] missing — treating as 0");
+      sheet.derived[oldPoolKey] = 0;
     }
-    if (typeof sheet.derived[newPool] !== "number") {
-      log("state-mutator commitment: derived[" + newPool + "] missing — treating as 0");
-      sheet.derived[newPool] = 0;
+    if (typeof sheet.derived[newPoolKey] !== "number") {
+      log("state-mutator commitment: derived[" + newPoolKey + "] missing — treating as 0");
+      sheet.derived[newPoolKey] = 0;
     }
     /* Compute the post-mutation pool values without mutating sheet yet,
        so a negative-floor check can roll back atomically — the
        restore-old-pool and debit-new-pool legs are linked. */
-    var simOld = sheet.derived[oldPool] + oldMotes;
-    var simNew = (oldPool === newPool ? simOld : sheet.derived[newPool]) - mNew;
+    var simOld = sheet.derived[oldPoolKey] + oldMotes;
+    var simNew = (oldPoolKey === newPoolKey ? simOld : sheet.derived[newPoolKey]) - mNew;
     if (simNew < 0) {
-      warn("state-mutator commitment: would deplete " + newPool + " pool below 0 (need " + mNew + ", have " + (oldPool === newPool ? simOld : sheet.derived[newPool]) + ")");
+      warn("state-mutator commitment: would deplete " + newPoolKey + " pool below 0 (need " + mNew + ", have " + (oldPoolKey === newPoolKey ? simOld : sheet.derived[newPoolKey]) + ")");
       return false;
     }
-    if (oldPool === newPool) {
-      sheet.derived[oldPool] = simNew;
+    if (oldPoolKey === newPoolKey) {
+      sheet.derived[oldPoolKey] = simNew;
     } else {
-      sheet.derived[oldPool] = simOld;
-      sheet.derived[newPool] = simNew;
+      sheet.derived[oldPoolKey] = simOld;
+      sheet.derived[newPoolKey] = simNew;
     }
     mTarget.moteCommitment = mNew;
     mTarget.motePool = newPool;
