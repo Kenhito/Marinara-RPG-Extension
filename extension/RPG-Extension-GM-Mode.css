@@ -2111,3 +2111,108 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+ * Phase 3.2 — panel-frame chrome (port of panel-frame.jsx)
+ * ═══════════════════════════════════════════════════════════════
+ * Standalone floating panel: drag head + 8 resize handles + body.
+ * Used by future Session 3.4+ flyouts (Inv / Spell / Gear edit forms,
+ * BackpackFlyout, SpellbookFlyout). The current Phase 3.3 sheet body
+ * REUSES the existing .mrr-sheet shell so toggling renderers doesn't
+ * disturb the saved sheet position.
+ * ═══════════════════════════════════════════════════════════════ */
+
+.mrr-p3-panel {
+  position: fixed;
+  background: var(--mrr-bg);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius);
+  box-shadow: var(--mrr-shadow);
+  color: var(--mrr-text);
+  z-index: var(--mrr-z-sheet);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.mrr-p3-panel__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: move;
+  user-select: none;
+  border-bottom: 1px solid var(--mrr-border);
+  background: var(--mrr-bg-elev);
+}
+.mrr-p3-panel__title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mrr-accent);
+}
+.mrr-p3-panel__title-meta {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mrr-text-dim);
+  letter-spacing: 0;
+  text-transform: none;
+  margin-left: 4px;
+}
+.mrr-p3-panel__close {
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  color: var(--mrr-text-dim);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 6px;
+  border-radius: var(--mrr-radius-sm);
+}
+.mrr-p3-panel__close:hover {
+  background: var(--mrr-tint-1);
+  color: var(--mrr-text);
+}
+.mrr-p3-panel__body {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+}
+
+/* Resize handles — 4 edges (8px wide along the edge) + 4 corners
+ * (12px square at the corner). Cursor hints encode the drag axis. */
+.mrr-p3-panel__resize {
+  position: absolute;
+  background: transparent;
+  z-index: 1;
+}
+.mrr-p3-panel__resize--n  { top: 0;     left: 8px;   right: 8px;   height: 6px; cursor: ns-resize; }
+.mrr-p3-panel__resize--s  { bottom: 0;  left: 8px;   right: 8px;   height: 6px; cursor: ns-resize; }
+.mrr-p3-panel__resize--e  { top: 8px;   right: 0;    bottom: 8px;  width: 6px;  cursor: ew-resize; }
+.mrr-p3-panel__resize--w  { top: 8px;   left: 0;     bottom: 8px;  width: 6px;  cursor: ew-resize; }
+.mrr-p3-panel__resize--ne { top: 0;     right: 0;                              width: 12px; height: 12px; cursor: nesw-resize; }
+.mrr-p3-panel__resize--nw { top: 0;     left: 0;                               width: 12px; height: 12px; cursor: nwse-resize; }
+.mrr-p3-panel__resize--se {
+  bottom: 0; right: 0;
+  width: 14px; height: 14px;
+  cursor: nwse-resize;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  color: var(--mrr-text-dim);
+}
+.mrr-p3-panel__resize--se:hover { color: var(--mrr-accent); }
+.mrr-p3-panel__resize--sw { bottom: 0;  left: 0;                               width: 12px; height: 12px; cursor: nesw-resize; }
+
+/* Phase 3 attribute-group sub-label (used by mrrP3RenderAttributesSection
+ * to label Exalted's Physical / Social / Mental groups). */
+.mrr-p3-section__subgroup-label {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mrr-text-dim);
+  margin: 8px 0 4px;
+  padding-left: 4px;
+}

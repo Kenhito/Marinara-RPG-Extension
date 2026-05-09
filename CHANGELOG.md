@@ -12,6 +12,28 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+### Added — Phase 3.2 + 3.3 UI port: panel-frame factory + renderer cutover behind feature flag (2026-05-08)
+
+Second slice of the multi-session renderSheet rewrite. Panel-frame chrome translated from `~/projects/claude-design-updates/panel-frame.jsx`, and a parallel `mrrP3RenderSheet` lands behind a `state.sheet.useNewRenderer` flag so users can opt into the new path while the classic renderer remains the default. Initial cutover migrates only the Attributes section to the Phase 3.1 primitives; every other section still routes through the classic helpers.
+
+- **`mrrP3CreatePanel(parent, opts)`** — vanilla-JS port of the JSX prototype's `DraggablePanel` (`panel-frame.jsx`). Floating panel with drag-from-head + 8 resize handles (4 edges + 4 corners) + `localStorage` position/size persistence + viewport re-clamp on `window.resize`. Returns `{ panel, head, body, dispose }` so callers populate the body and clean up event listeners on close. Drag from head ignores button / input / select / textarea targets via `e.target.closest`. The SE corner gets a small SVG glyph for affordance. Currently unused by the running renderer — held in reserve for future Session 3.4+ flyouts (Inv / Spell / Gear edit forms, BackpackFlyout, SpellbookFlyout).
+
+- **`mrrP3RenderSheet()` parallel renderer** — alternative entry point that REUSES the existing `.mrr-sheet` shell + `makeDraggable` / `makeResizable` so toggling renderers preserves the user's saved sheet position. Section dispatch identical to classic except the Attributes section, which routes to the new primitives via `mrrP3RenderAttributesSection`. Every other section (Skills, Saves, Derived, States, Conditions, Intimacies, Backgrounds, Inventory, Abilities) still calls the classic `renderXxx` helpers, so the sheet stays fully functional during the multi-session cutover.
+
+- **`mrrP3RenderAttributesSection(parent)`** — wires the Phase 3.1 `mrrP3RenderSection` + `mrrP3RenderAttrRow` primitives to `state.sheet.attributes` + `saveSheet`. Modifier slot populates from `statContext()[<attr>_mod]` for D&D-family rulesets that declare `modifierFormula`; pool systems pass `undefined` and the modifier slot collapses. Attribute groups (Exalted Physical / Social / Mental) render as `.mrr-p3-section__subgroup-label` separators.
+
+- **Feature flag — `state.sheet.useNewRenderer`** — defaults to `false` in `blankSheet`. The classic `renderSheet()` entry now dispatches to `mrrP3RenderSheet()` when the flag is `true`. The flag persists across sessions: `mergeSheet` adds `if (override.useNewRenderer === true) base.useNewRenderer = true` so the user's preference survives reload. Toggling between renderers preserves data — both paths write to the same `state.sheet.attributes` object.
+
+- **UI toggles** — the classic actions row gains a `🧪 Try Phase 3 renderer` button that flips the flag, saves, and re-renders. The new actions row gains a `↩ Use classic renderer` button that flips back. Both states are reachable from the UI.
+
+- **Section open/closed persistence** — `mergeSheet` now preserves `state.sheet.sectionCollapse` from saved sheets so the Phase 3 Attributes section (and any future sections) remember their collapsed state.
+
+- **Panel-frame CSS (`mrr-p3-panel*` namespace)** — ~110 lines covering panel root, head/title/title-meta/close, body slot, and 8 resize handles with cursor hints. Re-embedded via `tools/embed-css.mjs`.
+
+- **Engine functions still untouched.** `statContext`, `equippedBonuses`, `tierForSkill`, `resolveTierBonus` — sacred this phase too. The new path consumes `statContext()[modKey]` for the modifier display but doesn't redefine it.
+
+- **Deferred** (continuing the multi-session port): `panel-frame` factory has no caller yet — it's foundation for Session 3.4+ flyouts. Sections beyond Attributes (Skills, Saves, Bars/Charbar, Conditions, etc.) migrate one at a time across Sessions 3.4–3.N. Inline edit forms (`InvEditForm`, `SpellEditForm`, `GearEditForm`) translate later. Token migration (oklch palette + Geist + `--density-*`) still deferred.
+
 ### Added — Phase 3.1 UI port: row primitives extracted from sheet.jsx (2026-05-08)
 
 First slice of the multi-session renderSheet rewrite. Seven foundational row primitives translated from the Claude-Design prototype's `~/projects/claude-design-updates/sheet.jsx` into vanilla-JS DOM-builder functions, sitting alongside the existing 7K-line `renderSheet` so a future-session cutover can compose them mechanically. No behavioral change this commit — primitives are uncalled by the running renderer.
