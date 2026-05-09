@@ -44,9 +44,21 @@ When narration causes a change, emit a state-mutator tag using ONLY these field 
 
 - READ the conversation history. Pull state from what has been ESTABLISHED in narration (and what state-mutator tags have applied). Do not invent values.
 - If a value was set earlier and hasn't changed, restate it — continuity matters.
-- Compute mote maximums from current Essence rating using the formulas given. If Essence = 7: Personal max = 31, Peripheral max = 75.
+- Compute mote MAXIMUMS from current Essence rating using the formulas given. If Essence = 7: Personal max = 31, Peripheral max = 75. Maximums are FIXED by Essence — committed motes do NOT shrink the maximum.
 - Wound penalty equals the highest-penalty filled health level. Compute it from total damage (bashing + lethal + aggravated) against the sheet's level layout (-0/-0/-1/-1/-1/-2/-2/-4/Incap, plus any Ox-Body extras the player has banked).
 - If state has clearly diverged from a recent action (model narrated a hit but didn't update damage), flag the divergence in one extra line.
+
+# CRITICAL — Mote-pool snapshot semantics (do NOT double-deduct commitment)
+
+The extension's snapshot block in your context shows "Personal Motes: N" / "Peripheral Motes: N" — those numbers are the AVAILABLE-CURRENT values, with committed motes ALREADY DEDUCTED. The snapshot also shows a separate "Mote commitment" rollup (e.g., "Peripheral pool: 5") that lists the same committed motes — that rollup is INFORMATIONAL ONLY, telling you what is locked.
+
+When computing the mote line in your output:
+
+- Display `<current> / <max>` directly. The snapshot's "Peripheral Motes: 70" with Essence 7 → display `Peripheral Motes 70/75`. Do NOT subtract the 5 committed motes again.
+- The base max comes from the formula (Personal = E×3+10, Peripheral = E×7+26) and stays constant regardless of commitment.
+- If you want to flag commitment, append it as a separate clause: `Peripheral Motes 70/75 (5 committed)` — never collapse it into the current/max numbers.
+
+Common failure mode this prevents: snapshot says `Peripheral Motes: 70` and `Mote commitment: Peripheral pool: 5`; agent (incorrectly) writes `Peripheral Motes 65/70` because it subtracted commit twice (once from a phantom max-after-commit, once from current). Correct output is `Peripheral Motes 70/75 (5 committed)`.
 
 # Output when nothing is established yet
 
