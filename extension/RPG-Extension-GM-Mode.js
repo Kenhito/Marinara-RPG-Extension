@@ -9130,6 +9130,71 @@ function buildSheetForPrompt() {
     }
   }
 
+  /* Phase 5 — Intimacies snapshot. Exalted-only narrative ties +
+     principles. Agents read this to remember what the player cares
+     about and weave it into scenes. State-mutator field="intimacies"
+     already supports add/remove/update per Phase 2. */
+  if (Array.isArray(state.sheet.intimacies) && state.sheet.intimacies.length) {
+    lines.push("Intimacies:");
+    var byDeg = { defining: [], major: [], minor: [] };
+    state.sheet.intimacies.forEach(function (it) {
+      if (!it || !it.text) return;
+      var d = (it.degree === "major" || it.degree === "defining") ? it.degree : "minor";
+      byDeg[d].push(it);
+    });
+    ["defining", "major", "minor"].forEach(function (deg) {
+      var entries = byDeg[deg];
+      if (!entries.length) return;
+      var degLabel = deg.charAt(0).toUpperCase() + deg.slice(1);
+      lines.push("- " + degLabel + ":");
+      entries.forEach(function (it) {
+        var kindLabel = (it.kind === "principle") ? "Principle" : "Tie";
+        var lineParts = ["  · " + kindLabel + ": " + it.text];
+        if (it.kind === "tie" && it.target) lineParts.push("(toward " + it.target + ")");
+        lines.push(lineParts.join(" "));
+      });
+    });
+    lines.push("");
+  }
+
+  /* Phase 5 — Disciplines / Abilities-with-rating snapshot. Dice-pool
+     rulesets (V20, Exalted) use per-category rating to drive the dice
+     pool; the agent needs the rating + per-discipline ability list to
+     reason about what the player can do and at what tier. */
+  var poolModeForAbilities = state.ruleset && state.ruleset.resolution
+      && state.ruleset.resolution.mode === "dice-pool";
+  var abilitiesCfgForSnap = (typeof getAbilitiesConfig === "function") ? getAbilitiesConfig() : null;
+  if (poolModeForAbilities && abilitiesCfgForSnap && abilitiesCfgForSnap.categories) {
+    var allCatsSnap = abilitiesCfgForSnap.categories.slice();
+    if (Array.isArray(state.sheet.customAbilityCategories)) {
+      allCatsSnap = allCatsSnap.concat(state.sheet.customAbilityCategories);
+    }
+    var anyDiscipline = false;
+    var disciplineLines = [];
+    allCatsSnap.forEach(function (cat) {
+      var score = (state.sheet.abilityCategoryScores && typeof state.sheet.abilityCategoryScores[cat.id] === "number")
+        ? state.sheet.abilityCategoryScores[cat.id] : 0;
+      var abs = (state.sheet.abilities && Array.isArray(state.sheet.abilities[cat.id])) ? state.sheet.abilities[cat.id] : [];
+      if (score === 0 && abs.length === 0) return;
+      anyDiscipline = true;
+      var catLine = "- " + cat.label + ": rating " + score;
+      if (abs.length) catLine += " (" + abs.length + " " + (abs.length === 1 ? "ability" : "abilities") + ")";
+      disciplineLines.push(catLine);
+      abs.forEach(function (ab) {
+        if (!ab || !ab.name) return;
+        var abLine = "  · " + ab.name;
+        if (ab.costText) abLine += " — cost: " + ab.costText;
+        if (ab.notes && ab.notes !== ab.costText) abLine += " — " + ab.notes;
+        disciplineLines.push(abLine);
+      });
+    });
+    if (anyDiscipline) {
+      lines.push((abilitiesCfgForSnap.label || "Abilities") + ":");
+      disciplineLines.forEach(function (l) { lines.push(l); });
+      lines.push("");
+    }
+  }
+
   /* State-mutator field reference. The state-mutator agent emits
      [mrr-state: target="player" field="..." delta="..."] tags; the
      extension applies them to the sheet. The `field` token must match
