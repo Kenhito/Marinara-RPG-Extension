@@ -12,6 +12,24 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+### Added — Phase 3.1 UI port: row primitives extracted from sheet.jsx (2026-05-08)
+
+First slice of the multi-session renderSheet rewrite. Seven foundational row primitives translated from the Claude-Design prototype's `~/projects/claude-design-updates/sheet.jsx` into vanilla-JS DOM-builder functions, sitting alongside the existing 7K-line `renderSheet` so a future-session cutover can compose them mechanically. No behavioral change this commit — primitives are uncalled by the running renderer.
+
+- **`mrrP3RenderSection(parent, opts, bodyFn)`** — collapsible card matching `sheet.jsx:17`. Open/closed state persists in `state.sheet.sectionCollapse[id]` when `id` is provided. Click on header toggles + saves + re-renders; clicks on actions / right slot don't propagate.
+- **`mrrP3RenderStepper(parent, opts)`** — −/+ stateless buttons matching `sheet.jsx:34`. Clamps via `mrrP3Clamp` and calls `onChange`.
+- **`mrrP3RenderAttrRow(parent, opts)`** — attribute row (5-col grid) matching `sheet.jsx:44`. Composes `mrrP3RenderStepper`. Modifier slot collapses when `opts.modifier` is undefined/null.
+- **`mrrP3RenderSkillRow(parent, opts)`** — skill row (4-col grid) matching `sheet.jsx:60`. Largest primitive — handles autoCalc total breakdown tooltip, clickable tier pill that cycles `opts.tiers`, gear bonus pill, in-place specialty chips with delete + click-to-roll, an inline specialty editor toggleable via `+ spec` button, and an optional `×` delete button.
+- **`mrrP3RenderSaveRow(parent, opts)`** — save row (4-col grid) matching `sheet.jsx:132`. Always autoCalc; total bonus computed by caller; tier pill cycles like SkillRow's.
+- **`mrrP3RenderBar(parent, opts)`** — resource bar matching `sheet.jsx:149`. Auto-color: ratio < 0.3 → bad, < 0.65 → warn, else ok (override via `opts.fillVariant`). Quick-button array supports `{label, delta}` deltas applied to current.
+- **`mrrP3RenderDamageTrack(parent, opts)`** — Exalted damage track matching `sheet.jsx:180`. Counts B/L/A from `track.filled`; renders cell buttons whose click fires `onCellClick(i)`; track tools support add -0/-1/-2 boxes, remove last, Heal worst, Heal all (disabled when no damage).
+
+CSS additions (~500 lines) under the **`mrr-p3-*` namespace** prevent collision with the running renderer's existing `.mrr-section` / `.mrr-row` / `.mrr-stepper` / `.mrr-bar` rules. Both `extension/RPG-Extension-GM-Mode.css` and the embedded `EMBEDDED_CSS` string are in sync via `tools/embed-css.mjs`. Density values (12/8/30/13 cozy defaults from UI-build.md §2.3) are inlined since the extension doesn't yet ship `--density-*` tokens; the token-migration phase will swap them.
+
+Function names use the `mrrP3*` prefix for the same reason — `renderAttrRow` / `renderSkillRow` / `renderSaveRow` / `renderBar` already exist in the extension at the running-renderer's call sites; same-name redeclarations would shadow and break the live UI.
+
+The new primitives have no caller this session by design — they're foundation for Session 3.2 (panel-frame port) and Session 3.3+ (renderSheet body cutover). Engine functions (`statContext`, `equippedBonuses`, `tierForSkill`, `resolveTierBonus`) are untouched. State-mutator parser (Phase 2) is untouched. Bundle install validators all PASS.
+
 ### Added — Phase 2 UI port: state-mutator write-back + mote-pool plumbing (2026-05-08)
 
 Phase 2 of the multi-session UI port. Closes the read/write asymmetry Phase 1 left open: agents could SEE the new XP and commitment state but couldn't MODIFY it. Phase 2 wires the write path on three surfaces — agent tags, inventory dialog, and item delete — so every mutation route honors the same caps and pool budget.
