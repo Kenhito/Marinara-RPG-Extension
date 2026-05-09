@@ -1215,6 +1215,21 @@ function normalizeInventoryItem(it, idx) {
     it.moteCommitment = Math.floor(it.moteCommitment);
   }
   if (it.motePool !== "Personal" && it.motePool !== "Peripheral") it.motePool = "Personal";
+  /* Phase 4 — quantity (item stacking). Lets a single item entry
+     represent a stack (e.g. 5 healing potions) instead of forcing the
+     player to add five separate inventory rows. Defaults to 1 for
+     legacy items without the field; coerce numeric strings; floor to
+     non-negative integer. Quantity 0 keeps the row but renders as
+     depleted; the player can refill by editing the value. */
+  if (typeof it.quantity === "string" && it.quantity) {
+    var pq = parseInt(it.quantity, 10);
+    it.quantity = (!isNaN(pq) && pq >= 0) ? pq : 1;
+  }
+  if (typeof it.quantity !== "number" || it.quantity < 0 || !isFinite(it.quantity) || isNaN(it.quantity)) {
+    it.quantity = 1;
+  } else {
+    it.quantity = Math.floor(it.quantity);
+  }
   return it;
 }
 
@@ -1408,6 +1423,35 @@ function mergeSheet(base, override) {
     base.sectionCollapse = {};
     Object.keys(override.sectionCollapse).forEach(function (k) {
       base.sectionCollapse[k] = !!override.sectionCollapse[k];
+    });
+  }
+  /* Phase 4 — XP persistence. Preserve the entire xp struct (current,
+     level, next, total) so XP earned across sessions doesn't reset on
+     reload. Critical precondition for the upcoming leveling/XP-spending
+     system. Drop fields that aren't finite numbers; default missing
+     fields to the blankSheet values so legacy saves heal on load. */
+  if (override.xp && typeof override.xp === "object" && !Array.isArray(override.xp)) {
+    if (!base.xp) base.xp = { current: 0, level: 1, next: 0, total: 0 };
+    if (typeof override.xp.current === "number" && isFinite(override.xp.current)) base.xp.current = override.xp.current;
+    if (typeof override.xp.level   === "number" && isFinite(override.xp.level))   base.xp.level   = override.xp.level;
+    if (typeof override.xp.next    === "number" && isFinite(override.xp.next))    base.xp.next    = override.xp.next;
+    if (typeof override.xp.total   === "number" && isFinite(override.xp.total))   base.xp.total   = override.xp.total;
+  }
+  /* Phase 4 — commitment counter persistence. Snapshot reads these
+     caches; without preservation, attunedCount / investedCount reset
+     to 0 on every reload until the next item save fires the recompute. */
+  if (typeof override.attunedCount === "number" && isFinite(override.attunedCount)) {
+    base.attunedCount = Math.max(0, Math.floor(override.attunedCount));
+  }
+  if (typeof override.investedCount === "number" && isFinite(override.investedCount)) {
+    base.investedCount = Math.max(0, Math.floor(override.investedCount));
+  }
+  /* Phase 4 — conditions persistence. Active D&D-style condition list
+     (Blinded, Restrained, etc.) — without this, every reload clears
+     the user's active conditions. */
+  if (Array.isArray(override.conditions)) {
+    base.conditions = override.conditions.filter(function (c) {
+      return typeof c === "string" && c;
     });
   }
   return base;
@@ -6069,6 +6113,16 @@ function renderInventoryList(parent) {
       if (equippedHere) row.classList.add("mrr-inv-item--equipped");
 
       marinara.addElement(row, "span", { "class": "mrr-inv-item__name", textContent: item.name || "(unnamed)" });
+      /* Phase 4 — quantity badge. Shows "× N" next to the name when
+         the item is stacked. Hidden for quantity 1 (the default) so
+         single-instance items stay visually clean. */
+      if (typeof item.quantity === "number" && item.quantity !== 1) {
+        marinara.addElement(row, "span", {
+          "class": "mrr-chip mrr-chip--quantity",
+          textContent: "× " + item.quantity,
+          title: item.quantity + " in stack — edit via the item dialog"
+        });
+      }
       marinara.addElement(row, "span", { "class": "mrr-inv-item__slot", textContent: item.slot ? "[" + item.slot + "]" : "" });
 
       /* Damage cell: weapons declare e.g. "1d8 slashing"; non-weapons leave
@@ -6781,6 +6835,20 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
   var consInput = marinara.addElement(consRow, "input", { type: "checkbox" });
   if (consInput && draft.consumable) consInput.checked = true;
 
+  /* Phase 4 — Quantity (item stacking). One entry can represent N copies
+     of the same item (5 healing potions, 12 arrows, etc.). Default 1.
+     For consumables the Use action decrements; manual edits here are
+     for "I picked up a stack" / inventory-correction flows. */
+  var qtyRow = marinara.addElement(dialog, "div", { "class": "mrr-item-form__row" });
+  marinara.addElement(qtyRow, "label", { textContent: "Quantity" });
+  var qtyInput = marinara.addElement(qtyRow, "input", {
+    type: "number",
+    "class": "mrr-item-form__field",
+    min: "0",
+    step: "1"
+  });
+  if (qtyInput) qtyInput.value = String(typeof draft.quantity === "number" ? draft.quantity : 1);
+
   var notesRow = marinara.addElement(dialog, "div", { "class": "mrr-item-form__row" });
   marinara.addElement(notesRow, "label", { textContent: "Notes" });
   var notesInput = marinara.addElement(notesRow, "textarea", { "class": "mrr-item-form__textarea" });
@@ -6806,6 +6874,10 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
       draft.category = (catSel && catSel.value === "item") ? "item" : "equipment";
       draft.useEffect = (useInput && useInput.value || "").trim();
       draft.consumable = !!(consInput && consInput.checked);
+      /* Phase 4 — quantity. parseInt with Math.max(0,...) clamp; bad
+         input falls back to 1 (the default). */
+      var qn = qtyInput ? parseInt(qtyInput.value, 10) : 1;
+      draft.quantity = (!isNaN(qn) && qn >= 0) ? Math.floor(qn) : 1;
       /* Hardness / Overwhelming persist only on equipment. On a non-
          equipment item the fields are hidden in the dialog; we still
          clear them to 0 here so toggling category later doesn't leave
