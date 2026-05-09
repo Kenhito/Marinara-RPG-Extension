@@ -2226,3 +2226,22 @@
   margin: 8px 0 4px;
   padding-left: 4px;
 }
+
+/* Phase 3 derived-stat row wrapper (used by mrrP3RenderDerivedSection's
+ * value branch — bars and tracks display their name inside the primitive,
+ * but renderValue does not, so the wrapper supplies a name + formula
+ * label outside the value primitive). */
+.mrr-p3-derived {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.mrr-p3-derived__label {
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--mrr-text-dim);
+  padding-left: 4px;
+}
