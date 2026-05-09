@@ -12,6 +12,30 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+### Added — Phase 3.5 UI port: skills + states + conditions + backgrounds + intimacies migrated behind feature flag (2026-05-08)
+
+Marathon slice. With `state.sheet.useNewRenderer === true`, the Phase-3 sheet now renders **eight** sections via Phase-3 wrappers — Attributes (3.3), Derived (3.4), Saves (3.4), Skills, States, Conditions, Backgrounds, and Intimacies. Only Inventory (item-editor flyout) and Abilities/Charms (charm tree) remain on the classic helpers; those need dedicated flyout-migration sessions and are deferred to Phase 3.6+.
+
+- **`mrrP3RenderSkillsSection(parent)`** — iterates `state.ruleset.skills` and calls the Phase 3.1 `mrrP3RenderSkillRow` primitive per skill with the full opt set: `{skill, tier, tiers, tierLabel, value, attrMod, gearBonus, tierBonus, autoCalc, specialties, allowSpecialties, specialtyBonus, onTier, onValue, onRoll, onAddSpecialty, onRemoveSpecialty}`. Autocalc-vs-manual gate driven by `state.ruleset.resolution.skillBonusFormula` (D&D / PF2e autocalc; Exalted manual). Tier-cycle persists via `state.sheet.skillProficiency[skill.name]`. Specialties round-trip through `state.sheet.skillSpecialties[skill.name]` with `{name, value}` ↔ primitive's `{name, dice}` mapping. Ruleset section title resolves to "ABILITIES" for Exalted, "SKILLS" elsewhere.
+
+- **`mrrP3RenderCustomSkillRow(parent, sk, idx)`** — inline Phase-3 row for user-added skills/lores. The Phase 3.1 SkillRow primitive expects a fixed name (no inline edit), so custom skills get their own hand-authored row with debounced editable name + linked-attribute `<select>` + value `<input>` + remove button. State path matches classic: `state.sheet.customSkills[]` of `{name, linkedAttribute, value}`. Reuses classic `addCustomSkill` / `removeCustomSkill` for list mutations.
+
+- **`mrrP3RenderStatesSection(parent)`** — iterates `state.ruleset.states`; per state renders name + `<select>` of allowed values; persists to `state.sheet.states[name]`. Inline Phase-3 row, no primitive. Skips silently when ruleset declares no states.
+
+- **`mrrP3RenderConditionsSection(parent)`** — empty-state "None active." when `state.sheet.conditions[]` is empty. Per active condition renders name + effect chip (disadvantage / advantage descriptors from `state.ruleset.conditions[]` definitions) + × remove. Add-condition `<select>` lists all undeclared ruleset conditions plus an "(other — type a name)" option that opens `window.prompt`. Reuses classic `addCondition` / `removeCondition`. Effect-chip text + tooltips identical to classic.
+
+- **`mrrP3RenderBackgroundsSection(parent)`** — iterates `state.sheet.backgrounds[]` of `{name, value}`; per entry renders debounced editable name + value input (clamped to `cfg.min/max`) + × remove. `cfg.textOnly` (D&D feats) suppresses the value column. "+ Add Background" / "+ Add Feat" footer button calls existing `addBackground`. Section title from `cfg.label` uppercased, or "BACKGROUNDS" default. Section omitted entirely when ruleset declares `backgrounds.enabled !== true`.
+
+- **`mrrP3RenderIntimaciesSection(parent)`** — minimal wrapper. Renders a Phase-3 section frame with title "INTIMACIES" containing a single "Intimacies (N)" button that opens the existing classic flyout panel via `showIntimacies(true)`. Full flyout migration (using the shipped `mrrP3CreatePanel` factory from Phase 3.2) deferred to Phase 3.6+.
+
+- **Section dispatch swap** — five lines in `mrrP3RenderSheet`: `skills` → `mrrP3RenderSkillsSection`, `states` → `mrrP3RenderStatesSection`, `conditions` → `mrrP3RenderConditionsSection`, `backgrounds` → `mrrP3RenderBackgroundsSection`, `intimacies` → `mrrP3RenderIntimaciesSection`. Classic `renderSheet` body untouched.
+
+- **Engine + classic helpers untouched** — `statContext`, `equippedBonuses`, `tierForSkill`, `resolveTierBonus` plus classic `renderSkills` / `renderSkillRow` / `renderCustomSkillRow` / `renderSpecialtyRow` / `renderStates` / `renderConditions` / `renderBackgrounds` / `renderBackgroundRow` / `renderIntimaciesSection` all unchanged. Flag-OFF path still routes through them.
+
+- **No new CSS this slice** — Phase-3 wrappers reuse Phase 3.1 row primitives' CSS plus selected classic classes (`.mrr-skill-spec-row`, `.mrr-condition-row`, `.mrr-skill-spec-name`, `.mrr-track-add-btn`, `.mrr-char-btn--dashed`, `.mrr-item-form__select`, `.mrr-state__select`, `.mrr-inv-empty`, `.mrr-condition-effect`, `.mrr-custom-skill-attr`) inside Phase-3 section bodies. Visual consistency upgrade lives at the section frame; row interior keeps classic chrome for v1. Future Phase 3.7+ can deepen the migration with proper Phase-3 row variants. CSS file unchanged this slice.
+
+- **v1 retreats logged in ISA** — (1) Per-specialty value editing not migrated (primitive shows static dice; mutate by remove + re-add); (2) Custom skill name editing uses inline row, not the primitive (primitive expects fixed name); (3) Intimacies flyout still classic — only the entry button is Phase-3-framed.
+
 ### Added — Phase 3.4 UI port: derived (bars + damage track) + saves migrated behind feature flag (2026-05-08)
 
 Third slice of the multi-session renderSheet rewrite. With `state.sheet.useNewRenderer === true`, the Phase-3 sheet now renders three full sections via the Phase 3.1 primitives — Attributes (shipped in 3.3), Derived (bars + damage track, this slice), and Saves (this slice). Every other section still routes through classic helpers; the flag-OFF default is unchanged.

@@ -3425,13 +3425,13 @@ function mrrP3RenderSheet() {
       mrrP3RenderAttributesSection(state.mountEl);
       attrsRendered = true;
     }
-    else if (sec === "skills") renderSkills(state.mountEl);
+    else if (sec === "skills") mrrP3RenderSkillsSection(state.mountEl);
     else if (sec === "saves") mrrP3RenderSavesSection(state.mountEl);
     else if (sec === "derived") mrrP3RenderDerivedSection(state.mountEl);
-    else if (sec === "states") renderStates(state.mountEl);
-    else if (sec === "conditions") renderConditions(state.mountEl);
-    else if (sec === "intimacies") renderIntimaciesSection(state.mountEl);
-    else if (sec === "backgrounds") renderBackgrounds(state.mountEl);
+    else if (sec === "states") mrrP3RenderStatesSection(state.mountEl);
+    else if (sec === "conditions") mrrP3RenderConditionsSection(state.mountEl);
+    else if (sec === "intimacies") mrrP3RenderIntimaciesSection(state.mountEl);
+    else if (sec === "backgrounds") mrrP3RenderBackgroundsSection(state.mountEl);
     else if (sec === "inventory") renderInventory(state.mountEl);
     else if (sec === "abilities") renderAbilitiesSection(state.mountEl);
   });
@@ -3768,7 +3768,407 @@ function mrrP3RenderSavesSection(parent) {
   });
 }
 
-/* End Phase 3.2 + 3.3 + 3.4 cutover plumbing. */
+/* Phase 3.5 — SkillsSection wrapper. Uses mrrP3RenderSkillRow primitive
+   for ruleset skills, an inline custom-skill row (primitive doesn't
+   support editable name), and a "+ Add Skill" button. State contracts
+   preserved: state.sheet.skills[name] (manual mode value), state.sheet
+   .skillProficiency[name] (tier code), state.sheet.skillSpecialties
+   [name] (array of {name, value}), state.sheet.customSkills (array of
+   {name, linkedAttribute, value}). Autocalc-vs-manual driven by ruleset
+   resolution.skillBonusFormula presence — same gate classic uses. */
+function mrrP3RenderSkillsSection(parent) {
+  if (!parent || !state.ruleset || !Array.isArray(state.ruleset.skills)) return;
+  var title = (state.ruleset.id === "exalted3e") ? "ABILITIES" : "SKILLS";
+  var skillFormula = state.ruleset.resolution && state.ruleset.resolution.skillBonusFormula;
+  var prof = state.ruleset.skillProficiency;
+  var tiersList = (prof && Array.isArray(prof.tiers)) ? prof.tiers : [];
+  var tiers = tiersList.map(function (t) { return t.code; });
+  var tierLabel = {};
+  tiersList.forEach(function (t) { tierLabel[t.code] = t.label; });
+  var specsCfg = state.ruleset.skillSpecialties || {};
+  var allowSpecs = !!specsCfg.enabled;
+  var specBonus = (typeof specsCfg.value === "number") ? specsCfg.value : 1;
+
+  mrrP3RenderSection(parent, {
+    id: "skills-p3",
+    title: title,
+    defaultOpen: true
+  }, function (body) {
+    state.ruleset.skills.forEach(function (sk) {
+      var ctx = statContext();
+      var t = tierForSkill(sk.name);
+      var tierBonus = (t && t.rollBonusFormula) ? evalFormula(t.rollBonusFormula, ctx) : 0;
+      if (tierBonus == null) tierBonus = 0;
+      var attrMod = 0;
+      if (sk.linkedAttribute) {
+        var modKey = sk.linkedAttribute + "_mod";
+        if (typeof ctx[modKey] === "number") attrMod = ctx[modKey];
+      }
+      var gearBonus = 0;
+      try { gearBonus = (equippedBonuses(sk.name) || {}).value || 0; } catch (e) {}
+      var rawValue = state.sheet.skills[sk.name] || 0;
+      var specs = (state.sheet.skillSpecialties && state.sheet.skillSpecialties[sk.name]) || [];
+      var primitiveSpecs = specs.map(function (sp) {
+        return { name: sp.name || "", dice: (typeof sp.value === "number" ? sp.value : specBonus) };
+      });
+
+      mrrP3RenderSkillRow(body, {
+        skill: { name: sk.name, attr: sk.linkedAttribute },
+        tier: t ? t.code : "",
+        tiers: tiers,
+        tierLabel: tierLabel,
+        value: rawValue,
+        attrMod: attrMod,
+        gearBonus: gearBonus,
+        tierBonus: tierBonus,
+        autoCalc: !!skillFormula,
+        specialties: primitiveSpecs,
+        allowSpecialties: allowSpecs,
+        specialtyBonus: specBonus,
+        onTier: function (nextCode) {
+          if (!state.sheet.skillProficiency) state.sheet.skillProficiency = {};
+          state.sheet.skillProficiency[sk.name] = nextCode;
+          saveSheet(state.chatId, state.sheet);
+          renderSheet();
+        },
+        onValue: function (v) {
+          state.sheet.skills[sk.name] = v;
+          saveSheet(state.chatId, state.sheet);
+          renderSheet();
+        },
+        onRoll: function () {
+          quickRollForSkill(sk);
+        },
+        onAddSpecialty: function (newSp) {
+          if (!state.sheet.skillSpecialties) state.sheet.skillSpecialties = {};
+          if (!Array.isArray(state.sheet.skillSpecialties[sk.name])) state.sheet.skillSpecialties[sk.name] = [];
+          state.sheet.skillSpecialties[sk.name].push({
+            name: newSp.name || "",
+            value: (typeof newSp.dice === "number") ? newSp.dice : specBonus
+          });
+          saveSheet(state.chatId, state.sheet);
+          renderSheet();
+        },
+        onRemoveSpecialty: function (idx) {
+          if (!state.sheet.skillSpecialties || !Array.isArray(state.sheet.skillSpecialties[sk.name])) return;
+          state.sheet.skillSpecialties[sk.name].splice(idx, 1);
+          saveSheet(state.chatId, state.sheet);
+          renderSheet();
+        }
+      });
+    });
+
+    /* Custom user-added skills/lores. Inline Phase-3 row with editable
+       name + linked-attribute select + value input + remove button.
+       Primitive doesn't support editable names (skill.name is fixed
+       text), so this row is hand-authored. */
+    var customs = Array.isArray(state.sheet.customSkills) ? state.sheet.customSkills : [];
+    customs.forEach(function (sk, idx) { mrrP3RenderCustomSkillRow(body, sk, idx); });
+
+    var addBtn = marinara.addElement(body, "button", {
+      type: "button",
+      "class": "mrr-track-add-btn mrr-char-btn--dashed",
+      textContent: "+ Add Skill"
+    });
+    if (addBtn) marinara.on(addBtn, "click", function (e) {
+      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+      addCustomSkill();
+    });
+  });
+}
+
+function mrrP3RenderCustomSkillRow(parent, sk, idx) {
+  var row = marinara.addElement(parent, "div", { "class": "mrr-p3-row mrr-p3-row--custom-skill" });
+  if (!row) return;
+  var nameInput = marinara.addElement(row, "input", {
+    "class": "mrr-skill-spec-name",
+    type: "text",
+    placeholder: "skill or lore name",
+    value: sk.name || ""
+  });
+  if (nameInput) {
+    var saveTimer = null;
+    marinara.on(nameInput, "input", function () {
+      sk.name = nameInput.value;
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () { saveSheet(state.chatId, state.sheet); }, 250);
+    });
+    marinara.on(nameInput, "blur", function () {
+      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+      saveSheet(state.chatId, state.sheet);
+    });
+    marinara.on(nameInput, "click", function (e) {
+      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+    });
+  }
+  var attrSel = marinara.addElement(row, "select", { "class": "mrr-custom-skill-attr" });
+  if (attrSel) {
+    var blank = document.createElement("option");
+    blank.value = ""; blank.textContent = "—";
+    attrSel.appendChild(blank);
+    (state.ruleset.attributes || []).forEach(function (a) {
+      var opt = document.createElement("option");
+      opt.value = a.abbreviation || a.name;
+      opt.textContent = a.abbreviation || a.name;
+      if ((sk.linkedAttribute || "") === opt.value) opt.selected = true;
+      attrSel.appendChild(opt);
+    });
+    marinara.on(attrSel, "change", function () {
+      sk.linkedAttribute = attrSel.value;
+      saveSheet(state.chatId, state.sheet);
+    });
+    marinara.on(attrSel, "click", function (e) {
+      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+    });
+  }
+  var valInput = marinara.addElement(row, "input", {
+    "class": "mrr-p3-row__val",
+    type: "number"
+  });
+  if (valInput) {
+    valInput.value = String(sk.value || 0);
+    marinara.on(valInput, "change", function () {
+      var n = parseInt(valInput.value, 10);
+      if (isNaN(n)) n = 0;
+      sk.value = n;
+      saveSheet(state.chatId, state.sheet);
+      renderSheet();
+    });
+  }
+  var removeBtn = marinara.addElement(row, "button", {
+    type: "button",
+    "class": "mrr-p3-row__del",
+    textContent: "×",
+    title: "Remove skill"
+  });
+  if (removeBtn) marinara.on(removeBtn, "click", function (e) {
+    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+    removeCustomSkill(idx);
+  });
+}
+
+/* Phase 3.5 — StatesSection wrapper. Per-state name + select; persists
+   to state.sheet.states[name]. Inline Phase-3 row (no primitive). */
+function mrrP3RenderStatesSection(parent) {
+  if (!parent || !state.ruleset) return;
+  if (!Array.isArray(state.ruleset.states) || !state.ruleset.states.length) return;
+  mrrP3RenderSection(parent, {
+    id: "states-p3",
+    title: "STATES",
+    defaultOpen: true
+  }, function (body) {
+    state.ruleset.states.forEach(function (st) {
+      var row = marinara.addElement(body, "div", { "class": "mrr-p3-row mrr-p3-row--state" });
+      if (!row) return;
+      marinara.addElement(row, "span", { "class": "mrr-p3-row__name", textContent: st.name });
+      var sel = marinara.addElement(row, "select", { "class": "mrr-state__select" });
+      if (!sel) return;
+      st.values.forEach(function (v) {
+        var opt = document.createElement("option");
+        opt.value = v.label;
+        opt.textContent = v.label;
+        if (v.label === state.sheet.states[st.name]) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      marinara.on(sel, "change", function () {
+        state.sheet.states[st.name] = sel.value;
+        saveSheet(state.chatId, state.sheet);
+      });
+    });
+  });
+}
+
+/* Phase 3.5 — ConditionsSection wrapper. Active conditions list with
+   effect chips (disadv/adv from ruleset definitions); add-condition
+   select with custom-name fallback. Delegates to existing addCondition
+   / removeCondition for state mutations. */
+function mrrP3RenderConditionsSection(parent) {
+  if (!parent || !state.ruleset) return;
+  mrrP3RenderSection(parent, {
+    id: "conditions-p3",
+    title: "CONDITIONS",
+    defaultOpen: true
+  }, function (body) {
+    var defs = Array.isArray(state.ruleset.conditions) ? state.ruleset.conditions : [];
+    var defByName = {};
+    defs.forEach(function (d) { if (d && d.name) defByName[d.name.toLowerCase()] = d; });
+
+    var active = Array.isArray(state.sheet.conditions) ? state.sheet.conditions : [];
+    if (!active.length) {
+      marinara.addElement(body, "div", { "class": "mrr-inv-empty", textContent: "None active." });
+    }
+    active.forEach(function (name) {
+      var row = marinara.addElement(body, "div", { "class": "mrr-skill-spec-row mrr-condition-row" });
+      if (!row) return;
+      marinara.addElement(row, "span", { "class": "mrr-skill-spec-name", textContent: name });
+      var def = defByName[String(name).toLowerCase()];
+      if (def) {
+        var effects = [];
+        var dis = Array.isArray(def.imposesDisadvantageOn) ? def.imposesDisadvantageOn : [];
+        var adv = Array.isArray(def.grantsAdvantageOn) ? def.grantsAdvantageOn : [];
+        if (dis.length) effects.push("disadvantage on " + dis.join(", "));
+        if (adv.length) effects.push("advantage on " + adv.join(", "));
+        if (effects.length) {
+          var effSpan = marinara.addElement(row, "span", { "class": "mrr-condition-effect", textContent: effects.join("; ") });
+          if (effSpan && def.description) effSpan.title = def.description;
+        } else if (def.description) {
+          var descSpan = marinara.addElement(row, "span", { "class": "mrr-condition-effect", textContent: "(narrative)" });
+          if (descSpan) descSpan.title = def.description;
+        }
+      }
+      var rm = marinara.addElement(row, "button", {
+        type: "button",
+        "class": "mrr-track-add-btn mrr-track-add-btn--danger",
+        textContent: "×",
+        title: "Remove condition"
+      });
+      if (rm) marinara.on(rm, "click", function (e) {
+        if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+        removeCondition(name);
+      });
+    });
+
+    var addRow = marinara.addElement(body, "div", { "class": "mrr-skill-spec-row" });
+    if (addRow) {
+      var sel = marinara.addElement(addRow, "select", { "class": "mrr-item-form__select" });
+      if (sel) {
+        var blank = document.createElement("option");
+        blank.value = ""; blank.textContent = "— add condition —";
+        sel.appendChild(blank);
+        defs.forEach(function (d) {
+          if (!d || !d.name) return;
+          if (active.indexOf(d.name) !== -1) return;
+          var opt = document.createElement("option");
+          opt.value = d.name; opt.textContent = d.name;
+          if (d.description) opt.title = d.description;
+          sel.appendChild(opt);
+        });
+        var customOpt = document.createElement("option");
+        customOpt.value = "__custom__"; customOpt.textContent = "(other — type a name)";
+        sel.appendChild(customOpt);
+        marinara.on(sel, "change", function () {
+          var v = sel.value;
+          if (!v) return;
+          if (v === "__custom__") {
+            var typed = window.prompt("Condition name:");
+            sel.value = "";
+            if (typed && typed.trim()) addCondition(typed.trim());
+          } else {
+            addCondition(v);
+            sel.value = "";
+          }
+        });
+      }
+    }
+  });
+}
+
+/* Phase 3.5 — BackgroundsSection wrapper. Iterates state.sheet.backgrounds,
+   per-entry inline row with debounced editable name + value+stepper
+   (unless cfg.textOnly — D&D feats). Delegates to addBackground /
+   removeBackground for list mutations. */
+function mrrP3RenderBackgroundsSection(parent) {
+  if (!parent || !state.ruleset) return;
+  var cfg = state.ruleset.backgrounds;
+  if (!cfg || cfg.enabled !== true) return;
+  var label = (cfg.label || "BACKGROUNDS").toUpperCase();
+  var lo = (typeof cfg.min === "number") ? cfg.min : 0;
+  var hi = (typeof cfg.max === "number") ? cfg.max : 5;
+  var textOnly = !!cfg.textOnly;
+
+  mrrP3RenderSection(parent, {
+    id: "backgrounds-p3",
+    title: label,
+    defaultOpen: true
+  }, function (body) {
+    var entries = Array.isArray(state.sheet.backgrounds) ? state.sheet.backgrounds : [];
+    entries.forEach(function (entry, idx) {
+      var row = marinara.addElement(body, "div", { "class": "mrr-skill-spec-row" });
+      if (!row) return;
+      var nameInput = marinara.addElement(row, "input", {
+        "class": "mrr-skill-spec-name",
+        type: "text",
+        placeholder: textOnly ? "feat (e.g. Sharpshooter, Lucky)" : "background (e.g. Resources, Allies)",
+        value: entry.name || ""
+      });
+      if (nameInput) {
+        var saveTimer = null;
+        marinara.on(nameInput, "input", function () {
+          entry.name = nameInput.value;
+          if (saveTimer) clearTimeout(saveTimer);
+          saveTimer = setTimeout(function () { saveSheet(state.chatId, state.sheet); }, 250);
+        });
+        marinara.on(nameInput, "blur", function () {
+          if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+          saveSheet(state.chatId, state.sheet);
+        });
+        marinara.on(nameInput, "click", function (e) {
+          if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+        });
+      }
+      if (!textOnly) {
+        var valInput = marinara.addElement(row, "input", {
+          "class": "mrr-p3-row__val",
+          type: "number"
+        });
+        if (valInput) {
+          valInput.value = String(entry.value || 0);
+          marinara.on(valInput, "change", function () {
+            var n = parseInt(valInput.value, 10);
+            if (isNaN(n)) n = lo;
+            if (n < lo) n = lo;
+            if (n > hi) n = hi;
+            entry.value = n;
+            saveSheet(state.chatId, state.sheet);
+            renderSheet();
+          });
+        }
+      }
+      var removeBtn = marinara.addElement(row, "button", {
+        type: "button",
+        "class": "mrr-track-add-btn mrr-track-add-btn--danger",
+        textContent: "×",
+        title: "Remove " + (textOnly ? "feat" : "background")
+      });
+      if (removeBtn) marinara.on(removeBtn, "click", function (e) {
+        if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+        removeBackground(idx);
+      });
+    });
+
+    var addBtn = marinara.addElement(body, "button", {
+      type: "button",
+      "class": "mrr-track-add-btn mrr-char-btn--dashed",
+      textContent: "+ Add " + (textOnly ? "Feat" : "Background")
+    });
+    if (addBtn) marinara.on(addBtn, "click", function (e) {
+      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+      addBackground();
+    });
+  });
+}
+
+/* Phase 3.5 — IntimaciesSection wrapper. Button-only — clicking opens
+   the existing classic flyout panel (renderIntimaciesPanelContents et
+   al.). Full flyout migration deferred to Phase 3.6+. */
+function mrrP3RenderIntimaciesSection(parent) {
+  if (!parent || !state.ruleset) return;
+  if (typeof totalIntimacyCount !== "function" || typeof showIntimacies !== "function") return;
+  mrrP3RenderSection(parent, {
+    id: "intimacies-p3",
+    title: "INTIMACIES",
+    defaultOpen: true
+  }, function (body) {
+    var btn = marinara.addElement(body, "button", {
+      type: "button",
+      "class": "mrr-char-btn mrr-char-btn--dashed",
+      textContent: "Intimacies (" + totalIntimacyCount() + ")"
+    });
+    if (btn) marinara.on(btn, "click", function () { showIntimacies(!state.intimaciesOpen); });
+  });
+}
+
+/* End Phase 3.2 + 3.3 + 3.4 + 3.5 cutover plumbing. */
 
 function renderSheet() {
   if (!state.ruleset) return;
