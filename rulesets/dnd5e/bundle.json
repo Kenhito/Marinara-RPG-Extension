@@ -821,6 +821,21 @@
         ],
         "position": 1,
         "tokenBudget": 2000
+      },
+      {
+        "name": "Mechanic: Magic Item Attunement",
+        "keys": [
+          "attune",
+          "attuned",
+          "attunement",
+          "magic item",
+          "magic items",
+          "wondrous item",
+          "attune to"
+        ],
+        "content": "Magic item attunement (SRD 5.1). Many magic items require attunement — a one-hour focused process during a short rest — before the wielder can access the item magical properties. A creature can be attuned to at most 3 magic items at once; attempting a 4th attunement requires breaking an existing attunement first. Some items grant their basic effect without attunement (a +1 sword) but lock their full effect behind it (a magic sword that flames on command). Attunement breaks immediately on death, on the item leaving the wearer for 24 hours, or by deliberate choice during a short rest.\n\nState-mutator tag: [mrr-state: field=\"attunement\" item=\"<exact item name>\" attuned=\"true\"] to attune (cap-3 enforced; rejected with toast on overflow). attuned=\"false\" to release. Items must already exist on the player inventory; emit an inventory add tag first if needed.",
+        "position": 0,
+        "tokenBudget": 200
       }
     ]
   }

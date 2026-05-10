@@ -1,0 +1,467 @@
+{
+  "name": "V:TM V20 Reference",
+  "description": "Keyword-triggered reference for Vampire: The Masquerade 20th Anniversary Edition (2011 Onyx Path). Original-prose paraphrase + mechanical references; clan, Discipline, sect, and Path names belong to Paradox Interactive AB. Distributed under the Dark Pack Agreement (worldofdarkness.com/dark-pack). NOT official World of Darkness material.",
+  "category": "world",
+  "scanDepth": 4,
+  "tokenBudget": 2500,
+  "recursiveScanning": false,
+  "entries": [
+    {
+      "name": "Rule: Dice-pool resolution (V20)",
+      "keys": ["roll", "rolls", "check", "test", "dice", "pool", "successes", "difficulty"],
+      "content": "RESOLUTION: roll a pool of d10s equal to (Attribute + Ability). Each die that meets or beats the Storyteller's chosen DIFFICULTY (default 6, varies 6-9) is one success. Difficulty 6 = standard; 7 = challenging; 8 = difficult; 9 = nigh-impossible. A 1 cancels one success (Rule of 1). If after cancellation you have at least one net success, the roll succeeded. The Storyteller sets difficulty BEFORE the player rolls. Multiple successes mean cleaner / more impressive results; 5+ successes is heroic on a single action. V20 is a variable-difficulty system, not a fixed-difficulty extended-success system — do not import V5 / V20 Dark Ages variant rules.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "name": "Rule: Botch (V20)",
+      "keys": ["botch", "botched", "spectacular failure", "ones", "1s"],
+      "content": "BOTCH: a roll that produces ZERO net successes AND has at least one die showing a 1 is a botch — a spectacular failure that introduces narrative complications. The Storyteller introduces a meaningful consequence, not just a miss. Note: 1s only matter when net successes are zero; if you have at least one net success, no botch occurs even if 1s were rolled. A natural 1 ALWAYS counts as a 1 regardless of difficulty. Soak rolls cannot botch.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Rule: Specialty re-rolls",
+      "keys": ["specialty", "specialties", "specialty re-roll", "10s reroll"],
+      "content": "SPECIALTY: when a character has a Specialty in the Attribute or Ability being rolled (typically requires rating 4 or 5), every die that comes up a natural 10 counts as one success AND is rerolled, with each subsequent 10 again counting and rerolling. The specialty must apply to the action (e.g., a Brawl specialty 'Bar Fights' applies in a tavern brawl, not in a duel of honor). Specialty re-rolls are V20-canonical; they do NOT stack with Discipline auto-successes from Potence (those are independent).",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Rule: Willpower (V20)",
+      "keys": ["willpower", "wp", "spend willpower", "automatic success"],
+      "content": "WILLPOWER: max 10 (permanent rating); current pool is spent and refreshed. SPEND 1 WILLPOWER for ONE automatic guaranteed success on a single action — the success cannot be cancelled, even by botches. This may be done at most ONCE PER TURN (the cap is on this specific use, not on all Willpower spends). Other uses NOT subject to the per-turn cap: ignore wound penalties for one turn (1 WP), resist Frenzy / derangement triggers (1 WP per attempt), power certain Disciplines. REGAIN: +1 WP per scene when upholding a Major or Defining intimacy through hardship; full pool refresh on a night of restful sleep up to permanent rating; permanent +1 from in-character growth at the Storyteller's call.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "name": "Rule: Health track (V20)",
+      "keys": ["health", "wound", "wounded", "incapacitated", "damage", "soak"],
+      "content": "HEALTH TRACK: 7 levels — Bruised (-0), Hurt (-1), Injured (-1), Wounded (-2), Mauled (-2), Crippled (-5), Incapacitated (cannot act). Penalty in effect = the HIGHEST filled box; subtract from dice pools. Spend 1 Willpower to ignore the penalty for one turn. DAMAGE TYPES: Bashing (B, soak with Stamina; heals fast); Lethal (L, soak with Stamina + Fortitude; heals slow); Aggravated (A, ONLY Fortitude soaks it — fire, sunlight, supernatural fangs/claws). HEALING: spend Blood and rest. Bashing: 1 BP heals 1 level per hour. Lethal: 1 BP per night per level. Aggravated: 1 BP per 5 nights per level (dedicated daily Blood expenditure). Aggravated past Incapacitated = TORPOR or FINAL DEATH (see entries). Stake to the heart paralyzes — does not kill. DECAPITATION = automatic Final Death.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "name": "Rule: Combat round (V20)",
+      "keys": ["combat", "round", "initiative", "attack", "defend", "split action", "multiple actions"],
+      "content": "COMBAT: each round has three stages: (1) INITIATIVE: roll 1d10 + Dexterity + Wits; wound penalties subtract from the rating, NOT the d10. Highest acts first. Declare actions in REVERSE initiative (slow first) so fast characters can react. (2) ATTACK: at each character's slot. Pools — unarmed: Dex+Brawl; armed close: Dex+Melee; gun: Dex+Firearms; thrown: Dex+Athletics. Default attack difficulty 6. Defender may ABORT to a defensive action (block/dodge/parry) by spending 1 Willpower OR succeeding on a Willpower roll. (3) RESOLVE / DAMAGE: damage dice = weapon rating + extra successes; defender soaks; each soak success cancels one damage die. SPLIT ACTIONS (no Celerity): subtract total declared actions from the FIRST action, then -1 more per subsequent action. CELERITY: spend 1 Blood per dot to gain that many extra physical actions WITHOUT split-action penalty, all at end of turn, none can themselves be split.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Rule: Generation table (V20)",
+      "keys": ["generation", "blood pool max", "blood per turn", "trait cap"],
+      "content": "GENERATION TABLE (Blood Pool max / Blood per turn / Max Trait): 4th gen 50/10/9, 5th gen 40/8/8, 6th gen 30/6/7, 7th gen 20/4/6, 8th gen 15/3/5, 9th gen 14/2/5, 10th gen 13/1/5, 11th gen 12/1/5, 12th gen 11/1/5, 13th gen 10/1/5. 'Max Trait' caps permanent ratings of Attributes and Abilities (Humanity / Path / Willpower are NOT capped). 'Blood per turn' caps Blood spent in a single round for healing / Discipline activation / Physical-Attribute boost. 13th-gen neonate is the modern-nights default; lower generation costs Background dots at character creation. 3rd generation is functionally NPC (Antediluvian); no canonical numbers published — Storyteller fiat.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "name": "Rule: Beast and Frenzy",
+      "keys": ["frenzy", "the beast", "rotschreck", "red fear", "rage", "hunger frenzy"],
+      "content": "THE BEAST: every vampire carries the Beast — predatory, hungry, inarticulate. Frenzy is the Beast taking control. Three flavors: HUNGER FRENZY (low Blood Pool + smell/sight of mortal blood), ANGER FRENZY (insult, attack, humiliation, loss), ROTSCHRECK / RED FEAR (fire, sunlight, overwhelming supernatural threat). RESIST: roll Self-Control + Courage (or Instinct + Courage on a Path) vs difficulty by provocation severity (typically 6-8). Resist Rotschreck with Courage alone. 5 successes = master the Beast for the scene; partial successes hold it off for that many turns. CRITICAL: dice rolled for any Virtue (incl. Courage) cap at the character's Humanity / Path rating. A Humanity 3 vampire with Courage 5 still rolls only 3 dice. While in Frenzy: drive (kill/feed/destroy/flee), cannot use focused Disciplines, will not respect the Masquerade, ignores wound penalties. Spend 1 WP to act normally for ONE turn (does not end Frenzy). Frenzy ends when the trigger ends and the Beast is satisfied. RIDE THE WAVE: a player may instead choose to enter Frenzy intentionally and steer it loosely with Self-Control / Instinct rolls.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "name": "Rule: Frenzy & Rotschreck difficulties",
+      "keys": ["frenzy difficulty", "rotschreck difficulty", "frenzy trigger"],
+      "content": "FRENZY TRIGGERS (Self-Control + Courage diff): smell of blood while hungry 3+; sight of blood while hungry 4+; harassed 4; life-threatened 4; malicious taunts 4; physically struck in anger 6; taste of blood while hungry 6+; loved one in mortal danger 7; outright public humiliation 8. Modifier: significant fire near +1 to base. Modifier: character on a Path of unusual passion +2. ROTSCHRECK TRIGGERS (Courage alone): candle thrust into face 3; threatened with a torch 5; bonfire as immediate threat 6; obscured sunlight 7; on fire / actively burned 7; direct sunlight 8; trapped in a burning building 9. Decorative fires (fireplace across the room, table candles, torch in a wall sconce) do NOT trigger Rotschreck — flame must present a real threat. Difficulty +1 if character is a Road / Path initiate.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Rule: Hunger and feeding tempo",
+      "keys": ["hunger", "hungry", "hunting", "feeding", "blood point", "kiss"],
+      "content": "HUNGER thresholds: 'Hungry' = Blood Pool < (7 - Self-Control or Instinct rating). While hungry, Self-Control die pool for Frenzy CAPS at current Blood Pool. 'Starving' = BP 1 or 0; collapse imminent. DAILY UPKEEP: spend 1 Blood Point per night just to rise and animate. FEEDING: an adult human contains ~10 BP. Vampire takes 1 BP per turn while feeding (V20 canon — do not import 'up to 3/turn' from V5). Each BP drained inflicts 1 lethal damage on the mortal. The Kiss induces ecstatic pleasure and usually ends mortal resistance. HUNTING ROLL: technique-flexible. Pick Attribute + Ability matching method — Charisma+Subterfuge (charming), Manipulation+Subterfuge (deceptive lure), Wits+Streetwise (stalking), Appearance+Subterfuge (nightclub seduction), Strength+Brawl (ambush). One-hour hunt; difficulty 5-9 by district risk. Animal blood works (1:2 ratio at Storyteller call). Vampire vitae is rich but moves drinker toward Blood Bond.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Rule: Blood Bond (3-step)",
+      "keys": ["blood bond", "bound", "thrall", "regnant"],
+      "content": "BLOOD BOND: drinking a specific vampire's vitae three times on three SEPARATE NIGHTS forms a supernatural emotional bond. Quantity is irrelevant — a single drop counts. (1) FIRST DRINK: thrall finds themselves thinking of the regnant unbidden; gravitate toward them 'by coincidence.' No mechanical effect. (2) SECOND DRINK: visible infatuation. Thrall must spend 1 Willpower for any DIRECT action against the regnant (indirect action and inaction unmodified). (3) THIRD DRINK / FULL BOND: thrall loves the regnant more than any mortal could love anyone. Regnant may use Dominate by VOICE ALONE (no eye contact). Defying direct orders is possible only with great Willpower expenditure. BREAKING THE BOND: regnant's Final Death; OR extended absence (12 months minus thrall's permanent Willpower) decays one bond level. Tremere flaw: first drink counts as TWO for Tremere drinkers (so they bond after just two drinks).",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Rule: Torpor and Final Death",
+      "keys": ["torpor", "final death", "dead", "sunlight", "fire"],
+      "content": "TORPOR triggers: Incapacitated with no Blood remaining; voluntary entry; sustained aggravated damage filling track but not exceeding it. DURATION by Humanity/Path: rating 10 = 1 day; 9 = 1 day; 8 = 3 days; 7 = 1 week; 6 = 1 week; 5 = 1 month; 4 = 1 month; 3 = 1 year; 2 = 1 year; 1 = decades to centuries (ST); 0 = centuries+ (ST). AWAKENING: spend 1 Blood Point + roll Humanity/Path + Stamina vs difficulty 8; failure = sleep another full duration. FINAL DEATH: aggravated damage taken while at Incapacitated; OR aggravated damage taken while Incapacitated by bashing; OR DECAPITATION (always Final Death, instant); OR body destruction beyond repair. SUNLIGHT: aggravated. Direct noon = 3 dice agg/turn; bright daylight = 2; reflected = 1. FIRE: aggravated. Candle = 1 die; torch = 2; bonfire = 3; inferno = 4+. Fortitude soaks both. STAKE: paralyzes (functionally torpor); does NOT kill alone.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Rule: Six Traditions of the Camarilla",
+      "keys": ["traditions", "six traditions", "masquerade", "domain", "progeny", "accounting", "hospitality", "destruction"],
+      "content": "SIX TRADITIONS (paraphrased): (1) MASQUERADE — do not reveal vampiric existence to mortals; doing so forfeits Caine's protection. (2) DOMAIN — a Kindred's claimed territory is theirs to rule absolutely; in modern nights, rolled into the Prince's authority over a city. (3) PROGENY — do not Embrace without permission of one's elder; unauthorized creation can be a capital offence for both sire and childe. (4) ACCOUNTING — a sire is responsible for their childe's actions until the childe is publicly released and recognized by the Prince. (5) HOSPITALITY — when entering another's domain, present yourself to its ruler and seek formal welcome. (6) DESTRUCTION — the right to destroy another Kindred is reserved to the eldest of the community; only an elder may declare a Blood Hunt (the Lextalionis).",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Brujah",
+      "keys": ["brujah"],
+      "content": "BRUJAH — The Rabble. Camarilla. Idealist firebrands; philosopher-kings turned street-level rebels. Originally Carthaginian scholar-warriors; modern Brujah skew toward punks, activists, brawlers who can quote Plato between fists. IN-CLAN DISCIPLINES: Celerity, Potence, Presence. WEAKNESS: a perpetually short fuse. The Beast rides closer to the surface than any other Camarilla clan; difficulties of all rolls to resist Frenzy are increased by two. Strong Anarch sympathies — many Brujah are functionally Anarch within Camarilla cities. Sabbat antitribu exist.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Gangrel",
+      "keys": ["gangrel"],
+      "content": "GANGREL — The Outlanders. Independent (left the Camarilla in late-1990s metaplot). Loners, wanderers, hunters, shapeshifters who run with wolves and sleep in dirt. The most beast-touched of the major clans. IN-CLAN DISCIPLINES: Animalism, Fortitude, Protean. WEAKNESS: each Frenzy leaves a permanent animal feature — slit pupils, sharper teeth, patches of fur, claws, etc. Every five accumulated features reduces a Social Attribute by one dot (Storyteller's pick which). Country Gangrel and City Gangrel exist as distinct flavors. Sabbat antitribu retain a strong presence.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Malkavian",
+      "keys": ["malkavian", "malkavians", "cobweb"],
+      "content": "MALKAVIAN — The Lunatics / Oracles. Camarilla. Madness as sacrament. Every Malkavian carries a fragment of insight buried inside derangement; the Cobweb (their shared psychic Madness Network) ties them together. IN-CLAN DISCIPLINES: Auspex, Dementation, Obfuscate. (V20 restored Dementation to the in-clan trio after Revised's Dominate substitution.) WEAKNESS: every Malkavian gains at least one incurable Derangement at the moment of Embrace and can never be rid of it. Sabbat antitribu skew darker and crueler.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Nosferatu",
+      "keys": ["nosferatu", "schrecknet"],
+      "content": "NOSFERATU — The Sewer Rats / Information Brokers. Camarilla. Hideously deformed by the Embrace; masters of stealth, shadow networks, and the SchreckNet underground information system. IN-CLAN DISCIPLINES: Animalism, Obfuscate, Potence. WEAKNESS: their Embrace mutilates them into monsters. Appearance is permanently 0; any roll using Appearance automatically fails. The Masquerade is essentially impossible to maintain in plain sight — Nosferatu live in tunnels, sewers, and abandoned places. Sabbat antitribu exist and are even more grotesque.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Toreador",
+      "keys": ["toreador"],
+      "content": "TOREADOR — The Degenerates / Artistes. Camarilla (a founding pillar). Aesthetes, patrons, performers, tastemakers; embody and embalm beauty. IN-CLAN DISCIPLINES: Auspex, Celerity, Presence. WEAKNESS: captivated by beauty. When confronted with a truly beautiful sight, sound, or experience, the Toreador must succeed on a Self-Control / Instinct roll (difficulty 6) or stand transfixed until the beauty passes or they are jolted free. Sabbat antitribu are typically destructive anti-artists who pervert what their cousins worship.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Tremere",
+      "keys": ["tremere", "warlocks", "thaumaturgy"],
+      "content": "TREMERE — The Warlocks. Camarilla. A pyramid-structured house of blood sorcerers — formerly mortal Hermetic mages who stole vampirism and reshaped it into a clan. Distrusted by every other clan. IN-CLAN DISCIPLINES: Auspex, Dominate, Thaumaturgy. WEAKNESS: the Embrace ritual binds every neonate Tremere with the blood of the seven clan elders, producing one stage of a Blood Bond to the council before the new childe even meets their sire's superiors. Tremere also bond from drinking only TWICE from the same vampire (their first drink counts as two). Sabbat antitribu are heretics hunted by both sides.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Ventrue",
+      "keys": ["ventrue", "blue bloods"],
+      "content": "VENTRUE — The Blue Bloods / Kings. Camarilla (a founding pillar). Aristocrats, executives, princes; consider themselves the rightful rulers of Kindred society and frequently are. IN-CLAN DISCIPLINES: Dominate, Fortitude, Presence. WEAKNESS: refined palate. Each Ventrue can feed only on a single, specific category of mortal vessel (e.g., young athletes, devout Catholics, redheads, blondes with grad degrees, opera-goers). Other blood produces no nourishment and is vomited back up. Player picks the preference at character creation; it cannot be changed without rare ritual or in-character revelation.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Assamite",
+      "keys": ["assamite", "haqim", "alamut"],
+      "content": "ASSAMITE — The Assassins. Independent. A guild-clan of holy killers descended from Haqim, organized into Warrior, Vizier, and Sorcerer castes. The Warriors are most often encountered; they sell death for prestige and Kindred vitae. Fortress at Alamut. IN-CLAN DISCIPLINES: Celerity, Obfuscate, Quietus. WEAKNESS (V20 era): diablerie hunger. Drinking another vampire's blood produces unsoakable lethal damage of one health level per blood point consumed unless their religious blood curse has been lifted. Internal factions: Loyalist (orthodox), Schismatic (some joined Camarilla), Unconquered (independent zealots).",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Followers of Set",
+      "keys": ["followers of set", "setite", "setites"],
+      "content": "FOLLOWERS OF SET (Setites) — The Serpents. Independent. Cult-clan claiming descent from the Egyptian god Set. Corruptors who hook mortals and Kindred alike on vice — drugs, secrets, sex, power — to harvest their souls and grow their cult. IN-CLAN DISCIPLINES: Obfuscate, Presence, Serpentis. WEAKNESS: photophobia. Sunlight and even bright artificial light blind and pain them; they take additional dice of damage from sunlight and difficulty penalties when exposed to merely bright illumination. Operate via temple networks led by Hierophants.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Giovanni",
+      "keys": ["giovanni", "necromancy", "venice"],
+      "content": "GIOVANNI — The Necromancers. Independent. A Venetian-Italian merchant family that murdered and replaced the older Cappadocian clan. Run a global criminal-financial empire and study death itself. Operate as one extended Mafia-style family with the Don in Venice. IN-CLAN DISCIPLINES: Dominate, Necromancy, Potence. WEAKNESS: a Giovanni's bite causes excruciating, tearing pain instead of the usual narcotic bliss. Victims take additional damage from the Kiss, and any feeding scene becomes overtly horrific. Cannot pass off feeding as romance.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Lasombra",
+      "keys": ["lasombra", "obtenebration", "abyss"],
+      "content": "LASOMBRA — The Keepers. Sabbat (a founding pillar). Aristocratic shadow-shapers and the philosophical heart of the Sabbat. They wield the Abyss as a weapon and as a religion. IN-CLAN DISCIPLINES: Dominate, Obtenebration (signature shadow control), Potence. WEAKNESS: cast no reflection. Mirrors do not show them; cameras and digital recordings render them as smears, voids, or static. Many Lasombra also take an extra die of damage from sunlight. Cannot use mortal cameras for reconnaissance.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Ravnos",
+      "keys": ["ravnos", "chimerstry", "week of nightmares"],
+      "content": "RAVNOS — The Deceivers. Independent. Vagabond illusionists and tricksters of South Asian / Romani lineage. Devastated as a clan by the metaplot Week of Nightmares (1999) when their Antediluvian woke and wiped out most of the line. Survivors are scattered. IN-CLAN DISCIPLINES: Animalism, Chimerstry, Fortitude. WEAKNESS: each Ravnos has a defining vice — theft, deceit, cruelty, vanity, gluttony. When opportunity to indulge that vice presents itself, they must succeed on a Self-Control / Instinct roll (difficulty 6) or give in.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Clan: Tzimisce",
+      "keys": ["tzimisce", "vicissitude", "fiends"],
+      "content": "TZIMISCE — The Fiends. Sabbat (a founding pillar). Eastern European boyar-vampires and flesh-sculptors. Cold, alien, territorial; the philosophical engine of the Sabbat opposite the Lasombra. IN-CLAN DISCIPLINES: Animalism, Auspex, Vicissitude. WEAKNESS: tied to their land. They must rest each day in proximity to at least two handfuls of 'native earth' — soil from a place of personal significance (birthplace, grave site, ancestral domain). Without it, dice pools halve each successive night until reduced to one die. Many wear forms that have not been remotely human-shaped for centuries.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Bloodline: Caitiff",
+      "keys": ["caitiff", "clanless"],
+      "content": "CAITIFF — The Clanless. Vampires whose blood shows no clear lineage — usually thin-blooded, abandoned childer, or products of broken Embraces. Outcast everywhere; tolerated nowhere. IN-CLAN DISCIPLINES: NONE. A Caitiff has no inherited Discipline trio; instead, every Discipline costs them out-of-clan experience rates, but they are not locked out of any specific tree. WEAKNESS: no clan curse — but also no clan support, no clan resources, and active prejudice from the Camarilla, Sabbat, and Independents alike. Generation tends to be high (12th-13th). Most Caitiff drift toward the Anarch Movement, where lineage matters less.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Bloodline: Daughters of Cacophony",
+      "keys": ["daughters of cacophony", "melpominee"],
+      "content": "DAUGHTERS OF CACOPHONY — The Sirens. A small, mysterious bloodline of singer-vampires whose songs warp emotion, mind, and matter. Origin disputed — some claim Toreador descent, others Malkavian, others Ministerial. IN-CLAN DISCIPLINES: Fortitude, Melpominee (signature voice-magic), Presence. WEAKNESS: every Daughter hears constant, intrusive music inside her head — a private internal soundtrack she cannot silence. Difficulties on Perception rolls increase by two; Alertness cannot exceed 3 dots. Unaligned; perform in the cracks between sects.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Bloodline: Salubri",
+      "keys": ["salubri", "valeren", "obeah", "third eye"],
+      "content": "SALUBRI — The Soul-Eaters (per Tremere propaganda) or The Healers (per their own self-image). Tiny, hunted bloodline in V20 — the Tremere committed near-genocide on them centuries ago and still actively diablerize survivors. IN-CLAN DISCIPLINES: Healers — Auspex, Fortitude, Obeah. Warriors — Auspex, Fortitude, Valeren. (V20 Dark Ages folds these into a single 'Valeren' Discipline with three caste-paths.) WEAKNESS: a third eye opens in the forehead at the Embrace. Any use of Obeah or Valeren beyond the first dot causes the eye to glow visibly — Masquerade catastrophe and instant flag to Tremere bloodhounds.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Bloodline: Samedi",
+      "keys": ["samedi", "thanatosis", "stiffs"],
+      "content": "SAMEDI — The Stiffs / Bone Lords. Caribbean-rooted vampire-corpses whose flesh visibly rots even as it knits back together. Mortician-mystics with a mocking, gallows humor. IN-CLAN DISCIPLINES: Fortitude, Obfuscate, Thanatosis (signature death-sculpting). WEAKNESS: permanent and visible decay. Appearance is fixed at 0; any roll using Appearance automatically fails. Cannot pass for living mortals at any range closer than a darkened room. Loose ties to Giovanni (necromantic clientele) and Sabbat (mercenary work). Independent; few in number.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Animalism",
+      "keys": ["animalism", "feral whispers", "beckoning", "song of serenity", "drawing out the beast", "subsume the spirit"],
+      "content": "ANIMALISM — Beast-bond and primal command. (1) FERAL WHISPERS: speak with and command animals, one species at a time. (2) BECKONING: summon a specific kind of animal from the surrounding region. (3) SONG OF SERENITY: soothe and quiet a frenzying being (animal, vampire, or panicked mortal). (4) DRAWING OUT THE BEAST: force one's own Frenzy into another creature, sending it into rage instead. (5) SUBSUME THE SPIRIT (Sharing the Spirit): project consciousness fully into an animal host, riding it as a body. Common to: Gangrel, Nosferatu, Ravnos, Tzimisce.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Auspex",
+      "keys": ["auspex", "heightened senses", "aura perception", "spirit's touch", "telepathy", "psychic projection"],
+      "content": "AUSPEX — Heightened senses and the perception of things hidden. (1) HEIGHTENED SENSES: sharpen all five senses to supernatural acuity. (2) AURA PERCEPTION: read the swirling aura of any being — emotion, vampiric nature, diablerie, supernatural taint. (3) THE SPIRIT'S TOUCH: psychometry — handle an object and read recent events around it. (4) TELEPATHY: read surface thoughts; with effort, deeper memory. (5) PSYCHIC PROJECTION: send the consciousness travelling out of the body across long distances. Common to: Malkavian, Salubri, Toreador, Tremere, Tzimisce.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Celerity",
+      "keys": ["celerity", "speed"],
+      "content": "CELERITY — Vampiric speed bought one Blood Point at a time. Each dot purchased lets the vampire spend 1 Blood per turn for that many extra physical actions, taken at the END of turn after split-action declarations. Celerity actions are NOT subject to multi-action penalties and CANNOT themselves be split. Celerity may not be used for Mental or Social rolls — only physical actions. (1) +1 action / blood. (2) +2 actions / blood. (3) +3 actions; the elder begins to blur in motion. (4) +4 actions; arrows and small-arms fire become genuinely dodgeable. (5) +5 actions; the Kindred operates in a wholly faster timeframe than mortals. Common to: Assamite, Brujah, Toreador.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Dominate",
+      "keys": ["dominate", "command", "mesmerize", "forgetful mind", "conditioning", "possession"],
+      "content": "DOMINATE — Mind control through eye contact and the imperative voice. (1) COMMAND: one-word verbal command that the target must obey. (2) MESMERIZE: plant a complex post-hypnotic suggestion to trigger later. (3) THE FORGETFUL MIND: erase or rewrite recent memories. (4) CONDITIONING: long-term subliminal programming, building toward a one-sided psychological bond. (5) POSSESSION: eject the target's consciousness and inhabit their body directly. Eye contact normally required; Blood Bond removes the eye-contact requirement (regnant can Dominate by voice alone). Common to: Giovanni, Lasombra, Tremere, Ventrue.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Fortitude",
+      "keys": ["fortitude"],
+      "content": "FORTITUDE — Supernatural toughness; the only widely-available defense against aggravated damage. Each dot adds one die to soak rolls — uniquely, those dice apply against AGGRAVATED damage from fire, sunlight, and supernatural claws. There are no separately-named powers in the basic ladder; each dot simply hardens the body further. (1)-(5) progressively higher soak. Without Fortitude, fire and sunlight ignore mortal Stamina entirely; Fortitude is the only thing standing between an unprotected vampire and the dawn. Common to: Daughters of Cacophony, Gangrel, Ravnos, Salubri, Samedi, Ventrue.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Obfuscate",
+      "keys": ["obfuscate", "cloak of shadows", "unseen presence", "mask of a thousand faces", "vanish", "cloak the gathering"],
+      "content": "OBFUSCATE — The art of being unseen, unheard, and unremembered. (1) CLOAK OF SHADOWS: step into shadow or stillness and become functionally invisible to passive observers. (2) UNSEEN PRESENCE: move and act while remaining unseen; observers' minds slide past. (3) MASK OF A THOUSAND FACES: project an entirely different appearance to viewers. (4) VANISH FROM THE MIND'S EYE: disappear in the middle of being actively watched. (5) CLOAK THE GATHERING: extend Obfuscation to companions, vehicles, even small crowds. Common to: Assamite, Followers of Set, Malkavian, Nosferatu, Samedi.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Potence",
+      "keys": ["potence", "strength"],
+      "content": "POTENCE — Raw vampiric strength. Each dot purchased grants ONE automatic success on every Strength-based feat and Brawl/Melee damage roll — automatic, not rolled, never cancellable. (1)-(5) escalating brute force; a 5-dot Potence vampire's punch shatters concrete and warps steel. Advanced expressions like Earthshock (creating a localized tremor) and Imprint (leaving fingerprints in solid rock) emerge at 6+ dots — Elder territory. Common to: Brujah, Giovanni, Lasombra, Nosferatu.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Presence",
+      "keys": ["presence", "awe", "dread gaze", "entrancement", "summon", "majesty"],
+      "content": "PRESENCE — The supernatural force of personality — magnetism, awe, dread. (1) AWE: become fascinating; charm and attract everyone in line of sight. (2) DREAD GAZE: project terrifying menace; targets recoil in fear. (3) ENTRANCEMENT: bind a target into emotional devotion (short of a Blood Bond, but powerful). (4) SUMMON: compel a known target to come to the user from any distance. (5) MAJESTY: project unassailable presence; mortals and lesser Kindred cannot bring themselves to attack or even meaningfully oppose. Common to: Brujah, Daughters of Cacophony, Followers of Set, Toreador, Ventrue.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Protean",
+      "keys": ["protean", "eyes of the beast", "feral claws", "earth meld", "shape of the beast", "mist form"],
+      "content": "PROTEAN — Bodily transformation rooted in earth and Beast. (1) EYES OF THE BEAST: glowing red eyes; perfect sight in total darkness. (2) FERAL CLAWS: grow vampiric claws that deal aggravated damage to other supernaturals. (3) EARTH MELD: sink into and rest within unworked earth; total protection from sunlight and most physical threats while inside. (4) SHAPE OF THE BEAST: take the form of a wolf or large bat (the classic Gangrel transformation). (5) MIST FORM: dissolve entirely into mist, immune to most physical harm and able to slip through tiny gaps. Common to: Gangrel.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Necromancy",
+      "keys": ["necromancy", "sepulchre path", "bone path", "ash path", "wraith"],
+      "content": "NECROMANCY — Blood magic of the dead. Clan: Giovanni (signature); Hecata-adjacent bloodlines. Structured like Thaumaturgy: pick a primary PATH, advance it 1-5 dots, learn additional Paths at 1 dot each, plus formal RITUALS as separate spells learned individually. PRIMARY V20 PATHS: SEPULCHRE PATH (Giovanni default — detect, summon, compel, bind wraiths and ghosts; dot 1 senses recent dead, dot 5 binds named wraiths). BONE PATH (animate / command / harvest corpses; dot 1 numbs corpse against decay, dot 3 creates shambling minion, dot 5 imbues body with captured ghost as pilot). ASH PATH (cross the Shroud personally — view, project, eventually walk into the Underworld). Other Paths: Vitreous, Mortis, Cenotaph, Grave's Decay, Twilight Path. Activations: Willpower or Manipulation depending on power. Rituals require formal study (~1 week per dot) plus components — usually grave goods, body parts, or fluids of the dead.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Thaumaturgy",
+      "keys": ["thaumaturgy", "path of blood", "rego vitae", "thaumaturgical ritual"],
+      "content": "THAUMATURGY — Tremere blood sorcery, fusing vampiric vitae with Hermetic mage tradition. Splits into PATHS (always-active toolkit powers) and RITUALS (formal blood-magic spells). Every Tremere starts with one Path at the rating equal to their Thaumaturgy dots; may diversify into additional Paths at 1 dot each. Rituals are level 1-10, learned individually like spells in a grimoire. PRIMARY: most Tremere take the PATH OF BLOOD (Rego Vitae) — taste blood for information (dot 1), boil another's vitae from across a room (dot 3), steal blood directly out of a victim's veins (dot 4). Other Paths: Lure of Flames, Movement of the Mind, Path of Conjuring, Path of Corruption (Tlacique), Path of Elemental Mastery, Path of Mars, Spirit Manipulation, Weather Control, Green Path, Path of Father's Vengeance, Path of the Levinbolt. Sample Rituals: Deflection of Wooden Doom (lvl 1), Engaging the Vessel of Transference (lvl 1), Heart of Stone (lvl 5), Blood Contract, Ward versus Ghouls/Lupines/etc. Activation: Willpower; Rituals additionally require time and reagents.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Discipline: Vicissitude",
+      "keys": ["vicissitude", "fleshcraft", "bonecraft", "horrid form", "bloodform"],
+      "content": "VICISSITUDE — Fleshcrafting and bonecrafting; active reshaping of living and undead tissue. Clan: Tzimisce (signature); Sabbat at large via Vaulderie tutelage. (1) MALLEABLE VISAGE: reshape one's own appearance in detail — face, voice, build (within mass). (2) FLESHCRAFT: reshape another living or vampiric body's flesh; classic horror sculpting, usually requires the subject be restrained. (3) BONECRAFT: add the skeleton to the canvas — lengthen claws, reinforce joints, shape weapons from one's own bones. (4) HORRID FORM: transform self into a hulking eight-foot war-shape — claws, fangs, armor plates, additional Strength and Stamina. (5) BLOODFORM: dissolve into living, sentient, intelligent vitae — a pool of self-aware blood that can re-form at will. Lore wrinkle: V20 preserves the older 'Vicissitude is actually an alien parasite from Beneath' subplot as one of several in-character explanations.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Sect: Camarilla",
+      "keys": ["camarilla", "prince", "primogen", "justicar", "harpy", "sheriff"],
+      "content": "CAMARILLA — Goals: preserve the Masquerade above all; maintain stable Kindred society modelled on European feudalism; suppress the Sabbat; contain the Anarchs; manage independent clans through diplomacy. STRUCTURE: a Prince rules each city as feudal lord, supported by the Primogen (council of clan elders). Below sit Sheriffs (law enforcers), Harpies (social arbiters), Scourges (purgers of the unwelcome), Whips (clan deputies). Above all sit the seven Justicars — one per founding clan — who travel between cities with Archon enforcers. The Inner Circle convenes once a generation in Venice to elect the Justicars. MEMBER CLANS: Brujah, Gangrel (officially withdrew mid-1990s), Malkavian, Nosferatu, Toreador, Tremere, Ventrue.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Sect: Sabbat",
+      "keys": ["sabbat", "vaulderie", "pack", "ductus", "pack priest", "regent", "black hand"],
+      "content": "SABBAT — Goals: reject the Masquerade as cowardice; wage the Jyhad against the Antediluvians; liberate vampires from mortal morality through Vaulderie (mass blood-sharing) and pack loyalty. Religious mythology centers on Gehenna and the necessity of Cainite supremacy. STRUCTURE: organized in PACKS (3-10 vampires bound by Vaulderie). Multiple packs answer to a Bishop; Bishops to an Archbishop running a city; Archbishops to Cardinals running countries; Cardinals to the REGENT, the supreme leader (currently Melinda Galbraith). Each pack has a Ductus (warlord) and Pack Priest (ritual leader). The BLACK HAND is the Sabbat's elite warrior society. MEMBER CLANS: Lasombra, Tzimisce (founding); plus antitribu of nearly every Camarilla and Independent clan.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Sect: Anarchs",
+      "keys": ["anarch", "anarchs", "anarch movement", "anarch free state", "baron"],
+      "content": "ANARCHS — Goals: reject elder rule and the feudal Camarilla hierarchy; distribute power; fight Antediluvian manipulation; treat young Kindred as equals. Less an opposed government than a movement-within-the-Camarilla. In California, the Anarchs run the Anarch Free State outright. STRUCTURE: deliberately loose. Local Anarch gangs and crews self-organize; a BARON may rule an Anarch domain (functionally equivalent to a Prince but without the pretensions). The Anarch Manifesto by Salvador Garcia is the closest thing they have to a charter. MEMBER CLANS: anyone — Brujah are the historical core, but Anarchs include Caitiff in disproportionate numbers, and any clan can participate.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Sect: Independent Clans",
+      "keys": ["independent", "independent clans"],
+      "content": "INDEPENDENT CLANS — Refuse to bend the knee to either Camarilla or Sabbat. Goals vary by clan. Assamites pursue Haqim's mandate and the unbroken blood curse. Setites build the cult of Set and corrupt the world toward Apophis. Giovanni grow the family business in death and money. Ravnos (post-Week of Nightmares) just survive. STRUCTURE: each clan governs itself. Assamites have a fortress at Alamut and a Caliph. Setites have Hierophants and a temple network. Giovanni run as one extended Mafia-style family with the Don in Venice. Ravnos answer only to extended kumpania family bonds. MEMBER CLANS: Assamite, Followers of Set, Giovanni, Ravnos. Sometimes-counted: Daughters of Cacophony, Salubri, Samedi.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Morality: Humanity hierarchy of sins",
+      "keys": ["humanity", "sin", "sins", "hierarchy of sins", "conscience roll", "lose humanity"],
+      "content": "HUMANITY — the standard V20 chart. A vampire at a given Humanity level rolls Conscience to avoid losing a dot whenever they commit an act listed at their level OR BELOW. Higher Humanity = more sensitive conscience = more things count as sin. Lvl 10: selfish or vain thoughts. Lvl 9: minor selfish acts; petty cruelty in thought. Lvl 8: injury to another (accidental or otherwise); minor theft or lie. Lvl 7: theft, vandalism, deliberate property damage. Lvl 6: accidental violation that causes harm; minor manslaughter through negligence. Lvl 5: intentional but non-premeditated killing (passion, feeding gone wrong). Lvl 4: cold-blooded, planned violence; intentional grievous harm. Lvl 3: premeditated murder. Lvl 2: casual, indifferent slaughter; killing without thought. Lvl 1: utter perversion or heinousness. Lvl 0: no human soul; becomes a wight (NPC controlled wholly by the Beast).",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Path: Honorable Accord",
+      "keys": ["path of honorable accord", "honorable accord", "knight path", "templar path"],
+      "content": "PATH OF HONORABLE ACCORD — Virtues: Conviction + Self-Control. Adherents: Knights, Patriots, Canonici. PHILOSOPHY: a code of chivalry and oath-keeping for vampires whose word must mean something. Common among Sabbat templars but adoptable by Camarilla knights. Loyalty, hospitality, given word, obedience to recognized authority. HIERARCHY OF SINS (10 noblest -> 1 most permissive): 10 failing to act in accordance with one's recognized authority. 9 failing to extend hospitality to fellow members of one's order. 8 failing to observe a minor pack/order ritual. 7 failing to observe a major sect ritual. 6 acting against a recognized leader; failing to defend a fellow member. 5 putting personal welfare above the order's. 4 failing to honor a sworn agreement. 3 showing cowardice. 2 showing open disrespect to the sect. 1 breaking one's given word.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Path: Caine",
+      "keys": ["path of caine", "noddist"],
+      "content": "PATH OF CAINE — Virtues: Conviction + Instinct. Adherents: Noddists. PHILOSOPHY: Caine is the original vampire and the only legitimate model. Humanity is delusion; mortal morality is contemptible. Study Noddist scripture, reproduce Caine's circumstances, transcend through diablerie if necessary. Almost exclusive to Sabbat scholar-elders. HIERARCHY OF SINS: 10 failing to pursue evidence of Caine when doing so would cost your unlife. 9 failing to spend three hours each night in meditation. 8 acting against the Sabbat. 7 disrespect to elders; failing to pursue Caine despite moderate danger. 6 failing to take part in a War Party. 5 refusing to attempt destruction of Camarilla vampires; treating mortals as anything but food. 4 feeling remorse over killing a mortal; failing to pursue Caine despite minor danger. 3 failing to kill a mortal when need is clear. 2 relying on mortal allies or friends; failing to pursue Caine when no danger at all. 1 drinking animal blood when mortal blood is available.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Path: The Beast",
+      "keys": ["path of the beast", "beast path", "wild ones"],
+      "content": "PATH OF THE BEAST — Virtues: Conviction + Instinct. Adherents: Beasts, the Wild Ones (NOT to be confused with Lupines). PHILOSOPHY: the Beast is not the enemy; the Beast is the truth. Suppressing it is the lie. Hunt as predators, integrate the rational mind with the primal drive, treat civilization's restraints as cages to be broken. Common among Gangrel (especially Sabbat antitribu) and certain Brujah and Nosferatu. HIERARCHY OF SINS (V20 reconstruction; specific wording varies): 10 hunting without using innate vampiric senses and powers. 9 mortal political intrigue. 8 risking unlife for any cause not involving slaying an enemy. 7 showing fear or weakness before lesser predators. 6 acting against another Beast follower without personal cause. 5 failing to feed when hungry. 4 refusing to hunt when opportunity arises. 3 showing compassion to prey. 2 acting against own instincts to please another. 1 denying the Beast utterly.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Path: Night",
+      "keys": ["path of night", "nihilist"],
+      "content": "PATH OF NIGHT — Virtues: Conviction + Instinct (or Conviction + Self-Control on the 'Cold' variant). Adherents: Nihilists, almost exclusively Lasombra. PHILOSOPHY: vampires exist as God's appointed instruments of damnation. Their role is to expose latent sin in mortals and force confrontation with it. Suffering is sacrament; pain is pedagogy. Killing is generally avoided — corpses can no longer be tormented. HIERARCHY OF SINS (V20 reconstruction): 10 failing to actively expose a mortal's latent sin when chance arises. 9 failing to teach a lesson through deserved suffering. 8 failing to test another's faith or moral conviction. 7 aiding the soul of a clearly virtuous mortal toward salvation. 6 acting against another follower of the Path. 5 showing kindness without corruptive purpose. 4 failing to terrorize a sinner in your power. 3 killing a target before their lesson is complete. 2 acting in any way that strengthens mortal society. 1 showing sincere mercy or compassion.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Optional Sub-Agents — what they do and how to enable",
+      "keys": ["sub-agent", "sub agents", "subagent", "additional agent", "additionalagent", "state-mutator", "state mutator", "state-reminder", "state reminder", "combat-adjudicator", "combat adjudicator", "lore-query", "lore query", "npc-bookkeeper", "npc bookkeeper", "enable agent", "Settings → Agents", "agent toggle"],
+      "content": "The V:TM V20 ruleset bundle ships five OPTIONAL pre-generation sub-agents that focus the main narration model on specific tasks. All but the main rules helper are installed DISABLED by default — flip them on individually in Marinara's Settings → Agents panel. Each adds one model call per turn while enabled, so enable only what your chronicle needs.\n\n1. state-mutator — Instructs narration to emit hidden [mrr-state: ...] tags when the story changes a sheet value (Blood Pool, Willpower, Health, Humanity, Frenzy state). The extension parses these and applies the change to the floating sheet. Without this, mutate the sheet by hand. Enable when: you want narration to drive the sheet automatically.\n\n2. state-reminder — Surfaces a short bulleted list of current PC state (Blood Pool, Willpower, Health, Humanity, active Frenzy/path, Hunger tier, equipped Disciplines) at the top of every turn so the model stays mechanically honest. Enable when: long sessions or complex sheets, the model is forgetting your stats.\n\n3. combat-adjudicator — Wakes only when V20 combat is active. Restates initiative formula, action economy, attack/damage formulas, soak rules, and Celerity timing in V20 terms before each turn. Outputs 'No combat active.' otherwise. Enable when: you run heavy-mechanics combat encounters.\n\n4. lore-query — Wakes only when the latest user message is a rules question ('How do I resist Frenzy?', 'What's Dominate level 4?'). Answers from the installed lorebook + V20 RAW. Outputs 'No rules query.' otherwise. Enable when: you frequently ask the model rules questions mid-RP.\n\n5. npc-bookkeeper — Tracks active and recently-engaged NPC Blood Pool, Health, conditions, generation, sect affiliation, and telegraphed intentions across turns. Outputs 'No NPCs to track.' when no NPCs are in scene. Enable when: combat or court scenes with multiple named Kindred you want continuity on.\n\nHow to enable: Marinara → Settings → Agents → find the agent (named like 'MRR: V:TM V20 — <Role>') → toggle on. The agent persists across chats; toggle off any time.",
+      "selective": false,
+      "constant": false,
+      "position": 1,
+      "tokenBudget": 2500
+    },
+    {
+      "name": "Path Lookup: humanity",
+      "keys": ["humanity", "path:humanity", "humanity path"],
+      "content": "HUMANITY (default morality track). Virtues: Conscience + Self-Control + Courage. Most vampires use Humanity — it is the moral baseline borrowed from the mortal life left behind, and the only morality non-Sabbat Camarilla society broadly recognizes. Rating 0-10; lose a dot when you commit a sin at or below your current rating without a successful Conscience roll. Below 5 a vampire is visibly monstrous; 0 is a wight. See the 'Morality: Humanity hierarchy of sins' entry for the V20 sin chart.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Path Lookup: path-honorable-accord",
+      "keys": ["path-honorable-accord", "honorable accord", "path of honorable accord"],
+      "content": "PATH OF HONORABLE ACCORD. Virtues: Conviction + Self-Control + Courage. A code of chivalry and oath-keeping for vampires whose word must mean something — common among Sabbat Lasombra and Tzimisce templars but adoptable elsewhere. Loyalty, hospitality, oaths sworn and oaths kept, obedience to recognized authority. See the 'Path: Honorable Accord' entry for the full V20 hierarchy of sins.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Path Lookup: path-caine",
+      "keys": ["path-caine", "path of caine", "noddist"],
+      "content": "PATH OF CAINE. Virtues: Conviction + Instinct + Courage. Adherents (Noddists) hold that Caine is the only legitimate model — humanity is delusion, mortal morality is contemptible, and the only worthy goal is to study Noddist scripture, reproduce Caine's circumstances, and transcend through diablerie if necessary. Almost exclusive to Sabbat scholar-elders. See the 'Path: Caine' entry for the V20 hierarchy of sins.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Path Lookup: path-beast",
+      "keys": ["path-beast", "path of the beast", "beast path"],
+      "content": "PATH OF THE BEAST. Virtues: Conviction + Instinct + Courage. The Beast is not the enemy — the Beast is the truth, and suppressing it is the lie. Adherents hunt as predators, integrate the rational mind with the primal drive, and treat civilization's restraints as cages to be broken. Common among Gangrel (especially Sabbat antitribu) and certain Brujah and Nosferatu. See the 'Path: The Beast' entry for the V20 hierarchy of sins.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "name": "Path Lookup: path-night",
+      "keys": ["path-night", "path of night", "nihilist path"],
+      "content": "PATH OF NIGHT. Virtues: Conviction + Instinct + Courage (or Conviction + Self-Control + Courage on the 'Cold' variant). Adherents hold that vampires exist as God's appointed instruments of damnation — their role is to expose latent sin in mortals and force confrontation with it. Suffering is sacrament; pain is pedagogy. Killing is generally avoided because corpses can no longer be tormented. Almost exclusive to Lasombra. See the 'Path: Night' entry for the V20 hierarchy of sins.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    }
+  ]
+}

@@ -8,31 +8,78 @@
  */
 
 :root {
-  --mrr-bg:           rgba(20, 16, 28, 0.92);
-  --mrr-bg-elev:      rgba(40, 32, 56, 0.92);
-  --mrr-border:       rgba(255, 255, 255, 0.10);
-  --mrr-border-strong:rgba(255, 255, 255, 0.20);
-  --mrr-text:         #f5f0ff;
-  --mrr-text-dim:     rgba(245, 240, 255, 0.65);
-  --mrr-accent:       #d4a8ff;
-  --mrr-accent-dim:   rgba(212, 168, 255, 0.30);
-  --mrr-success:      #6ee7b7;
-  --mrr-fail:         #fb7185;
-  --mrr-warning:      #fbbf24;
-  --mrr-on-accent:    #1a0f2a;
-  --mrr-on-fail:      #1a0f0f;
-  --mrr-tint-1:       rgba(255, 255, 255, 0.04);
-  --mrr-tint-2:       rgba(255, 255, 255, 0.06);
-  --mrr-tint-strong:  rgba(255, 255, 255, 0.20);
-  --mrr-radius:       8px;
-  --mrr-radius-sm:    4px;
-  --mrr-pad:          10px;
-  --mrr-gap:          6px;
-  --mrr-shadow:       0 8px 24px rgba(0, 0, 0, 0.35);
-  --mrr-mono:         ui-monospace, "Cascadia Code", "Fira Code", Menlo, Monaco, monospace;
-  --mrr-z-sheet:      9997;
-  --mrr-z-dice:       9998;
-  --mrr-z-dialog:     9999;
+  /* Phase 4 — design-token migration: oklch palette + Geist font stack
+   * Ported from ~/projects/claude-design-updates/styles.css. Token NAMES preserved
+   * so existing rules resolve unchanged. New tokens (h/c/l, *-soft, *-line, *-app,
+   * *-input, hairline, hairline-strong, *-text-faint, *-sans) added per prototype.
+   * Tracked in tools/token-migration-map.json. */
+
+  /* tweakable accent (purple, port of prototype --accent-h/c/l) */
+  --mrr-accent-h: 280;
+  --mrr-accent-c: 0.12;
+  --mrr-accent-l: 0.78;
+
+  /* derived accent — original token names preserved */
+  --mrr-accent:       oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h));
+  --mrr-accent-soft:  oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.18);
+  --mrr-accent-line:  oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.32);
+  --mrr-accent-dim:   oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.30);
+  --mrr-on-accent:    oklch(0.18 0.04 var(--mrr-accent-h));
+
+  /* surfaces — purple/dark mood per prototype --bg-app/--bg/--bg-elev/--bg-input */
+  --mrr-bg:           oklch(0.21 0.025 285 / 0.96);
+  --mrr-bg-elev:      oklch(0.26 0.03 285 / 0.92);
+  --mrr-bg-app:       oklch(0.16 0.02 285);
+  --mrr-bg-input:     oklch(0.18 0.02 285);
+
+  /* hairlines (NEW) and borders (NAMES retained) */
+  --mrr-hairline:        oklch(1 0 0 / 0.07);
+  --mrr-hairline-strong: oklch(1 0 0 / 0.14);
+  --mrr-border:          oklch(1 0 0 / 0.10);
+  --mrr-border-strong:   oklch(1 0 0 / 0.20);
+
+  /* tints — port of prototype --tint/--tint-2 (--tint-strong retained) */
+  --mrr-tint-1:       oklch(1 0 0 / 0.04);
+  --mrr-tint-2:       oklch(1 0 0 / 0.07);
+  --mrr-tint-strong:  oklch(1 0 0 / 0.20);
+
+  /* text — three tiers per prototype --text/--text-dim/--text-faint */
+  --mrr-text:        oklch(0.97 0.005 285);
+  --mrr-text-dim:    oklch(0.72 0.01 285);
+  --mrr-text-faint:  oklch(0.55 0.012 285);
+
+  /* status — port of prototype --ok/--warn/--bad */
+  --mrr-success:    oklch(0.82 0.13 155);
+  --mrr-warning:    oklch(0.84 0.14 85);
+  --mrr-fail:       oklch(0.72 0.16 25);
+  --mrr-on-fail:    oklch(0.18 0.02 25);
+
+  /* radii / spacing — preserved (density toggle deferred to step 4.4) */
+  --mrr-radius:     8px;
+  --mrr-radius-sm:  4px;
+  --mrr-pad:        10px;
+  --mrr-gap:        6px;
+
+  /* shadow — ported from prototype --shadow (richer drop) */
+  --mrr-shadow:     0 24px 60px -20px rgba(0, 0, 0, 0.6), 0 6px 16px -8px rgba(0, 0, 0, 0.5);
+
+  /* typography — ported from prototype --sans/--mono (Geist-first stack) */
+  --mrr-sans:       "Geist", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mrr-mono:       "Geist Mono", ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+
+  /* layering — preserved */
+  --mrr-z-sheet:    9997;
+  --mrr-z-dice:     9998;
+  --mrr-z-dialog:   9999;
+
+  /* Phase 5 step 5.5 — density toggle (cozy preset defaults; branched per
+   * .mrr-sheet[data-density="…"] at end of file). Drives padding, gap,
+   * row height, and body font-size across density-aware components. */
+  --mrr-density-pad-x: 12px;
+  --mrr-density-pad-y: 12px;
+  --mrr-density-gap:    6px;
+  --mrr-density-row-h: 28px;
+  --mrr-density-fs:    13px;
 }
 
 .mrr-hidden { display: none !important; }
@@ -51,6 +98,7 @@
   padding: var(--mrr-pad);
   margin: var(--mrr-gap) 0;
   color: var(--mrr-text);
+  font-family: var(--mrr-sans);
   font-size: 13px;
 }
 
@@ -106,33 +154,91 @@
    pairs whose labels are ruleset-driven (Race+Class for D&D, Ancestry+
    Class for PF2e, Exalt Type+Caste for Exalted, Concept+Trouble for Fate).
    Inputs flex to share the row evenly; labels stay tight and dim. */
-.mrr-sheet__identity-row {
+
+/* Phase 5 step 5.1 — Identity card (port of prototype's `.identity`).
+   Sits at the bottom of the sheet header, immediately above the body.
+   Wraps the existing renderIdentityField inputs so save/load behavior
+   is preserved verbatim. Ruleset-driven sub-row honors identityFields[]
+   when declared; otherwise falls back to header.raceLabel/classLabel.
+   Token names mirror the prototype: __avatar, __main, __name, __sub,
+   __sub-item, __sub-label, __sub-input. Type scale matches UI-build.md
+   §3.4 exactly: name 16px/600, sub-label 9px uppercase letter-spacing
+   0.1em, sub-input 12px borderless text-dim. */
+.mrr-identity {
+  background: linear-gradient(145deg, var(--mrr-accent-soft), transparent 70%), var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-hairline);
+  border-radius: var(--mrr-radius);
+  padding: var(--mrr-pad);
   display: grid;
-  grid-template-columns: auto 1fr auto 1fr;
+  grid-template-columns: 44px 1fr;
+  gap: 10px;
   align-items: center;
-  gap: 4px 6px;
-  margin-top: 2px;
+  margin-top: var(--mrr-gap);
 }
-
-.mrr-sheet__id-label {
-  font-size: 11px;
+.mrr-identity__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: repeating-linear-gradient(
+    45deg,
+    oklch(0.3 0.04 285) 0 6px,
+    oklch(0.26 0.04 285) 6px 12px
+  );
   color: var(--mrr-text-dim);
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  border: 1px dashed var(--mrr-hairline-strong);
 }
-
-.mrr-sheet__id-input {
-  width: 100%;
-  background: var(--mrr-bg-elev);
+.mrr-identity__main {
+  min-width: 0;
+}
+.mrr-identity__name {
+  background: transparent;
+  border: 0;
   color: var(--mrr-text);
-  border: 1px solid var(--mrr-border);
-  border-radius: var(--mrr-radius-sm);
-  padding: 2px 6px;
-  font-family: inherit;
-  font-size: 12px;
-}
-.mrr-sheet__id-input:focus {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 0;
+  width: 100%;
   outline: none;
-  border-color: var(--mrr-accent);
+  font-family: inherit;
+}
+.mrr-identity__name:focus {
+  color: var(--mrr-accent);
+}
+.mrr-identity__sub {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+.mrr-identity__sub-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+.mrr-identity__sub-label {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mrr-text-faint);
+}
+.mrr-identity__sub-input {
+  background: transparent;
+  border: 0;
+  color: var(--mrr-text-dim);
+  font-size: 12px;
+  padding: 0;
+  width: 100px;
+  outline: none;
+  font-family: inherit;
+}
+.mrr-identity__sub-input:focus {
+  color: var(--mrr-accent);
 }
 
 .mrr-sheet__char-label {
@@ -2244,4 +2350,460 @@
   letter-spacing: 0.04em;
   color: var(--mrr-text-dim);
   padding-left: 4px;
+}
+
+/* ── Phase 5 step 5.5: density toggle ──────────────────────────────────
+ * 3-way data-density attribute on .mrr-sheet swaps the five
+ * --mrr-density-* variables. UI: pill button group in the actions row
+ * with aria-pressed indicating selection. Per-character (state.sheet.density),
+ * defaults to "cozy". Source: ~/projects/claude-design-updates/UI-build.md §2.3.
+ * ────────────────────────────────────────────────────────────────────── */
+.mrr-sheet[data-density="compact"] {
+  --mrr-density-pad-x: 8px;
+  --mrr-density-pad-y: 8px;
+  --mrr-density-gap:   4px;
+  --mrr-density-row-h: 24px;
+  --mrr-density-fs:   12px;
+}
+.mrr-sheet[data-density="cozy"] {
+  --mrr-density-pad-x: 12px;
+  --mrr-density-pad-y: 12px;
+  --mrr-density-gap:    6px;
+  --mrr-density-row-h: 28px;
+  --mrr-density-fs:    13px;
+}
+.mrr-sheet[data-density="roomy"] {
+  --mrr-density-pad-x: 16px;
+  --mrr-density-pad-y: 16px;
+  --mrr-density-gap:   10px;
+  --mrr-density-row-h: 34px;
+  --mrr-density-fs:   14px;
+}
+
+/* density toggle pill button group (rendered inside the actions row) */
+.mrr-density-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 2px;
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 999px;
+  background: var(--mrr-tint-1);
+}
+.mrr-density-toggle__label {
+  font-family: var(--mrr-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mrr-text-faint);
+  padding: 0 8px 0 6px;
+}
+.mrr-density-toggle__btn {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mrr-text-dim);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.mrr-density-toggle__btn:hover {
+  color: var(--mrr-text);
+  background: var(--mrr-tint-2);
+}
+.mrr-density-toggle__btn:focus-visible {
+  outline: 1px solid var(--mrr-accent-line);
+  outline-offset: 1px;
+}
+.mrr-density-toggle__btn[aria-pressed="true"] {
+  background: var(--mrr-accent-soft);
+  color: var(--mrr-text);
+  box-shadow: inset 0 0 0 1px var(--mrr-accent-line);
+}
+
+/* ── Phase 5 step 5.4: derived tooltip math ──────────────────────────
+ * Cursor + underline affordance on derived value cells whose ruleset
+ * declares a tooltipFormula. The browser's native title-attr tooltip
+ * carries the breakdown ("Soak (Bashing): 7 = Stamina (4) + Bashing
+ * Soak (3)"). Affordance is intentionally subtle — dotted underline
+ * + help cursor is the long-established "this has hover info" pattern
+ * (matches the prototype's skill-bonus pill UX). Scoped to autocalc
+ * value cells with a non-empty title so static-rendered derived stats
+ * without a tooltipFormula keep their default cursor + no underline. */
+.mrr-row__value--autocalc[title]:not([title=""]) {
+  cursor: help;
+  text-decoration: underline dotted var(--mrr-text-faint);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.mrr-row__value--autocalc[title]:not([title=""]):hover {
+  text-decoration-color: var(--mrr-accent-line);
+}
+
+/* ── Phase 5 step 5.2: XP card ───────────────────────────────────────
+ * Visual restructure to prototype parity (sheet.jsx XpCard, UI-build.md
+ * §3.4 + §4.7). The baseline rules at the .mrr-xp-card section above
+ * already supply structure (flex column, row, group). This section
+ * tightens the type scale + spacing to match the prototype:
+ *   - card-level label: 10px / 600 / 0.12em uppercase (already)
+ *   - sub-labels:       9px  / 0.10em uppercase (already)
+ *   - numeric value:    14px → 16px / 600  (PROTOTYPE TARGET)
+ *   - level input:      16px → 18px / 600 / 56px wide (PROTOTYPE)
+ *   - + button placed inline at row end via flex-end self-align.
+ * Selector specificity matches the baseline rule (single-class) so the
+ * cascade resolves the override by source order — appended last wins.
+ * Pool-mode (Exalted) and formula-mode (D&D, PF2e) both consume the
+ * same primitives; the only mode difference is which primitives
+ * appear (pool: current/sep/total/+1; formula: level/current/sep/next/bar).
+ * Mode dispatch lives in renderXpCard() which keys off
+ * ruleset.resolution.mode. */
+.mrr-xp-card__input {
+  font-size: 16px;
+}
+.mrr-xp-card__input--lvl {
+  font-size: 18px;
+  width: 56px;
+}
+.mrr-xp-card__sep {
+  font-size: 18px;
+  padding-bottom: 6px;
+}
+.mrr-xp-card__next {
+  font-size: 16px;
+  font-weight: 600;
+  padding-bottom: 4px;
+}
+/* Pool-mode +1 button now lives inside the row (see renderXpCard pool
+   branch). Anchor it to flex-end so it baselines with the inputs and
+   doesn't stretch the row vertically. The baseline alignment already
+   says align-self: flex-start at the .mrr-xp-card__add base rule;
+   this overrides for the inline placement. */
+.mrr-xp-card__row .mrr-xp-card__add {
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+/* ── Phase 5 step 5.6: state badges + anima banner ──
+ * Visual treatments for state rows whose active value carries narrative
+ * weight: Initiative=Crashed (distress) and Anima=Suppressed (muted).
+ * Uses a data-active-value attribute on .mrr-state plus paired modifier
+ * classes so the row + select restyle without changing the underlying
+ * select-based render (which already handles N values natively, including
+ * the 6-value Anima Banner with Suppressed prepended in Plan B step B.2).
+ *
+ * Crashed token: scoped to this section, no global :root pollution beyond
+ * the three new --mrr-state-crashed-* tokens.
+ * Suppressed: leans on existing --mrr-text-faint for the "no anima" feel.
+ */
+
+:root {
+  --mrr-state-crashed-color: oklch(0.62 0.18 28);
+  --mrr-state-crashed-soft:  oklch(0.62 0.18 28 / 0.18);
+  --mrr-state-crashed-line:  oklch(0.62 0.18 28 / 0.42);
+}
+
+/* Initiative=Crashed — red distress treatment on row + select.
+ * Subtle pulse on the name to draw the eye without being jarring; respects
+ * prefers-reduced-motion below. (!)-glyph appended via ::after pseudo. */
+.mrr-state--initiative-crashed .mrr-state__name {
+  color: var(--mrr-state-crashed-color);
+  font-weight: 600;
+  animation: mrr-state-crashed-pulse 2.4s ease-in-out infinite;
+}
+
+.mrr-state--initiative-crashed .mrr-state__name::after {
+  content: " (!)";
+  color: var(--mrr-state-crashed-color);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.mrr-state--initiative-crashed .mrr-state__select {
+  color: var(--mrr-state-crashed-color);
+  border-color: var(--mrr-state-crashed-line);
+  background: var(--mrr-state-crashed-soft);
+}
+
+@keyframes mrr-state-crashed-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.72; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mrr-state--initiative-crashed .mrr-state__name { animation: none; }
+}
+
+/* Anima=Suppressed — muted "no anima visible" treatment.
+ * Suppressed renders at the top of the Anima Banner select because Plan B
+ * step B.2 prepended it as the first value in ruleset.json — option order
+ * follows ruleset value order. */
+.mrr-state--anima-suppressed .mrr-state__name {
+  color: var(--mrr-text-faint);
+  font-style: italic;
+}
+
+.mrr-state--anima-suppressed .mrr-state__select {
+  color: var(--mrr-text-faint);
+}
+
+/* Defensive overflow guard for state rows on narrow panels (≥320px).
+ * The row is flex-row name+select; if a future ruleset adds a long state
+ * name, the select should compress rather than spill. Anima Banner with 6
+ * values (Suppressed/Dim/Glowing/Burning/Bonfire/Iconic) renders inside
+ * the native <select>, so option count never affects row width. */
+.mrr-state {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.mrr-state__select {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* ── Phase 5 step 5.3: Resources cluster ──────────────────────────────
+ * Horizontal "charbar" cluster of resource readouts rendered above
+ * Attributes when the active ruleset declares resources[] (Plan B v1
+ * schema add). Driven by mrrP3RenderResourcesSection — sub-renderers
+ * dispatch by resource.type (bar / dice / counter / pool / custom).
+ *
+ * Layout: flex-wrap with min 120px per resource so 4+ pools at the top
+ * of a 280-320px panel collapse to a 2x2 grid rather than spilling
+ * horizontally. Adjacent resources sharing a `group` value render under
+ * a shared subheader (D&D Spell Slots case).
+ *
+ * Auto-color thresholds match prototype <Bar> in sheet.jsx:151
+ *   pct < 30%  → bad
+ *   pct < 65%  → warn
+ *   pct >= 65% → ok
+ * Override via resource.color ∈ {ok|warn|bad|accent}.
+ *
+ * Tokens: reuses --mrr-success/-warning/-fail and --mrr-accent. No
+ * global :root pollution. Local section-scoped tokens for the dice
+ * glyph treatment only.
+ */
+
+:root {
+  --mrr-resources-pad: 10px;
+  --mrr-resources-gap: 10px;
+  --mrr-resource-min-w: 120px;
+  --mrr-resource-bar-h: 6px;
+  --mrr-resource-die-size: 22px;
+}
+
+.mrr-resources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mrr-resources-gap);
+  padding: var(--mrr-resources-pad);
+  margin: 0 0 8px 0;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-hairline);
+  border-radius: 8px;
+}
+
+/* Sub-group subheader (D&D Spell Slots). Forces a wrap break so all
+ * resources sharing a group cluster under their label. */
+.mrr-resources__group-break {
+  flex-basis: 100%;
+  height: 0;
+  margin: 0;
+  border: 0;
+}
+.mrr-resources__group-label {
+  flex-basis: 100%;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mrr-text-faint);
+  margin: 4px 0 -2px 0;
+}
+
+.mrr-resource {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 var(--mrr-resource-min-w);
+  min-width: var(--mrr-resource-min-w);
+  padding: 6px 8px;
+  background: var(--mrr-bg-input);
+  border: 1px solid var(--mrr-hairline);
+  border-radius: 6px;
+}
+
+.mrr-resource__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mrr-text-faint);
+  line-height: 1.1;
+}
+
+.mrr-resource__values {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 13px;
+  color: var(--mrr-text);
+}
+.mrr-resource__val {
+  font-weight: 600;
+}
+.mrr-resource__val-input {
+  width: 3.5ch;
+  padding: 1px 2px;
+  background: transparent;
+  border: 1px solid var(--mrr-hairline);
+  border-radius: 3px;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+}
+.mrr-resource__val-input:focus {
+  outline: none;
+  border-color: var(--mrr-accent-line);
+}
+.mrr-resource__sep {
+  color: var(--mrr-text-faint);
+  opacity: 0.7;
+}
+
+/* Bar render (type=bar) — fill bar with auto-color. */
+.mrr-resource__bar {
+  position: relative;
+  height: var(--mrr-resource-bar-h);
+  width: 100%;
+  background: var(--mrr-bg-app);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.mrr-resource__bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  transition: width 120ms ease-out, background-color 120ms ease-out;
+}
+.mrr-resource__bar-fill--ok     { background: var(--mrr-success, oklch(0.78 0.14 145)); }
+.mrr-resource__bar-fill--warn   { background: var(--mrr-warning, oklch(0.82 0.14 85)); }
+.mrr-resource__bar-fill--bad    { background: var(--mrr-fail, oklch(0.65 0.18 28)); }
+.mrr-resource__bar-fill--accent { background: var(--mrr-accent); }
+
+/* Dice render (type=dice) — pool of clickable dice glyphs. Spent dice
+ * dim. Reuses --mrr-resource-die-size for sizing. */
+.mrr-resource__dice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 2px;
+}
+.mrr-resource__die {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--mrr-resource-die-size);
+  height: var(--mrr-resource-die-size);
+  padding: 0;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  border-radius: 4px;
+  color: var(--mrr-text);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 100ms ease-out, opacity 100ms ease-out;
+}
+.mrr-resource__die:hover { background: var(--mrr-accent-soft); }
+.mrr-resource__die--spent {
+  opacity: 0.32;
+  cursor: default;
+}
+.mrr-resource__die--spent:hover { background: var(--mrr-bg-elev); }
+
+/* Counter render (type=counter) — numeric stepper. */
+.mrr-resource__counter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mrr-resource__step {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  border-radius: 4px;
+  color: var(--mrr-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+.mrr-resource__step:hover { background: var(--mrr-accent-soft); }
+.mrr-resource__step:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Pool render (type=pool) — current/max display, no bar (matches
+ * Exalted motes/willpower pattern; the prominent type-scale recalls the
+ * XP card values). */
+.mrr-resource--pool .mrr-resource__values {
+  font-size: 15px;
+}
+
+/* Custom placeholder — renders when a resource declares
+ * type=custom with a rendererConfig.component name that has not been
+ * registered in the custom-component registry yet. Distinct visual
+ * marker so missing components are obvious during integration. */
+.mrr-resource__placeholder {
+  font-size: 11px;
+  color: var(--mrr-text-faint);
+  font-style: italic;
+  padding: 4px 6px;
+  background: var(--mrr-bg-app);
+  border: 1px dashed var(--mrr-hairline-strong);
+  border-radius: 4px;
+}
+.mrr-resource__placeholder code {
+  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 10px;
+  color: var(--mrr-text);
+}
+
+/* Quick-button row — pill-style, matches XpCard +1 XP affordance. */
+.mrr-resource__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.mrr-resource__quick-btn {
+  padding: 2px 8px;
+  background: var(--mrr-accent-soft);
+  border: 1px solid var(--mrr-accent-line);
+  border-radius: 999px;
+  color: var(--mrr-text);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background-color 100ms ease-out;
+}
+.mrr-resource__quick-btn:hover {
+  background: var(--mrr-accent-dim);
+}
+
+/* Narrow-panel guard (≥320px). Below ~280px the cluster collapses to a
+ * single column; above that the resources wrap as a 2-up grid via
+ * flex-wrap + min-width. */
+@media (max-width: 320px) {
+  .mrr-resource {
+    flex-basis: 100%;
+    min-width: 0;
+  }
 }

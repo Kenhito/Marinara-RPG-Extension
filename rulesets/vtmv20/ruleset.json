@@ -738,6 +738,133 @@
     "inventory",
     "notes"
   ],
+  "sections": {
+    "order": [
+      "identity",
+      "xp",
+      "resources",
+      "morality",
+      "attributes",
+      "skills",
+      "derived",
+      "abilities",
+      "disciplines",
+      "states",
+      "backgrounds",
+      "inventory",
+      "notes"
+    ],
+    "hidden": [
+      "derived:Animalism",
+      "derived:Auspex",
+      "derived:Celerity",
+      "derived:Dominate",
+      "derived:Fortitude",
+      "derived:Obfuscate",
+      "derived:Potence",
+      "derived:Presence",
+      "derived:Protean",
+      "derived:Necromancy",
+      "derived:Thaumaturgy",
+      "derived:Vicissitude"
+    ]
+  },
+  "resources": [
+    {
+      "id": "blood-pool",
+      "label": "Blood Pool",
+      "type": "pool",
+      "max": 10,
+      "current": 10,
+      "color": "bad",
+      "quickButtons": [
+        { "label": "Spend 1", "delta": -1 },
+        { "label": "Spend 5", "delta": -5 },
+        { "label": "Feed", "delta": "max" }
+      ]
+    },
+    {
+      "id": "willpower",
+      "label": "Willpower",
+      "type": "pool",
+      "max": 10,
+      "current": 5,
+      "color": "accent",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "+1", "delta": 1 },
+        { "label": "Refresh", "delta": "max" }
+      ]
+    },
+    {
+      "id": "health",
+      "label": "Health",
+      "type": "custom",
+      "rendererConfig": {
+        "component": "v20-health-track",
+        "levels": [
+          { "label": "Bruised", "penalty": 0 },
+          { "label": "Hurt", "penalty": -1 },
+          { "label": "Injured", "penalty": -1 },
+          { "label": "Wounded", "penalty": -2 },
+          { "label": "Mauled", "penalty": -2 },
+          { "label": "Crippled", "penalty": -5 },
+          { "label": "Incapacitated", "penalty": -99 }
+        ],
+        "damageTypes": [
+          { "id": "bashing", "label": "B", "severity": 0 },
+          { "id": "lethal", "label": "L", "severity": 1 },
+          { "id": "aggravated", "label": "A", "severity": 2 }
+        ]
+      }
+    }
+  ],
+  "morality": {
+    "rating": {
+      "label": "Path Rating",
+      "min": 0,
+      "max": 10,
+      "default": 7
+    },
+    "paths": [
+      { "id": "humanity", "label": "Humanity", "loreRef": "humanity" },
+      { "id": "honorable-accord", "label": "Path of Honorable Accord", "loreRef": "path-honorable-accord" },
+      { "id": "caine", "label": "Path of Caine", "loreRef": "path-caine" },
+      { "id": "beast", "label": "Path of the Beast", "loreRef": "path-beast" },
+      { "id": "night", "label": "Path of Night", "loreRef": "path-night" }
+    ],
+    "virtues": [
+      {
+        "id": "conscience-conviction",
+        "label": "Conscience / Conviction",
+        "options": [
+          { "id": "conscience", "label": "Conscience" },
+          { "id": "conviction", "label": "Conviction" }
+        ],
+        "min": 1,
+        "max": 5,
+        "default": 3
+      },
+      {
+        "id": "self-control-instinct",
+        "label": "Self-Control / Instinct",
+        "options": [
+          { "id": "self-control", "label": "Self-Control" },
+          { "id": "instinct", "label": "Instinct" }
+        ],
+        "min": 1,
+        "max": 5,
+        "default": 3
+      },
+      {
+        "id": "courage",
+        "label": "Courage",
+        "min": 1,
+        "max": 5,
+        "default": 3
+      }
+    ]
+  },
   "lorebookKeys": [
     "blood pool",
     "blood point",
@@ -771,6 +898,56 @@
   ],
   "abilities": {
     "label": "Disciplines",
+    "groups": [
+      {
+        "id": "talents",
+        "label": "Talents",
+        "members": [
+          "Alertness",
+          "Athletics",
+          "Awareness",
+          "Brawl",
+          "Empathy",
+          "Expression",
+          "Intimidation",
+          "Leadership",
+          "Streetwise",
+          "Subterfuge"
+        ]
+      },
+      {
+        "id": "skills",
+        "label": "Skills",
+        "members": [
+          "Animal Ken",
+          "Crafts",
+          "Drive",
+          "Etiquette",
+          "Firearms",
+          "Larceny",
+          "Melee",
+          "Performance",
+          "Stealth",
+          "Survival"
+        ]
+      },
+      {
+        "id": "knowledges",
+        "label": "Knowledges",
+        "members": [
+          "Academics",
+          "Computer",
+          "Finance",
+          "Investigation",
+          "Law",
+          "Medicine",
+          "Occult",
+          "Politics",
+          "Science",
+          "Technology"
+        ]
+      }
+    ],
     "categories": [
       {
         "id": "animalism",

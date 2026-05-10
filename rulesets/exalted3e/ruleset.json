@@ -467,7 +467,8 @@
       "name": "Soak (Bashing)",
       "formula": "Stamina + armor B-soak",
       "renderAs": "value",
-      "valueFormula": "{Stamina}",
+      "valueFormula": "{Stamina} + {bonuses:Bashing Soak}",
+      "tooltipFormula": "{Stamina} + {bonuses:Bashing Soak}",
       "aliases": [
         "soakBashing",
         "bashingSoak",
@@ -478,7 +479,8 @@
       "name": "Soak (Lethal)",
       "formula": "Stamina + armor L-soak (Exalts use FULL Stamina; mortals use Stamina/2 rounded down)",
       "renderAs": "value",
-      "valueFormula": "{Stamina}",
+      "valueFormula": "{Stamina} + {bonuses:Lethal Soak}",
+      "tooltipFormula": "{Stamina} + {bonuses:Lethal Soak}",
       "aliases": [
         "soakLethal",
         "lethalSoak",
@@ -493,22 +495,16 @@
       "aliases": [
         "hardness"
       ]
-    },
-    {
-      "name": "Sorcerous Motes",
-      "formula": "Accumulated successes from Shape Sorcery actions toward an in-progress spell. Resets to 0 when the spell is cast or aborted.",
-      "renderAs": "value",
-      "aliases": [
-        "sorcerousMotes",
-        "sorceryMotes",
-        "sm"
-      ]
     }
   ],
   "states": [
     {
       "name": "Anima Banner",
       "values": [
+        {
+          "label": "Suppressed",
+          "description": "Anima banner is suppressed or unlit. No outward flare; caste mark dormant. Use when the Exalt has spent no Peripheral motes this action, is intentionally damping the banner (Charm or stunt), or is a non-Exalt who simply has no anima."
+        },
         {
           "label": "Dim",
           "trigger": "0-4 Peripheral motes spent in one action; only the caste mark glints when motes are spent."
@@ -585,6 +581,20 @@
           "description": "A spell is being shaped. The spell name should be tracked as a 'Shaping: <spell name>' condition; sorcerous motes accumulate in the Sorcerous Motes counter; 1 Willpower is committed up front and refunded only on successful cast."
         }
       ]
+    },
+    {
+      "name": "Initiative",
+      "values": [
+        {
+          "label": "Active",
+          "description": "Initiative is at 1 or higher. The character is operating normally in combat — withering attacks add to their Initiative, decisive attacks may be declared, and standard Join Battle ordering applies."
+        },
+        {
+          "label": "Crashed",
+          "trigger": "Initiative drops to 0 or below as a result of withering damage or specific Charm effects.",
+          "description": "Initiative crashed. The character cannot make decisive attacks until they reset to base, suffers Onslaught penalties more readily, and is the prime target for finishing decisive attacks. Reset to base Initiative occurs after 3 turns (or 5 if crashed below -5), at which point the Crash Recovery bonus applies and the character returns to Active."
+        }
+      ]
     }
   ],
   "diceTagFormat": {
@@ -602,6 +612,92 @@
     "backgrounds",
     "inventory",
     "notes"
+  ],
+  "sections": {
+    "order": [
+      "identity",
+      "xp",
+      "resources",
+      "attributes",
+      "skills",
+      "derived",
+      "abilities",
+      "states",
+      "intimacies",
+      "backgrounds",
+      "inventory",
+      "notes"
+    ],
+    "hidden": [
+      "derived:Sorcery Circle",
+      "derived:Sorcerous Motes"
+    ]
+  },
+  "resources": [
+    {
+      "id": "health",
+      "label": "HP",
+      "type": "pool",
+      "max": 7,
+      "current": 7,
+      "color": "bad",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "+1", "delta": 1 },
+        { "label": "Full", "delta": "max" }
+      ]
+    },
+    {
+      "id": "motes-personal",
+      "label": "Motes Personal",
+      "type": "bar",
+      "max": "{Essence} * 3 + 10",
+      "current": "{Essence} * 3 + 10",
+      "color": "accent",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "-5", "delta": -5 },
+        { "label": "Full", "delta": "max" }
+      ]
+    },
+    {
+      "id": "motes-peripheral",
+      "label": "Motes Peripheral",
+      "type": "bar",
+      "max": "{Essence} * 7 + 26",
+      "current": "{Essence} * 7 + 26",
+      "color": "accent",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "-5", "delta": -5 },
+        { "label": "Full", "delta": "max" }
+      ]
+    },
+    {
+      "id": "willpower",
+      "label": "Willpower",
+      "type": "pool",
+      "max": 10,
+      "current": 5,
+      "color": "accent",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "+1", "delta": 1 },
+        { "label": "Full", "delta": "max" }
+      ]
+    },
+    {
+      "id": "sorcerous-motes",
+      "label": "Sorcerous Motes",
+      "type": "counter",
+      "max": "{Essence} + {Wits}",
+      "current": 0,
+      "color": "accent",
+      "quickButtons": [
+        { "label": "+1", "delta": 1 },
+        { "label": "Reset", "delta": "max" }
+      ]
+    }
   ],
   "lorebookKeys": [
     "charm",
