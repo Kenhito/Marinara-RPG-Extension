@@ -4419,11 +4419,14 @@ function renderSheet() {
     }
   }
 
-  /* Phase 3.3 dispatch: when the user has flipped the experimental
-     renderer flag, route to the new path. The classic body below
-     stays as the fallback; future sessions migrate one section at
-     a time, keeping both paths shippable. */
-  if (state.sheet && state.sheet.useNewRenderer === true && typeof mrrP3RenderSheet === "function") {
+  /* Cutover step 1 (Phase 3.8): Phase 3 renderer is now the only path.
+     Classic renderSheet body below is unreachable dead code — kept
+     temporarily as an emergency rollback hatch during the cutover
+     verification window, deleted in step 2 once live testing confirms
+     no Phase-3 path regressions. The useNewRenderer flag, toggle
+     buttons, and mergeSheet wiring all become no-ops here and get
+     swept away in the same step-2 commit. */
+  if (typeof mrrP3RenderSheet === "function") {
     mrrP3RenderSheet();
     restoreScroll();
     return;
