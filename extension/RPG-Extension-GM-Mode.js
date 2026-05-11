@@ -3543,13 +3543,28 @@ function mrrP3RenderSheet() {
      "xp" entries in sections.order are NO-OPs at the dispatcher level
      because renderSheetHeader (identity) and renderXpCard (xp) already
      fired above this loop — listing them here is purely declarative. */
+  /* Plan B v1's `sections.order[]` is canonical when present; falls back
+     to legacy `sheetSections[]` for pre-Plan-B rulesets; hardcoded default
+     for rulesets with neither. */
   var sections;
-  if (state.ruleset.sheetSections && state.ruleset.sheetSections.length) {
-    sections = state.ruleset.sheetSections;
-  } else if (state.ruleset.sections && Array.isArray(state.ruleset.sections.order) && state.ruleset.sections.order.length) {
+  if (state.ruleset.sections && Array.isArray(state.ruleset.sections.order) && state.ruleset.sections.order.length) {
     sections = state.ruleset.sections.order;
+  } else if (state.ruleset.sheetSections && state.ruleset.sheetSections.length) {
+    sections = state.ruleset.sheetSections;
   } else {
     sections = ["attributes", "skills", "derived", "states"];
+  }
+
+  /* Honor sections.hidden[] section-level hides. Bare entries (e.g.
+     "disciplines") drop the whole section; prefixed entries (e.g.
+     "derived:Sorcery Circle") are honored inside the respective section
+     renderer (see mrrP3RenderDerivedSection). */
+  if (state.ruleset.sections && Array.isArray(state.ruleset.sections.hidden) && state.ruleset.sections.hidden.length) {
+    var hiddenSet = {};
+    state.ruleset.sections.hidden.forEach(function (h) {
+      if (typeof h === "string" && h.indexOf(":") === -1) hiddenSet[h] = true;
+    });
+    sections = sections.filter(function (sec) { return !hiddenSet[sec]; });
   }
 
   /* If the ruleset declares attributes but doesn't list them, render
@@ -4110,12 +4125,23 @@ function mrrP3RenderAttributesSection(parent) {
 function mrrP3RenderDerivedSection(parent) {
   if (!parent || !state.ruleset) return;
   if (!Array.isArray(state.ruleset.derivedStats) || !state.ruleset.derivedStats.length) return;
+  /* Per-item hides: sections.hidden[] entries prefixed `derived:` filter
+     individual derived stats out of this section (Plan B v1). */
+  var derivedHidden = {};
+  if (state.ruleset.sections && Array.isArray(state.ruleset.sections.hidden)) {
+    state.ruleset.sections.hidden.forEach(function (h) {
+      if (typeof h === "string" && h.indexOf("derived:") === 0) {
+        derivedHidden[h.slice(8)] = true;
+      }
+    });
+  }
   mrrP3RenderSection(parent, {
     id: "derived-p3",
     title: "DERIVED",
     defaultOpen: true
   }, function (body) {
     state.ruleset.derivedStats.forEach(function (d) {
+      if (d && d.name && derivedHidden[d.name]) return;
       if (d.renderAs === "bar") {
         mrrP3RenderDerivedBar(body, d);
       } else if (d.renderAs === "track" && Array.isArray(d.track)) {
