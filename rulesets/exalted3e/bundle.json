@@ -654,6 +654,7 @@
         "max": "{Essence} * 3 + 10",
         "current": "{Essence} * 3 + 10",
         "color": "accent",
+        "stateName": "Personal Motes",
         "quickButtons": [
           {
             "label": "-1",
@@ -676,6 +677,7 @@
         "max": "{Essence} * 7 + 26",
         "current": "{Essence} * 7 + 26",
         "color": "accent",
+        "stateName": "Peripheral Motes",
         "quickButtons": [
           {
             "label": "-1",
@@ -696,8 +698,9 @@
         "label": "Willpower",
         "type": "pool",
         "max": 10,
-        "current": 5,
+        "current": 10,
         "color": "accent",
+        "stateName": "Willpower",
         "quickButtons": [
           {
             "label": "-1",

@@ -771,6 +771,10 @@
             "type": "object",
             "description": "Free-form blob for type=custom. Consumed by a registered named renderer (e.g. {component:'v20-health-track', levels:[...], damageTypes:[...]}). The extension knows no custom components by default — the ruleset must reference a component name the extension JS has registered.",
             "additionalProperties": true
+          },
+          "stateName": {
+            "type": "string",
+            "description": "Optional legacy-state binding. When set, the resource reads/writes state.sheet.derived[stateName] instead of the new state.sheet.resources[id].current — keeping the value in the same store the legacy state-mutator chat-tag parser writes to (e.g. [mrr-state: field=\"Personal Motes\" delta=-3]). Used to surface LLM mutations in the Resources cluster automatically and to inherit the persistence path the 'derived' mergeSheet whitelist already supports. Resources without a legacy counterpart (e.g. sorcerous-motes) omit this and use the new resources store directly."
           }
         }
       }

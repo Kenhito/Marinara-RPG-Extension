@@ -1052,6 +1052,10 @@ function blankSheet(rs) {
   var s = {
     attributes: {}, skills: {}, derived: {}, states: {},
     track: {}, extraTrack: {},
+    /* Plan B v1 resources cluster state. Resources with `stateName`
+       persist via state.sheet.derived[stateName] for legacy state-mutator
+       compat; this map stores resources without a legacy counterpart. */
+    resources: {},
     inventory: [],
     equipped: {},
     skillProficiency: {},
@@ -1272,6 +1276,17 @@ function mergeSheet(base, override) {
       if (Array.isArray(override.extraTrack[name])) {
         base.extraTrack[name] = override.extraTrack[name];
       }
+    });
+  }
+  /* Plan B v1 resources state. Resources with `stateName` actually
+     persist via state.sheet.derived[stateName] (handled by 'derived'
+     merge above). This block preserves resources without a legacy
+     counterpart. */
+  if (override.resources && typeof override.resources === "object") {
+    if (!base.resources) base.resources = {};
+    Object.keys(override.resources).forEach(function (id) {
+      var v = override.resources[id];
+      if (v && typeof v === "object") base.resources[id] = v;
     });
   }
   /* inventory + equipped accept any items / slots the saved sheet carried,
@@ -3723,11 +3738,30 @@ function mrrGetResourceCurrent(resource, ctx) {
   }
   var id = resource && resource.id;
   if (!id) return 0;
+  /* Legacy-state binding (Plan B v1.x): when a resource declares
+     `stateName`, the canonical store is state.sheet.derived[stateName] —
+     the same key the state-mutator chat-tag parser writes to. Reading
+     from there makes LLM-driven mutations flow into the Resources
+     cluster automatically, and writes via mrrSetResourceCurrent also
+     persist there so mergeSheet's existing 'derived' whitelist preserves
+     the value across sessions. */
+  if (typeof resource.stateName === "string" && resource.stateName) {
+    if (!state.sheet.derived || typeof state.sheet.derived !== "object") {
+      state.sheet.derived = {};
+    }
+    var dv = state.sheet.derived[resource.stateName];
+    if (typeof dv === "number" && isFinite(dv)) return dv;
+    var maxL = mrrResolveResourceMax(resource, ctx);
+    var defL = mrrResolveResourceDefaultCurrent(resource, ctx, maxL);
+    state.sheet.derived[resource.stateName] = defL;
+    return defL;
+  }
   var entry = state.sheet.resources[id];
   if (!entry || typeof entry.current !== "number") {
     var max = mrrResolveResourceMax(resource, ctx);
     var def = mrrResolveResourceDefaultCurrent(resource, ctx, max);
-    state.sheet.resources[id] = { current: def };
+    if (!entry) entry = state.sheet.resources[id] = {};
+    entry.current = def;
     return def;
   }
   return entry.current;
@@ -3738,7 +3772,17 @@ function mrrSetResourceCurrent(resource, value) {
   if (!state.sheet.resources || typeof state.sheet.resources !== "object") {
     state.sheet.resources = {};
   }
-  state.sheet.resources[resource.id] = { current: value };
+  if (typeof resource.stateName === "string" && resource.stateName) {
+    if (!state.sheet.derived || typeof state.sheet.derived !== "object") {
+      state.sheet.derived = {};
+    }
+    state.sheet.derived[resource.stateName] = value;
+    saveSheet(state.chatId, state.sheet);
+    return;
+  }
+  var prev = state.sheet.resources[resource.id];
+  if (!prev || typeof prev !== "object") prev = state.sheet.resources[resource.id] = {};
+  prev.current = value;
   saveSheet(state.chatId, state.sheet);
 }
 
