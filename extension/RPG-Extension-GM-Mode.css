@@ -99,7 +99,7 @@
   margin: var(--mrr-gap) 0;
   color: var(--mrr-text);
   font-family: var(--mrr-sans);
-  font-size: 13px;
+  font-size: var(--mrr-density-fs);
 }
 
 .mrr-sheet--floating {
@@ -119,7 +119,7 @@
 .mrr-sheet__header {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--mrr-density-gap);
   border-bottom: 1px solid var(--mrr-border);
   padding-bottom: 6px;
   margin-bottom: 4px;
@@ -291,10 +291,10 @@
 .mrr-section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--mrr-density-gap);
   border: 1px solid var(--mrr-border);
   border-radius: var(--mrr-radius-sm);
-  padding: 8px;
+  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);
   background: var(--mrr-bg-elev);
 }
 
@@ -326,7 +326,7 @@
   display: grid;
   grid-template-columns: 1fr auto auto auto;
   align-items: center;
-  gap: 6px;
+  gap: var(--mrr-density-gap);
   padding: 2px 4px;
   border-radius: var(--mrr-radius-sm);
 }
@@ -782,7 +782,7 @@
   padding: var(--mrr-pad);
   box-shadow: var(--mrr-shadow);
   z-index: var(--mrr-z-dice);
-  font-size: 13px;
+  font-size: var(--mrr-density-fs);
   display: none;
 }
 
@@ -832,7 +832,7 @@
   border-radius: var(--mrr-radius-sm);
   padding: 4px 6px;
   font-family: var(--mrr-mono);
-  font-size: 13px;
+  font-size: var(--mrr-density-fs);
   width: 100%;
 }
 
@@ -1049,7 +1049,7 @@
 .mrr-dialog__lib-name {
   flex: 1;
   font-family: var(--mrr-mono);
-  font-size: 13px;
+  font-size: var(--mrr-density-fs);
 }
 
 .mrr-msg {
@@ -1327,7 +1327,7 @@
   padding: var(--mrr-pad);
   box-shadow: var(--mrr-shadow);
   z-index: 9996;
-  font-size: 13px;
+  font-size: var(--mrr-density-fs);
   display: none;
   flex-direction: column;
   overflow: hidden;
@@ -1748,7 +1748,7 @@
   margin-bottom: 8px;
 }
 .mrr-p3-section__head {
-  padding: 12px;
+  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1785,7 +1785,7 @@
 .mrr-p3-section--open .mrr-p3-section__chev { transform: rotate(90deg); }
 .mrr-p3-section__body {
   display: none;
-  padding: 8px 12px 12px;
+  padding: 8px var(--mrr-density-pad-x) var(--mrr-density-pad-y);
   flex-direction: column;
   gap: 8px;
 }
@@ -1822,7 +1822,7 @@
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
-  height: 30px;
+  height: var(--mrr-density-row-h);
   border-radius: var(--mrr-radius-sm);
 }
 .mrr-p3-row:hover { background: var(--mrr-tint-1); }
@@ -1831,11 +1831,11 @@
   grid-template-columns: 1fr auto auto auto;
   align-items: start;
   height: auto;
-  min-height: 30px;
+  min-height: var(--mrr-density-row-h);
 }
 .mrr-p3-row--save { grid-template-columns: 1fr auto auto auto; }
 .mrr-p3-row__name {
-  font-size: 13px;
+  font-size: var(--mrr-density-fs);
   color: var(--mrr-text);
   display: inline-flex;
   align-items: center;
@@ -1907,7 +1907,7 @@
 .mrr-p3-row__val--auto {
   background: transparent;
   border: 0;
-  font-size: 13px;
+  font-size: var(--mrr-density-fs);
   font-weight: 600;
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
@@ -2254,7 +2254,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 10px var(--mrr-density-pad-x);
   cursor: move;
   user-select: none;
   border-bottom: 1px solid var(--mrr-border);
@@ -2293,7 +2293,7 @@
 .mrr-p3-panel__body {
   flex: 1;
   overflow: auto;
-  padding: 12px;
+  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);
 }
 
 /* Resize handles — 4 edges (8px wide along the edge) + 4 corners
@@ -2805,5 +2805,255 @@
   .mrr-resource {
     flex-basis: 100%;
     min-width: 0;
+  }
+}
+
+/* ── Phase 5 step 5.6: V20 morality + paths + virtues + health-track ─────
+ * V20 visual treatment. Owns the .mrr-morality cluster (Path Rating,
+ * path picker + description, virtue rows with paired-choice toggle) and
+ * the .mrr-health-track grid (7 boxes cycling through B / L / A damage
+ * types per V20 RAW). All rules namespaced under .mrr-morality* and
+ * .mrr-health-track* so they don't collide with the Phase 5 step 5.3
+ * resources cluster above. */
+
+.mrr-morality {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 6px 0;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-hairline);
+  border-radius: 6px;
+}
+.mrr-morality__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mrr-morality__title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mrr-text-faint);
+}
+.mrr-morality__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.mrr-morality__rating-label {
+  font-size: 11px;
+  color: var(--mrr-text-faint);
+}
+.mrr-morality__rating-step {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mrr-bg-input);
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 4px;
+  color: var(--mrr-text);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.mrr-morality__rating-step:hover:not([disabled]) {
+  background: var(--mrr-accent-soft);
+}
+.mrr-morality__rating-step[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.mrr-morality__rating-value {
+  min-width: 1.5em;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mrr-text);
+}
+.mrr-morality__path-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mrr-morality__path-select {
+  background: var(--mrr-bg-input);
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 4px;
+  color: var(--mrr-text);
+  padding: 4px 6px;
+  font-size: 12px;
+  font-family: inherit;
+}
+.mrr-morality__path-desc {
+  font-size: 11px;
+  color: var(--mrr-text-faint);
+  line-height: 1.4;
+  padding: 4px 6px;
+  background: var(--mrr-bg-app);
+  border-left: 2px solid var(--mrr-accent-line);
+  border-radius: 2px;
+}
+.mrr-morality__virtues {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mrr-morality__virtue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.mrr-morality__virtue-label {
+  flex: 1 1 auto;
+  font-size: 12px;
+  color: var(--mrr-text);
+}
+.mrr-morality__virtue-toggle {
+  display: inline-flex;
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.mrr-morality__virtue-toggle-btn {
+  padding: 2px 8px;
+  background: var(--mrr-bg-input);
+  border: 0;
+  color: var(--mrr-text-faint);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color 100ms ease-out, color 100ms ease-out;
+}
+.mrr-morality__virtue-toggle-btn[aria-pressed="true"] {
+  background: var(--mrr-accent-soft);
+  color: var(--mrr-text);
+  font-weight: 600;
+}
+.mrr-morality__virtue-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.mrr-morality__virtue-step {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mrr-bg-input);
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 3px;
+  color: var(--mrr-text);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.mrr-morality__virtue-step:hover:not([disabled]) {
+  background: var(--mrr-accent-soft);
+}
+.mrr-morality__virtue-step[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.mrr-morality__virtue-value {
+  min-width: 1.25em;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mrr-text);
+}
+
+/* v20-health-track — 7-level V20 health grid. Each box cycles
+ * empty → B (bashing) → L (lethal) → A (aggravated) → empty on click.
+ * Color tier matches damage severity (B = faint, L = warn, A = bad). */
+.mrr-health-track {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+.mrr-health-track__levels {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+.mrr-health-track__level {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.mrr-health-track__box {
+  width: 100%;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mrr-bg-input);
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 3px;
+  color: var(--mrr-text);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  cursor: pointer;
+  transition: background-color 100ms ease-out, border-color 100ms ease-out;
+}
+.mrr-health-track__box[data-damage="B"] {
+  background: var(--mrr-accent-soft);
+  border-color: var(--mrr-accent-line);
+}
+.mrr-health-track__box[data-damage="L"] {
+  background: oklch(0.55 0.16 60 / 0.32);
+  border-color: oklch(0.65 0.18 60 / 0.55);
+  color: oklch(0.94 0.04 60);
+}
+.mrr-health-track__box[data-damage="A"] {
+  background: oklch(0.50 0.20 25 / 0.42);
+  border-color: oklch(0.62 0.22 25 / 0.65);
+  color: oklch(0.96 0.05 25);
+}
+.mrr-health-track__label {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--mrr-text-faint);
+  text-align: center;
+  line-height: 1.1;
+}
+.mrr-health-track__penalty {
+  font-size: 9px;
+  color: var(--mrr-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.mrr-health-track__summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--mrr-text-faint);
+}
+.mrr-health-track__legend {
+  display: inline-flex;
+  gap: 6px;
+}
+.mrr-health-track__legend code {
+  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 10px;
+}
+
+@media (max-width: 320px) {
+  .mrr-health-track__levels {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .mrr-morality__virtue {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

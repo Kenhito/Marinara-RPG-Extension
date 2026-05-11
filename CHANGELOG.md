@@ -12,6 +12,62 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+### Added — Phase 5 step 5.6 (V:TM V20 subset): Morality section + path picker + virtue toggles + `v20-health-track` renderer (2026-05-10)
+
+V20 visual treatment for the morality block (Plan B step 1 + B.3 schema/data) and the custom `v20-health-track` renderer that Round 4's Resources cluster (step 5.3) called for. Closes the V20-specific surface area of step 5.6.
+
+- **`extension/RPG-Extension-GM-Mode.css` end-of-file** — new `/* ── Phase 5 step 5.6: V20 morality + paths + virtues + health-track ── */` section (lines 2811-3059, +249 lines): `.mrr-morality` cluster (Path Rating numeric stepper, `__path-picker` dropdown, `__path-desc` 1-2 line description below picker, `__virtue-row` with paired-choice segmented control or single-label variant), `.mrr-health-track` grid (7 levels × box-per-level, click to cycle empty → B → L → A → empty, severity-colored per damage type), narrow-panel media query for ≥320px responsiveness.
+- **`extension/RPG-Extension-GM-Mode.js`** — single-line section dispatch wiring at line 3563 (`else if (sec === "morality") mrrP3RenderMoralitySection(state.mountEl)`). Lines 11227-11657 (+431 lines): `mrrP3RenderMoralitySection`, `mrrRenderVirtueRow` (handles `options[]` paired-choice and non-options single-virtue cases), `mrrRenderPathPicker` (lists `morality.paths[]`, on-change writes `state.sheet.morality.path` and auto-resets paired-choice virtue actives to the new path's canonical defaults), `mrr_v20PathVirtueMap` (path → {description, canonical virtue actives} table; mirrors lorebook `Path Lookup:` entries verbatim because lorebook entries are Marinara-server-side and not loadable from the extension at render time), plus the `v20-health-track` registration in `mrr_resourceRenderers` (renders the 7-level damage-typed track; stores `state.sheet.resources["health"].track = [{type: "B"|"L"|"A"|null}, ...]`; writes `entry.current = levels.length - damaged` so existing `mrrGetResourceCurrent`-based code resolves to a sane integer).
+- **Mirror discipline**: same in `Marinara-RPG-RP-Mode-Extension` with `mrrp-` namespace (CSS at line 2796-3044, JS dispatch at line 3747, JS implementation at line 11320-11750).
+- **Embedded CSS regenerated** — `node tools/embed-css.mjs` re-ran in both repos after Round 5: RP grew to 80182 chars / GM to 79276 chars (+6.6K each from the V20 5.6 CSS).
+- **V20 Health resource** now renders the actual track UI in both repos — previously showed the placeholder "Custom component v20-health-track not registered" because the registry was empty. The registry-default `{current: number}` shape didn't fit V20 per-level damage typing, so the renderer owns its own state shape under its resource id and shadow-writes `current` for compatibility.
+- **Path-virtue mapping** (per V20 RAW + lorebook): Humanity → Conscience + Self-Control; Path of Honorable Accord → Conviction + Instinct; Path of Caine → Conviction + Instinct; Path of Beast → Conviction + Instinct; Path of Night → Conviction + Instinct ("Cold variant" alternative for Self-Control documented in lorebook). User can override per-virtue after selecting the path; overrides persist until path changes again.
+- **Hand-off note**: future dice integrations should read the active option (e.g., `state.sheet.morality.virtues["self-control-instinct"].active`) when picking which virtue to roll — the active label matters, not the row id.
+- **Lorebook-fetch deviation**: spec called for runtime lorebook lookup via `loreRef`. Lorebook entries are server-side at install time, not loadable from the extension at render time. Used an embedded `mrr_v20PathVirtueMap` with descriptions verbatim from `rulesets/vtmv20/lorebook.json` `Path Lookup:` entries instead. Same data, kept in sync because the rulesets dir is the source of truth for the lorebook install. When a server-side fetch path lands, the map becomes redundant and the renderer code already only reads `pathMap.description`.
+
+### Added — Density-aware threading: existing components now respond to the density toggle (2026-05-10)
+
+Follow-up to Phase 5 step 5.5 (Round 2). The density toggle was previously declared with `[data-density]` branches but most existing components didn't reference the `--mrr(p)-density-*` variables, so the toggle had no visible effect on most of the sheet. This pass threads density vars through 13 existing component rules per repo.
+
+- **`extension/RPG-Extension-GM-Mode.css`** — 13 existing component rules modified (17 individual literal-to-density-var replacements). Categories:
+  - **padding (full pad-x + pad-y)** — 3 rules: `.mrr-section`, `.mrr-p3-section__head`, `.mrr-p3-panel__body`
+  - **gap** — 3 rules: `.mrr-sheet__header`, `.mrr-section`, `.mrr-row`
+  - **font-size (body text)** — 7 rules: `.mrr-sheet` (root cascade), `.mrr-dice`, `.mrr-dice__input`, `.mrr-dialog__lib-name`, `.mrr-spellbook` / dialog panel, `.mrr-p3-row__name`, `.mrr-p3-row__val--auto`
+  - **row-height** — 2 rules: `.mrr-p3-row` height, `.mrr-p3-row--skill` min-height
+  - **pad-x-only / pad-y-only (asymmetric)** — 2 rules: `.mrr-p3-section__body` (preserves 8px top + density x/y), `.mrr-p3-panel__head` (preserves 10px top + density x)
+- **Mirror discipline**: same 13 rules in `Marinara-RPG-RP-Mode-Extension` with `mrrp-density-*` namespace.
+- **Components that visibly respond to density now** (sampled): every `.mrr(p)-section` card, both row primitives (`.mrr(p)-row` legacy + `.mrr(p)-p3-row` current), Phase-3 section heads and panel bodies, the dice tray, and dialog/spellbook panels. Switching `[data-density]` between compact/cozy/roomy now visibly affects a substantially larger fraction of the sheet.
+- **Components left UNTHREADED on purpose** (with rationale):
+  - **Type-scale labels** (9px / 10px / 11px / 16px uppercase letter-spaced) — type-scale decisions, not density-driven.
+  - **Tiny pill button paddings** (`.mrr(p)-char-btn`, `.mrr(p)-density-toggle__btn`, `.mrr(p)-p3-row__roll`) with `padding: 2px 6px;` — control-sizing decisions; threading would oversize chips at higher density.
+  - **Stepper button dimensions** (22×22 with 13px glyph) — control-sizing, not density.
+  - **Border widths, border-radius, shadow offsets, line-height** — visual identity, not density.
+  - **Inter-card vertical rhythm** (`margin-bottom: 8px` on `.mrr(p)-p3-section`) — layout-rhythm decision distinct from intra-component density.
+- **Phase 5 step 5.1 identity card** still uses Phase 4 tokens `--mrr(p)-pad`/`--mrr(p)-gap` (left untouched per ownership boundary — Phase 5.1 section is owned territory). A future cycle can evolve identity-card density-awareness inside that section.
+- **Embedded CSS regenerated** in the same Round 5 post-agents pass (orchestrator-owned single `embed-css.mjs` run).
+- **JS-side density awareness flagged for separate cycle** — any JS code that constructs inline style strings (e.g. `el.style.fontSize = '13px'`) bypasses the density vars. A grep over `extension/*.js` for inline px literals in padding/gap/height/font-size categories would find any remaining un-threaded surfaces. Not addressed in this cycle.
+
+### Added — Plan B step B.5: `rulesets/pathfinder2e/ruleset.json` (creation — closes the validate-rulesets ENOENT gap) (2026-05-10)
+
+PF2e's `ruleset.json` was previously missing (validate-rulesets reported ENOENT for both repos). This step creates the file as a schema-conforming MVP for Pathfinder 2nd Edition.
+
+- **NEW file `rulesets/pathfinder2e/ruleset.json`** in both repos (721 lines, 22194 bytes, byte-identical mirror):
+  - **6 attributes**: STR, DEX, CON, INT, WIS, CHA — using `modifierFormula: "{Score}"` because PF2e stores raw modifiers (Remaster removed ability scores), not 1-30 score values.
+  - **17 skills**: Acrobatics, Arcana, Athletics, Crafting, Deception, Diplomacy, Intimidation, Lore, Medicine, Nature, Occultism, Performance, Religion, Society, Stealth, Survival, Thievery.
+  - **3 saves**: Fortitude (CON), Reflex (DEX), Will (WIS).
+  - **`skillProficiency.tiers`**: 5-tier UTEML (Untrained / Trained / Expert / Master / Legendary) with Level-scaled rollBonusFormula `{Level} + 0/2/4/6/8`.
+  - **10 derivedStats**, **8 with `tooltipFormula`**: Armor Class, Class DC, Spell DC, Perception, Fortitude/Reflex/Will Save, Speed (with formula breakdowns). Hit Points and Level are plain.
+  - **6 resources**: `hit-points` (bar, color bad), `hero-points` (counter, max 3), `focus-points` (counter, default 0 for casters with focus spells), `spell-slots-1` / `-2` / `-3` (counter, grouped under "Spell Slots").
+  - **21 conditions** in `states[]` (single "Condition" state group): includes spec-required Frightened, Sickened, Drained, Wounded, Dying, plus Off-Guard, Stunned, Doomed, Persistent Damage and 11 others.
+  - **`xpTable[]`** with 20 entries (levels 1-20, +1000 XP per level after level 1, per PF2e Core Rulebook).
+  - **`sections.order[]`** (12 entries): identity, xp, resources, attributes, saves, skills, derived, abilities, states, conditions, inventory, notes.
+  - **`resolution.mode: "single-roll"`** with full formula set (modifier / skill / spellSaveDc / attackProficiency).
+  - **`morality` NOT declared** — N/A for PF2e.
+- **Header fields**: PF2e wants Class + Heritage + Background + Ancestry + Level (5-field case flagged in roadmap "Open questions"). Since the schema currently exposes only `header.raceLabel` / `header.classLabel` for two free-text slots, declared `raceLabel: "Ancestry"` / `classLabel: "Class"`; Heritage and Background remain GM-agent-prompted free text (likely captured in notes). Adding a real `identityFields[]` is a schema-evolution concern for Plan C.
+- **Validation gates**: `node tools/validate-ruleset.mjs --all` now reports **5/5 PASS in both repos** — the PF2e ENOENT failure that has been flagged since Phase 4 is closed.
+- **PF2e mechanics intentionally NOT encoded** (out of MVP scope): spellcasting class variants, animal companions / familiars / eidolons, archetypes and dedication feats, ancestry heritages, class-specific resources (Rage points, Composition Points, Mythic Points), critical specialization effects per weapon group, MAP automation, three-action economy enforcement, sub-systems (Influence, Research, Chase, Hexploration, Victory Points).
+- **For future PF2e content cycle**: bundle.json already has rich lorebook entries for Investiture, Hero Points, MAP, Recall Knowledge, XP awards, and degrees of success. Future cycles should encode class-specific focus pools, archetype dedications, and the spellcasting variant matrix. Note bundle.json has divergent `mrr-`/`mrrp-` namespaces — that pre-existing inter-repo difference was NOT touched this cycle.
+
 ### Added — Phase 5 step 5.3: Resources cluster ("charbar") (2026-05-10)
 
 The biggest Phase 5 piece — a horizontal resource readout cluster above Attributes, driven by `ruleset.resources[]` (Plan B step 1 schema add). Five sub-renderers dispatch by `type`: bar / dice / counter / pool / custom. Includes a custom-component registry that Round 5's V20 visual treatment will populate.

@@ -1,0 +1,721 @@
+{
+  "id": "pathfinder2e",
+  "name": "Pathfinder 2nd Edition",
+  "version": "1.0.0",
+  "edition": "Pathfinder 2e (Remaster, 2024)",
+  "license": "Original mechanical references; Pathfinder 2e ruleset content under Paizo's ORC license. Spell, class, and monster names belong to Paizo Publishing.",
+  "summary": "Pathfinder 2nd Edition is a tightly mathematical d20 fantasy system. A check is 1d20 + ability modifier + proficiency bonus + item bonus vs. a Difficulty Class, with four degrees of success: critical success at +10 over the DC, success at meeting it, failure under it, critical failure at -10 below. The three-action economy and Multiple Attack Penalty give every turn meaningful tactical choice.",
+  "commitmentModel": "invested",
+  "xpTable": [
+    { "level": 1, "xp": 0 },
+    { "level": 2, "xp": 1000 },
+    { "level": 3, "xp": 2000 },
+    { "level": 4, "xp": 3000 },
+    { "level": 5, "xp": 4000 },
+    { "level": 6, "xp": 5000 },
+    { "level": 7, "xp": 6000 },
+    { "level": 8, "xp": 7000 },
+    { "level": 9, "xp": 8000 },
+    { "level": 10, "xp": 9000 },
+    { "level": 11, "xp": 10000 },
+    { "level": 12, "xp": 11000 },
+    { "level": 13, "xp": 12000 },
+    { "level": 14, "xp": 13000 },
+    { "level": 15, "xp": 14000 },
+    { "level": 16, "xp": 15000 },
+    { "level": 17, "xp": 16000 },
+    { "level": 18, "xp": 17000 },
+    { "level": 19, "xp": 18000 },
+    { "level": 20, "xp": 19000 }
+  ],
+  "dice": {
+    "type": "d20",
+    "notation": "1d20+MOD"
+  },
+  "resolution": {
+    "mode": "single-roll",
+    "modifierFormula": "1d20 + ability_mod + proficiency_bonus + item_bonus + circumstance_bonus - status_penalty",
+    "skillBonusFormula": "{linkedAttribute_mod} + {tierBonus}",
+    "spellSaveDcFormula": "10 + {Level} + {spellcastingAttribute_mod}",
+    "attackProficiencyFormula": "{Level} + 2"
+  },
+  "difficulties": {
+    "Trivial": {
+      "threshold": 10,
+      "description": "Untrained character can manage with average stats."
+    },
+    "Low": {
+      "threshold": 15,
+      "description": "Trained at character's level expects to succeed."
+    },
+    "Moderate": {
+      "threshold": 20,
+      "description": "The standard challenge for an at-level expert."
+    },
+    "High": {
+      "threshold": 25,
+      "description": "Pushes a master character; a trained one will need luck."
+    },
+    "Severe": {
+      "threshold": 30,
+      "description": "A serious test even for a Master at level."
+    },
+    "Extreme": {
+      "threshold": 40,
+      "description": "Legendary territory. Stack every bonus."
+    }
+  },
+  "attributes": [
+    {
+      "name": "Strength",
+      "abbreviation": "STR",
+      "min": -1,
+      "max": 8,
+      "default": 0,
+      "description": "Raw physical force. Adds to Athletics, melee attack rolls with non-finesse weapons, and melee damage.",
+      "modifierFormula": "{Score}"
+    },
+    {
+      "name": "Dexterity",
+      "abbreviation": "DEX",
+      "min": -1,
+      "max": 8,
+      "default": 0,
+      "description": "Agility, balance, fine motor control. Adds to AC (capped by armor's Dex cap), Reflex saves, ranged attacks, and finesse melee attacks.",
+      "modifierFormula": "{Score}"
+    },
+    {
+      "name": "Constitution",
+      "abbreviation": "CON",
+      "min": -1,
+      "max": 8,
+      "default": 0,
+      "description": "Health and endurance. Adds to Hit Points each level and to Fortitude saves.",
+      "modifierFormula": "{Score}"
+    },
+    {
+      "name": "Intelligence",
+      "abbreviation": "INT",
+      "min": -1,
+      "max": 8,
+      "default": 0,
+      "description": "Memory, reasoning, education. Grants extra trained skills and Lores at character creation; adds to skills like Arcana, Crafting, Society.",
+      "modifierFormula": "{Score}"
+    },
+    {
+      "name": "Wisdom",
+      "abbreviation": "WIS",
+      "min": -1,
+      "max": 8,
+      "default": 0,
+      "description": "Awareness, intuition, common sense. Adds to Perception, Will saves, and skills like Medicine, Nature, Religion, Survival.",
+      "modifierFormula": "{Score}"
+    },
+    {
+      "name": "Charisma",
+      "abbreviation": "CHA",
+      "min": -1,
+      "max": 8,
+      "default": 0,
+      "description": "Presence, persuasion, force of personality. Adds to social skills (Diplomacy, Deception, Intimidation, Performance, Society) and to spell DCs for Charisma-based casters.",
+      "modifierFormula": "{Score}"
+    }
+  ],
+  "saves": [
+    {
+      "name": "Fortitude",
+      "linkedAttribute": "Constitution",
+      "description": "Resists poison, disease, and physical effects. Constitution + proficiency."
+    },
+    {
+      "name": "Reflex",
+      "linkedAttribute": "Dexterity",
+      "description": "Dodges traps, area effects, and quick hazards. Dexterity + proficiency."
+    },
+    {
+      "name": "Will",
+      "linkedAttribute": "Wisdom",
+      "description": "Resists mind-affecting effects, fear, and possession. Wisdom + proficiency."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Acrobatics",
+      "linkedAttribute": "Dexterity",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Tumbling, balancing, escaping grabs. Trained-only actions: Maneuver in Flight."
+    },
+    {
+      "name": "Arcana",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Knowledge of arcane magic and creatures. Trained-only: Identify Magic, Learn a Spell, Decipher Writing of arcane origin."
+    },
+    {
+      "name": "Athletics",
+      "linkedAttribute": "Strength",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Climbing, jumping, swimming, forceful maneuvers (Grapple, Trip, Shove, Disarm). High Jump and Long Jump are signature actions."
+    },
+    {
+      "name": "Crafting",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Making and repairing items. Trained-only: Craft, Repair, Identify Alchemy."
+    },
+    {
+      "name": "Deception",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Lying, disguise, feinting in combat. Trained-only: Impersonate."
+    },
+    {
+      "name": "Diplomacy",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Making requests, gathering information, swaying attitudes. Always available untrained."
+    },
+    {
+      "name": "Intimidation",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Coercing or demoralizing. Demoralize is a frequent combat action."
+    },
+    {
+      "name": "Lore",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "A specific narrow expertise the player chose at character creation (Sailing Lore, Goblin Lore, Absalom Lore, Carpentry Lore, etc.). Each Lore is a separate trained skill; the GM allows it for narrow Recall Knowledge questions."
+    },
+    {
+      "name": "Medicine",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "First aid, treating poison/disease. Trained-only: Treat Disease, Treat Poison, Treat Wounds."
+    },
+    {
+      "name": "Nature",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Knowledge of plants, animals, weather. Trained-only: Command an Animal, Identify Magic of primal origin."
+    },
+    {
+      "name": "Occultism",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Knowledge of the occult — esoteric philosophy, ghosts, aberrations. Trained-only: Identify Magic of occult origin."
+    },
+    {
+      "name": "Performance",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Music, oratory, dance, acting. Trained-only: Perform (extended)."
+    },
+    {
+      "name": "Religion",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Knowledge of deities, dogmas, the planes. Trained-only: Identify Magic of divine origin."
+    },
+    {
+      "name": "Society",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "History, etiquette, languages, current affairs. Trained-only: Decipher Writing, Subsist (in civilization)."
+    },
+    {
+      "name": "Stealth",
+      "linkedAttribute": "Dexterity",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Hiding and sneaking. Used to oppose Perception when avoiding detection."
+    },
+    {
+      "name": "Survival",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Wilderness skills: tracking, foraging, weathering. Trained-only: Cover Tracks, Track."
+    },
+    {
+      "name": "Thievery",
+      "linkedAttribute": "Dexterity",
+      "min": 0,
+      "max": 30,
+      "default": 0,
+      "description": "Picking locks, picking pockets, disabling traps. Trained-only: Disable Device, Pick a Lock."
+    }
+  ],
+  "skillProficiency": {
+    "tiers": [
+      {
+        "code": "U",
+        "label": "Untrained",
+        "rollBonusFormula": "0"
+      },
+      {
+        "code": "T",
+        "label": "Trained",
+        "rollBonusFormula": "{Level} + 2"
+      },
+      {
+        "code": "E",
+        "label": "Expert",
+        "rollBonusFormula": "{Level} + 4"
+      },
+      {
+        "code": "M",
+        "label": "Master",
+        "rollBonusFormula": "{Level} + 6"
+      },
+      {
+        "code": "L",
+        "label": "Legendary",
+        "rollBonusFormula": "{Level} + 8"
+      }
+    ],
+    "default": "U"
+  },
+  "derivedStats": [
+    {
+      "name": "Hit Points",
+      "formula": "(class HP per level + CON_mod) per character level + ancestry HP at level 1",
+      "renderAs": "bar",
+      "aliases": [
+        "hp",
+        "HP",
+        "hitPoints",
+        "hitpoints"
+      ]
+    },
+    {
+      "name": "Armor Class",
+      "formula": "10 + DEX_mod (capped by armor) + armor proficiency bonus + armor item bonus",
+      "renderAs": "value",
+      "default": 10,
+      "tooltipFormula": "10 + {Dexterity_mod} + {tierBonus} + {bonuses:Armor Class}",
+      "aliases": [
+        "ac",
+        "AC",
+        "armorClass"
+      ]
+    },
+    {
+      "name": "Class DC",
+      "formula": "10 + class proficiency bonus + key ability modifier",
+      "renderAs": "value",
+      "default": 10,
+      "tooltipFormula": "10 + {tierBonus} + {bonuses:Class DC}",
+      "aliases": [
+        "classDC",
+        "classdc"
+      ]
+    },
+    {
+      "name": "Spell DC",
+      "formula": "10 + spell proficiency bonus + casting ability modifier",
+      "renderAs": "value",
+      "default": 10,
+      "tooltipFormula": "10 + {Level} + {bonuses:Spell DC}",
+      "aliases": [
+        "spellDC",
+        "spelldc"
+      ]
+    },
+    {
+      "name": "Perception",
+      "formula": "WIS_mod + perception proficiency bonus + item bonus",
+      "renderAs": "value",
+      "tooltipFormula": "{Wisdom_mod} + {tierBonus} + {bonuses:Perception}",
+      "rollFormula": "{Wisdom_mod} + {tierBonus}",
+      "aliases": [
+        "perception",
+        "PER"
+      ]
+    },
+    {
+      "name": "Fortitude Save",
+      "formula": "CON_mod + fortitude proficiency bonus + item bonus",
+      "renderAs": "value",
+      "tooltipFormula": "{Constitution_mod} + {tierBonus} + {bonuses:Fortitude Save}",
+      "rollFormula": "{Constitution_mod} + {tierBonus}",
+      "aliases": [
+        "fortitude",
+        "fort"
+      ]
+    },
+    {
+      "name": "Reflex Save",
+      "formula": "DEX_mod + reflex proficiency bonus + item bonus",
+      "renderAs": "value",
+      "tooltipFormula": "{Dexterity_mod} + {tierBonus} + {bonuses:Reflex Save}",
+      "rollFormula": "{Dexterity_mod} + {tierBonus}",
+      "aliases": [
+        "reflex",
+        "ref"
+      ]
+    },
+    {
+      "name": "Will Save",
+      "formula": "WIS_mod + will proficiency bonus + item bonus",
+      "renderAs": "value",
+      "tooltipFormula": "{Wisdom_mod} + {tierBonus} + {bonuses:Will Save}",
+      "rollFormula": "{Wisdom_mod} + {tierBonus}",
+      "aliases": [
+        "will"
+      ]
+    },
+    {
+      "name": "Speed",
+      "formula": "Ancestry base speed (typically 25 ft) + bonuses",
+      "renderAs": "value",
+      "default": 25,
+      "tooltipFormula": "25 + {bonuses:Speed}",
+      "aliases": [
+        "speed",
+        "movement"
+      ]
+    },
+    {
+      "name": "Level",
+      "formula": "Character level, 1-20.",
+      "max": 20,
+      "default": 1,
+      "renderAs": "value",
+      "aliases": [
+        "level",
+        "lvl",
+        "LVL",
+        "characterLevel"
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "id": "hit-points",
+      "label": "HP",
+      "type": "bar",
+      "max": 10,
+      "current": 10,
+      "color": "bad",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "-5", "delta": -5 },
+        { "label": "Heal", "delta": "max" }
+      ]
+    },
+    {
+      "id": "hero-points",
+      "label": "Hero Points",
+      "type": "counter",
+      "max": 3,
+      "current": 1,
+      "color": "accent",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "+1", "delta": 1 },
+        { "label": "Session Reset", "delta": "max" }
+      ]
+    },
+    {
+      "id": "focus-points",
+      "label": "Focus Points",
+      "type": "counter",
+      "max": 0,
+      "current": 0,
+      "color": "accent",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "Refocus", "delta": 1 },
+        { "label": "Refill", "delta": "max" }
+      ]
+    },
+    {
+      "id": "spell-slots-1",
+      "label": "Spell Slots (1st)",
+      "type": "counter",
+      "group": "Spell Slots",
+      "max": 0,
+      "current": 0,
+      "color": "accent",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "Daily Prep", "delta": "max" }
+      ]
+    },
+    {
+      "id": "spell-slots-2",
+      "label": "Spell Slots (2nd)",
+      "type": "counter",
+      "group": "Spell Slots",
+      "max": 0,
+      "current": 0,
+      "color": "accent",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "Daily Prep", "delta": "max" }
+      ]
+    },
+    {
+      "id": "spell-slots-3",
+      "label": "Spell Slots (3rd)",
+      "type": "counter",
+      "group": "Spell Slots",
+      "max": 0,
+      "current": 0,
+      "color": "accent",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "Daily Prep", "delta": "max" }
+      ]
+    }
+  ],
+  "states": [
+    {
+      "name": "Condition",
+      "values": [
+        {
+          "label": "None"
+        },
+        {
+          "label": "Off-Guard",
+          "description": "-2 circumstance penalty to AC. Used to be 'flat-footed'. Triggered by being flanked, prone, hidden from, or many maneuvers."
+        },
+        {
+          "label": "Frightened",
+          "description": "Status penalty equal to the value to all checks and DCs. Decreases by 1 at the end of each turn (or by other means)."
+        },
+        {
+          "label": "Sickened",
+          "description": "Status penalty equal to the value to all checks and DCs. Spend 1 action and Fortitude save to reduce."
+        },
+        {
+          "label": "Stunned",
+          "description": "Lose actions equal to the value (or up to the Stunned value) at the start of your turn; reduce Stunned by the actions lost."
+        },
+        {
+          "label": "Slowed",
+          "description": "Lose actions equal to the value at the start of each turn (does not stack with Stunned for the lost-action calculation; take the worse)."
+        },
+        {
+          "label": "Quickened",
+          "description": "Gain 1 extra action at the start of each turn, usable only for the specified purpose granted by the source."
+        },
+        {
+          "label": "Prone",
+          "description": "-2 circumstance to attacks; off-guard. Standing up is a single action."
+        },
+        {
+          "label": "Grabbed",
+          "description": "Off-guard and immobilized; you can Escape (Acrobatics or Athletics, or attempt a basic check) as an action."
+        },
+        {
+          "label": "Restrained",
+          "description": "Off-guard and immobilized; cannot use manipulate actions other than Escape or to break free."
+        },
+        {
+          "label": "Wounded",
+          "description": "When dying value is reset, your wounded value increases. Future dying tracks add wounded value to the new dying."
+        },
+        {
+          "label": "Dying",
+          "description": "Drop to 0 HP and you become dying 1 (or higher if crit hit). At dying 4 you die. Each turn make a recovery flat check (DC 10 + dying)."
+        },
+        {
+          "label": "Doomed",
+          "description": "Maximum dying value drops by your doomed value. At doomed 4 (or whatever brings dying max to 0), if you would become dying you die."
+        },
+        {
+          "label": "Confused",
+          "description": "You attack any creature in reach (or use cantrip on a random adjacent target if no melee). You're off-guard."
+        },
+        {
+          "label": "Fascinated",
+          "description": "-2 status to Perception and skill checks; cannot Concentrate or use actions with concentrate trait other than Seek; ends if hostile action is taken against you."
+        },
+        {
+          "label": "Drained",
+          "description": "Status penalty equal to value to Constitution-based checks, Fortitude saves, and HP max. Lose HP equal to drained × level."
+        },
+        {
+          "label": "Enfeebled",
+          "description": "Status penalty equal to value to Strength-based rolls and damage."
+        },
+        {
+          "label": "Stupefied",
+          "description": "Status penalty equal to value to Intelligence/Wisdom/Charisma checks and to spell DCs and spell attack rolls."
+        },
+        {
+          "label": "Clumsy",
+          "description": "Status penalty equal to value to Dexterity-based rolls and to AC."
+        },
+        {
+          "label": "Persistent Damage",
+          "description": "At end of each turn take damage of the listed type; flat check DC 15 (or DC 10 with assistance) to end."
+        },
+        {
+          "label": "Unconscious",
+          "description": "Off-guard; -4 status to AC, Perception, and Reflex; cannot act. Wakes if HP restored or shaken (1 action) and DC 5 Perception."
+        }
+      ]
+    }
+  ],
+  "conditions": [
+    {
+      "name": "Off-Guard",
+      "description": "-2 circumstance penalty to AC. Triggered by being flanked, prone, hidden from, or many maneuvers."
+    },
+    {
+      "name": "Frightened",
+      "description": "Status penalty equal to value to all checks and DCs. Decreases by 1 at end of each turn.",
+      "imposesDisadvantageOn": ["attack", "save", "skill"]
+    },
+    {
+      "name": "Sickened",
+      "description": "Status penalty equal to value to all checks and DCs. Spend 1 action and Fortitude save to reduce.",
+      "imposesDisadvantageOn": ["attack", "save", "skill"]
+    },
+    {
+      "name": "Prone",
+      "description": "-2 circumstance to attacks; off-guard. Standing up is a single action.",
+      "imposesDisadvantageOn": ["attack"]
+    },
+    {
+      "name": "Drained",
+      "description": "Status penalty equal to value to Constitution-based checks, Fortitude saves, and HP max.",
+      "imposesDisadvantageOn": ["save"]
+    },
+    {
+      "name": "Enfeebled",
+      "description": "Status penalty equal to value to Strength-based rolls and damage.",
+      "imposesDisadvantageOn": ["attack"]
+    },
+    {
+      "name": "Stupefied",
+      "description": "Status penalty to Int/Wis/Cha checks, spell DCs, and spell attack rolls.",
+      "imposesDisadvantageOn": ["skill"]
+    },
+    {
+      "name": "Clumsy",
+      "description": "Status penalty to Dexterity-based rolls and to AC.",
+      "imposesDisadvantageOn": ["attack", "save"]
+    },
+    {
+      "name": "Fascinated",
+      "description": "-2 status to Perception and skill checks; cannot Concentrate; ends if hostile action taken against you.",
+      "imposesDisadvantageOn": ["skill"]
+    }
+  ],
+  "diceTagFormat": {
+    "template": "[dice: 1d20{+MOD} vs DC{DC} = {result}]",
+    "example": "[dice: 1d20+9 vs DC20 = 24 success]"
+  },
+  "sheetSections": [
+    "attributes",
+    "saves",
+    "skills",
+    "derived",
+    "states",
+    "conditions",
+    "inventory",
+    "abilities",
+    "notes"
+  ],
+  "sections": {
+    "order": [
+      "identity",
+      "xp",
+      "resources",
+      "attributes",
+      "saves",
+      "skills",
+      "derived",
+      "abilities",
+      "states",
+      "conditions",
+      "inventory",
+      "notes"
+    ]
+  },
+  "abilities": {
+    "label": "Spellbook",
+    "categories": [
+      { "id": "cantrip", "label": "Cantrips" },
+      { "id": "focus", "label": "Focus Spells" },
+      { "id": "rank-1", "label": "1st Rank" },
+      { "id": "rank-2", "label": "2nd Rank" },
+      { "id": "rank-3", "label": "3rd Rank" },
+      { "id": "rank-4", "label": "4th Rank" },
+      { "id": "rank-5", "label": "5th Rank" },
+      { "id": "rank-6", "label": "6th Rank" },
+      { "id": "rank-7", "label": "7th Rank" },
+      { "id": "rank-8", "label": "8th Rank" },
+      { "id": "rank-9", "label": "9th Rank" },
+      { "id": "rank-10", "label": "10th Rank" }
+    ]
+  },
+  "lorebookKeys": [
+    "degrees of success",
+    "critical success",
+    "critical failure",
+    "three actions",
+    "MAP",
+    "multiple attack penalty",
+    "proficiency",
+    "untrained",
+    "trained",
+    "expert",
+    "master",
+    "legendary",
+    "Fortitude",
+    "Reflex",
+    "Will",
+    "save",
+    "Hero Point",
+    "Focus Point",
+    "Recall Knowledge",
+    "spell rank",
+    "off-guard",
+    "wounded",
+    "dying",
+    "doomed",
+    "ancestry",
+    "heritage",
+    "background",
+    "class"
+  ],
+  "header": {
+    "raceLabel": "Ancestry",
+    "classLabel": "Class"
+  }
+}
