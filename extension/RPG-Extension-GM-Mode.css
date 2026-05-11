@@ -2629,6 +2629,12 @@
   border: 1px solid var(--mrr-hairline);
   border-radius: 6px;
 }
+/* Full-width resource (used by exalted-health-track so the track has room
+   to grow with extra HL added via Ox-Body, Mutations, etc.). Wraps onto
+   its own row regardless of cluster width. */
+.mrr-resource--full-width {
+  flex-basis: 100%;
+}
 
 .mrr-resource__label {
   font-size: 10px;
@@ -2651,14 +2657,17 @@
   font-weight: 600;
 }
 .mrr-resource__val-input {
-  width: 3.5ch;
-  padding: 1px 2px;
-  background: transparent;
-  border: 1px solid var(--mrr-hairline);
+  min-width: 3ch;
+  width: auto;
+  max-width: 5ch;
+  padding: 2px 4px;
+  background: var(--mrr-bg-app);
+  border: 1px solid var(--mrr-hairline-strong);
   border-radius: 3px;
   color: inherit;
   font: inherit;
   text-align: right;
+  box-sizing: content-box;
 }
 .mrr-resource__val-input:focus {
   outline: none;
