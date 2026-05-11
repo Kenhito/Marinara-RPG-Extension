@@ -12,6 +12,138 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+### Added — Trophy Dark + Stewpot rulesets (stance-modal-pool generalization) (2026-05-10)
+
+Two additional rulesets that exercise `stance-modal-pool` beyond L&F — proves the mode generalizes to the polarized-pool family.
+
+- **NEW `rulesets/stewpot/ruleset.json`** (148 lines, both repos byte-identical): Tim Hutchings-tradition slow-life village RPG. Clean fit. Single stat `Capability` (2-5), `stillness/under` vs `action/over`, `poolFormula: 2 + (invested ? 1 : 0) + helping_neighbors`, `exactMatch: PERFECT DAY`, 4 outcome tiers (`stalled/small-grace/good-day/harvest`). 5 skills + Hearth derived stat (max 5 bar, refills on Perfect Days).
+- **NEW `rulesets/trophy-dark/ruleset.json`** (176 lines, both repos byte-identical): Jesse Ross / 24XX-family horror. **Approximated fit** — Trophy Dark RAW is dual-pool comparison which `stance-modal-pool` can't fully express. Forced fit: `Risk` fixed at min=max=3, `light/over` + `dark/under`, 3 outcome tiers (`devils-bargain/at-a-cost/clean`), `EDGE OF RUIN` exact-match (narrative-only, not success). Derived: `Ruin` (max 6 bar) + `Burdens`. Deviations honestly documented inline.
+- **Trophy Dark deviation flagged**: a faithful Trophy Dark mode would need a new `dual-pool-comparison` resolution branch — future schema cycle.
+- **Validation**: `validate-ruleset --all` now reports **10/10 PASS in both repos**.
+- **Schema compatibility**: both rulesets satisfy the Round 8 tightened "exactly one under + exactly one over" invariant. Trophy Dark uses `Risk` and Stewpot uses `Capability` for stat names — proves opaque-string handling.
+
+### Tightened — `stance-modal-pool` schema directional invariant + L&F sample characters + INSTALL.md (2026-05-10)
+
+- **`schema/ruleset.schema.json`** — `stance-modal-pool` `stances` array now requires exactly one `direction: "under"` + exactly one `direction: "over"` via `allOf` + `contains/minContains: 1/maxContains: 1`. Order not constrained. Two-under or two-over rulesets FAIL validation.
+- **NEW `rulesets/lasers-and-feelings/INSTALL.md`** (72 lines, both repos byte-identical): bundle install flow, stance-modal-pool explainer, LASER FEELINGS rule, outcome tier interpretation.
+- **NEW `rulesets/lasers-and-feelings/characters/sample-pilot.json`** (46 lines): "Sparks McGee", Hot-Shot Pilot, Alien, Number=4.
+- **NEW `rulesets/lasers-and-feelings/characters/sample-doctor.json`** (46 lines): "Doc Counterpart", Heroic Doctor, Android, Number=3.
+- **Synthetic two-under negative test confirmed** — validator rejects with expected `contains` diagnostic.
+- **Hand-off — bundle artifacts**: Round 7 L&F bundle/gm-agent/lorebook files remained untracked; Round 8 commit picks them up alongside these new additions.
+
+### Added — `quickRollFor*` STANCE branch + `applyDiceContextSpecialties` UNDER+STANCE branches (2026-05-10)
+
+Completes the dice-tray dispatch story for both `roll-under` (Round 6) and `stance-modal-pool` (Round 7).
+
+- **`extension/RPG-Extension-GM-Mode.js`** — extended four helpers:
+  - `quickRollForSave` (lines 5507/5514-5536): STANCE branch reads `state.ruleset.resolution.stat` → `state.sheet.attributes[<stat>]` (fallback `resolution.statDefault || 4`), opens widget with `setDiceInput("stat", N)` + `setDiceInput("pool", 1)`. No auto-stance — player chooses each roll.
+  - `quickRollForDerived` (lines 5576-5596): same shape, ignores `derived.rollFormula`.
+  - `quickRollForSkill` (lines 5851-5871): preserves existing diceContext initializer; sets `base.stat` + `base.pool = 1`.
+  - `applyDiceContextSpecialties` (lines 5960-5979): UNDER sums VALUE-kind specialties into `bonus` input (mental-model flip); STANCE is explicit no-op `return` with explanatory comment.
+- **Mirror discipline**: same in `Marinara-RPG-RP-Mode-Extension` with `mrrp-` namespace at corresponding lines (5636/5646-5668/5713-5731/5985-6005/6094-6113).
+- **Validation**: `node --check` clean. Existing branches unchanged — no regression.
+- **Future hook**: stance + specialties combination would naturally map specialty value → pool adjustment.
+
+### Added — `stance-modal-pool` resolution mode + Lasers & Feelings ruleset (2026-05-10)
+
+New 6th branch in the schema's `resolution.oneOf` union — `stance-modal-pool` — supports hybrid roll-under/roll-over pool systems with optional exact-match special outcomes (the LASER FEELINGS bridge). Designed for indie one-pagers like L&F, BRP-family games, and the polarized-pool family generally (Trophy Dark light/dark dice, The Stewpot's action/stillness, etc.). Plan source: `~/cc-wiki/Roadmap/marinara-lasers-and-feelings-stance-modal-pool.md` (378-line spec).
+
+- **`schema/ruleset.schema.json`** — added `stance-modal-pool` `oneOf` branch (lines 233-344, 112 lines) with required `mode`/`diceType`/`poolFormula`/`stat`/`stances`/`outcomeTiers` plus optional `exactMatch`. Inline sub-schemas for `stances` (exactly 2 items, per-item `direction` enum `under|over`), `exactMatch` (with `narrationHook` pattern), `outcomeTiers` (≥2 items, monotonic `minSuccesses`).
+- **`extension/RPG-Extension-GM-Mode.js`** — `MODES.STANCE = "stance-modal-pool"` constant (line 69); dispatcher branch at line 8676; lines 8866-9051 implement `buildStanceModalPoolWidget` (segmented stance toggle + pool size + stat inputs + poolFormula hint) and `rollStanceModalPool` (strict under/over comparisons making double-count structurally impossible, exact-match counting, outcome-tier walk, `[mrr-roll: ruleset=..., stance=..., stat=..., statValue=..., pool=..., dice=[...], successes=..., exactMatches=..., tier=..., narrationHook=...]` chat tag emission).
+- **`extension/RPG-Extension-GM-Mode.css`** — new `/* ── Round 7: stance-modal-pool ── */` section at lines 3070-3186 with segmented stance toggle pill control, hint label, exact-match die outline ring, four tier-* result strip variants (miss/barely/good/critical).
+- **NEW `rulesets/lasers-and-feelings/`** in both repos (mirror-identical content except namespace-required `schema` and `diceTagFormat` differences in bundle.json):
+  - `ruleset.json` — single Number stat (2-5), LASERS (under) / FEELINGS (over) stances, LASER FEELINGS exact-match (counts as success + grants player a question), four outcome tiers (miss / barely / good / critical). One "Help" skill captures the helping-roll mechanic to satisfy the schema's `skills.minItems: 1` constraint.
+  - `bundle.json` — minimal manifest
+  - `lorebook.json` — Doubleclicks tribute setting + four "create a space adventure" prep tables
+  - `gm-agent.md` — stance-prompting, tier narration, LASER FEELINGS handling
+- **Mirror discipline**: same in `Marinara-RPG-RP-Mode-Extension` with `mrrp-` namespace (schema at lines 233-344, JS at lines 69/8770/8960-9145, CSS at lines 3055-3171, ruleset/bundle/lorebook/gm-agent.md byte-identical mirrors).
+- **Logic tests verified** (5/5 PASS via standalone Node harness):
+  - Lasers stance, pool=3d6, stat=4, faces=[1,4,6] → stance-successes=1, exactMatches=1, total=2, tier="good"
+  - Feelings stance, same input → stance-successes=1, exactMatches=1, total=2, tier="good"
+  - Exact-match no-double-count, faces=[4,4,4] stat=4 → stanceSuccesses=0, exactMatches=3, total=3, tier="critical"
+  - Miss, faces=[5,6,6] Lasers stat=4 → all 0 → tier="miss"
+  - Open-ended top tier, faces=[1,2,3,4] Lasers stat=5 → 4 successes → tier="critical"
+- **`validate-ruleset --all` reports 8/8 PASS** in both repos.
+- **Deviations from spec**: (1) Schema enforces exactly 2 stances via `minItems/maxItems: 2` but does NOT enforce one-under + one-over pairing — would require nested conditional `oneOf` on items order; the dice widget treats equal-direction stances as soft failure; flagged for Round 8. (2) Pool input is user-typed each roll with poolFormula shown as hint label, rather than auto-parsing `(prepared ? 1 : 0)` syntax — matches how L&F plays at the table. (3) L&F gets a single "Help" skill to satisfy schema `skills.minItems: 1` without modifying the schema constraint.
+
+### Added — Call of Cthulhu 7e + GURPS-lite rulesets (roll-under exemplars) (2026-05-10)
+
+Two reference rulesets that exercise the Round 6 `roll-under` mode end-to-end.
+
+- **NEW `rulesets/coc7e/ruleset.json`** in both repos (308 lines, byte-identical):
+  - Resolution: `roll-under` / `1d100` / `criticalSuccessFormula: "{target}/5"` / `criticalFailureThreshold: 96`
+  - 8 attributes (STR, CON, SIZ, DEX, APP, INT, POW, EDU; range 15-99, default 50)
+  - 46 skills with per-skill defaults (Spot Hidden 25, Dodge linkedAttribute Dex, Cthulhu Mythos 0, Fighting Brawl 25, Firearms specialties, etc.)
+  - 6 derived stats: Hit Points (bar, `({CON}+{SIZ})/10`), Magic Points (bar, `{POW}/5`), Sanity (bar, starts at POW), Move (default 8 with conditional rule documented in `formula`), Luck (default 50), Build (default 0 with lookup table in `formula`)
+  - 2 state blocks: Sanity (Stable/Temporary/Indefinite/Permanently Insane) and Status (Healthy/Wounded/Dying/Unconscious/Dead)
+  - 4 resources cluster (HP bar, MP bar, Sanity counter, Luck counter)
+  - Difficulties block (Regular 100, Hard 50, Extreme 20) — required by schema's `difficulties.minProperties: 2`; documentation-only for roll-under
+  - `header.raceLabel: "Occupation"`, `header.classLabel: "Archetype"`
+  - NO `morality`, NO `xpTable`, NO `skillProficiency`, NO `saves`, NO `abilities`, NO `conditions[]`
+- **NEW `rulesets/gurps-lite/ruleset.json`** in both repos (247 lines, byte-identical):
+  - Resolution: `roll-under` / `3d6` / `criticalSuccessFormula: "4"` / `criticalFailureFormula: "{target} + 10"` (MVP simplified from the full RAW)
+  - 4 attributes (ST, DX, IQ, HT; range 1-25, default 10)
+  - 24 skills with `linkedAttribute` per skill, defaults reflecting GURPS-lite default-from-attribute math (DX-5 for easy, DX for hard, etc.)
+  - 7 derived stats: HP (`=ST`), FP (`=HT`), Will (`=IQ`), Perception (`=IQ`), Basic Speed (`(DX+HT)/4`), Basic Move (floor of Speed), Dodge (Speed+3)
+  - 3 state blocks: Status (6 values), Fatigue (4 values), Posture (5 values)
+  - 2 resources cluster (HP bar with `max: {ST}`, FP bar with `max: {HT}`)
+  - Difficulties block (Easy/Average/Hard/VeryHard with canonical skill default offsets 0/-1/-2/-3)
+  - `header.raceLabel: "Race"`, `header.classLabel: "Template"`
+  - NO `morality`, NO `xpTable`, NO `skillProficiency`, NO `saves`, NO `abilities`
+- **Validation**: `validate-ruleset --all` reports 8/8 PASS in both repos (5 pre-existing + CoC + GURPS + L&F).
+- **Deviations** documented in detail in the RP mirror's identical entry — same content, mirror discipline preserved.
+
+### Added — `quickRollFor*` helpers wired for roll-under mode (2026-05-10)
+
+Extends Round 6's roll-under to actually work from the sheet — previously, clicking the Roll button on a skill/save/derived row in a roll-under ruleset did nothing because the helpers bailed out on `mode !== MODES.SINGLE`.
+
+- **`extension/RPG-Extension-GM-Mode.js`** — extended three helpers to handle `MODES.UNDER`:
+  - `quickRollForSave` (lines 5503-5546): guard widened to `SINGLE|UNDER`; advantage check gated under SINGLE; new UNDER branch pre-fills target from `state.sheet.skills[save.name]` (fallback to linked attribute) + bonus from `equippedBonuses(save.name).value`.
+  - `quickRollForDerived` (lines 5551-5582): guard widened; new UNDER branch evaluates `derived.formula` for target + `equippedBonuses(derived.name).value` for bonus.
+  - `quickRollForSkill` (lines 5747-5812): new `else if (mode === MODES.UNDER)` branch after FATE; pre-fills target from `state.sheet.skills[skill.name]`, bonus from `equippedBonuses(skill.name).value + tierBonus`.
+- **Bonus direction correctly inverted** for UNDER mode: bonuses populate the widget's `bonus` input, which `rollRollUnder` adds to `baseTarget` to produce the effective target. Result line prints e.g. `(target 65+5)` so the math is visible to the player.
+- **For `quickRollForSkill`**, also bundles `tierBonus` (proficiency-tier bonus) into the bonus input since skill proficiency raises the cap in roll-under.
+- **SINGLE-mode behavior unchanged** — UNDER is a strictly-additive branch in each helper; existing rulesets (D&D, PF2e, Exalted) keep working.
+- **Mirror discipline**: same in `Marinara-RPG-RP-Mode-Extension` with `mrrp-` namespace.
+- **Out of scope this cycle (Round 8 follow-ups)**: `applyDiceContextSpecialties` (the skill-specialty checkbox recomputer) still only branches on POOL/SINGLE/FATE — UNDER specialty support is a follow-up. Once stance-modal-pool's widget stabilizes, `quickRollFor*` should also gain a `MODES.STANCE` branch.
+
+### Added — Roll-under resolution mode (system-neutral percentile + stat-vs-XdY) (2026-05-10)
+
+New `resolution.mode: "roll-under"` for percentile (Call of Cthulhu, BRP, Runequest, Pendragon) and stat-vs-XdY (GURPS, traditional BRP) systems. Bonuses contribute to the TARGET (raise the cap), not to the dice roll — opposite of `single-roll` where bonuses lift the roll total.
+
+- **`schema/ruleset.schema.json`** — added a `roll-under` `oneOf` branch on `resolution` with required `diceFormula` (XdY regex `^[1-9][0-9]*d[1-9][0-9]*$`) and optional `skillBonusFormula`, `criticalSuccessFormula`, `criticalFailureThreshold` (integer ≥1), `criticalFailureFormula`. `additionalProperties: false` enforced.
+- **`extension/RPG-Extension-GM-Mode.js`** — `MODES.UNDER = "roll-under"` constant (line 68); dispatcher branch at line 8620 (`else if (mode === MODES.UNDER) buildRollUnderWidget();`); four new functions at lines 8719-8817: `buildRollUnderWidget` (dice tray Target + Bonus input + Roll button), `parseRollUnderFormula` (XdY regex parser), `evalRollUnderFormula` (sandboxed arithmetic-only Function-eval with whitelist regex, supports `{target}` and `{margin}` token substitution), `rollRollUnder` (rolls dice, sums total, compares `total ≤ target` for success, applies crit-success when `total ≤ criticalSuccessFormula(target)` and fumble when `total ≥ criticalFailureThreshold` or per `criticalFailureFormula`).
+- **`extension/RPG-Extension-GM-Mode.css`** — new `/* ── Round 6: roll-under mechanic ── */` section at lines 3056-3067: `.mrr-dice__result--crit` (accent ring) and `.mrr-dice__result--fumble` (warning fill) modifiers reusing existing tokens (no new tokens introduced).
+- **Mirror discipline**: same in `Marinara-RPG-RP-Mode-Extension` with `mrrp-` namespace (schema mirror identical, JS at lines 68/8709/8809-8907, CSS at lines 3041-3052).
+- **Embedded CSS regenerated** — `node tools/embed-css.mjs` re-ran in both repos after Round 6: RP 80447 chars / GM 79523 chars.
+- **Validation**: 15-case logic test passed (CoC 7e + GURPS + plain + bonus-target + injection-rejection); `validate-ruleset --all` still 5/5 PASS in both repos (the new enum value is permissive — existing rulesets don't have to use it).
+- **What's needed to actually USE roll-under**: a `coc7e` or `gurps-lite` ruleset bundle that declares `resolution: { mode: "roll-under", diceFormula: "1d100"|"3d6", criticalSuccessFormula: "{target}/5"|"4", criticalFailureThreshold: 96|null }`. Plus quickRoll helpers wiring to populate the target input automatically from skill values, and route equipped-bonuses to the target (mental-model flip from single-roll). Both deferred to a future cycle.
+- **Out of scope this cycle**: hybrid-resolution rulesets that mix roll-under for some skills and roll-over for others (would need sub-mode-per-skill or mixed-resolution mode design — deferred per roadmap).
+
+### Removed — Orphaned legacy-identity CSS comment block (2026-05-10)
+
+Round 4 deleted the legacy `renderIdentityField` function and `.mrr(p)-sheet__id-*` CSS rules but left behind a 4-line comment block at lines 153-156 of each `extension/*.css` file that described the now-deleted rules. This pass removes that orphan plus its trailing blank line (5 lines total per repo) to preserve single-blank-line separation between the preceding `.mrr(p)-sheet__char-row` rule and the active Phase 5 step 5.1 identity-card comment.
+
+- **`extension/RPG-Extension-GM-Mode.css`** — deleted lines 153-157 (4 orphan-comment lines + 1 trailing blank).
+- **`extension/RPG-Extension-RP-Mode.css`** — same deletion with `mrrp-` namespace surrounding context.
+- **Mirror discipline**: identical 5-line deletion in both repos.
+- **Pre-deletion verification**: confirmed the deleted comment described only the now-removed legacy identity-row rules; the adjacent Phase 5 step 5.1 comment block (now at line 153, shifted up from 158) was left intact verbatim.
+- **Embedded CSS regenerated** in the same Round 6 post-agents pass.
+
+### Added — Pathfinder 2e content enrichment: tooltipFormula, condition descriptions, recovery clauses (2026-05-10)
+
+Round 5 (step B.5) created the PF2e ruleset as a schema-conforming MVP. This pass enriches PF2e content with 15 substantive additions that don't require schema changes.
+
+- **`rulesets/pathfinder2e/ruleset.json`** — grew from 721 to 732 lines:
+  - **`derivedStats[].tooltipFormula`** (1 addition): Hit Points now declares `8 + ((10 + {Constitution_mod}) * {Level}) + {bonuses:Hit Points}` as a Fighter-representative formula (ancestry 8 + class 10/level + CON_mod/level baseline). The existing `formula` field retains the class-agnostic GM-readable plain-language version, documenting that class HP/level legitimately ranges 6 (Wizard) to 12 (Barbarian).
+  - **`states[]` condition descriptions** (10 enrichments): Off-Guard, Frightened, Sickened, Stunned, Prone, Wounded, Dying, Doomed, Drained, Persistent Damage now have expanded canon descriptions (graduated 1-4 mechanics, recovery rules, action cost, interaction rules) and new `trigger` fields.
+  - **Top-level `conditions[]` refinements** (4 enrichments): Off-Guard, Drained, Stupefied, Fascinated descriptions expanded with canon detail (renamed-from-flat-footed note, graduated effects, flat-check spell-fizzle on Stupefied, Will-save recovery clause on Fascinated).
+- **`xpTable[]` verified**: levels 1-20 thresholds confirmed correct against PF2e Core Rulebook canon. No adjustments needed.
+- **Mirror discipline**: byte-identical changes in `Marinara-RPG-RP-Mode-Extension`.
+- **Validation**: `node tools/validate-ruleset.mjs --all` still 5/5 PASS in both repos.
+- **Schema-blocked items deferred** (would need schema evolution): `resources[].description` for Hero Points / Focus Points context, Lore subspecialization pattern (PF2e Lore is one trained skill per topic), per-class `hpPerLevel` table for true class-agnostic Hit Points formula.
+- **Future PF2e content surfaces** (not addressed this cycle): the remaining 11 `states[]` conditions still need full trigger fields (Quickened, Slowed, Grabbed, Restrained, Confused, Fascinated [partial], Enfeebled, Stupefied [partial], Clumsy, Unconscious + 1 more); spell slots beyond rank 1-3 (4-10 + cantrips); weapon/armor/feat content (outside ruleset.json by current design).
+
 ### Added — Phase 5 step 5.6 (V:TM V20 subset): Morality section + path picker + virtue toggles + `v20-health-track` renderer (2026-05-10)
 
 V20 visual treatment for the morality block (Plan B step 1 + B.3 schema/data) and the custom `v20-health-track` renderer that Round 4's Resources cluster (step 5.3) called for. Closes the V20-specific surface area of step 5.6.

@@ -173,6 +173,35 @@
           "additionalProperties": false
         },
         {
+          "required": ["mode", "diceFormula"],
+          "properties": {
+            "mode": { "const": "roll-under" },
+            "diceFormula": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*d[1-9][0-9]*$",
+              "description": "Standard XdY dice notation for the roll that is summed and compared against the target. Percentile roll-under (Call of Cthulhu, BRP, Runequest, Pendragon) uses \"1d100\"; stat-vs-XdY roll-under (GURPS, traditional BRP) uses \"3d6\". The dice are summed and the total must be <= target for success."
+            },
+            "skillBonusFormula": {
+              "type": "string",
+              "description": "Optional formula that resolves a check's TARGET from the skill row's stored value and other stats. Tokens: {skill} resolves to the skill's stored value, {StatName} resolves to attribute/derived values, {Level} resolves to character level. Defaults to \"{skill}\" when omitted (raw skill value = target, the BRP/CoC convention)."
+            },
+            "criticalSuccessFormula": {
+              "type": "string",
+              "description": "Optional formula evaluated against the resolved target. When the rolled total is <= this evaluated number, the result is flagged as a critical success. Token {target} resolves to the effective target value. Examples: Call of Cthulhu 7e \"{target} / 5\"; GURPS literal constant \"4\". When omitted, no critical success band applies."
+            },
+            "criticalFailureThreshold": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Optional integer threshold. When the rolled total is >= this value, the result is flagged as a fumble. Call of Cthulhu 7e: 96 (rolls of 96-100 fumble). Cannot be combined with criticalFailureFormula. When neither field is set, no fumble band applies."
+            },
+            "criticalFailureFormula": {
+              "type": "string",
+              "description": "Optional formula alternative to criticalFailureThreshold. Evaluated against the resolved target; when the rolled total is >= the evaluated number the result is flagged as a fumble. Token {target} resolves to the effective target value, {margin} resolves to (target - total). Used by GURPS where fumble depends on margin. When neither this field nor criticalFailureThreshold is set, no fumble band applies."
+            }
+          },
+          "additionalProperties": false
+        },
+        {
           "required": ["mode", "modifierFormula", "ladder", "successWithStyle"],
           "properties": {
             "mode": { "const": "fate-ladder" },
@@ -198,6 +227,136 @@
               "type": "integer",
               "minimum": 1,
               "description": "The minimum positive margin (rolled total - target) that counts as 'success with style' (Fate Core: 3)."
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "required": ["mode", "diceType", "poolFormula", "stat", "stances", "outcomeTiers"],
+          "properties": {
+            "mode": { "const": "stance-modal-pool" },
+            "diceType": {
+              "type": "string",
+              "enum": ["d4", "d6", "d8", "d10", "d12", "d20"],
+              "description": "Face count of each pool die (Lasers & Feelings uses d6). Each die is compared independently to stat; successes are counted per the active stance's direction."
+            },
+            "poolFormula": {
+              "type": "string",
+              "description": "Plain-language formula for pool size (e.g. \"1 + (prepared ? 1 : 0) + (expert ? 1 : 0) + assistance\"). The dice widget uses this string as the Pool input's label; the player types the resolved integer pool size each roll."
+            },
+            "stat": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Name of the single character attribute that serves as the per-die threshold (L&F: \"Number\")."
+            },
+            "stances": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Exactly two stance options. Each declares the success direction relative to stat. One stance must use direction=under and the other direction=over — the schema enforces this pairing via `allOf` + `contains`/`minContains` so two same-direction stances fail validation rather than relying on the dice widget's soft-failure check.",
+              "allOf": [
+                {
+                  "contains": {
+                    "type": "object",
+                    "required": ["direction"],
+                    "properties": { "direction": { "const": "under" } }
+                  },
+                  "minContains": 1,
+                  "maxContains": 1
+                },
+                {
+                  "contains": {
+                    "type": "object",
+                    "required": ["direction"],
+                    "properties": { "direction": { "const": "over" } }
+                  },
+                  "minContains": 1,
+                  "maxContains": 1
+                }
+              ],
+              "items": {
+                "type": "object",
+                "required": ["id", "label", "direction"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9-]{1,31}$",
+                    "description": "Stable identifier (kebab-case). Used in chat tags (e.g. stance=lasers)."
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Display label rendered on the stance toggle (e.g. \"LASERS\", \"FEELINGS\")."
+                  },
+                  "direction": {
+                    "type": "string",
+                    "enum": ["under", "over"],
+                    "description": "Strict comparison: \"under\" means face<stat counts as a success; \"over\" means face>stat counts as a success. Equality is handled separately by exactMatch."
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Optional in-fiction guidance shown in tooltip / GM agent prompt."
+                  }
+                }
+              }
+            },
+            "exactMatch": {
+              "type": "object",
+              "required": ["name", "countsAsSuccess"],
+              "additionalProperties": false,
+              "description": "Optional rule for dice that roll exactly equal to stat. With strict under/over comparisons on stances, exact-match dice never count via the stance direction — this block controls whether they also count as successes plus any narration hook.",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Display name for the exact-match outcome (L&F: \"LASER FEELINGS\")."
+                },
+                "countsAsSuccess": {
+                  "type": "boolean",
+                  "description": "When true, each exact-match die adds 1 to the success total. L&F: true."
+                },
+                "effect": {
+                  "type": "string",
+                  "description": "Plain-language description of the in-fiction effect (L&F: \"Ask the GM a question and they answer honestly\")."
+                },
+                "narrationHook": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$",
+                  "description": "Token the GM agent matches against in the chat tag (e.g. \"laser_feelings\") to know it owes a special beat."
+                }
+              }
+            },
+            "outcomeTiers": {
+              "type": "array",
+              "minItems": 2,
+              "description": "Ordered tiers from worst to best. Each tier is reached when total successes >= minSuccesses; if maxSuccesses is set, the tier is bounded above too (otherwise it is the open-ended top tier). The dice widget walks the array and picks the LAST tier whose minSuccesses <= total successes.",
+              "items": {
+                "type": "object",
+                "required": ["minSuccesses", "label"],
+                "additionalProperties": false,
+                "properties": {
+                  "minSuccesses": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Inclusive lower bound of total successes for this tier."
+                  },
+                  "maxSuccesses": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Optional inclusive upper bound. Omit on the open-ended top tier."
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Short outcome label (L&F: miss / barely / good / critical)."
+                  },
+                  "narration": {
+                    "type": "string",
+                    "description": "Default narration the GM agent can riff on for this tier."
+                  }
+                }
+              }
             }
           },
           "additionalProperties": false

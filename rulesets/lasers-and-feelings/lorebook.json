@@ -1,0 +1,76 @@
+{
+  "name": "Lasers & Feelings Rules Reference",
+  "description": "Keyword-triggered rules reference and space-adventure prep tables for the GM agent running a Lasers & Feelings game. Doubleclicks tribute setting baked in. Each entry surfaces only when its keys appear in recent narration or player input.",
+  "category": "world",
+  "scanDepth": 4,
+  "tokenBudget": 1500,
+  "recursiveScanning": false,
+  "entries": [
+    {
+      "name": "Rules Resolution",
+      "keys": ["lasers", "feelings", "roll", "check", "dice"],
+      "content": "Lasers & Feelings resolution: build a pool of 1d6 (+1d if prepared, +1d if expert, +1d per helping ally). Choose stance LASERS (succeeds under Number) or FEELINGS (succeeds over Number). Count successes. 0 = miss / GM makes it worse. 1 = barely / success with cost. 2 = good / clean success. 3+ = critical / extra bonus effect.",
+      "position": 0
+    },
+    {
+      "name": "Rules Laser Feelings",
+      "keys": ["laser feelings", "exact", "exactly", "ask the gm"],
+      "content": "When a die rolls EXACTLY the character's Number, it's LASER FEELINGS: the die counts as a success regardless of stance, AND the player asks the GM a question that must be answered honestly in-fiction. Sample questions: What are they really feeling? Who's behind this? What should I be on the lookout for? How could I get them to ___? What's the best way to ___? The GM must answer honestly. The fiction-truth revealed cannot be retconned.",
+      "position": 0
+    },
+    {
+      "name": "Rules Number",
+      "keys": ["number", "stat", "2", "3", "4", "5"],
+      "content": "Each PC has a single stat: Number, between 2 and 5. High Number is good at LASERS (science, reason, cold action). Low Number is good at FEELINGS (intuition, passion, wild action). A Number of 2 is almost all FEELINGS; a Number of 5 is almost all LASERS. Extremes get more LASER FEELINGS triggers because they roll against their weakness more often.",
+      "position": 0
+    },
+    {
+      "name": "Rules Helping",
+      "keys": ["help", "helping", "assist", "assistance"],
+      "content": "Helping rolls: a second character describes how they assist, rolls a check with stance + Number, and on success the originator gains +1d to their pool. The helper can also help via fiction (using equipment, providing cover) without a roll, at GM discretion. Helping ties characters together in the moment and is one of the main ways L&F generates camaraderie.",
+      "position": 0
+    },
+    {
+      "name": "Rules Style and Role",
+      "keys": ["style", "role", "alien", "android", "dangerous", "heroic", "hot-shot", "hot shot", "intrepid", "savvy", "doctor", "envoy", "engineer", "explorer", "pilot", "scientist", "soldier"],
+      "content": "Each PC has a Style (Alien / Android / Dangerous / Heroic / Hot-Shot / Intrepid / Savvy) and a Role (Doctor / Envoy / Engineer / Explorer / Pilot / Scientist / Soldier). These are flavor tags, not stats — they do not change dice math. Lean into them in narration: an Alien Doctor inhabits the medbay differently from a Dangerous Soldier.",
+      "position": 0
+    },
+    {
+      "name": "Setting Raptor and Consortium",
+      "keys": ["raptor", "consortium", "captain", "ship", "space"],
+      "content": "The interstellar scout ship Raptor is the PCs' home. The Consortium is the distant central authority that gives orders but cannot save you in the moment. The original captain — Captain Darcy — was lost to a strange psychic space anomaly called Something. The crew has command in the meantime. The Raptor has strengths (fast, well-armed, powerful shields, superior sensors, cloaking, fightercraft) and problems (consumes huge amounts of fuel, the medbay is too small, horrible food processors, alien pet that causes trouble, the worst luck). Pick or improvise.",
+      "position": 0
+    },
+    {
+      "name": "Setting Doubleclicks Tribute",
+      "keys": ["doubleclicks", "tribute", "song"],
+      "content": "Lasers & Feelings was written by John Harper in 2013 as a tribute to the song 'Lasers and Feelings' by The Doubleclicks. The game runs on a single d6 mechanic by design — Harper wrote it to be playable in 15 minutes from a one-page sheet. Released under CC BY 4.0; hacks and clones are explicitly encouraged.",
+      "position": 0
+    },
+    {
+      "name": "Table Threat",
+      "keys": ["threat", "create a space adventure", "prep table", "what's the threat"],
+      "content": "Threat: 1 rogue AI, 2 a deadly virus, 3 alien parasites, 4 dark energy beings, 5 psychic space anomaly, 6 hostile alien race, 7 space pirates, 8 a doomsday weapon, 9 a power-mad scientist, 10 corrupt Consortium officers. Roll 1d10 or pick.",
+      "position": 0
+    },
+    {
+      "name": "Table Wants To",
+      "keys": ["wants to", "what do they want"],
+      "content": "Wants To: 1 consume all life, 2 conquer the galaxy, 3 find its ancient home, 4 destroy all technology, 5 protect a great secret, 6 collect rare specimens, 7 achieve godhood, 8 break free of their masters, 9 sing the songs of forever, 10 understand humans. Roll 1d10 or pick.",
+      "position": 0
+    },
+    {
+      "name": "Table The",
+      "keys": ["the noun", "object", "noun table"],
+      "content": "The: 1 space station, 2 ancient temple, 3 derelict spaceship, 4 civilian transport, 5 Consortium HQ, 6 a populated planet, 7 starbase, 8 alien artifact, 9 colony world, 10 the Raptor itself. Roll 1d10 or pick.",
+      "position": 0
+    },
+    {
+      "name": "Table Which Will",
+      "keys": ["which will", "consequence", "stakes"],
+      "content": "Which Will: 1 destroy a star system, 2 start an interstellar war, 3 enslave a planet, 4 release an ancient evil, 5 cause a temporal paradox, 6 spread to other ships, 7 collapse the Consortium, 8 doom the Raptor's crew, 9 alter reality, 10 erase memories. Roll 1d10 or pick.",
+      "position": 0
+    }
+  ]
+}

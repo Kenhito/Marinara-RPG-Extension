@@ -1,0 +1,247 @@
+{
+  "id": "gurps-lite",
+  "name": "GURPS Lite",
+  "version": "1.0.0",
+  "edition": "GURPS Lite 4th Edition (Steve Jackson Games, 2004)",
+  "license": "Original mechanics references; GURPS is a registered trademark of Steve Jackson Games Incorporated. Stat-vs-3d6 roll-under mechanics are common to the generic-system family; no verbatim SJG text reproduced.",
+  "summary": "Generic universal stat-vs-3d6 roll-under system. Each attribute and skill has a target number; roll 3d6 and succeed if the total is at or under that number. Bonuses raise the target (the cap of success), penalties lower it. Critical success on a natural 3 or 4; critical failure on the target plus ten, the natural 17, or the natural 18.",
+  "dice": {
+    "type": "d6",
+    "notation": "3d6 vs target"
+  },
+  "resolution": {
+    "mode": "roll-under",
+    "diceFormula": "3d6",
+    "skillBonusFormula": "{skill}",
+    "criticalSuccessFormula": "4",
+    "criticalFailureFormula": "{target} + 10"
+  },
+  "difficulties": {
+    "Easy": {
+      "threshold": 0,
+      "description": "Easy skill default — base attribute minus 4."
+    },
+    "Average": {
+      "threshold": -1,
+      "description": "Average skill default — base attribute minus 5."
+    },
+    "Hard": {
+      "threshold": -2,
+      "description": "Hard skill default — base attribute minus 6."
+    },
+    "VeryHard": {
+      "threshold": -3,
+      "description": "Very Hard skill — no default; must be learned. Base attribute minus 9 once trained at 1 point."
+    }
+  },
+  "attributes": [
+    {
+      "name": "Strength",
+      "abbreviation": "ST",
+      "group": "Physical",
+      "min": 1,
+      "max": 25,
+      "default": 10,
+      "description": "Muscle power and bulk. Drives HP, damage, lifting capacity, and any physical activity that depends on raw force."
+    },
+    {
+      "name": "Dexterity",
+      "abbreviation": "DX",
+      "group": "Physical",
+      "min": 1,
+      "max": 25,
+      "default": 10,
+      "description": "Agility, co-ordination, and reaction speed. Underlies most active physical skills and Basic Speed."
+    },
+    {
+      "name": "Intelligence",
+      "abbreviation": "IQ",
+      "group": "Mental",
+      "min": 1,
+      "max": 25,
+      "default": 10,
+      "description": "Brainpower, alertness, and adaptability. Default for Will, Perception, and most mental skills."
+    },
+    {
+      "name": "Health",
+      "abbreviation": "HT",
+      "group": "Physical",
+      "min": 1,
+      "max": 25,
+      "default": 10,
+      "description": "Endurance, resistance to illness and poison, and the body's reserve. Drives FP and recovery."
+    }
+  ],
+  "skills": [
+    { "name": "Acrobatics", "linkedAttribute": "Dexterity", "min": 0, "max": 20, "default": 6, "description": "Tumbling, balance, and athletic feats. Hard skill; default DX-6." },
+    { "name": "Area Knowledge", "linkedAttribute": "Intelligence", "min": 0, "max": 20, "default": 10, "description": "Familiarity with a specific region's people, places, and customs. Easy skill; default IQ." },
+    { "name": "Brawling", "linkedAttribute": "Dexterity", "min": 0, "max": 20, "default": 10, "description": "Unarmed striking. Easy skill; defaults to DX." },
+    { "name": "Camouflage", "linkedAttribute": "Intelligence", "min": 0, "max": 20, "default": 6, "description": "Conceal an object or oneself by blending into surroundings. Easy skill; default IQ-4." },
+    { "name": "Climbing", "linkedAttribute": "Dexterity", "min": 0, "max": 20, "default": 5, "description": "Scale walls, ropes, and natural features. Average skill; default DX-5." },
+    { "name": "Driving", "linkedAttribute": "Dexterity", "min": 0, "max": 20, "default": 5, "description": "Operate a ground vehicle (specify type on the character sheet). Average skill; default DX-5." },
+    { "name": "Electronics Operation", "linkedAttribute": "Intelligence", "min": 0, "max": 20, "default": 5, "description": "Use a specific category of electronic gear. Average skill; default IQ-5." },
+    { "name": "First Aid", "linkedAttribute": "Intelligence", "min": 0, "max": 20, "default": 6, "description": "Stop bleeding and stabilise injuries in the field. Easy skill; default IQ-4." },
+    { "name": "Forensics", "linkedAttribute": "Intelligence", "min": 0, "max": 20, "default": 4, "description": "Apply scientific method to crime-scene evidence. Hard skill; default IQ-6." },
+    { "name": "Gunner", "linkedAttribute": "Dexterity", "min": 0, "max": 20, "default": 6, "description": "Operate a vehicle-mounted or heavy weapon. Easy skill; default DX-4." },
+    { "name": "Guns", "linkedAttribute": "Dexterity", "min": 0, "max": 20, "default": 6, "description": "Fire portable firearms (specify category on the character sheet). Easy skill; default DX-4." },
+    { "name": "Knife", "linkedAttribute": "Dexterity", "min": 0, "max": 20, "default": 6, "description": "Wield a knife in melee or thrown. Easy skill; default DX-4." },
+    { "name": "Lockpicking", "linkedAttribute": "Intelligence", "min": 0, "max": 20, "default": 5, "description": "Open a lock without its key. Average skill; default IQ-5." },
+    { "name": "Mechanic", "linkedAttribute": "Intelligence", "min": 0, "max": 20, "default": 5, "description": "Maintain and repair a class of machine (specify on the character sheet). Average skill; default IQ-5." },
+    { "name": "Navigation", "linkedAttribute": "Intelligence", "min": 0, "max": 20, "default": 5, "description": "Find one's way using maps, instruments, or natural cues. Average skill; default IQ-5." },
+    { "name": "Observation", "linkedAttribute": "Perception", "min": 0, "max": 20, "default": 5, "description": "Notice details about the environment, people, or activity. Average skill; default Per-5." },
+    { "name": "Riding", "linkedAttribute": "Dexterity", "min": 0, "max": 20, "default": 5, "description": "Control a mount (specify type on the character sheet). Average skill; default DX-5." },
+    { "name": "Shadowing", "linkedAttribute": "Intelligence", "min": 0, "max": 20, "default": 5, "description": "Follow a person without being noticed. Average skill; default IQ-5." },
+    { "name": "Stealth", "linkedAttribute": "Dexterity", "min": 0, "max": 20, "default": 5, "description": "Move quietly and remain unseen. Average skill; default DX-5." },
+    { "name": "Streetwise", "linkedAttribute": "Intelligence", "min": 0, "max": 20, "default": 5, "description": "Navigate criminal and underground social networks. Average skill; default IQ-5." },
+    { "name": "Survival", "linkedAttribute": "Perception", "min": 0, "max": 20, "default": 5, "description": "Live off the land in a specific environment. Average skill; default Per-5." },
+    { "name": "Swimming", "linkedAttribute": "Health", "min": 0, "max": 20, "default": 6, "description": "Stay afloat and move through water. Easy skill; default HT-4." },
+    { "name": "Throwing", "linkedAttribute": "Dexterity", "min": 0, "max": 20, "default": 7, "description": "Hurl an object at a target accurately. Hard skill; default DX-3." },
+    { "name": "Tracking", "linkedAttribute": "Perception", "min": 0, "max": 20, "default": 5, "description": "Follow a trail through outdoor or urban terrain. Average skill; default Per-5." }
+  ],
+  "derivedStats": [
+    {
+      "name": "Hit Points",
+      "formula": "Equal to ST at baseline; modifiable by Extra HP advantages",
+      "renderAs": "bar",
+      "tooltipFormula": "{Strength}",
+      "aliases": ["hp", "HP", "hitPoints"]
+    },
+    {
+      "name": "Fatigue Points",
+      "formula": "Equal to HT at baseline; modifiable by Extra FP advantages",
+      "renderAs": "bar",
+      "tooltipFormula": "{Health}",
+      "aliases": ["fp", "FP", "fatiguePoints"]
+    },
+    {
+      "name": "Will",
+      "formula": "Equal to IQ at baseline; covers mental fortitude and resistance",
+      "renderAs": "value",
+      "tooltipFormula": "{Intelligence}",
+      "aliases": ["will", "WILL"]
+    },
+    {
+      "name": "Perception",
+      "formula": "Equal to IQ at baseline; the sense-based attribute used for awareness rolls",
+      "renderAs": "value",
+      "tooltipFormula": "{Intelligence}",
+      "aliases": ["per", "PER", "perception"]
+    },
+    {
+      "name": "Basic Speed",
+      "formula": "(DX + HT) / 4, not rounded",
+      "renderAs": "value",
+      "tooltipFormula": "({Dexterity} + {Health}) / 4",
+      "aliases": ["basicSpeed", "speed"]
+    },
+    {
+      "name": "Basic Move",
+      "formula": "Basic Speed rounded down; the number of yards moved in a step",
+      "renderAs": "value",
+      "tooltipFormula": "({Dexterity} + {Health}) / 4",
+      "aliases": ["basicMove", "move"]
+    },
+    {
+      "name": "Dodge",
+      "formula": "Basic Speed + 3, rounded down; the active defence against attacks",
+      "renderAs": "value",
+      "tooltipFormula": "(({Dexterity} + {Health}) / 4) + 3",
+      "aliases": ["dodge"]
+    }
+  ],
+  "states": [
+    {
+      "name": "Status",
+      "values": [
+        { "label": "Healthy", "description": "Above 1/3 of HP. No injury penalties." },
+        { "label": "Reeling", "description": "Below 1/3 of HP. Move and Dodge halved (round up)." },
+        { "label": "Collapse Risk", "description": "At 0 HP or below. Roll HT each turn to stay conscious." },
+        { "label": "Unconscious", "description": "Failed a consciousness check, knocked out, or HP at -1xHP." },
+        { "label": "Mortally Wounded", "description": "HP at -1xHP or worse. Roll HT to avoid death; each subsequent multiple is a fresh roll." },
+        { "label": "Dead", "description": "Failed a death check, or HP at -5xHP." }
+      ]
+    },
+    {
+      "name": "Fatigue",
+      "values": [
+        { "label": "Fresh", "description": "Above 1/3 of FP. No fatigue penalties." },
+        { "label": "Tired", "description": "Below 1/3 of FP. Move, Dodge, and ST halved (round up)." },
+        { "label": "Exhausted", "description": "FP at 0. Cannot do anything strenuous without losing HP instead." },
+        { "label": "Collapse", "description": "FP below 0. Unconsciousness imminent without rest." }
+      ]
+    },
+    {
+      "name": "Posture",
+      "values": [
+        { "label": "Standing", "description": "Standard combat posture. No penalties." },
+        { "label": "Crouching", "description": "-2 to hit in melee; smaller target for ranged attackers." },
+        { "label": "Kneeling", "description": "-2 to hit; -2 to active defences." },
+        { "label": "Prone", "description": "-4 to hit; -3 to active defences. Half move only." },
+        { "label": "Stunned", "description": "Cannot defend actively this turn. Roll IQ or HT each turn to recover." }
+      ]
+    }
+  ],
+  "diceTagFormat": {
+    "template": "[dice: 3d6 vs {target} -> {result} {outcome}, margin {margin}]",
+    "example": "[dice: 3d6 vs 14 -> 9 SUCCESS, margin 5]"
+  },
+  "sections": {
+    "order": [
+      "identity",
+      "resources",
+      "attributes",
+      "skills",
+      "derived",
+      "states",
+      "inventory",
+      "notes"
+    ]
+  },
+  "resources": [
+    {
+      "id": "hit-points",
+      "label": "HP",
+      "type": "bar",
+      "max": "{Strength}",
+      "current": "{Strength}",
+      "color": "bad",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "-5", "delta": -5 },
+        { "label": "Full", "delta": "max" }
+      ]
+    },
+    {
+      "id": "fatigue-points",
+      "label": "FP",
+      "type": "bar",
+      "max": "{Health}",
+      "current": "{Health}",
+      "color": "warn",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "-5", "delta": -5 },
+        { "label": "Rest", "delta": "max" }
+      ]
+    }
+  ],
+  "lorebookKeys": [
+    "advantage",
+    "disadvantage",
+    "skill",
+    "tech-level",
+    "campaign"
+  ],
+  "header": {
+    "raceLabel": "Race",
+    "classLabel": "Template"
+  },
+  "backgrounds": {
+    "enabled": true,
+    "label": "Advantages & Disadvantages",
+    "min": 0,
+    "max": 5,
+    "default": 0,
+    "textOnly": true
+  }
+}

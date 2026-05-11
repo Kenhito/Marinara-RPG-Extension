@@ -1,0 +1,46 @@
+{
+  "$schema-comment": "Smoke-test character rig for the Lasers & Feelings ruleset. Shape mirrors the blankSheet() snapshot the extension persists to localStorage, wrapped with name/role metadata so a human reader can scan the file without running the extension. Import is NOT automated — paste the `sheet` object into Marinara's character-library localStorage entry, or use the values as a hand-fill reference when creating a new character via the in-extension sheet editor.",
+  "name": "Sparks McGee",
+  "ruleset": "lasers-and-feelings",
+  "role": "Hot-Shot Pilot",
+  "style": "Alien",
+  "number": 4,
+  "goal": "Become Captain",
+  "summary": "Hot-Shot Pilot, Alien stowaway turned crew. Number 4 — slight lean toward LASERS (science, precise action) over FEELINGS (intuition, passion). Looking to prove they're command material on every away mission.",
+  "sheet": {
+    "identity": {
+      "race": "Alien",
+      "class": "Hot-Shot Pilot"
+    },
+    "attributes": {
+      "Number": 4
+    },
+    "skills": {
+      "Help": 0
+    },
+    "derived": {},
+    "states": {},
+    "track": {},
+    "extraTrack": {},
+    "inventory": [],
+    "equipped": {},
+    "skillProficiency": {},
+    "skillSpecialties": {},
+    "backgrounds": [],
+    "abilities": {},
+    "abilityCollapse": {},
+    "intimacies": [],
+    "intimacyCollapse": {},
+    "customSkills": [],
+    "derivedMax": {},
+    "xp": { "current": 0, "level": 1, "next": 0, "total": 0 },
+    "attunedCount": 0,
+    "investedCount": 0,
+    "density": "cozy"
+  },
+  "notes": [
+    "Stance lean: prefer LASERS when in doubt — face<4 on a d6 succeeds.",
+    "LASER FEELINGS triggers on rolling exactly 4 — that die counts as a success AND grants an honest GM answer.",
+    "Default pool is 1d6; +1d if prepared, +1d if expert, +1d per ally helping."
+  ]
+}

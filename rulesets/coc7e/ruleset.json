@@ -1,0 +1,308 @@
+{
+  "id": "coc7e",
+  "name": "Call of Cthulhu 7th Edition",
+  "version": "1.0.0",
+  "edition": "Call of Cthulhu 7e (Chaosium, 2014)",
+  "license": "Original mechanics references; Call of Cthulhu and Cthulhu Mythos are trademarks of Chaosium Inc. Skill and characteristic names follow the BRP family conventions; no verbatim Chaosium text reproduced.",
+  "summary": "Percentile horror investigation rules. Each skill and characteristic is a 1-99 number; roll 1d100 and succeed if the total is at or under that number. Sanity erodes as investigators brush up against the Mythos; success degrees (regular / hard / extreme) reward skilled play and a punishing fumble band keeps tension high.",
+  "dice": {
+    "type": "d100",
+    "notation": "1d100 vs skill"
+  },
+  "resolution": {
+    "mode": "roll-under",
+    "diceFormula": "1d100",
+    "skillBonusFormula": "{skill}",
+    "criticalSuccessFormula": "{target} / 5",
+    "criticalFailureThreshold": 96
+  },
+  "difficulties": {
+    "Regular": {
+      "threshold": 100,
+      "description": "Roll equal to or under the full skill value."
+    },
+    "Hard": {
+      "threshold": 50,
+      "description": "Roll equal to or under half the skill value (round down)."
+    },
+    "Extreme": {
+      "threshold": 20,
+      "description": "Roll equal to or under one-fifth the skill value (round down)."
+    }
+  },
+  "attributes": [
+    {
+      "name": "Strength",
+      "abbreviation": "STR",
+      "group": "Physical",
+      "min": 15,
+      "max": 99,
+      "default": 50,
+      "description": "Muscle power, the ability to lift heavy objects, use weapons, and push through physical resistance."
+    },
+    {
+      "name": "Constitution",
+      "abbreviation": "CON",
+      "group": "Physical",
+      "min": 15,
+      "max": 99,
+      "default": 50,
+      "description": "Health, vigour, and vitality. Resistance to disease, poison, and the wearing effects of injury."
+    },
+    {
+      "name": "Size",
+      "abbreviation": "SIZ",
+      "group": "Physical",
+      "min": 15,
+      "max": 99,
+      "default": 50,
+      "description": "A combined measure of height and weight. Contributes to Hit Points and the Damage Bonus."
+    },
+    {
+      "name": "Dexterity",
+      "abbreviation": "DEX",
+      "group": "Physical",
+      "min": 15,
+      "max": 99,
+      "default": 50,
+      "description": "Quickness, agility, and physical co-ordination. The highest-DEX combatant generally acts first."
+    },
+    {
+      "name": "Appearance",
+      "abbreviation": "APP",
+      "group": "Social",
+      "min": 15,
+      "max": 99,
+      "default": 50,
+      "description": "Physical attractiveness and personal charm — the surface impression an investigator makes on others."
+    },
+    {
+      "name": "Intelligence",
+      "abbreviation": "INT",
+      "group": "Mental",
+      "min": 15,
+      "max": 99,
+      "default": 50,
+      "description": "Cleverness and the ability to reason. Also the value used for the Idea roll."
+    },
+    {
+      "name": "Power",
+      "abbreviation": "POW",
+      "group": "Mental",
+      "min": 15,
+      "max": 99,
+      "default": 50,
+      "description": "Force of will, mental fortitude, and the wellspring of magic. POW seeds starting Sanity and Magic Points."
+    },
+    {
+      "name": "Education",
+      "abbreviation": "EDU",
+      "group": "Mental",
+      "min": 15,
+      "max": 99,
+      "default": 50,
+      "description": "Formal learning and accumulated knowledge. Drives initial skill picks during occupation selection."
+    }
+  ],
+  "skills": [
+    { "name": "Accounting", "min": 0, "max": 99, "default": 5, "description": "Examine ledgers, follow money trails, spot financial irregularities." },
+    { "name": "Anthropology", "min": 0, "max": 99, "default": 1, "description": "Read a culture's customs and infer its beliefs from sparse evidence." },
+    { "name": "Appraise", "min": 0, "max": 99, "default": 5, "description": "Judge the age, authenticity, and value of objects and artworks." },
+    { "name": "Archaeology", "min": 0, "max": 99, "default": 1, "description": "Date sites, identify artifacts, and survive ruin exploration." },
+    { "name": "Art/Craft", "min": 0, "max": 99, "default": 5, "description": "Practice a specific creative or technical craft (specify on the character sheet)." },
+    { "name": "Charm", "min": 0, "max": 99, "default": 15, "description": "Persuade through warmth, flattery, or attractiveness." },
+    { "name": "Climb", "min": 0, "max": 99, "default": 20, "description": "Scale walls, trees, and other steep surfaces without specialised gear." },
+    { "name": "Computer Use", "min": 0, "max": 99, "default": 5, "description": "Modern era only. Operate computers, recover data, and follow digital trails." },
+    { "name": "Credit Rating", "min": 0, "max": 99, "default": 0, "description": "Social and financial standing. Drives starting cash and reception by elites." },
+    { "name": "Cthulhu Mythos", "min": 0, "max": 99, "default": 0, "description": "Forbidden knowledge of the Mythos. Each point gained is a point of Sanity lost." },
+    { "name": "Disguise", "min": 0, "max": 99, "default": 5, "description": "Alter appearance to pass as someone else or escape recognition." },
+    { "name": "Dodge", "min": 0, "max": 99, "default": 0, "linkedAttribute": "Dexterity", "description": "Avoid an incoming attack or environmental danger. Base value is half of DEX." },
+    { "name": "Drive Auto", "min": 0, "max": 99, "default": 20, "description": "Operate a wheeled motor vehicle under normal and adverse conditions." },
+    { "name": "Electrical Repair", "min": 0, "max": 99, "default": 10, "description": "Diagnose and fix electrical systems, from house wiring to radios." },
+    { "name": "Fast Talk", "min": 0, "max": 99, "default": 5, "description": "Bluster, distract, or rapidly persuade without leaving lasting goodwill." },
+    { "name": "Fighting (Brawl)", "min": 0, "max": 99, "default": 25, "description": "Hand-to-hand combat: fists, improvised weapons, and grappling." },
+    { "name": "Firearms (Handgun)", "min": 0, "max": 99, "default": 20, "description": "Pistols and revolvers. Single-shot accuracy in stressed conditions." },
+    { "name": "Firearms (Rifle/Shotgun)", "min": 0, "max": 99, "default": 25, "description": "Long arms. Hunting rifles, shotguns, and military pattern rifles." },
+    { "name": "First Aid", "min": 0, "max": 99, "default": 30, "description": "Stabilise an injured person and restore a small amount of lost HP." },
+    { "name": "History", "min": 0, "max": 99, "default": 5, "description": "Recall historical facts, dates, and the significance of past events." },
+    { "name": "Intimidate", "min": 0, "max": 99, "default": 15, "description": "Compel co-operation through threats, presence, or implication of force." },
+    { "name": "Jump", "min": 0, "max": 99, "default": 20, "description": "Leap horizontally or vertically, or fall safely from a height." },
+    { "name": "Language (Own)", "min": 0, "max": 99, "default": 50, "linkedAttribute": "Education", "description": "Native tongue. Base value equals EDU." },
+    { "name": "Language (Other)", "min": 0, "max": 99, "default": 1, "description": "A second language (specify on the character sheet)." },
+    { "name": "Law", "min": 0, "max": 99, "default": 5, "description": "Knowledge of legal systems, court procedure, and rights." },
+    { "name": "Library Use", "min": 0, "max": 99, "default": 20, "description": "Locate a specific piece of information in a library or archive." },
+    { "name": "Listen", "min": 0, "max": 99, "default": 20, "description": "Notice and interpret sound. The investigator's ear for trouble." },
+    { "name": "Locksmith", "min": 0, "max": 99, "default": 1, "description": "Pick, bypass, or otherwise open locks without their key." },
+    { "name": "Mechanical Repair", "min": 0, "max": 99, "default": 10, "description": "Diagnose and fix mechanical devices, from clocks to engines." },
+    { "name": "Medicine", "min": 0, "max": 99, "default": 1, "description": "Treat illness and injury at a professional level. Slower but stronger than First Aid." },
+    { "name": "Natural World", "min": 0, "max": 99, "default": 10, "description": "Folk knowledge of plants, animals, and the natural world." },
+    { "name": "Navigate", "min": 0, "max": 99, "default": 10, "description": "Find one's way using landmarks, maps, the stars, or instruments." },
+    { "name": "Occult", "min": 0, "max": 99, "default": 5, "description": "Mundane mystic lore: hauntings, folklore, and traditional ritual." },
+    { "name": "Operate Heavy Machinery", "min": 0, "max": 99, "default": 1, "description": "Cranes, excavators, and similar large-scale industrial equipment." },
+    { "name": "Persuade", "min": 0, "max": 99, "default": 10, "description": "Win agreement through reasoned argument. Lasting effect, slow to deploy." },
+    { "name": "Pilot", "min": 0, "max": 99, "default": 1, "description": "Operate an aircraft or vessel (specify type on the character sheet)." },
+    { "name": "Psychoanalysis", "min": 0, "max": 99, "default": 1, "description": "Long-term mental care. Can recover Sanity over extended treatment." },
+    { "name": "Psychology", "min": 0, "max": 99, "default": 10, "description": "Read motivations, detect lies, and judge mental state on the fly." },
+    { "name": "Science", "min": 0, "max": 99, "default": 1, "description": "A specific scientific field (specify on the character sheet)." },
+    { "name": "Sleight of Hand", "min": 0, "max": 99, "default": 10, "description": "Palm objects, pick pockets, and perform other deft hand tricks." },
+    { "name": "Spot Hidden", "min": 0, "max": 99, "default": 25, "description": "Notice things that aren't obvious — concealed objects, subtle clues, watchers." },
+    { "name": "Stealth", "min": 0, "max": 99, "default": 20, "description": "Move quietly and remain unseen." },
+    { "name": "Survival", "min": 0, "max": 99, "default": 10, "description": "Endure and travel through a specific hostile environment (specify)." },
+    { "name": "Swim", "min": 0, "max": 99, "default": 20, "description": "Stay afloat and move through water under both calm and stressed conditions." },
+    { "name": "Throw", "min": 0, "max": 99, "default": 20, "description": "Hurl an object accurately at a target." },
+    { "name": "Track", "min": 0, "max": 99, "default": 10, "description": "Follow physical trails left by people, animals, or vehicles." }
+  ],
+  "derivedStats": [
+    {
+      "name": "Hit Points",
+      "formula": "(CON + SIZ) / 10, rounded down",
+      "renderAs": "bar",
+      "tooltipFormula": "({Constitution} + {Size}) / 10",
+      "aliases": ["hp", "HP", "hitPoints", "hitpoints"]
+    },
+    {
+      "name": "Magic Points",
+      "formula": "POW / 5, rounded down",
+      "renderAs": "bar",
+      "tooltipFormula": "{Power} / 5",
+      "aliases": ["mp", "MP", "magicPoints"]
+    },
+    {
+      "name": "Sanity",
+      "formula": "Starts equal to POW; maximum is 99 minus Cthulhu Mythos",
+      "renderAs": "bar",
+      "tooltipFormula": "{Power}",
+      "aliases": ["san", "SAN", "sanity"]
+    },
+    {
+      "name": "Move",
+      "formula": "7 if STR and DEX < SIZ; 9 if both > SIZ; 8 otherwise (modern era)",
+      "renderAs": "value",
+      "default": 8,
+      "aliases": ["mov", "MOV", "movement"]
+    },
+    {
+      "name": "Luck",
+      "formula": "Roll 3d6 x 5 at character creation (range 15-90)",
+      "renderAs": "value",
+      "default": 50,
+      "aliases": ["luck", "LUK"]
+    },
+    {
+      "name": "Build",
+      "formula": "Derived from combined STR + SIZ on the build table; drives Damage Bonus and grapple",
+      "renderAs": "value",
+      "default": 0,
+      "aliases": ["build", "BLD"]
+    }
+  ],
+  "states": [
+    {
+      "name": "Sanity",
+      "values": [
+        { "label": "Stable", "description": "No active sanity impairment." },
+        { "label": "Temporary Insanity", "description": "Lost 5+ Sanity in a single roll OR failed a Sanity check. Roleplay phobia or mania for the scene." },
+        { "label": "Indefinite Insanity", "description": "Lost 1/5 of current Sanity within a single game. Symptoms persist over sessions until treated." },
+        { "label": "Permanently Insane", "description": "Sanity has fallen to 0. The investigator is retired from play." }
+      ]
+    },
+    {
+      "name": "Status",
+      "values": [
+        { "label": "Healthy", "description": "Above the Major Wound threshold (HP greater than half maximum)." },
+        { "label": "Wounded", "description": "Has taken a Major Wound (a single hit reducing HP by half its maximum or more)." },
+        { "label": "Dying", "description": "HP at 0 with an unresolved Major Wound. First Aid or Medicine must stabilise within the hour." },
+        { "label": "Unconscious", "description": "HP at 0 without a Major Wound, or knocked out by other means." },
+        { "label": "Dead", "description": "Negative HP, or unstabilised dying state expired." }
+      ]
+    }
+  ],
+  "diceTagFormat": {
+    "template": "[dice: 1d100 vs {target} -> {result} {outcome}]",
+    "example": "[dice: 1d100 vs 65 -> 47 SUCCESS]"
+  },
+  "sections": {
+    "order": [
+      "identity",
+      "resources",
+      "attributes",
+      "skills",
+      "derived",
+      "states",
+      "inventory",
+      "notes"
+    ]
+  },
+  "resources": [
+    {
+      "id": "hit-points",
+      "label": "HP",
+      "type": "bar",
+      "max": "({Constitution} + {Size}) / 10",
+      "current": "({Constitution} + {Size}) / 10",
+      "color": "bad",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "-5", "delta": -5 },
+        { "label": "Full", "delta": "max" }
+      ]
+    },
+    {
+      "id": "magic-points",
+      "label": "MP",
+      "type": "bar",
+      "max": "{Power} / 5",
+      "current": "{Power} / 5",
+      "color": "accent",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "Restore", "delta": "max" }
+      ]
+    },
+    {
+      "id": "sanity",
+      "label": "Sanity",
+      "type": "counter",
+      "max": "{Power}",
+      "current": "{Power}",
+      "color": "warn",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "-1d6", "delta": -3 },
+        { "label": "-1d10", "delta": -5 }
+      ]
+    },
+    {
+      "id": "luck",
+      "label": "Luck",
+      "type": "counter",
+      "max": 99,
+      "current": 50,
+      "color": "ok",
+      "quickButtons": [
+        { "label": "-5", "delta": -5 },
+        { "label": "-10", "delta": -10 }
+      ]
+    }
+  ],
+  "lorebookKeys": [
+    "mythos",
+    "deity",
+    "tome",
+    "spell",
+    "occupation",
+    "era"
+  ],
+  "header": {
+    "raceLabel": "Occupation",
+    "classLabel": "Archetype"
+  },
+  "backgrounds": {
+    "enabled": true,
+    "label": "Backstory & Bonds",
+    "min": 0,
+    "max": 5,
+    "default": 0,
+    "textOnly": true
+  }
+}

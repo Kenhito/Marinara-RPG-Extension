@@ -1,0 +1,176 @@
+{
+  "id": "trophy-dark",
+  "name": "Trophy Dark",
+  "version": "0.1.0",
+  "edition": "Trophy Dark (Jesse Ross, 2019 — Codex publication; mechanics descend from Jason Tocci's 24XX SRD)",
+  "license": "Trophy Dark mechanics by Jesse Ross / Hedgemaze Press. 24XX SRD (Jason Tocci) is CC BY 4.0. This ruleset file is a clean-room re-implementation of the resolution mechanic for the Marinara-RPG framework; no setting prose, treasure-hunter pitches, ruin descriptions, or other Hedgemaze copyrightable text is reproduced. Buy the game at hedgemazepress.com.",
+  "summary": "One-shot horror RPG: treasure hunters in a haunted wood, doomed from the start. Each character has Pursuits (light-die professions) and Backgrounds (light-die histories). Risk rolls mix the character's light d6s with situational dark d6s; the highest light face determines outcome (5+ clean, 4 cost, 1-3 devil's bargain), and any dark die higher than the highest light die inflicts Ruin. APPROXIMATED here as a stance-modal-pool: stance=light succeeds OVER Risk (3) to mirror the 4+ band, stance=dark fails UNDER Risk to mirror the corruption-overrules-light cascade. See gm-agent.md for the deviation note — true Trophy Dark wants a dual-pool with comparison, which stance-modal-pool cannot express in one roll.",
+  "commitmentModel": null,
+  "dice": {
+    "type": "d6",
+    "notation": "Pd6 stance=LIGHT|DARK vs Risk (light dice = your Pursuits + Backgrounds; dark dice = GM-assigned)"
+  },
+  "resolution": {
+    "mode": "stance-modal-pool",
+    "diceType": "d6",
+    "poolFormula": "(applicable_pursuit_dots ? 1 : 0) + (applicable_background_dots ? 1 : 0) + (devils_bargain_dice ? 1 : 0) + (helping_dice ? 1 : 0)",
+    "stat": "Risk",
+    "stances": [
+      {
+        "id": "dark",
+        "label": "DARK",
+        "direction": "under",
+        "description": "Roll the GM-assigned dark dice for this scene. A dark die UNDER Risk (1-2) is mundane menace; faces 4-6 represent the wood's corruption gaining ground. Use the gm-agent's dark-overrule guidance when narrating, since stance-modal-pool cannot express 'highest dark beats highest light' in a single roll."
+      },
+      {
+        "id": "light",
+        "label": "LIGHT",
+        "direction": "over",
+        "description": "Roll your character's light dice (1 die per applicable Pursuit, +1 per applicable Background, +1 per Devil's Bargain accepted, +1 per Helping ally). A face OVER Risk (4-6) is a success; the outcomeTier walks this success count to clean / costly / devil's bargain."
+      }
+    ],
+    "exactMatch": {
+      "name": "EDGE OF RUIN",
+      "countsAsSuccess": false,
+      "effect": "A die rolling EXACTLY Risk (3) is a hair's-breadth moment. It does NOT count as success on its own, but on a light roll the GM should flavor the narration with 'the wood almost takes you' — a free reminder that Ruin is coming. On a dark roll, it counts as a near-miss the GM banks for the next scene.",
+      "narrationHook": "edge_of_ruin"
+    },
+    "outcomeTiers": [
+      {
+        "minSuccesses": 0,
+        "maxSuccesses": 0,
+        "label": "devils-bargain",
+        "narration": "No light die came up 4+. The action fails as attempted; GM offers a Devil's Bargain (mark Ruin, accept a complication, sacrifice an item, or trade something the wood wants) to convert this into a costly success. Decline and the failure stands. Trophy Dark RAW: tier 1-3 on highest light."
+      },
+      {
+        "minSuccesses": 1,
+        "maxSuccesses": 1,
+        "label": "at-a-cost",
+        "narration": "Exactly one light die came up 4+ — and likely it was the 4 itself. You succeed AT A COST: harm, complication, a piece of yourself left in the wood. Now check dark dice (GM): any dark face higher than the highest light face? If yes, mark Ruin. Trophy Dark RAW: tier 4 on highest light."
+      },
+      {
+        "minSuccesses": 2,
+        "label": "clean",
+        "narration": "Multiple light dice came up 4+ — at least one was likely a 5 or 6. The action succeeds cleanly. Even so, check dark dice: if any dark face exceeded your highest light face, mark Ruin anyway. The wood corrupts even clean wins. Trophy Dark RAW: tier 5-6 on highest light."
+      }
+    ]
+  },
+  "attributes": [
+    {
+      "name": "Risk",
+      "abbreviation": "RSK",
+      "min": 3,
+      "max": 3,
+      "default": 3,
+      "description": "Fixed Trophy Dark threshold (3). Faces 4-6 succeed on light dice; faces 1-3 fail. Held at min=max=3 to model the system's invariant Risk line — Trophy Dark does not vary this stat per character (unlike L&F's Number). Player should not edit."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Burglar",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Pursuit. Climbing, picking locks, slipping into places that don't want you. When the GM agrees this Pursuit applies, contribute 1 light die to the Risk roll."
+    },
+    {
+      "name": "Brute",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Pursuit. Strength, intimidation, smashing through obstacles. Contributes 1 light die when applicable."
+    },
+    {
+      "name": "Sneak",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Pursuit. Stealth, deception, going unseen. Contributes 1 light die when applicable."
+    },
+    {
+      "name": "Scholar",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Pursuit. Lore, languages, reading the unreadable. Contributes 1 light die when applicable."
+    },
+    {
+      "name": "Cursed",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Background. A doom rides on your shoulders. When the curse is relevant (often: when something supernatural blocks the path), contribute 1 light die to the Risk roll."
+    },
+    {
+      "name": "Doomed",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Background. You know how you die — you've seen the wood-shape of it. Contributes 1 light die when the doom-vision applies."
+    },
+    {
+      "name": "Haunted",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Background. Something dead follows you. Contributes 1 light die when communing with the dead, surviving fear, or facing the wood's spirits."
+    },
+    {
+      "name": "Soldier",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Background. You bled in a war and came home wrong. Contributes 1 light die for combat, command, and reading other violent people."
+    },
+    {
+      "name": "Smuggler",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Background. Routes, contacts, the trick of moving forbidden things. Contributes 1 light die for navigation, contraband, and lies told fast."
+    }
+  ],
+  "derivedStats": [
+    {
+      "name": "Ruin",
+      "formula": "ticks accumulated from failed Risk rolls and Devil's Bargains; at Ruin = 6 the character is consumed by the wood",
+      "max": 6,
+      "default": 0,
+      "renderAs": "bar",
+      "aliases": ["ruin", "corruption", "doom-track"]
+    },
+    {
+      "name": "Burdens",
+      "formula": "narrative tracker for accepted Devil's Bargains the GM is holding over the character; not a number that drives dice math",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": ["burdens", "owed", "bargains-held"]
+    }
+  ],
+  "header": {
+    "raceLabel": "Drive",
+    "classLabel": "Occupation"
+  },
+  "diceTagFormat": {
+    "template": "[mrrp-roll: ruleset=trophy-dark, stance={stance}, stat=Risk, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]",
+    "example": "[mrrp-roll: ruleset=trophy-dark, stance=light, stat=Risk, statValue=3, pool=3, dice=[2,4,5], successes=2, exactMatches=0, tier=clean, narrationHook=]"
+  },
+  "lorebookKeys": [
+    "trophy",
+    "trophy dark",
+    "ruin",
+    "risk",
+    "wood",
+    "haunted wood",
+    "treasure",
+    "doomed",
+    "devil's bargain",
+    "devils bargain",
+    "pursuit",
+    "background",
+    "burdens",
+    "light die",
+    "dark die",
+    "edge of ruin"
+  ]
+}

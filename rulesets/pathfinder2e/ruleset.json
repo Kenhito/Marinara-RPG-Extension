@@ -311,6 +311,7 @@
       "name": "Hit Points",
       "formula": "(class HP per level + CON_mod) per character level + ancestry HP at level 1",
       "renderAs": "bar",
+      "tooltipFormula": "8 + ((10 + {Constitution_mod}) * {Level}) + {bonuses:Hit Points}",
       "aliases": [
         "hp",
         "HP",
@@ -509,19 +510,23 @@
         },
         {
           "label": "Off-Guard",
-          "description": "-2 circumstance penalty to AC. Used to be 'flat-footed'. Triggered by being flanked, prone, hidden from, or many maneuvers."
+          "description": "-2 circumstance penalty to AC. Renamed from 'flat-footed' in the Remaster. Not graduated — either you are off-guard or you aren't. Most attackers gain off-guard against a target they've successfully feinted; many other effects (grabbing, restraining, stunning) also impose it.",
+          "trigger": "Being flanked, prone, grabbed, restrained, climbing, hidden from your attacker, successfully feinted, or affected by an ability or maneuver that explicitly imposes off-guard."
         },
         {
           "label": "Frightened",
-          "description": "Status penalty equal to the value to all checks and DCs. Decreases by 1 at the end of each turn (or by other means)."
+          "description": "Graduated 1-4. Take a status penalty equal to the current value on ALL checks and DCs (attack rolls, saves, skill checks, AC, class DC, spell DC, etc.). At the end of each of your turns the value decreases by 1 unless an effect specifies otherwise. Frightened 4 is the maximum; some effects cap a creature at lower values (e.g. successful save = frightened 1).",
+          "trigger": "Failing a Demoralize check, failing a save against a fear effect, witnessing a particularly grim event, or any ability that explicitly inflicts the frightened condition."
         },
         {
           "label": "Sickened",
-          "description": "Status penalty equal to the value to all checks and DCs. Spend 1 action and Fortitude save to reduce."
+          "description": "Graduated 1-4. Take a status penalty equal to the current value on all checks and DCs, AND cannot willingly ingest anything (food, potion, elixir). You may spend 1 action retching to attempt a Fortitude save: success reduces sickened by 1, critical success reduces by 2; failure does nothing; critical failure increases by 1. Allies may use Battle Medicine or comparable abilities to grant a bonus to the save.",
+          "trigger": "Failing a save against a disgust, poison, or disease effect; taking an action that revolts the character; or any ability that explicitly inflicts the sickened condition."
         },
         {
           "label": "Stunned",
-          "description": "Lose actions equal to the value (or up to the Stunned value) at the start of your turn; reduce Stunned by the actions lost."
+          "description": "Numeric value OR a duration. When numeric (e.g. stunned 2), at the start of your turn lose actions equal to the value, then reduce the stunned value by the actions lost; if the value exceeds your remaining actions, the overflow carries into the next turn. When durational (e.g. stunned for 1 minute), you lose ALL actions on your turn until the duration ends. Stunned doesn't reduce reactions you've already gained.",
+          "trigger": "Failing a save against a stunning effect, certain critical hits, monk Stunning Strike, or any ability that explicitly inflicts the stunned condition."
         },
         {
           "label": "Slowed",
@@ -533,7 +538,8 @@
         },
         {
           "label": "Prone",
-          "description": "-2 circumstance to attacks; off-guard. Standing up is a single action."
+          "description": "You're lying on the ground. You take a -2 circumstance penalty to attack rolls and are off-guard. You can Crawl (1 action, 5 ft) or Stand (1 action) to leave prone. Ranged attackers against you may suffer additional penalties depending on cover and range. You can Take Cover while prone to gain greater cover against ranged attacks.",
+          "trigger": "Failing a Trip (Athletics) check against you, certain area effects and spells that knock targets prone, voluntarily Dropping Prone (1 action), or any ability that explicitly inflicts the prone condition."
         },
         {
           "label": "Grabbed",
@@ -545,15 +551,18 @@
         },
         {
           "label": "Wounded",
-          "description": "When dying value is reset, your wounded value increases. Future dying tracks add wounded value to the new dying."
+          "description": "Graduated 1-3+. Whenever you lose the dying condition, your wounded value increases by 1 (or by 2 if you were dying 4 or higher). The next time you'd become dying, add your wounded value to the dying value — meaning subsequent knockouts come faster. Wounded only fully removes when you've been at full HP for 10 minutes of rest (or via Treat Wounds at appropriate proficiency that explicitly removes wounded).",
+          "trigger": "Losing the dying condition by recovering to positive HP; the value increases each time you go from dying-N back to alive."
         },
         {
           "label": "Dying",
-          "description": "Drop to 0 HP and you become dying 1 (or higher if crit hit). At dying 4 you die. Each turn make a recovery flat check (DC 10 + dying)."
+          "description": "Graduated 1-3 (with 4 = death). You're unconscious and progressing toward death. Becoming dying for the first time starts you at dying 1 (or dying 2 if dropped by a critical hit, or dying 1 + wounded value if already wounded). At the start of each of your turns make a recovery flat check: DC 10 + current dying. Success reduces dying by 1, critical success by 2; failure increases by 1, critical failure by 2. Reaching dying 4 means you die. Taking damage while dying increases the value by 1 (by 2 if critical). Regaining at least 1 HP removes dying entirely (but inflicts wounded).",
+          "trigger": "Being reduced to 0 HP from positive HP — automatically dying 1 (or dying 2 on a critical hit). Add your current wounded value to the dying value when you enter dying."
         },
         {
           "label": "Doomed",
-          "description": "Maximum dying value drops by your doomed value. At doomed 4 (or whatever brings dying max to 0), if you would become dying you die."
+          "description": "Graduated 1-3+. Your effective maximum dying value (normally 4) is reduced by your doomed value. So doomed 1 means dying 3 = death; doomed 2 means dying 2 = death; doomed 3 means dying 1 = death; doomed 4 means going dying at all = death. Doomed reduces by 1 each time you take a full night's rest (typically 8 hours). Some powerful effects bypass normal restoration — only high-rank divine intervention can remove doomed early.",
+          "trigger": "Failing a save against a death effect, certain demons' aura, or any ability that explicitly inflicts the doomed condition. Doomed does NOT automatically come from being knocked out — only from specified sources."
         },
         {
           "label": "Confused",
@@ -565,7 +574,8 @@
         },
         {
           "label": "Drained",
-          "description": "Status penalty equal to value to Constitution-based checks, Fortitude saves, and HP max. Lose HP equal to drained × level."
+          "description": "Graduated 1-4. Status penalty equal to the value applies to all Constitution-based checks (including Fortitude saves). Your maximum HP is reduced by your level × drained value, and you lose current HP equal to your level × the AMOUNT the drained value increased by when first applied (so going from drained 0 to drained 2 deals level × 2 immediate damage). The value decreases by 1 every full night's rest. Restoring drained doesn't restore the lost HP — those need to be healed normally.",
+          "trigger": "Failing a save against a negative-energy effect, certain undead's life-drain attacks, severe disease progression, vampire bite, or any ability that explicitly inflicts the drained condition."
         },
         {
           "label": "Enfeebled",
@@ -581,7 +591,8 @@
         },
         {
           "label": "Persistent Damage",
-          "description": "At end of each turn take damage of the listed type; flat check DC 15 (or DC 10 with assistance) to end."
+          "description": "Damage of a specific type (e.g. persistent fire 1d6, persistent bleed 2d4) applied at the END of each of your turns. After the damage, attempt a flat check DC 15 (or DC 10 if you or an ally took an action to provide assistance appropriate to the damage type — pouring water on fire, bandaging bleed, scraping off acid) to end the condition. Each damage type has its own track and assistance method; multiple persistent damages run in parallel. Resistances and weaknesses apply normally.",
+          "trigger": "Critical hits with weapons that deal bleed/poison/acid/fire, alchemical splash items, certain spells (Flaming Sphere, Acid Arrow), and creature special attacks. Persistent damage is suffixed by its type (persistent bleed, persistent fire, etc.)."
         },
         {
           "label": "Unconscious",
@@ -593,7 +604,7 @@
   "conditions": [
     {
       "name": "Off-Guard",
-      "description": "-2 circumstance penalty to AC. Triggered by being flanked, prone, hidden from, or many maneuvers."
+      "description": "-2 circumstance penalty to AC. Renamed from 'flat-footed' in the Remaster. Triggered by being flanked, prone, grabbed, restrained, climbing, hidden from your attacker, successfully feinted, or affected by an ability that explicitly imposes off-guard."
     },
     {
       "name": "Frightened",
@@ -612,7 +623,7 @@
     },
     {
       "name": "Drained",
-      "description": "Status penalty equal to value to Constitution-based checks, Fortitude saves, and HP max.",
+      "description": "Graduated 1-4 status penalty to all Constitution-based checks (including Fortitude saves) and to HP maximum. Initial application also deals immediate level × increase damage. Decreases by 1 per full night's rest; lost HP must be healed normally.",
       "imposesDisadvantageOn": ["save"]
     },
     {
@@ -622,7 +633,7 @@
     },
     {
       "name": "Stupefied",
-      "description": "Status penalty to Int/Wis/Cha checks, spell DCs, and spell attack rolls.",
+      "description": "Graduated 1-4 status penalty to all Intelligence-, Wisdom-, and Charisma-based checks, spell DCs, and spell attack rolls. When attempting to Cast a Spell, first attempt a flat check DC 5 + stupefied value; failure makes the spell fizzle and lose its slot/cost. Hits casters particularly hard.",
       "imposesDisadvantageOn": ["skill"]
     },
     {
@@ -632,7 +643,7 @@
     },
     {
       "name": "Fascinated",
-      "description": "-2 status to Perception and skill checks; cannot Concentrate; ends if hostile action taken against you.",
+      "description": "-2 status penalty to Perception and to all skill checks. You cannot use actions with the concentrate trait other than Seek (no Casting Spells, no Sustain). The condition ends automatically if any creature uses hostile action against you or any ally you can perceive, and you can attempt a Will save against the source's DC at the end of each of your turns.",
       "imposesDisadvantageOn": ["skill"]
     }
   ],

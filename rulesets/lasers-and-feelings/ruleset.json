@@ -1,0 +1,105 @@
+{
+  "id": "lasers-and-feelings",
+  "name": "Lasers & Feelings",
+  "version": "0.1.0",
+  "edition": "v1.4 (2013, John Harper — written as a Doubleclicks tribute)",
+  "license": "Game format CC BY 4.0 — text and mechanics © 2013 John Harper, used under the CC BY 4.0 grant explicitly published on the one-page rules. This ruleset file is a clean-room re-implementation of the mechanics for the Marinara-RPG framework; no verbatim play examples or unique flavor prose are reproduced.",
+  "summary": "One-page space-adventure RPG. Each character has a single stat (Number, 2–5). LASERS rolls succeed under Number; FEELINGS rolls succeed over Number; rolling exactly Number is LASER FEELINGS — counts as a success AND grants the player an honest GM answer.",
+  "commitmentModel": null,
+  "dice": {
+    "type": "d6",
+    "notation": "Pd6 stance=LASERS|FEELINGS vs Number (1–4 dice typical)"
+  },
+  "resolution": {
+    "mode": "stance-modal-pool",
+    "diceType": "d6",
+    "poolFormula": "1 + (prepared ? 1 : 0) + (expert ? 1 : 0) + assistance_dice",
+    "stat": "Number",
+    "stances": [
+      {
+        "id": "lasers",
+        "label": "LASERS",
+        "direction": "under",
+        "description": "Science, technology, cold rationality, calm precise action."
+      },
+      {
+        "id": "feelings",
+        "label": "FEELINGS",
+        "direction": "over",
+        "description": "Diplomacy, intuition, seduction, wild passionate action."
+      }
+    ],
+    "exactMatch": {
+      "name": "LASER FEELINGS",
+      "countsAsSuccess": true,
+      "effect": "Ask the GM a question and they answer honestly. The die also counts as a success toward the outcome tier.",
+      "narrationHook": "laser_feelings"
+    },
+    "outcomeTiers": [
+      {
+        "minSuccesses": 0,
+        "maxSuccesses": 0,
+        "label": "miss",
+        "narration": "It goes wrong. GM says how things get worse."
+      },
+      {
+        "minSuccesses": 1,
+        "maxSuccesses": 1,
+        "label": "barely",
+        "narration": "You barely manage it. GM inflicts a complication, harm, or cost."
+      },
+      {
+        "minSuccesses": 2,
+        "maxSuccesses": 2,
+        "label": "good",
+        "narration": "You do it well. Good job!"
+      },
+      {
+        "minSuccesses": 3,
+        "label": "critical",
+        "narration": "Critical success. GM tells you an extra effect you get."
+      }
+    ]
+  },
+  "attributes": [
+    {
+      "name": "Number",
+      "abbreviation": "NUM",
+      "min": 2,
+      "max": 5,
+      "default": 4,
+      "description": "Your single stat. High Number = better at LASERS (science, reason). Low Number = better at FEELINGS (intuition, passion). Choose somewhere in the middle if you want balance; choose an extreme if you want to specialize."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Help",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Helping marker. When another player rolls and you describe how you assist, mark this and roll a Help check; on success the originator gains +1d to their pool. Tracked here as a single skill slot to satisfy the framework's per-character skill list; the helping rule itself is GM-resolved per the L&F one-page rules."
+    }
+  ],
+  "header": {
+    "raceLabel": "Style",
+    "classLabel": "Role"
+  },
+  "diceTagFormat": {
+    "template": "[mrrp-roll: ruleset=lasers-and-feelings, stance={stance}, stat=Number, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]",
+    "example": "[mrrp-roll: ruleset=lasers-and-feelings, stance=lasers, stat=Number, statValue=4, pool=3, dice=[1,4,5], successes=2, exactMatches=1, tier=good, narrationHook=laser_feelings]"
+  },
+  "lorebookKeys": [
+    "lasers",
+    "feelings",
+    "laser feelings",
+    "number",
+    "raygun",
+    "consortium",
+    "captain",
+    "ship",
+    "doubleclicks",
+    "prepared",
+    "expert",
+    "helping"
+  ]
+}

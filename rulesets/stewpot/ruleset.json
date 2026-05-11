@@ -1,0 +1,148 @@
+{
+  "id": "stewpot",
+  "name": "The Stewpot",
+  "version": "0.1.0",
+  "edition": "The Stewpot (Tim Hutchings, slow-life community-building hack of Avery Alder's & Joe Mcdaldno-adjacent Stonetop / PbtA traditions). Inspired by Hutchings' published stewpot-style village games; this is a clean-room mechanic re-implementation, not the published rules.",
+  "license": "Original mechanics by Tim Hutchings & the broader Stonetop / PbtA tradition. This ruleset file is a clean-room re-implementation of a slow-life resolution mechanic adapted to the stance-modal-pool mode for the Marinara-RPG framework; no published Stewpot prose, NPC names, or village setting text is reproduced. Buy Hutchings' work to see the real thing.",
+  "summary": "Slow-life cozy village RPG. PCs are villagers who never leave on adventures — they stew. Each villager has one stat (Capability, 2-5) and chooses a stance per roll: ACTION (succeed OVER Capability — making something happen) or STILLNESS (succeed UNDER Capability — observing, recovering, holding space). Roll 2d6, +1d if invested in the activity. Exact-match faces are 'Perfect Days' — a beat of true grace the GM honors with a quiet good thing.",
+  "commitmentModel": null,
+  "dice": {
+    "type": "d6",
+    "notation": "Pd6 stance=ACTION|STILLNESS vs Capability (2-3 dice typical)"
+  },
+  "resolution": {
+    "mode": "stance-modal-pool",
+    "diceType": "d6",
+    "poolFormula": "2 + (invested ? 1 : 0) + (helping_neighbors)",
+    "stat": "Capability",
+    "stances": [
+      {
+        "id": "stillness",
+        "label": "STILLNESS",
+        "direction": "under",
+        "description": "When the villager is observing, listening, recovering, holding space, letting a thing be. Each die UNDER Capability is a moment of grace counted toward the outcome. Use STILLNESS for: tending a garden patiently, sitting with a grieving neighbor, mending a torn cloak, watching the bread rise."
+      },
+      {
+        "id": "action",
+        "label": "ACTION",
+        "direction": "over",
+        "description": "When the villager is making a thing happen — pushing, persuading, doing. Each die OVER Capability is a forward step counted toward the outcome. Use ACTION for: persuading the council, hauling the harvest, raising a roof beam, putting out the fire before it spreads."
+      }
+    ],
+    "exactMatch": {
+      "name": "PERFECT DAY",
+      "countsAsSuccess": true,
+      "effect": "A die rolling EXACTLY Capability is a Perfect Day — a small grace. It counts as a success toward the outcome tier, AND the GM should narrate a quiet good thing: a kindness returned, an unexpected smile, a memory surfacing at the right moment. The Perfect Day reminds the table that the stewpot is the point, not the broth.",
+      "narrationHook": "perfect_day"
+    },
+    "outcomeTiers": [
+      {
+        "minSuccesses": 0,
+        "maxSuccesses": 0,
+        "label": "stalled",
+        "narration": "Nothing moves. The thing the villager hoped for does not happen today; perhaps a worse thing does. The GM names what's lost — a chance, a feeling, a name — and the table sits with it for a moment before the next scene."
+      },
+      {
+        "minSuccesses": 1,
+        "maxSuccesses": 1,
+        "label": "small-grace",
+        "narration": "The villager gets a partial — the thing happens but smaller, slower, or at a quiet cost. A neighbor still grumbles, or the garden takes another day. The fiction moves, but barely."
+      },
+      {
+        "minSuccesses": 2,
+        "maxSuccesses": 2,
+        "label": "good-day",
+        "narration": "A good day. The thing happens cleanly. The villager goes home tired in the right way. The GM names one small joy that came with the success."
+      },
+      {
+        "minSuccesses": 3,
+        "label": "harvest",
+        "narration": "A harvest — the rarest tier. The thing happens AND ripples outward. A neighbor benefits. A long-held tension softens. The stewpot is fuller tonight than it was this morning. GM names the second-order good."
+      }
+    ]
+  },
+  "attributes": [
+    {
+      "name": "Capability",
+      "abbreviation": "CAP",
+      "min": 2,
+      "max": 5,
+      "default": 3,
+      "description": "Your one stat, 2-5. High Capability favors ACTION (over) — you are good at making things happen. Low Capability favors STILLNESS (under) — you are good at noticing, holding, receiving. The middle (3 or 4) is the table's most common villager."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Garden",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Tending plants, reading weather, knowing what wants to grow here. Mark when invested in a gardening scene to add +1d to the pool."
+    },
+    {
+      "name": "Cook",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Stewpot-keeping. Bread, broth, the small magic of feeding people. Mark when invested to add +1d."
+    },
+    {
+      "name": "Mend",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Patching cloth, fixing fence, putting a thing back together that wanted to fall apart. Mark when invested to add +1d."
+    },
+    {
+      "name": "Listen",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Hearing what neighbors aren't saying. Noticing the absent, the grieving, the new. Especially potent under STILLNESS. Mark when invested to add +1d."
+    },
+    {
+      "name": "Persuade",
+      "min": 0,
+      "max": 1,
+      "default": 0,
+      "description": "Asking neighbors for help, asking the council to vote your way, asking the storm to break later. Especially potent under ACTION. Mark when invested to add +1d."
+    }
+  ],
+  "derivedStats": [
+    {
+      "name": "Hearth",
+      "formula": "narrative resource: how settled the villager is at home. Refill on Perfect Days; spend on rough scenes the GM calls for.",
+      "max": 5,
+      "default": 3,
+      "renderAs": "bar",
+      "aliases": ["hearth", "home", "rest"]
+    }
+  ],
+  "header": {
+    "raceLabel": "Kin",
+    "classLabel": "Trade"
+  },
+  "diceTagFormat": {
+    "template": "[mrrp-roll: ruleset=stewpot, stance={stance}, stat=Capability, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]",
+    "example": "[mrrp-roll: ruleset=stewpot, stance=stillness, stat=Capability, statValue=3, pool=3, dice=[1,2,3], successes=3, exactMatches=1, tier=harvest, narrationHook=perfect_day]"
+  },
+  "lorebookKeys": [
+    "stewpot",
+    "village",
+    "villager",
+    "capability",
+    "perfect day",
+    "action",
+    "stillness",
+    "hearth",
+    "harvest",
+    "neighbor",
+    "council",
+    "garden",
+    "cook",
+    "mend",
+    "listen",
+    "persuade",
+    "slow life"
+  ]
+}
