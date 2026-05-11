@@ -639,31 +639,69 @@
       ],
       "hidden": [
         "derived:Sorcery Circle",
-        "derived:Sorcerous Motes"
+        "derived:Sorcerous Motes",
+        "derived:Personal Motes",
+        "derived:Peripheral Motes",
+        "derived:Willpower",
+        "derived:Health Track"
       ]
     },
     "resources": [
       {
-        "id": "health",
-        "label": "HP",
-        "type": "pool",
-        "max": 7,
-        "current": 7,
+        "id": "health-track",
+        "label": "Health Track",
+        "type": "custom",
         "color": "bad",
-        "quickButtons": [
-          {
-            "label": "-1",
-            "delta": -1
-          },
-          {
-            "label": "+1",
-            "delta": 1
-          },
-          {
-            "label": "Full",
-            "delta": "max"
-          }
-        ]
+        "rendererConfig": {
+          "component": "exalted-health-track",
+          "levels": [
+            {
+              "label": "-0",
+              "penalty": 0
+            },
+            {
+              "label": "-1",
+              "penalty": -1
+            },
+            {
+              "label": "-1",
+              "penalty": -1
+            },
+            {
+              "label": "-2",
+              "penalty": -2
+            },
+            {
+              "label": "-2",
+              "penalty": -2
+            },
+            {
+              "label": "-4",
+              "penalty": -4
+            },
+            {
+              "label": "Inc",
+              "penalty": -99
+            }
+          ],
+          "damageTypes": [
+            {
+              "id": "bashing",
+              "label": "B",
+              "severity": 0
+            },
+            {
+              "id": "lethal",
+              "label": "L",
+              "severity": 1
+            },
+            {
+              "id": "aggravated",
+              "label": "A",
+              "severity": 2
+            }
+          ]
+        }
       },
       {
         "id": "motes-personal",
