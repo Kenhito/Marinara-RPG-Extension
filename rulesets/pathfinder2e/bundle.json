@@ -4,8 +4,8 @@
   "minExtensionVersion": "0.4.0",
   "authorId": "kenhito",
   "generator": {
-    "name": "claude-vibecode",
-    "version": "1.0.0"
+    "name": "build-bundle.mjs",
+    "version": "1.1.0"
   },
   "ruleset": {
     "id": "pathfinder2e",
@@ -105,7 +105,8 @@
       "mode": "single-roll",
       "modifierFormula": "1d20 + ability_mod + proficiency_bonus + item_bonus + circumstance_bonus - status_penalty",
       "skillBonusFormula": "{linkedAttribute_mod} + {tierBonus}",
-      "spellSaveDcFormula": "10 + {Level} + {spellcastingAttribute_mod}"
+      "spellSaveDcFormula": "10 + {Level} + {spellcastingAttribute_mod}",
+      "attackProficiencyFormula": "{Level} + 2"
     },
     "difficulties": {
       "Trivial": {
@@ -187,15 +188,23 @@
         "default": 0,
         "description": "Presence, persuasion, force of personality. Adds to social skills (Diplomacy, Deception, Intimidation, Performance, Society) and to spell DCs for Charisma-based casters.",
         "modifierFormula": "{Score}"
+      }
+    ],
+    "saves": [
+      {
+        "name": "Fortitude",
+        "linkedAttribute": "Constitution",
+        "description": "Resists poison, disease, and physical effects. Constitution + proficiency."
       },
       {
-        "name": "Level",
-        "abbreviation": "LVL",
-        "min": 1,
-        "max": 20,
-        "default": 1,
-        "description": "Character level (1-20). Drives the proficiency math for trained-and-above skills: Trained = level + 2, Expert = level + 4, Master = level + 6, Legendary = level + 8.",
-        "modifierFormula": "{Score}"
+        "name": "Reflex",
+        "linkedAttribute": "Dexterity",
+        "description": "Dodges traps, area effects, and quick hazards. Dexterity + proficiency."
+      },
+      {
+        "name": "Will",
+        "linkedAttribute": "Wisdom",
+        "description": "Resists mind-affecting effects, fear, and possession. Wisdom + proficiency."
       }
     ],
     "skills": [
@@ -370,59 +379,240 @@
       {
         "name": "Hit Points",
         "formula": "(class HP per level + CON_mod) per character level + ancestry HP at level 1",
-        "renderAs": "bar"
+        "renderAs": "bar",
+        "tooltipFormula": "8 + ((10 + {Constitution_mod}) * {Level}) + {bonuses:Hit Points}",
+        "aliases": [
+          "hp",
+          "HP",
+          "hitPoints",
+          "hitpoints"
+        ]
       },
       {
         "name": "Armor Class",
         "formula": "10 + DEX_mod (capped by armor) + armor proficiency bonus + armor item bonus",
-        "renderAs": "value"
+        "renderAs": "value",
+        "default": 10,
+        "tooltipFormula": "10 + {Dexterity_mod} + {tierBonus} + {bonuses:Armor Class}",
+        "aliases": [
+          "ac",
+          "AC",
+          "armorClass"
+        ]
       },
       {
         "name": "Class DC",
         "formula": "10 + class proficiency bonus + key ability modifier",
-        "renderAs": "value"
+        "renderAs": "value",
+        "default": 10,
+        "tooltipFormula": "10 + {tierBonus} + {bonuses:Class DC}",
+        "aliases": [
+          "classDC",
+          "classdc"
+        ]
       },
       {
         "name": "Spell DC",
         "formula": "10 + spell proficiency bonus + casting ability modifier",
-        "renderAs": "value"
+        "renderAs": "value",
+        "default": 10,
+        "tooltipFormula": "10 + {Level} + {bonuses:Spell DC}",
+        "aliases": [
+          "spellDC",
+          "spelldc"
+        ]
       },
       {
         "name": "Perception",
         "formula": "WIS_mod + perception proficiency bonus + item bonus",
-        "renderAs": "value"
+        "renderAs": "value",
+        "tooltipFormula": "{Wisdom_mod} + {tierBonus} + {bonuses:Perception}",
+        "rollFormula": "{Wisdom_mod} + {tierBonus}",
+        "aliases": [
+          "perception",
+          "PER"
+        ]
       },
       {
         "name": "Fortitude Save",
         "formula": "CON_mod + fortitude proficiency bonus + item bonus",
-        "renderAs": "value"
+        "renderAs": "value",
+        "tooltipFormula": "{Constitution_mod} + {tierBonus} + {bonuses:Fortitude Save}",
+        "rollFormula": "{Constitution_mod} + {tierBonus}",
+        "aliases": [
+          "fortitude",
+          "fort"
+        ]
       },
       {
         "name": "Reflex Save",
         "formula": "DEX_mod + reflex proficiency bonus + item bonus",
-        "renderAs": "value"
+        "renderAs": "value",
+        "tooltipFormula": "{Dexterity_mod} + {tierBonus} + {bonuses:Reflex Save}",
+        "rollFormula": "{Dexterity_mod} + {tierBonus}",
+        "aliases": [
+          "reflex",
+          "ref"
+        ]
       },
       {
         "name": "Will Save",
         "formula": "WIS_mod + will proficiency bonus + item bonus",
-        "renderAs": "value"
-      },
-      {
-        "name": "Hero Points",
-        "formula": "Start each session at 1; gain more for heroic moments. Cap 3.",
-        "renderAs": "value"
+        "renderAs": "value",
+        "tooltipFormula": "{Wisdom_mod} + {tierBonus} + {bonuses:Will Save}",
+        "rollFormula": "{Wisdom_mod} + {tierBonus}",
+        "aliases": [
+          "will"
+        ]
       },
       {
         "name": "Speed",
         "formula": "Ancestry base speed (typically 25 ft) + bonuses",
-        "renderAs": "value"
+        "renderAs": "value",
+        "default": 25,
+        "tooltipFormula": "25 + {bonuses:Speed}",
+        "aliases": [
+          "speed",
+          "movement"
+        ]
       },
       {
         "name": "Level",
         "formula": "Character level, 1-20.",
         "max": 20,
         "default": 1,
-        "renderAs": "value"
+        "renderAs": "value",
+        "aliases": [
+          "level",
+          "lvl",
+          "LVL",
+          "characterLevel"
+        ]
+      }
+    ],
+    "resources": [
+      {
+        "id": "hit-points",
+        "label": "HP",
+        "type": "bar",
+        "max": 10,
+        "current": 10,
+        "color": "bad",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "-5",
+            "delta": -5
+          },
+          {
+            "label": "Heal",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "hero-points",
+        "label": "Hero Points",
+        "type": "counter",
+        "max": 3,
+        "current": 1,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Session Reset",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "focus-points",
+        "label": "Focus Points",
+        "type": "counter",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Refocus",
+            "delta": 1
+          },
+          {
+            "label": "Refill",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "spell-slots-1",
+        "label": "Spell Slots (1st)",
+        "type": "counter",
+        "group": "Spell Slots",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Daily Prep",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "spell-slots-2",
+        "label": "Spell Slots (2nd)",
+        "type": "counter",
+        "group": "Spell Slots",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Daily Prep",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "spell-slots-3",
+        "label": "Spell Slots (3rd)",
+        "type": "counter",
+        "group": "Spell Slots",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Daily Prep",
+            "delta": "max"
+          }
+        ]
       }
     ],
     "states": [
@@ -434,19 +624,23 @@
           },
           {
             "label": "Off-Guard",
-            "description": "-2 circumstance penalty to AC. Used to be 'flat-footed'. Triggered by being flanked, prone, hidden from, or many maneuvers."
+            "description": "-2 circumstance penalty to AC. Renamed from 'flat-footed' in the Remaster. Not graduated — either you are off-guard or you aren't. Most attackers gain off-guard against a target they've successfully feinted; many other effects (grabbing, restraining, stunning) also impose it.",
+            "trigger": "Being flanked, prone, grabbed, restrained, climbing, hidden from your attacker, successfully feinted, or affected by an ability or maneuver that explicitly imposes off-guard."
           },
           {
             "label": "Frightened",
-            "description": "Status penalty equal to the value to all checks and DCs. Decreases by 1 at the end of each turn (or by other means)."
+            "description": "Graduated 1-4. Take a status penalty equal to the current value on ALL checks and DCs (attack rolls, saves, skill checks, AC, class DC, spell DC, etc.). At the end of each of your turns the value decreases by 1 unless an effect specifies otherwise. Frightened 4 is the maximum; some effects cap a creature at lower values (e.g. successful save = frightened 1).",
+            "trigger": "Failing a Demoralize check, failing a save against a fear effect, witnessing a particularly grim event, or any ability that explicitly inflicts the frightened condition."
           },
           {
             "label": "Sickened",
-            "description": "Status penalty equal to the value to all checks and DCs. Spend 1 action and Fortitude save to reduce."
+            "description": "Graduated 1-4. Take a status penalty equal to the current value on all checks and DCs, AND cannot willingly ingest anything (food, potion, elixir). You may spend 1 action retching to attempt a Fortitude save: success reduces sickened by 1, critical success reduces by 2; failure does nothing; critical failure increases by 1. Allies may use Battle Medicine or comparable abilities to grant a bonus to the save.",
+            "trigger": "Failing a save against a disgust, poison, or disease effect; taking an action that revolts the character; or any ability that explicitly inflicts the sickened condition."
           },
           {
             "label": "Stunned",
-            "description": "Lose actions equal to the value (or up to the Stunned value) at the start of your turn; reduce Stunned by the actions lost."
+            "description": "Numeric value OR a duration. When numeric (e.g. stunned 2), at the start of your turn lose actions equal to the value, then reduce the stunned value by the actions lost; if the value exceeds your remaining actions, the overflow carries into the next turn. When durational (e.g. stunned for 1 minute), you lose ALL actions on your turn until the duration ends. Stunned doesn't reduce reactions you've already gained.",
+            "trigger": "Failing a save against a stunning effect, certain critical hits, monk Stunning Strike, or any ability that explicitly inflicts the stunned condition."
           },
           {
             "label": "Slowed",
@@ -458,7 +652,8 @@
           },
           {
             "label": "Prone",
-            "description": "-2 circumstance to attacks; off-guard. Standing up is a single action."
+            "description": "You're lying on the ground. You take a -2 circumstance penalty to attack rolls and are off-guard. You can Crawl (1 action, 5 ft) or Stand (1 action) to leave prone. Ranged attackers against you may suffer additional penalties depending on cover and range. You can Take Cover while prone to gain greater cover against ranged attacks.",
+            "trigger": "Failing a Trip (Athletics) check against you, certain area effects and spells that knock targets prone, voluntarily Dropping Prone (1 action), or any ability that explicitly inflicts the prone condition."
           },
           {
             "label": "Grabbed",
@@ -470,15 +665,18 @@
           },
           {
             "label": "Wounded",
-            "description": "When dying value is reset, your wounded value increases. Future dying tracks add wounded value to the new dying."
+            "description": "Graduated 1-3+. Whenever you lose the dying condition, your wounded value increases by 1 (or by 2 if you were dying 4 or higher). The next time you'd become dying, add your wounded value to the dying value — meaning subsequent knockouts come faster. Wounded only fully removes when you've been at full HP for 10 minutes of rest (or via Treat Wounds at appropriate proficiency that explicitly removes wounded).",
+            "trigger": "Losing the dying condition by recovering to positive HP; the value increases each time you go from dying-N back to alive."
           },
           {
             "label": "Dying",
-            "description": "Drop to 0 HP and you become dying 1 (or higher if crit hit). At dying 4 you die. Each turn make a recovery flat check (DC 10 + dying)."
+            "description": "Graduated 1-3 (with 4 = death). You're unconscious and progressing toward death. Becoming dying for the first time starts you at dying 1 (or dying 2 if dropped by a critical hit, or dying 1 + wounded value if already wounded). At the start of each of your turns make a recovery flat check: DC 10 + current dying. Success reduces dying by 1, critical success by 2; failure increases by 1, critical failure by 2. Reaching dying 4 means you die. Taking damage while dying increases the value by 1 (by 2 if critical). Regaining at least 1 HP removes dying entirely (but inflicts wounded).",
+            "trigger": "Being reduced to 0 HP from positive HP — automatically dying 1 (or dying 2 on a critical hit). Add your current wounded value to the dying value when you enter dying."
           },
           {
             "label": "Doomed",
-            "description": "Maximum dying value drops by your doomed value. At doomed 4 (or whatever brings dying max to 0), if you would become dying you die."
+            "description": "Graduated 1-3+. Your effective maximum dying value (normally 4) is reduced by your doomed value. So doomed 1 means dying 3 = death; doomed 2 means dying 2 = death; doomed 3 means dying 1 = death; doomed 4 means going dying at all = death. Doomed reduces by 1 each time you take a full night's rest (typically 8 hours). Some powerful effects bypass normal restoration — only high-rank divine intervention can remove doomed early.",
+            "trigger": "Failing a save against a death effect, certain demons' aura, or any ability that explicitly inflicts the doomed condition. Doomed does NOT automatically come from being knocked out — only from specified sources."
           },
           {
             "label": "Confused",
@@ -490,7 +688,8 @@
           },
           {
             "label": "Drained",
-            "description": "Status penalty equal to value to Constitution-based checks, Fortitude saves, and HP max. Lose HP equal to drained × level."
+            "description": "Graduated 1-4. Status penalty equal to the value applies to all Constitution-based checks (including Fortitude saves). Your maximum HP is reduced by your level × drained value, and you lose current HP equal to your level × the AMOUNT the drained value increased by when first applied (so going from drained 0 to drained 2 deals level × 2 immediate damage). The value decreases by 1 every full night's rest. Restoring drained doesn't restore the lost HP — those need to be healed normally.",
+            "trigger": "Failing a save against a negative-energy effect, certain undead's life-drain attacks, severe disease progression, vampire bite, or any ability that explicitly inflicts the drained condition."
           },
           {
             "label": "Enfeebled",
@@ -506,12 +705,80 @@
           },
           {
             "label": "Persistent Damage",
-            "description": "At end of each turn take damage of the listed type; flat check DC 15 (or DC 10 with assistance) to end."
+            "description": "Damage of a specific type (e.g. persistent fire 1d6, persistent bleed 2d4) applied at the END of each of your turns. After the damage, attempt a flat check DC 15 (or DC 10 if you or an ally took an action to provide assistance appropriate to the damage type — pouring water on fire, bandaging bleed, scraping off acid) to end the condition. Each damage type has its own track and assistance method; multiple persistent damages run in parallel. Resistances and weaknesses apply normally.",
+            "trigger": "Critical hits with weapons that deal bleed/poison/acid/fire, alchemical splash items, certain spells (Flaming Sphere, Acid Arrow), and creature special attacks. Persistent damage is suffixed by its type (persistent bleed, persistent fire, etc.)."
           },
           {
             "label": "Unconscious",
             "description": "Off-guard; -4 status to AC, Perception, and Reflex; cannot act. Wakes if HP restored or shaken (1 action) and DC 5 Perception."
           }
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "name": "Off-Guard",
+        "description": "-2 circumstance penalty to AC. Renamed from 'flat-footed' in the Remaster. Triggered by being flanked, prone, grabbed, restrained, climbing, hidden from your attacker, successfully feinted, or affected by an ability that explicitly imposes off-guard."
+      },
+      {
+        "name": "Frightened",
+        "description": "Status penalty equal to value to all checks and DCs. Decreases by 1 at end of each turn.",
+        "imposesDisadvantageOn": [
+          "attack",
+          "save",
+          "skill"
+        ]
+      },
+      {
+        "name": "Sickened",
+        "description": "Status penalty equal to value to all checks and DCs. Spend 1 action and Fortitude save to reduce.",
+        "imposesDisadvantageOn": [
+          "attack",
+          "save",
+          "skill"
+        ]
+      },
+      {
+        "name": "Prone",
+        "description": "-2 circumstance to attacks; off-guard. Standing up is a single action.",
+        "imposesDisadvantageOn": [
+          "attack"
+        ]
+      },
+      {
+        "name": "Drained",
+        "description": "Graduated 1-4 status penalty to all Constitution-based checks (including Fortitude saves) and to HP maximum. Initial application also deals immediate level × increase damage. Decreases by 1 per full night's rest; lost HP must be healed normally.",
+        "imposesDisadvantageOn": [
+          "save"
+        ]
+      },
+      {
+        "name": "Enfeebled",
+        "description": "Status penalty equal to value to Strength-based rolls and damage.",
+        "imposesDisadvantageOn": [
+          "attack"
+        ]
+      },
+      {
+        "name": "Stupefied",
+        "description": "Graduated 1-4 status penalty to all Intelligence-, Wisdom-, and Charisma-based checks, spell DCs, and spell attack rolls. When attempting to Cast a Spell, first attempt a flat check DC 5 + stupefied value; failure makes the spell fizzle and lose its slot/cost. Hits casters particularly hard.",
+        "imposesDisadvantageOn": [
+          "skill"
+        ]
+      },
+      {
+        "name": "Clumsy",
+        "description": "Status penalty to Dexterity-based rolls and to AC.",
+        "imposesDisadvantageOn": [
+          "attack",
+          "save"
+        ]
+      },
+      {
+        "name": "Fascinated",
+        "description": "-2 status penalty to Perception and to all skill checks. You cannot use actions with the concentrate trait other than Seek (no Casting Spells, no Sustain). The condition ends automatically if any creature uses hostile action against you or any ally you can perceive, and you can attempt a Will save against the source's DC at the end of each of your turns.",
+        "imposesDisadvantageOn": [
+          "skill"
         ]
       }
     ],
@@ -521,17 +788,41 @@
     },
     "sheetSections": [
       "attributes",
+      "saves",
       "skills",
       "derived",
       "states",
-      "abilities"
+      "conditions",
+      "inventory",
+      "abilities",
+      "notes"
     ],
+    "sections": {
+      "order": [
+        "identity",
+        "xp",
+        "resources",
+        "attributes",
+        "saves",
+        "skills",
+        "derived",
+        "abilities",
+        "states",
+        "conditions",
+        "inventory",
+        "notes"
+      ]
+    },
     "abilities": {
       "label": "Spellbook",
       "categories": [
         {
           "id": "cantrip",
           "label": "Cantrips"
+        },
+        {
+          "id": "focus",
+          "label": "Focus Spells"
         },
         {
           "id": "rank-1",
@@ -572,10 +863,6 @@
         {
           "id": "rank-10",
           "label": "10th Rank"
-        },
-        {
-          "id": "focus",
-          "label": "Focus Spells"
         }
       ]
     },
@@ -597,12 +884,17 @@
       "Will",
       "save",
       "Hero Point",
+      "Focus Point",
       "Recall Knowledge",
       "spell rank",
       "off-guard",
       "wounded",
       "dying",
-      "doomed"
+      "doomed",
+      "ancestry",
+      "heritage",
+      "background",
+      "class"
     ],
     "header": {
       "raceLabel": "Ancestry",
@@ -611,262 +903,126 @@
   },
   "lorebook": {
     "name": "Pathfinder 2e Rules Reference",
-    "description": "Keyword-triggered reference for Pathfinder 2nd Edition (Remaster) classes, conditions, and core mechanics. Surface-level rules reference for the GM agent — fires when keywords appear in narration. Original mechanical references; Pathfinder 2e content under Paizo's ORC license.",
+    "description": "Keyword-triggered rules reference for the GM agent running a Pathfinder Second Edition (Remaster) game. Each entry surfaces only when its keys appear in recent narration or player input, so the GM gets the right rule at the right moment without inflating every prompt.",
     "category": "world",
     "scanDepth": 4,
-    "tokenBudget": 2000,
+    "tokenBudget": 1500,
     "recursiveScanning": false,
     "entries": [
       {
-        "name": "Mechanic: Four Degrees of Success",
+        "name": "Three Action Economy",
         "keys": [
-          "degree of success",
+          "three actions",
+          "action economy",
+          "actions",
+          "reaction",
+          "free action",
+          "MAP",
+          "multiple attack penalty"
+        ],
+        "content": "Each turn a creature gets 3 actions, 1 reaction, and any number of free actions. Most things cost 1 action (Strike, Stride, Demoralize); some cost 2 (Sustain a 2-action spell, two-action activities); a few cost 3 (full-round spells, Confident Finisher). Reactions trigger on specified events (Attack of Opportunity, Shield Block) outside your turn. Multiple Attack Penalty (MAP): your first Strike per turn is at +0, second at -5 (or -4 with an agile weapon), third at -10 (or -8 agile). MAP resets at the start of your next turn.",
+        "position": 0
+      },
+      {
+        "name": "Degrees of Success",
+        "keys": [
           "degrees of success",
           "critical success",
           "critical failure",
           "crit success",
-          "crit fail"
+          "crit fail",
+          "natural 20",
+          "natural 1"
         ],
-        "content": "Every check resolves to one of four degrees. Critical Success: rolled total >= DC + 10 (or natural 20 bumping a Success up). Success: total >= DC. Failure: total < DC. Critical Failure: total <= DC - 10 (or natural 1 bumping a Failure down). Natural 20 shifts degree up one step; natural 1 shifts down one step (apply AFTER computing the DC delta). Most pf2e abilities have distinct effects on all four lines — never collapse them. Save spells often use the 'basic save' pattern: crit save = no damage, save = half, fail = full, crit fail = double.",
+        "content": "Every d20 check resolves on four bands: critical success when the result beats the DC by 10 or more (or a natural 20 bumps a success up one band); success when the result meets or exceeds the DC; failure when the result is below the DC; critical failure when the result is 10 or more under the DC (or a natural 1 bumps a failure down one band). Natural 20 and natural 1 are SHIFTS, not autocrits — a nat 20 on a roll that would still miss by 10 only upgrades miss to hit. Spells, attacks, and skill actions all read their effects off this four-band ladder.",
         "position": 0
       },
       {
-        "name": "Mechanic: Three-Action Economy",
-        "keys": [
-          "action economy",
-          "three actions",
-          "3 actions",
-          "two actions",
-          "2 actions",
-          "single action",
-          "free action",
-          "reaction"
-        ],
-        "content": "Each turn you have 3 actions, 1 reaction, and any number of free actions. Actions cost 1, 2, or 3. Most attacks (Strike) are 1 action. Most spells are 2 actions. Mode-changing or extended activities take 3 actions. Reactions trigger on a cue (Attack of Opportunity, Shield Block) and reset at the start of your next turn. Free actions cost no action but each has a trigger or per-round limit. Common single actions: Strike, Stride, Step (1 square no trigger), Demoralize, Recall Knowledge, Trip, Shove, Grapple, Raise a Shield, Take Cover.",
-        "position": 0
-      },
-      {
-        "name": "Mechanic: Multiple Attack Penalty (MAP)",
-        "keys": [
-          "MAP",
-          "multiple attack penalty",
-          "second attack",
-          "third attack",
-          "agile"
-        ],
-        "content": "Your 2nd attack action this turn takes -5 to its attack roll; your 3rd takes -10. Weapons with the agile trait reduce these to -4 and -8. MAP resets at the start of each turn and applies only to attack-trait actions (Strike, Trip, Shove, Grapple, Disarm), not to damage. The third attack at -10 almost never lands against an at-level foe — most turns you should spend that third action on Demoralize, Raise a Shield, Stride, or Recall Knowledge instead of a 3rd Strike.",
-        "position": 0
-      },
-      {
-        "name": "Mechanic: Proficiency Tiers",
+        "name": "Proficiency Tiers (UTEML)",
         "keys": [
           "proficiency",
           "untrained",
           "trained",
           "expert",
           "master",
-          "legendary"
+          "legendary",
+          "UTEML"
         ],
-        "content": "Five proficiency tiers add to checks: Untrained = 0 (no -2 penalty in Remaster), Trained = level + 2, Expert = level + 4, Master = level + 6, Legendary = level + 8. Tiers gate access to special trained-only actions (e.g. Treat Wounds requires trained Medicine; Identify Magic requires trained tradition skill). At higher tiers you also get access to Master- and Legendary-only feats and spells.",
+        "content": "Proficiency in skills, saves, weapons, and class DC is one of five tiers: Untrained (+0, no level), Trained (+2 + Level), Expert (+4 + Level), Master (+6 + Level), Legendary (+8 + Level). Level adds to the bonus at every trained-or-higher tier, which is why PF2e math stays tight as parties scale. Many skill actions are Trained-only (Treat Wounds, Identify Magic, Disable Device). Class features and skill increases raise tiers at specific levels.",
         "position": 0
       },
       {
-        "name": "Mechanic: Saving Throws",
-        "keys": [
-          "save",
-          "saving throw",
-          "Fortitude",
-          "Fort save",
-          "Reflex",
-          "Ref save",
-          "Will save"
-        ],
-        "content": "Three saves: Fortitude (CON-based, against poison/disease/physical resistance), Reflex (DEX-based, against area effects/dodge), Will (WIS-based, against mental/charm). Each is d20 + ability_mod + proficiency_bonus + item_bonus. Most damage spells use the 'basic save' pattern (crit save = no damage, save = half, fail = full, crit fail = double). Other save effects use unique outcome blocks per spell — read the spell's text.",
-        "position": 0
-      },
-      {
-        "name": "Mechanic: Hero Points",
+        "name": "Hero Points",
         "keys": [
           "hero point",
-          "hero points"
+          "hero points",
+          "reroll"
         ],
-        "content": "Players start each session with 1 Hero Point (cap 3). Spend 1 Hero Point as a free action to either: reroll one check just made, taking the better result; OR remove the dying condition and stabilize at 0 HP. The GM hands out additional Hero Points for clever solutions, table-positive play, dramatic risks, accepting compels, or spending the spotlight on someone else. Hero Points reset at session start; never accumulate across sessions.",
+        "content": "Each PC starts the session with 1 Hero Point and gains 1 per hour of significant play (max 3 banked). Spend 1 Hero Point to reroll a check you just made and take the better result, OR spend ALL Hero Points to avoid death when reduced to dying with no Stabilize available. Hero Points reset to 1 at the start of each session — banking is not cross-session. Encourage spending; the system assumes PCs use them.",
         "position": 0
       },
       {
-        "name": "Mechanic: Recall Knowledge",
+        "name": "Dying and Wounded",
         "keys": [
-          "recall knowledge",
-          "knowledge check",
-          "what do I know"
+          "dying",
+          "wounded",
+          "doomed",
+          "stabilize",
+          "recovery check",
+          "death"
         ],
-        "content": "A single action with the Concentrate trait. Roll the appropriate skill (Lore, Arcana, Crafting, Nature, Occultism, Religion, Society) vs. a level-based DC, usually the creature's or topic's level converted to the standard DC table. Critical Success: one accurate fact plus useful context. Success: one accurate fact (GM picks the most useful for the situation). Failure: no useful info. Critical Failure: GM tells a believable lie that the character thinks is true. Players ask 'what do I know about X' — they don't pre-specify what they want to learn.",
+        "content": "At 0 HP from positive, you fall unconscious and gain dying 1 (dying 2 on a critical hit; add your current wounded value to the starting dying value). At the start of each of your turns make a recovery flat check: DC 10 + current dying. Success reduces dying by 1, critical success by 2; failure increases by 1, critical failure by 2. Reaching dying 4 means you die. Regaining at least 1 HP removes dying entirely but increases wounded by 1 (or 2 if you were dying 4+). Wounded only clears after 10 minutes at full HP or with Treat Wounds that explicitly removes it. Doomed reduces the dying-4 death threshold (doomed 1 = die at dying 3, etc.); decreases by 1 per full night's rest.",
         "position": 0
       },
       {
-        "name": "Conditions: Off-Guard, Frightened, Sickened, Stunned, Slowed",
+        "name": "Common Conditions",
         "keys": [
           "off-guard",
-          "off guard",
           "flat-footed",
           "frightened",
           "sickened",
           "stunned",
-          "slowed"
-        ],
-        "content": "Off-Guard: -2 circumstance to AC. Triggered by being prone, flanked, hidden from, grabbed, or many maneuvers. (Replaces 5e/old-pf2e 'flat-footed'.) Frightened N: -N status penalty to all checks and DCs; reduces by 1 at end of each turn. Sickened N: -N status to all checks and DCs; spend an action and Fort save to reduce. Stunned N: lose actions equal to N (or up to N) at start of turn; reduce Stunned by actions lost. Slowed N: lose N actions at start of turn (does not stack with Stunned for the lost-action calc — take the worse).",
-        "position": 0
-      },
-      {
-        "name": "Conditions: Wounded, Dying, Doomed",
-        "keys": [
-          "wounded",
-          "dying",
-          "doomed",
-          "death",
-          "dropped to 0",
-          "stabilize"
-        ],
-        "content": "Drop to 0 HP and you become Dying 1 (Dying 2 if from a critical hit). On your turn while Dying you make a recovery flat check vs. DC 10 + dying value: crit success reduces dying by 2, success by 1, failure increases by 1, crit failure by 2. At Dying 4 you die. When the dying condition is removed, gain Wounded 1 (or +1 to existing Wounded). Future Dying conditions add your Wounded value to the new Dying value. Doomed N reduces your maximum Dying value by N — at Doomed 4 (or whatever brings max Dying to 0) you die when you would gain dying. Hero Point can spend to remove Dying and stabilize at 0 HP.",
-        "position": 0
-      },
-      {
-        "name": "Conditions: Drained, Enfeebled, Stupefied, Clumsy",
-        "keys": [
-          "drained",
+          "slowed",
+          "prone",
+          "grabbed",
+          "restrained",
+          "clumsy",
           "enfeebled",
           "stupefied",
-          "clumsy",
-          "ability damage"
+          "drained",
+          "persistent damage"
         ],
-        "content": "Pf2e doesn't use ability score damage; it uses status conditions. Drained N: -N to CON-based checks and Fort saves; lose N × level HP (max HP also reduced by that amount). Enfeebled N: -N to STR-based rolls and damage. Stupefied N: -N to INT/WIS/CHA checks and to spell DCs and spell attack rolls. Clumsy N: -N to DEX-based rolls and to AC. All four reduce by 1 per day naturally (or on a successful save where applicable).",
+        "content": "Off-Guard: -2 circumstance penalty to AC; renamed from flat-footed in the Remaster. Frightened/Sickened/Clumsy/Enfeebled/Stupefied/Drained: graduated 1-4, apply a status penalty equal to the value to relevant rolls; frightened decreases by 1 each turn-end automatically. Stunned: lose actions equal to the value at the start of your turn. Slowed: lose actions equal to the value at the start of each turn (does not stack with Stunned — take the worse). Prone: -2 circumstance to attacks; off-guard. Persistent Damage (bleed/fire/acid/etc.): take the listed damage at the END of each of your turns, then flat-check DC 15 (DC 10 with assistance) to end.",
         "position": 0
       },
       {
-        "name": "Combat: Initiative & Combat Round",
+        "name": "Saves and DCs",
         "keys": [
-          "initiative",
-          "round",
-          "turn order",
-          "combat starts"
+          "save",
+          "saving throw",
+          "fortitude",
+          "reflex",
+          "will",
+          "DC",
+          "spell DC",
+          "class DC",
+          "perception"
         ],
-        "content": "Initiative is a single skill check at the start of an encounter — usually Perception, but the GM may call for Stealth (if you're sneaking) or another skill (Deception when feinting at a parley). Higher result acts first. NPCs are usually grouped — the GM rolls one initiative for a squad of similar enemies. Turn structure: each character takes 3 actions in their turn slot, can take their reaction once between turns. The Delay action lets you change your initiative order downward.",
+        "content": "Three saves: Fortitude (CON + prof), Reflex (DEX + prof), Will (WIS + prof). Spell DC = 10 + spell proficiency bonus + casting attribute mod. Class DC = 10 + class proficiency bonus + key ability mod. Set encounter DCs from the Difficulty table: Trivial 10, Low 15, Moderate 20, High 25, Severe 30, Extreme 40 — adjust by level. Recall Knowledge uses the Lore/Society/Arcana/etc. DC from the same table tied to the subject's level.",
         "position": 0
       },
       {
-        "name": "Combat: Attack Rolls & Damage",
-        "keys": [
-          "attack roll",
-          "Strike",
-          "damage",
-          "critical hit",
-          "weapon damage"
-        ],
-        "content": "Strike action: 1 action, roll d20 + ability mod (STR for non-finesse melee, DEX for finesse or ranged) + weapon proficiency + item bonus vs. target's AC. Apply MAP for second/third Strikes. Critical hit (Crit Success on attack) doubles damage and applies the weapon's critical specialization effect. Damage: weapon's listed dice + ability mod (STR for melee; STR for thrown weapons; no ability mod for non-propulsive ranged like crossbows; HALF STR mod for propulsive ranged like composite bows). Many weapons have traits (deadly, fatal, forceful, sweep, etc.) that modify the math.",
-        "position": 0
-      },
-      {
-        "name": "Combat: Spellcasting Basics",
+        "name": "Spellcasting and Slots",
         "keys": [
           "spell",
-          "spell rank",
           "spell slot",
+          "spell rank",
           "cantrip",
-          "heighten",
-          "spell DC",
-          "spell attack"
+          "focus spell",
+          "heightened",
+          "sustain"
         ],
-        "content": "Spells have a rank 1-10. Cantrips auto-heighten to half caster level rounded up. Most spells are 2 actions (verbal + somatic + targeting). Spell DC = 10 + spellcasting proficiency bonus + casting ability mod. Spell attack rolls = d20 + spellcasting prof + casting ability. Casting traditions: Arcane (wizards, magus), Divine (clerics, champions), Occult (bards, psychics), Primal (druids, rangers). Slots are per rank per day; lower-rank slots can heighten lower-rank spells. Sustained spells require a 1-action Sustain each subsequent turn.",
-        "position": 0
-      },
-      {
-        "name": "Classes: Fighter / Rogue / Wizard / Cleric / Druid / Bard / Ranger / Champion / Barbarian / Sorcerer",
-        "keys": [
-          "Fighter",
-          "Rogue",
-          "Wizard",
-          "Cleric",
-          "Druid",
-          "Bard",
-          "Ranger",
-          "Champion",
-          "Barbarian",
-          "Sorcerer"
-        ],
-        "content": "Fighter: 10 HP/level, weapon legend. Best martial proficiency progression in the game. Reactive Strike at level 1. Rogue: 8 HP/level, skill specialist. Sneak Attack 1d6 (scales). High skill bumps. Wizard: 6 HP/level, Int caster. Prepared arcane spells from a spellbook. Curriculum focus. Cleric: 8 HP/level, Wis caster. Prepared divine spells. Channels: Heal/Harm Font. Druid: 8 HP/level, Wis caster. Prepared primal spells. Order specialization (Animal/Leaf/Storm/etc.). Bard: 8 HP/level, Cha caster. Spontaneous occult; Composition cantrip Inspire Courage. Ranger: 10 HP/level, Hunt Prey + class-specific edge (Flurry/Outwit/Precision). Pure martial by default; specific subclass features and feats can grant primal spells but Ranger is NOT a default spellcaster. Champion: 10 HP/level, divine cause + reactive ability tied to your cause's edicts, anathema, and tenets (Remaster removed alignment; causes are now Justice/Liberation/Obedience/Redemption/Grandeur/Iniquity defined by their tenets). Barbarian: 12 HP/level, Rage; instinct (Animal/Dragon/Spirit/etc.). Sorcerer: 6 HP/level, bloodline-driven spontaneous caster, tradition matches bloodline.",
-        "position": 0
-      },
-      {
-        "name": "Ancestries: Human / Elf / Dwarf / Halfling / Goblin / Gnome / Orc / Leshy / Tengu / Kobold",
-        "keys": [
-          "ancestry",
-          "Human",
-          "Elf",
-          "Dwarf",
-          "Halfling",
-          "Goblin",
-          "Gnome",
-          "Orc",
-          "Leshy",
-          "Tengu",
-          "Kobold"
-        ],
-        "content": "Pf2e replaces 'race' with 'ancestry'. Each grants HP at level 1, base speed, languages, vision, and a heritage choice plus 1 ancestry feat. Human: 8 ancestry HP, 25 ft, Common + 1, versatile heritage options. Elf: 6, 30 ft, low-light/darkvision via heritage, long-lived. Dwarf: 10, 20 ft, darkvision, sturdy. Halfling: 6, 25 ft, keen eyes. Goblin: 6, 25 ft, darkvision, junkyard scavenger flavor. Gnome: 8, 25 ft, low-light, fey-touched. Orc: 10, 25 ft, darkvision, ferocity. Leshy: 8, 25 ft, plant-folk. Tengu: 6, 25 ft, low-light, bird-folk martial heritage. Kobold: 6, 25 ft, draconic heritage. Each has 1d8 (or class-determined) HP per level on top.",
-        "position": 0
-      },
-      {
-        "name": "Mechanic: Bonus & Penalty Stacking",
-        "keys": [
-          "bonus",
-          "penalty",
-          "stack",
-          "circumstance",
-          "status",
-          "item"
-        ],
-        "content": "Pf2e has four bonus/penalty types: item, circumstance, status, and untyped. SAME-TYPE BONUSES DO NOT STACK — only the highest of each type applies. Same-type penalties don't stack either — only the worst applies. Untyped bonuses and penalties always stack. This is what keeps the math tight: even a +1 status from Bless plus a +1 status from Aid does NOT become +2 — only +1 applies. Always tag bonuses by type so the player and GM know what stacks.",
-        "position": 0
-      },
-      {
-        "name": "Healing & Recovery",
-        "keys": [
-          "heal",
-          "healing",
-          "Treat Wounds",
-          "rest",
-          "long rest",
-          "Refocus"
-        ],
-        "content": "Treat Wounds: trained Medicine, 10 minutes per target, DC depends on Medicine proficiency target. Heals 2d8 + extras (more on crit, less on fail; can't be retried on the same target for 1 hour after success, 10 min after failure). 8-hour rest restores HP equal to constitution_mod × level (min 1 × level), removes fatigued, reduces drained/wounded by 1. Refocus is a 10-minute activity that recovers 1 Focus Point (cap is class-dependent). Hero Points reset to 1 at session start, NOT at long rest.",
-        "position": 0
-      },
-      {
-        "name": "Mechanic: Investiture and Worn Items",
-        "keys": [
-          "invest",
-          "invested",
-          "investiture",
-          "worn item",
-          "worn items",
-          "magical worn",
-          "invest in",
-          "10 invested"
-        ],
-        "content": "Investiture is Pathfinder 2e analog of D&D attunement. Worn magic items occupy slots and require a one-action invest activity (or a 10-minute ritual outside combat) to gain their magical effects beyond the mundane (a +1 weapon still grants the weapon bonus when not invested; a Cloak of Resistance grants its save bonus only while invested). A creature can have at most 10 invested worn items at once. Death removes investiture; switching items requires re-investing.\n\nState-mutator tag: [mrr-state: field=\"investiture\" item=\"<exact item name>\" invested=\"true\"] to invest (cap-10 enforced; rejected on overflow). invested=\"false\" to un-invest. Investiture is exclusive with attunement (D&D model) and mote commitment (Exalted model) on the same item — the parser rejects mismatched cross-system commits.",
-        "position": 0
-      },
-      {
-        "name": "Mechanic: State-mutator XP Tags",
-        "keys": [
-          "xp",
-          "experience",
-          "level up",
-          "leveled up",
-          "xp award",
-          "xp delta",
-          "experience point"
-        ],
-        "content": "Pathfinder 2e XP follows the formula model — current XP, level, and a per-level next threshold (default 1000 XP per level, configurable via the ruleset xpTable). Awards push current up; reaching next triggers a level-up. The state-mutator parser supports two XP tag forms:\n\n- [mrr-state: field=\"xp\" delta=\"+150\" reason=\"Cleared the goblin warren\"] — incremental award; clamp at 0 on negative deltas.\n- [mrr-state: field=\"xp\" current=\"6500\" level=\"5\" next=\"7000\" reason=\"Levelled up\"] — absolute set when level changes (emit current+level+next together so the sheet card stays consistent).\n\nMixing delta with absolute fields in one tag is rejected (ambiguous). Negative absolute values rejected.",
+        "content": "Prepared casters fill spell slots at a daily preparation; spontaneous casters cast known spells from slots of the appropriate rank (PF2e uses 'rank' instead of 'level' for spells post-Remaster). Cantrips are at-will and auto-heighten to half your level rounded up. Focus spells use Focus Points (refocus during a 10-minute rest to regain 1 point per focus spell trained). Heightening a spell at a higher rank often adds dice or extra targets — read the spell's heightened entry. Sustained spells require a sustain action (1 action) on each subsequent turn to remain in effect.",
         "position": 0
       }
     ]

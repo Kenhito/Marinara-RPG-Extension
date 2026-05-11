@@ -1,0 +1,52 @@
+{
+  "name": "Trophy Dark Rules Reference",
+  "description": "Keyword-triggered rules reference for the GM agent running Trophy Dark (Jesse Ross) one-shots in the Marinara-RPG framework's approximated stance-modal-pool mode. Each entry surfaces only when its keys appear in recent narration or player input, so the GM gets the right rule at the right moment without inflating every prompt.",
+  "category": "world",
+  "scanDepth": 4,
+  "tokenBudget": 1500,
+  "recursiveScanning": false,
+  "entries": [
+    {
+      "name": "Risk Roll Resolution",
+      "keys": ["risk", "risk roll", "light die", "dark die", "light dice", "dark dice", "stance", "approximation"],
+      "content": "Trophy Dark uses RISK rolls. Light dice (the character's) and dark dice (the GM's) are rolled together; the highest light face determines outcome on the 4+ band, and any dark face higher than the highest light face inflicts Ruin. The Marinara-RPG ruleset approximates this with a stance-modal-pool. Stance LIGHT counts dice OVER Risk (3) — mirrors the 4+ success band. Stance DARK counts dice UNDER Risk (3) — mirrors the wood's mundane menace. The stance approximation cannot fully express RAW's dark-overrules-light comparison; the gm-agent.md flags this and instructs the GM to run a second mental check after a stance-LIGHT roll: if the highest dark die rolled (or imagined) would exceed the highest light face, narrate Ruin.",
+      "position": 0
+    },
+    {
+      "name": "Outcome Tiers (Devil's Bargain, At a Cost, Clean)",
+      "keys": ["outcome", "clean", "at a cost", "devils bargain", "devil's bargain", "success", "failure"],
+      "content": "Count successes (light faces of 4 or higher in the approximation). 0 successes = DEVIL'S BARGAIN: the action fails as attempted; the GM offers a bargain — mark Ruin, accept a complication, sacrifice an item, or trade something the wood wants — to convert this into a costly success. Decline and the failure stands. 1 success = AT A COST: the action succeeds, but harm or complication lands; a piece of the hunter is left in the wood. 2+ successes = CLEAN: the action succeeds without harm — but the GM still checks the dark dice. If any dark face exceeded the highest light face, mark Ruin anyway. Trophy Dark corrupts even clean wins.",
+      "position": 0
+    },
+    {
+      "name": "Ruin Track",
+      "keys": ["ruin", "ruin track", "corruption", "consumed", "retire"],
+      "content": "Each hunter has a RUIN track from 0 to 6. Mark Ruin on: failed Risk rolls where a dark face exceeds the highest light face; accepted Devil's Bargains; specific narrative beats the GM telegraphs in advance (the wood always demands payment for what it gives). At Ruin 6, the character is CONSUMED BY THE WOOD — narrated as a corruption that takes them whole, transforming them into something the surviving hunters will have to face. The retire-by-corruption is the game's central engine; players should feel the track tightening every scene. Ruin does NOT clear during a one-shot. Trophy Dark is a doomed-tone game.",
+      "position": 0
+    },
+    {
+      "name": "Devil's Bargain",
+      "keys": ["devil's bargain", "devils bargain", "bargain", "mark ruin", "trade"],
+      "content": "When a hunter is about to fail or wants extra dice, the GM may offer a DEVIL'S BARGAIN: the hunter trades something to the wood in exchange for a die or a success. Standard trades: mark Ruin (1-2 points depending on stakes), sacrifice an item (especially treasure), accept a lasting complication (the wood marks the hunter physically or psychically), reveal a secret the hunter has been keeping. A good Devil's Bargain feels tempting AND costly; if the player accepts every bargain without hesitation, the bargains aren't biting hard enough. Always describe the cost in concrete fictional terms before the player decides — Trophy Dark's horror comes from informed consent to ruin.",
+      "position": 0
+    },
+    {
+      "name": "Pursuits and Backgrounds",
+      "keys": ["pursuit", "background", "burglar", "brute", "sneak", "scholar", "cursed", "doomed", "haunted", "soldier", "smuggler"],
+      "content": "Each hunter has PURSUITS (light-die professions: Burglar, Brute, Sneak, Scholar — pick one or two at creation) and BACKGROUNDS (light-die histories: Cursed, Doomed, Haunted, Soldier, Smuggler, more — pick one or two). When the GM agrees a Pursuit applies to the action, the hunter rolls +1 light die. Same for an applicable Background. The GM has wide latitude — a Scholar in a treasure-vault gets the die; a Scholar fleeing a dire wolf does not. Background dice often carry tonal weight: a Cursed hunter's curse always finds a way to be relevant; a Doomed hunter's death-vision shapes how the GM frames their fate scenes.",
+      "position": 0
+    },
+    {
+      "name": "Rituals (The Other Sub-System)",
+      "keys": ["ritual", "rituals", "magic", "spell", "occult"],
+      "content": "Trophy Dark rituals are a SEPARATE sub-system — they are not Risk rolls. A hunter casting a ritual gathers ingredients, follows a specific procedure described in the ritual's text, and then narrates the casting. The GM judges whether the procedure was followed; on success, the effect manifests; on failure, the wood twists it. Most rituals always cost Ruin (often 1-2 points) regardless of outcome — knowledge of the wood corrupts you. Rituals are designed by the GM (or pulled from published Codex zines), not generated by a system at play time. When a player wants to cast something improvised, the GM should EITHER refuse and ask them to find a written ritual, OR treat the improvisation as a Risk roll with a steep Devil's Bargain attached.",
+      "position": 0
+    },
+    {
+      "name": "Tone: Doomed Treasure Hunters in a Haunted Wood",
+      "keys": ["tone", "doomed", "haunted wood", "wood", "treasure", "one-shot", "incursion"],
+      "content": "Trophy Dark is a ONE-SHOT horror game about treasure hunters who entered a haunted wood and will not all return. The treasure pitch is the hook ('the lost vault of the silver-tongue queen, said to ride on the back of an iron stag'); the wood is the antagonist. The game arc is 3-5 scenes called INCURSIONS, each ramping pressure on the Ruin tracks. The expected ending is 1-2 hunters consumed, 0-2 hunters fled with partial treasure, 0-1 hunters dragging the prize home changed forever. Aim for that ratio. Trophy Dark does NOT continue across sessions — start a new one-shot, with new hunters, in a new wood. The doom is the genre.",
+      "position": 0
+    }
+  ]
+}

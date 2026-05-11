@@ -1,0 +1,52 @@
+{
+  "name": "The Stewpot Rules Reference",
+  "description": "Keyword-triggered rules reference for the GM agent running a cozy village game in The Stewpot (Tim Hutchings tradition). Each entry surfaces only when its keys appear in recent narration or player input, so the GM gets the right rule at the right moment without inflating every prompt.",
+  "category": "world",
+  "scanDepth": 4,
+  "tokenBudget": 1500,
+  "recursiveScanning": false,
+  "entries": [
+    {
+      "name": "Stance Toggle (Stillness vs Action)",
+      "keys": ["stance", "stillness", "action", "over", "under", "capability"],
+      "content": "Every roll picks a stance the villager chooses BEFORE the dice land. STILLNESS counts dice UNDER Capability — for tending the garden patiently, sitting with a grieving neighbor, mending a torn cloak, watching bread rise. ACTION counts dice OVER Capability — for persuading the council, hauling the harvest, raising a beam, putting out the fire before it spreads. High Capability (4-5) favors ACTION; low Capability (2-3) favors STILLNESS. The same Capability is used in both stances — the stance picks the direction of grace, not the stat. Encourage players to consider which mode fits the fiction before reaching for dice; many scenes need stillness more than action.",
+      "position": 0
+    },
+    {
+      "name": "Perfect Days (Exact Match)",
+      "keys": ["perfect day", "perfect days", "exact", "exactly", "match"],
+      "content": "A die rolling EXACTLY the villager's Capability is a PERFECT DAY. It counts as a success toward the outcome tier, AND the GM should narrate a quiet good thing: a kindness returned, an unexpected smile, a half-forgotten memory surfacing at the right moment, a song heard through an open window. Perfect Days are the heart of The Stewpot — they remind the table that the stewpot is the point, not the broth. Honor them every time. Don't undercut a Perfect Day with sarcasm or with a beat that immediately spoils it; let the grace land.",
+      "position": 0
+    },
+    {
+      "name": "Outcome Tiers (Stalled, Small Grace, Good Day, Harvest)",
+      "keys": ["outcome", "stalled", "small grace", "good day", "harvest", "successes"],
+      "content": "Count successes (dice on the correct side of Capability for the chosen stance, plus any Perfect Day exact-matches). 0 successes = STALLED: nothing moves, perhaps a worse thing happens; the GM names what is lost — a chance, a feeling, a name — and the table sits with it. 1 success = SMALL GRACE: the thing happens partial / slow / at a quiet cost; a neighbor still grumbles, the garden takes another day, but the fiction moves. 2 successes = GOOD DAY: the thing happens cleanly; the villager goes home tired in the right way; the GM names one small joy that came along with it. 3+ successes = HARVEST: rarest tier; the thing happens AND ripples outward — a neighbor benefits, a long-held tension softens, the stewpot is fuller tonight; the GM names the second-order good.",
+      "position": 0
+    },
+    {
+      "name": "Helping Neighbors",
+      "keys": ["help", "helping", "neighbor", "neighbors", "ally", "assistance"],
+      "content": "Helping is the only way to grow a villager's dice pool beyond the base 2 + invested bonus. A second villager (or a named NPC neighbor) describes how they assist in the fiction, and the player rolling adds +1d to their pool. There is no cap on helpers in principle, but in practice 2-3 is the maximum the table can credibly stage. Helping isn't free — the helper takes part in the consequences if the roll stalls. Use helping to make scenes about community, not solo achievement; The Stewpot is a slow-life game about the village, and helping is the central mechanism that makes that true.",
+      "position": 0
+    },
+    {
+      "name": "Seasonal Cycles and the Hearth",
+      "keys": ["season", "spring", "summer", "autumn", "winter", "hearth", "cycle", "year", "festival"],
+      "content": "Stewpot campaigns turn on seasons rather than missions. The GM names the season at the start of each session — spring planting, summer travel, autumn harvest, winter holding — and the season colors what scenes the table reaches for. The Hearth track (max 5, default 3) is each villager's quiet measure of how settled they are at home. Perfect Days refill the Hearth. Rough scenes spend Hearth — a death in the village, a long argument with a neighbor, a hard frost on tender plants. Empty Hearth means the villager needs a rest scene before more dice roll; this is a feature, not a bug. Festivals (the GM names one or two a year) refill all Hearths and reset season-long tensions.",
+      "position": 0
+    },
+    {
+      "name": "Invested Skills",
+      "keys": ["invested", "garden", "cook", "mend", "listen", "persuade", "skill", "+1d", "trade"],
+      "content": "A villager is INVESTED in a skill they took at character creation (Garden, Cook, Mend, Listen, Persuade are the canonical five; campaigns add more). When a scene clearly leans on an invested skill, the player adds +1d to the pool. Invested skills are not all-purpose — a Cook helping the council is just persuading; a Persuader weeding the garden is just gardening. Invested skills also carry narrative weight: a Listener notices what others miss; a Mender's mended things hold longer; a Cook's stewpot tonight is a little better. Encourage the table to name an invested skill before rolling so the +1d is part of the fiction, not bookkeeping.",
+      "position": 0
+    },
+    {
+      "name": "What a Stewpot Game Is Not",
+      "keys": ["adventure", "leave", "danger", "combat", "weapon", "violence", "monster"],
+      "content": "The Stewpot is NOT an adventure game. Villagers do not leave the village on quests. There are no monsters, no combats, no XP for kills, no treasure pulls. The drama is at-home and inward: who is grieving, who is harvesting, who is leaving the village (rarely, sadly, finally), who is joining (rarely, joyfully, awkwardly), what the council will decide, what is being mended. When players reach for adventure-game beats, the GM gently redirects to the slow-life frame — 'tell me about the morning before the council vote', 'what does your villager carry to the funeral', 'what does the stew need tonight'. The genre is the rule.",
+      "position": 0
+    }
+  ]
+}

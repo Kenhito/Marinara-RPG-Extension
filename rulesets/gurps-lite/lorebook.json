@@ -1,0 +1,52 @@
+{
+  "name": "GURPS Lite Rules Reference",
+  "description": "Keyword-triggered rules reference for the GM agent running a GURPS Lite (4th Edition) campaign. Each entry surfaces only when its keys appear in recent narration or player input, so the GM gets the right rule at the right moment without inflating every prompt.",
+  "category": "world",
+  "scanDepth": 4,
+  "tokenBudget": 1500,
+  "recursiveScanning": false,
+  "entries": [
+    {
+      "name": "3d6 Roll-Under Resolution",
+      "keys": ["3d6", "roll", "check", "skill check", "roll under", "target number", "margin", "margin of success", "margin of failure"],
+      "content": "Every check rolls 3d6 and SUCCEEDS if the total is at or under the effective target (attribute or skill plus any modifiers). The bell curve means 10-11 is most likely, 3 and 18 are rare. MARGIN OF SUCCESS = target - rolled total; the higher the margin, the better the success (used for damage on some attacks, contests, and timing). MARGIN OF FAILURE = rolled - target; higher margin = worse result. A success by 5 is meaningfully better than a success by 1; tell the player both the result and the margin so the narration can scale.",
+      "position": 0
+    },
+    {
+      "name": "Critical Success and Failure",
+      "keys": ["critical", "crit", "critical success", "critical failure", "fumble", "natural 3", "natural 4", "natural 17", "natural 18"],
+      "content": "Critical success: natural 3 or natural 4. Critical success on an effective skill of 15+ also fires on a natural 5; an effective skill of 16+ also on a natural 6. The GM rules a spectacular extra benefit. Critical failure: natural 18 always. Natural 17 is a critical failure if the effective target is 15 or less; otherwise it's just a regular failure by 17-target. Any roll of target+10 or higher is also a critical failure (so target 8 fumbles on 18; target 6 fumbles on 16+). Critical failures roll on the critical-miss table appropriate to the action — combat fumbles drop weapons, social fumbles offend, magic fumbles backlash.",
+      "position": 0
+    },
+    {
+      "name": "Combat Maneuvers",
+      "keys": ["maneuver", "attack", "all-out attack", "all-out defense", "feint", "evaluate", "ready", "concentrate", "move and attack", "move", "wait"],
+      "content": "Each turn pick one MANEUVER: Do Nothing, Move (full Basic Move), Change Posture, Ready (draw/load), Aim, Attack, Feint, All-Out Attack (no defense this turn, +4 to hit OR extra attack OR +2 damage), Move and Attack (-2 or skill cap at 9 whichever is worse), All-Out Defense (no attack, +2 to one active defense OR two active defenses against the same attack OR a second defense roll), Concentrate (mental task), Wait (held action), Evaluate (+1 to next attack per turn evaluating, max +3). The Maneuver chosen FIRST in a turn shapes which actions resolve later.",
+      "position": 0
+    },
+    {
+      "name": "Active Defenses",
+      "keys": ["dodge", "parry", "block", "active defense", "defense"],
+      "content": "When attacked, choose ONE active defense per attack: Dodge (Basic Speed + 3, rounded down), Parry (skill/2 + 3 with a weapon you've already used this turn; unarmed Parry uses Brawling or DX), Block (Shield skill / 2 + 3, only with a readied shield). Each defense applies its own modifiers — Dodge dodges everything but suffers a -2 against attacks that come from behind; Parry suffers cumulative -4 per extra parry that turn after the first (-4, -8, -12). Block can absorb most attacks but each successful block of a heavy weapon needs a HT check to keep the shield. On a successful active defense, the attack misses entirely.",
+      "position": 0
+    },
+    {
+      "name": "Damage and Wounds",
+      "keys": ["damage", "thrust", "swing", "wound", "HP", "hit points", "DR", "damage resistance", "soak", "armor"],
+      "content": "Damage rolls vary by weapon and attacker's ST. Thrusting attacks roll the thrust column for the attacker's ST; swinging attacks roll the swing column. The defender's Damage Resistance (DR) from armor and natural toughness subtracts before injury is calculated. Different damage types have wound multipliers: crushing x1, cutting x1.5, impaling x2, piercing x0.5/x1/x1.5/x2 depending on caliber. Below 1/3 HP = REELING (Move and Dodge halved). At 0 HP, roll HT each turn to stay conscious; reach -1xHP and roll HT to avoid death. -5xHP is automatic death. HP recovers 1/day at rest, faster with First Aid (skill / 2, capped) or Physician.",
+      "position": 0
+    },
+    {
+      "name": "Fatigue Points",
+      "keys": ["fatigue", "fatigue points", "FP", "tired", "exhausted"],
+      "content": "Fatigue Points (FP) start equal to HT. FP costs come from: extra effort (1 FP per use), running long distances (1 FP per 100 yards above Basic Move x10), spellcasting (varies by spell), and forced marches (1 FP per hour past your limit). Below 1/3 FP = TIRED: Move, Dodge, and ST halved (round up). At 0 FP, exhaustion sets in — strenuous actions cost HP instead of FP. Below 0 FP = unconsciousness imminent. FP recovers 1 per 10 minutes of rest, faster with Will rolls (specific cases). Manage FP carefully on long expeditions — running out at the wrong time is as bad as running out of HP.",
+      "position": 0
+    },
+    {
+      "name": "Skill Difficulty and Defaults",
+      "keys": ["skill difficulty", "easy", "average", "hard", "very hard", "default", "skill default", "untrained"],
+      "content": "Skills come in four difficulty tiers: Easy (default at attribute), Average (attribute - 1 to learn at attribute level; defaults at attribute - 4), Hard (attribute - 2 to learn at attribute level; defaults at attribute - 5), Very Hard (attribute - 3; no default — must learn at 1 point first). Defaults: untrained characters can attempt most skills at a reduced effective skill (e.g., Climbing defaults to DX-5). Some skills have NO default (Very Hard skills, most magic, technique-specific skills). Bonuses for tools, beneficial conditions, and bonus dice raise the effective skill; penalties from injury, environment, distraction lower it.",
+      "position": 0
+    }
+  ]
+}

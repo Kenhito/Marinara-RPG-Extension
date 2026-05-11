@@ -1,0 +1,52 @@
+{
+  "name": "Call of Cthulhu 7e Rules Reference",
+  "description": "Keyword-triggered rules reference for the GM agent running a Call of Cthulhu 7th Edition investigation. Each entry surfaces only when its keys appear in recent narration or player input, so the GM gets the right rule at the right moment without inflating every prompt.",
+  "category": "world",
+  "scanDepth": 4,
+  "tokenBudget": 1500,
+  "recursiveScanning": false,
+  "entries": [
+    {
+      "name": "Percentile Resolution",
+      "keys": ["d100", "1d100", "roll", "check", "skill check", "percentile", "regular", "hard", "extreme"],
+      "content": "Call of Cthulhu uses roll-under percentile. Roll 1d100 and succeed if the result is at or under the target. Three difficulty bands: Regular (under the full skill value), Hard (under half the skill, rounded down), Extreme (under one-fifth, rounded down). A critical success is a roll of 01. A fumble is 96-100 if the skill is under 50, or natural 100 if the skill is 50+. The Keeper sets the difficulty BEFORE the player rolls — never after. Most checks default to Regular; raise the bar only when the fiction demands it.",
+      "position": 0
+    },
+    {
+      "name": "Bonus and Penalty Dice",
+      "keys": ["bonus die", "bonus dice", "penalty die", "penalty dice", "advantage", "disadvantage"],
+      "content": "When circumstances favor or hinder the investigator, the Keeper assigns bonus or penalty dice. Roll an additional d10 for the tens column for each bonus die and keep the LOWEST tens result. Roll an additional d10 for the tens column for each penalty die and keep the HIGHEST tens result. The ones die is the same in both cases. Bonus and penalty cancel one-for-one; never roll more than 2 extras of each kind. A bonus die can swing a Hard check into a likely Regular hit; a penalty die can ruin a check the investigator should have made.",
+      "position": 0
+    },
+    {
+      "name": "Pushing a Roll",
+      "keys": ["push", "pushing", "pushed roll", "retry"],
+      "content": "After a failed skill check, the player may PUSH the roll — narrate redoubled effort and reroll the same skill at the same difficulty. If the push succeeds, the action succeeds. If the push fails, the Keeper inflicts a serious consequence appropriate to the skill: a Climb push that fails sends the investigator plummeting, a Charm push that fails turns the target permanently hostile, a Library Use push that fails consumes the night with the wrong book. Some skills cannot be pushed (Dodge, Luck) and some scenes don't allow it (combat rounds, secret checks). The Keeper has final say.",
+      "position": 0
+    },
+    {
+      "name": "Sanity",
+      "keys": ["sanity", "sanity check", "san", "SAN", "mythos", "cthulhu mythos", "insanity", "temporary insanity", "indefinite insanity"],
+      "content": "Sanity starts equal to POW and caps at 99 minus the investigator's Cthulhu Mythos skill. Most Mythos encounters call for a Sanity check: roll 1d100 against current Sanity. Success costs the smaller value (e.g., 0/1d4 = 0 on success, lose 1d4 on failure); failure costs the larger. Losing 5+ Sanity in a single roll OR failing a Sanity check triggers TEMPORARY INSANITY — roleplay phobia or mania for the rest of the scene (and the Keeper rolls on the bout-of-madness table). Losing 1/5 of current Sanity within a single game day is INDEFINITE INSANITY: symptoms persist across sessions until cured by Psychoanalysis. Sanity at 0 retires the character to permanent insanity.",
+      "position": 0
+    },
+    {
+      "name": "Combat and Damage",
+      "keys": ["combat", "fight", "fighting", "firearms", "shoot", "dodge", "attack", "damage", "hit points", "HP", "major wound"],
+      "content": "Combat is opposed when an attacker rolls Fighting/Firearms against a defender who may Dodge or fight back. The defender chooses BEFORE seeing the attacker's roll. Both roll; whoever has the better SUCCESS LEVEL wins (Extreme > Hard > Regular > fail). A weapon's damage is rolled on success plus the attacker's Damage Bonus from STR+SIZ. A single hit that takes HP by half its maximum or more is a MAJOR WOUND — the target falls Dying at 0 HP rather than Unconscious, and stabilization needs First Aid within an hour or Medicine. HP regenerates 1/day with rest or via First Aid (one use per wound).",
+      "position": 0
+    },
+    {
+      "name": "Luck",
+      "keys": ["luck", "luck roll", "luck spend"],
+      "content": "Luck is a numeric pool 15-90 rolled at character creation (3d6 x 5). After failing a skill check by 1-9 (configurable by the Keeper) the player may SPEND Luck to bridge the gap — 1 Luck per point of margin. Luck is NOT refilled session-to-session; spend it carefully. Some Keepers also call for raw Luck rolls (1d100 <= current Luck) when ambient fortune decides an outcome no skill covers. Luck can be regained slowly through Keeper-granted milestones.",
+      "position": 0
+    },
+    {
+      "name": "Occupations and Bonds",
+      "keys": ["occupation", "credit rating", "bond", "backstory", "key connection"],
+      "content": "Each investigator picks an Occupation that determines starting skill picks, occupation skill points (typically 4xEDU or a mixed formula), and Credit Rating range. Bonds (Key Connection, Significant People, Locations, Possessions, Traits) are narrative anchors the Keeper exploits — invoking a Bond in distress can restore lost Sanity in small amounts; losing a Bond inflicts Sanity. The 1920s is canon era; modern and other periods use era-appropriate skill substitutions (Computer Use exists in modern, not the 20s).",
+      "position": 0
+    }
+  ]
+}

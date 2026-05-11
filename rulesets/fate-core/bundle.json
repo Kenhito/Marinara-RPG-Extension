@@ -343,6 +343,44 @@
       "states",
       "abilities"
     ],
+    "sections": {
+      "order": [
+        "identity",
+        "resources",
+        "attributes",
+        "skills",
+        "derived",
+        "abilities",
+        "states",
+        "inventory",
+        "notes"
+      ],
+      "hidden": []
+    },
+    "resources": [
+      {
+        "id": "fate-points",
+        "label": "Fate Points",
+        "type": "counter",
+        "max": "{Refresh}",
+        "current": "{Refresh}",
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Refresh",
+            "delta": "max"
+          }
+        ]
+      }
+    ],
     "lorebookKeys": [
       "aspect",
       "high concept",

@@ -1,0 +1,58 @@
+{
+  "name": "Pathfinder 2e Rules Reference",
+  "description": "Keyword-triggered rules reference for the GM agent running a Pathfinder Second Edition (Remaster) game. Each entry surfaces only when its keys appear in recent narration or player input, so the GM gets the right rule at the right moment without inflating every prompt.",
+  "category": "world",
+  "scanDepth": 4,
+  "tokenBudget": 1500,
+  "recursiveScanning": false,
+  "entries": [
+    {
+      "name": "Three Action Economy",
+      "keys": ["three actions", "action economy", "actions", "reaction", "free action", "MAP", "multiple attack penalty"],
+      "content": "Each turn a creature gets 3 actions, 1 reaction, and any number of free actions. Most things cost 1 action (Strike, Stride, Demoralize); some cost 2 (Sustain a 2-action spell, two-action activities); a few cost 3 (full-round spells, Confident Finisher). Reactions trigger on specified events (Attack of Opportunity, Shield Block) outside your turn. Multiple Attack Penalty (MAP): your first Strike per turn is at +0, second at -5 (or -4 with an agile weapon), third at -10 (or -8 agile). MAP resets at the start of your next turn.",
+      "position": 0
+    },
+    {
+      "name": "Degrees of Success",
+      "keys": ["degrees of success", "critical success", "critical failure", "crit success", "crit fail", "natural 20", "natural 1"],
+      "content": "Every d20 check resolves on four bands: critical success when the result beats the DC by 10 or more (or a natural 20 bumps a success up one band); success when the result meets or exceeds the DC; failure when the result is below the DC; critical failure when the result is 10 or more under the DC (or a natural 1 bumps a failure down one band). Natural 20 and natural 1 are SHIFTS, not autocrits — a nat 20 on a roll that would still miss by 10 only upgrades miss to hit. Spells, attacks, and skill actions all read their effects off this four-band ladder.",
+      "position": 0
+    },
+    {
+      "name": "Proficiency Tiers (UTEML)",
+      "keys": ["proficiency", "untrained", "trained", "expert", "master", "legendary", "UTEML"],
+      "content": "Proficiency in skills, saves, weapons, and class DC is one of five tiers: Untrained (+0, no level), Trained (+2 + Level), Expert (+4 + Level), Master (+6 + Level), Legendary (+8 + Level). Level adds to the bonus at every trained-or-higher tier, which is why PF2e math stays tight as parties scale. Many skill actions are Trained-only (Treat Wounds, Identify Magic, Disable Device). Class features and skill increases raise tiers at specific levels.",
+      "position": 0
+    },
+    {
+      "name": "Hero Points",
+      "keys": ["hero point", "hero points", "reroll"],
+      "content": "Each PC starts the session with 1 Hero Point and gains 1 per hour of significant play (max 3 banked). Spend 1 Hero Point to reroll a check you just made and take the better result, OR spend ALL Hero Points to avoid death when reduced to dying with no Stabilize available. Hero Points reset to 1 at the start of each session — banking is not cross-session. Encourage spending; the system assumes PCs use them.",
+      "position": 0
+    },
+    {
+      "name": "Dying and Wounded",
+      "keys": ["dying", "wounded", "doomed", "stabilize", "recovery check", "death"],
+      "content": "At 0 HP from positive, you fall unconscious and gain dying 1 (dying 2 on a critical hit; add your current wounded value to the starting dying value). At the start of each of your turns make a recovery flat check: DC 10 + current dying. Success reduces dying by 1, critical success by 2; failure increases by 1, critical failure by 2. Reaching dying 4 means you die. Regaining at least 1 HP removes dying entirely but increases wounded by 1 (or 2 if you were dying 4+). Wounded only clears after 10 minutes at full HP or with Treat Wounds that explicitly removes it. Doomed reduces the dying-4 death threshold (doomed 1 = die at dying 3, etc.); decreases by 1 per full night's rest.",
+      "position": 0
+    },
+    {
+      "name": "Common Conditions",
+      "keys": ["off-guard", "flat-footed", "frightened", "sickened", "stunned", "slowed", "prone", "grabbed", "restrained", "clumsy", "enfeebled", "stupefied", "drained", "persistent damage"],
+      "content": "Off-Guard: -2 circumstance penalty to AC; renamed from flat-footed in the Remaster. Frightened/Sickened/Clumsy/Enfeebled/Stupefied/Drained: graduated 1-4, apply a status penalty equal to the value to relevant rolls; frightened decreases by 1 each turn-end automatically. Stunned: lose actions equal to the value at the start of your turn. Slowed: lose actions equal to the value at the start of each turn (does not stack with Stunned — take the worse). Prone: -2 circumstance to attacks; off-guard. Persistent Damage (bleed/fire/acid/etc.): take the listed damage at the END of each of your turns, then flat-check DC 15 (DC 10 with assistance) to end.",
+      "position": 0
+    },
+    {
+      "name": "Saves and DCs",
+      "keys": ["save", "saving throw", "fortitude", "reflex", "will", "DC", "spell DC", "class DC", "perception"],
+      "content": "Three saves: Fortitude (CON + prof), Reflex (DEX + prof), Will (WIS + prof). Spell DC = 10 + spell proficiency bonus + casting attribute mod. Class DC = 10 + class proficiency bonus + key ability mod. Set encounter DCs from the Difficulty table: Trivial 10, Low 15, Moderate 20, High 25, Severe 30, Extreme 40 — adjust by level. Recall Knowledge uses the Lore/Society/Arcana/etc. DC from the same table tied to the subject's level.",
+      "position": 0
+    },
+    {
+      "name": "Spellcasting and Slots",
+      "keys": ["spell", "spell slot", "spell rank", "cantrip", "focus spell", "heightened", "sustain"],
+      "content": "Prepared casters fill spell slots at a daily preparation; spontaneous casters cast known spells from slots of the appropriate rank (PF2e uses 'rank' instead of 'level' for spells post-Remaster). Cantrips are at-will and auto-heighten to half your level rounded up. Focus spells use Focus Points (refocus during a 10-minute rest to regain 1 point per focus spell trained). Heightening a spell at a higher rank often adds dice or extra targets — read the spell's heightened entry. Sustained spells require a sustain action (1 action) on each subsequent turn to remain in effect.",
+      "position": 0
+    }
+  ]
+}

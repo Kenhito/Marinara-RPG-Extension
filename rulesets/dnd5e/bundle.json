@@ -355,6 +355,7 @@
         "formula": "10 + DEX_mod (or armor formula)",
         "renderAs": "value",
         "default": 10,
+        "tooltipFormula": "10 + {Dexterity_mod} + {bonuses:Armor Class}",
         "aliases": [
           "ac",
           "AC",
@@ -367,6 +368,7 @@
         "renderAs": "value",
         "valueFormula": "{Dexterity_mod}",
         "rollFormula": "{Dexterity_mod}",
+        "tooltipFormula": "{Dexterity_mod} + {bonuses:Initiative}",
         "aliases": [
           "init",
           "initiative"
@@ -397,8 +399,8 @@
         "name": "Level",
         "formula": "Character level, 1-20.",
         "max": 20,
-        "renderAs": "value",
         "default": 1,
+        "renderAs": "value",
         "aliases": [
           "level",
           "lvl",
@@ -423,6 +425,123 @@
       "inventory",
       "abilities",
       "notes"
+    ],
+    "sections": {
+      "order": [
+        "identity",
+        "xp",
+        "resources",
+        "attributes",
+        "saves",
+        "skills",
+        "derived",
+        "abilities",
+        "states",
+        "conditions",
+        "backgrounds",
+        "inventory",
+        "notes"
+      ]
+    },
+    "resources": [
+      {
+        "id": "hit-points",
+        "label": "HP",
+        "type": "bar",
+        "max": 8,
+        "current": 8,
+        "color": "bad",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "-5",
+            "delta": -5
+          },
+          {
+            "label": "Heal",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "hit-dice",
+        "label": "Hit Dice",
+        "type": "dice",
+        "die": "d8",
+        "max": "{Level}",
+        "current": "{Level}",
+        "color": "ok",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Long Rest",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "spell-slots-1",
+        "label": "Spell Slots (1st)",
+        "type": "counter",
+        "group": "Spell Slots",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Long Rest",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "spell-slots-2",
+        "label": "Spell Slots (2nd)",
+        "type": "counter",
+        "group": "Spell Slots",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Long Rest",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "spell-slots-3",
+        "label": "Spell Slots (3rd)",
+        "type": "counter",
+        "group": "Spell Slots",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Long Rest",
+            "delta": "max"
+          }
+        ]
+      }
     ],
     "lorebookKeys": [
       "spell",
