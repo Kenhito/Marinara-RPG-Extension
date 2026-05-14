@@ -20,13 +20,17 @@ Marinara's existing `game-tag-parser.ts` already parses `[dice: ...]` tags from 
 
 ### Dice rolling — client-side, faithful to the ruleset
 
-The extension's floating dice widget supports five resolution modes:
+The extension's floating dice widget supports nine resolution modes:
 
 - **single-roll** (d20 + modifier vs DC) — D&D, Pathfinder.
 - **dice-pool** (Xd10 vs target, with doubles and botch detection) — Exalted, Storyteller.
 - **d100-percentile** (1d100 under skill) — Call of Cthulhu.
 - **2d6-stat with bands** (2d6+stat, 6-/7-9/10+ outcome bands) — PbtA.
 - **fate-ladder** (4dF + skill vs ladder target, with Tie / Success / Success-with-style outcomes) — Fate Core, Fate Accelerated, Fate-of-Cthulhu.
+- **roll-under** (3d6 or 1d100 ≤ target; optional crit / fumble) — GURPS, CoC 7e, Pendragon.
+- **stance-modal-pool** (Xd6 pool with per-roll stance toggle, directional invariant, bridge value) — Lasers & Feelings, Stewpot, Trophy Dark.
+- **dice-pool-sum** (Xd6 sum vs difficulty with optional Wild Die explode-on-face cascade and 1/3-of-a-die pip granularity) — OpenD6, WEG Star Wars, Mini Six.
+- **narrative-handled** (no mechanical roll — GM / fiction adjudicates) — Trophy Dark dark dice, prose-resolved scenes.
 
 Roll output is mathematically faithful to the ruleset's spec (target, doubles face/successes, botch trigger, success-with-style margin). The "Send to chat" button writes the formatted tag into the chat input, ready to send.
 

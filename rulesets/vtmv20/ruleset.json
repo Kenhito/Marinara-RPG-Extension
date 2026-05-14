@@ -256,7 +256,7 @@
       "min": 0,
       "max": 5,
       "default": 0,
-      "description": "Skill. Singing, instrument, acting, dance \u2014 the art of performing for an audience. Untrained: cannot roll."
+      "description": "Skill. Singing, instrument, acting, dance — the art of performing for an audience. Untrained: cannot roll."
     },
     {
       "name": "Stealth",
@@ -312,14 +312,14 @@
       "min": 0,
       "max": 5,
       "default": 0,
-      "description": "Knowledge. Diagnosis, surgery, pharmacology \u2014 and what blood reveals. Untrained: cannot roll."
+      "description": "Knowledge. Diagnosis, surgery, pharmacology — and what blood reveals. Untrained: cannot roll."
     },
     {
       "name": "Occult",
       "min": 0,
       "max": 5,
       "default": 0,
-      "description": "Knowledge. Lore of the supernatural \u2014 vampires, mages, ghosts, the Antediluvians. Untrained: cannot roll."
+      "description": "Knowledge. Lore of the supernatural — vampires, mages, ghosts, the Antediluvians. Untrained: cannot roll."
     },
     {
       "name": "Politics",
@@ -333,7 +333,7 @@
       "min": 0,
       "max": 5,
       "default": 0,
-      "description": "Knowledge. Physics, chemistry, biology \u2014 the natural sciences. Untrained: cannot roll."
+      "description": "Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll."
     },
     {
       "name": "Technology",
@@ -372,78 +372,16 @@
       ]
     },
     {
-      "name": "Blood Pool",
-      "formula": "Player-set max keyed to Generation (13th=10, 12th=11, 11th=12, 10th=13, 9th=14, 8th=15, 7th=20, 6th=30, 5th=40, 4th=50). Spent for healing, Discipline activation, blushing of life, Physical Attribute boost (cap = generation per-turn limit).",
-      "default": 10,
-      "renderAs": "bar",
-      "aliases": [
-        "blood",
-        "bp",
-        "vitae",
-        "bloodPool"
-      ]
-    },
-    {
-      "name": "Willpower",
-      "formula": "Current/permanent. Max 10. Spend 1 for one automatic success on a single action (max once/turn) or to ignore wound penalties for one turn or to resist Frenzy/derangement triggers. Permanent rating regen +1 per significant scene; current refreshes at full per night's sleep up to permanent.",
-      "default": 5,
-      "renderAs": "bar",
-      "aliases": [
-        "wp",
-        "WP",
-        "willpower"
-      ]
-    },
-    {
-      "name": "Humanity",
-      "formula": "0-10. Sin-hierarchy: lose a dot when you commit an act at or below your current rating without a successful Conscience roll. Most humans sit 6-7. Below 5 is monstrous; 0 is wight.",
-      "default": 7,
-      "renderAs": "bar",
-      "aliases": [
-        "humanity"
-      ]
-    },
-    {
-      "name": "Path Rating",
-      "formula": "0-10. Use INSTEAD of Humanity if the character is on a Path of Enlightenment. Mechanically identical hierarchy of sins; the act-list differs per Path. Default 0 (= no Path; Humanity is in use).",
-      "default": 0,
-      "renderAs": "value",
-      "aliases": [
-        "path",
-        "pathRating",
-        "pathOfEnlightenment"
-      ]
-    },
-    {
-      "name": "Conscience",
-      "formula": "1-5. Standard Virtue (Humanity track). Resists doing acts that would cost Humanity. Replaced by Conviction on a Path of Enlightenment.",
+      "name": "Permanent Willpower",
+      "formula": "1-10. The character's permanent Willpower rating — the cap on the Willpower resource pool. V20 RAW: starts equal to Courage at character creation; grows via XP spend (current rating → next rating costs the current rating × 2 XP) or chargen freebies (one freebie per dot). Adjust this stepper directly: set to your Courage at chargen, then click + as you spend XP. Cap 10.",
       "default": 3,
       "renderAs": "value",
       "aliases": [
-        "conscience",
-        "conviction",
-        "ConscienceConviction"
-      ]
-    },
-    {
-      "name": "Self-Control",
-      "formula": "1-5. Standard Virtue (Humanity track). Resists Frenzy. Replaced by Instinct on a Path of Enlightenment.",
-      "default": 3,
-      "renderAs": "value",
-      "aliases": [
-        "selfControl",
-        "instinct",
-        "SelfControlInstinct"
-      ]
-    },
-    {
-      "name": "Courage",
-      "formula": "1-5. Resists Rotschreck (the Red Fear) and shoring up against fear-based effects. Used by both Humanity AND Path characters. Note: when rolling Virtues, the dice cap at the character's Humanity/Path rating, not the Virtue rating.",
-      "default": 3,
-      "renderAs": "value",
-      "aliases": [
-        "courage"
-      ]
+        "permanentWillpower",
+        "willpowerMax",
+        "willpowerRating"
+      ],
+      "max": 10
     },
     {
       "name": "Animalism",
@@ -510,7 +448,7 @@
     },
     {
       "name": "Presence",
-      "formula": "Common Discipline 0-5. The supernatural force of personality \u2014 magnetism, awe, dread. Powers per dot in the lorebook.",
+      "formula": "Common Discipline 0-5. The supernatural force of personality — magnetism, awe, dread. Powers per dot in the lorebook.",
       "default": 0,
       "renderAs": "value",
       "aliases": [
@@ -564,67 +502,6 @@
       ]
     },
     {
-      "name": "Health Track",
-      "formula": "7 V20 health levels: -0 / -1 / -1 / -2 / -2 / -5 / Incapacitated. Penalty in effect equals the highest filled box and applies to dice pools (Willpower spend ignores it for one turn). Damage types: Bashing (B, severity 0), Lethal (L, severity 1), Aggravated (A, severity 2 \u2014 only Fortitude soaks it).",
-      "renderAs": "track",
-      "track": [
-        {
-          "label": "Bruised",
-          "penalty": 0
-        },
-        {
-          "label": "Hurt -1",
-          "penalty": -1
-        },
-        {
-          "label": "Injured -1",
-          "penalty": -1
-        },
-        {
-          "label": "Wounded -2",
-          "penalty": -2
-        },
-        {
-          "label": "Mauled -2",
-          "penalty": -2
-        },
-        {
-          "label": "Crippled -5",
-          "penalty": -5
-        },
-        {
-          "label": "Incapacitated",
-          "penalty": -99
-        }
-      ],
-      "damageTypes": [
-        {
-          "id": "bashing",
-          "label": "B",
-          "severity": 0,
-          "description": "Blunt or non-lethal damage. Soaked with Stamina. Heals quickly (one level per hour with Blood spend, or naturally over a night)."
-        },
-        {
-          "id": "lethal",
-          "label": "L",
-          "severity": 1,
-          "description": "Edged, piercing, or gunshot. Soaked with Stamina + Fortitude. Heals slower; one level per night with Blood spend."
-        },
-        {
-          "id": "aggravated",
-          "label": "A",
-          "severity": 2,
-          "description": "Fire, sunlight, supernatural claws/fangs, magic. ONLY Fortitude soaks it. Heals very slowly; one level per five nights with full daily blood expenditure."
-        }
-      ],
-      "aliases": [
-        "hp",
-        "HP",
-        "health",
-        "healthTrack"
-      ]
-    },
-    {
       "name": "Soak (Bashing)",
       "formula": "Stamina + armor B-soak. Soak rolls cannot botch.",
       "renderAs": "value",
@@ -652,6 +529,57 @@
       "aliases": [
         "soakAggravated",
         "aggravatedSoak"
+      ]
+    },
+    {
+      "name": "Humanity",
+      "formula": "0-10. Sin-hierarchy: lose a dot when you commit an act at or below your current rating without a successful Conscience roll. Most humans sit 6-7. Below 5 is monstrous; 0 is wight.",
+      "default": 7,
+      "renderAs": "bar",
+      "aliases": [
+        "humanity"
+      ]
+    },
+    {
+      "name": "Path Rating",
+      "formula": "0-10. Use INSTEAD of Humanity if the character is on a Path of Enlightenment. Mechanically identical hierarchy of sins; the act-list differs per Path. Default 0 (= no Path; Humanity is in use).",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "path",
+        "pathRating",
+        "pathOfEnlightenment"
+      ]
+    },
+    {
+      "name": "Conscience",
+      "formula": "1-5. Standard Virtue (Humanity track). Resists doing acts that would cost Humanity. Replaced by Conviction on a Path of Enlightenment.",
+      "default": 3,
+      "renderAs": "value",
+      "aliases": [
+        "conscience",
+        "conviction",
+        "ConscienceConviction"
+      ]
+    },
+    {
+      "name": "Self-Control",
+      "formula": "1-5. Standard Virtue (Humanity track). Resists Frenzy. Replaced by Instinct on a Path of Enlightenment.",
+      "default": 3,
+      "renderAs": "value",
+      "aliases": [
+        "selfControl",
+        "instinct",
+        "SelfControlInstinct"
+      ]
+    },
+    {
+      "name": "Courage",
+      "formula": "1-5. Resists Rotschreck (the Red Fear) and shoring up against fear-based effects. Used by both Humanity AND Path characters. Note: when rolling Virtues, the dice cap at the character's Humanity/Path rating, not the Virtue rating.",
+      "default": 3,
+      "renderAs": "value",
+      "aliases": [
+        "courage"
       ]
     }
   ],
@@ -690,7 +618,7 @@
         },
         {
           "label": "Ride the Wave",
-          "description": "Player is intentionally riding the Beast \u2014 limited steering via Self-Control / Instinct rolls. Some control retained."
+          "description": "Player is intentionally riding the Beast — limited steering via Self-Control / Instinct rolls. Some control retained."
         },
         {
           "label": "Frenzy (Hunger)",
@@ -735,6 +663,7 @@
     "abilities",
     "states",
     "backgrounds",
+    "meritsFlaws",
     "inventory",
     "notes"
   ],
@@ -751,6 +680,7 @@
       "disciplines",
       "states",
       "backgrounds",
+      "meritsFlaws",
       "inventory",
       "notes"
     ],
@@ -766,34 +696,57 @@
       "derived:Protean",
       "derived:Necromancy",
       "derived:Thaumaturgy",
-      "derived:Vicissitude"
+      "derived:Vicissitude",
+      "derived:Humanity",
+      "derived:Path Rating",
+      "derived:Conscience",
+      "derived:Self-Control",
+      "derived:Courage"
     ]
   },
   "resources": [
     {
       "id": "blood-pool",
-      "label": "Blood Pool",
+      "label": "Blood Pool (gen 8-13 auto; elder gens override manually)",
       "type": "pool",
-      "max": 10,
-      "current": 10,
+      "max": "23 - {Generation}",
+      "current": "23 - {Generation}",
       "color": "bad",
       "quickButtons": [
-        { "label": "Spend 1", "delta": -1 },
-        { "label": "Spend 5", "delta": -5 },
-        { "label": "Feed", "delta": "max" }
+        {
+          "label": "Spend 1",
+          "delta": -1
+        },
+        {
+          "label": "Spend 5",
+          "delta": -5
+        },
+        {
+          "label": "Feed",
+          "delta": "max"
+        }
       ]
     },
     {
       "id": "willpower",
-      "label": "Willpower",
+      "label": "Willpower (max = Permanent Willpower)",
       "type": "pool",
-      "max": 10,
-      "current": 5,
+      "max": "{Permanent Willpower}",
+      "current": "{Courage}",
       "color": "accent",
       "quickButtons": [
-        { "label": "-1", "delta": -1 },
-        { "label": "+1", "delta": 1 },
-        { "label": "Refresh", "delta": "max" }
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "+1",
+          "delta": 1
+        },
+        {
+          "label": "Refresh",
+          "delta": "max"
+        }
       ]
     },
     {
@@ -803,18 +756,51 @@
       "rendererConfig": {
         "component": "v20-health-track",
         "levels": [
-          { "label": "Bruised", "penalty": 0 },
-          { "label": "Hurt", "penalty": -1 },
-          { "label": "Injured", "penalty": -1 },
-          { "label": "Wounded", "penalty": -2 },
-          { "label": "Mauled", "penalty": -2 },
-          { "label": "Crippled", "penalty": -5 },
-          { "label": "Incapacitated", "penalty": -99 }
+          {
+            "label": "Bruised",
+            "penalty": 0
+          },
+          {
+            "label": "Hurt",
+            "penalty": -1
+          },
+          {
+            "label": "Injured",
+            "penalty": -1
+          },
+          {
+            "label": "Wounded",
+            "penalty": -2
+          },
+          {
+            "label": "Mauled",
+            "penalty": -2
+          },
+          {
+            "label": "Crippled",
+            "penalty": -5
+          },
+          {
+            "label": "Incapacitated",
+            "penalty": -99
+          }
         ],
         "damageTypes": [
-          { "id": "bashing", "label": "B", "severity": 0 },
-          { "id": "lethal", "label": "L", "severity": 1 },
-          { "id": "aggravated", "label": "A", "severity": 2 }
+          {
+            "id": "bashing",
+            "label": "B",
+            "severity": 0
+          },
+          {
+            "id": "lethal",
+            "label": "L",
+            "severity": 1
+          },
+          {
+            "id": "aggravated",
+            "label": "A",
+            "severity": 2
+          }
         ]
       }
     }
@@ -827,19 +813,45 @@
       "default": 7
     },
     "paths": [
-      { "id": "humanity", "label": "Humanity", "loreRef": "humanity" },
-      { "id": "honorable-accord", "label": "Path of Honorable Accord", "loreRef": "path-honorable-accord" },
-      { "id": "caine", "label": "Path of Caine", "loreRef": "path-caine" },
-      { "id": "beast", "label": "Path of the Beast", "loreRef": "path-beast" },
-      { "id": "night", "label": "Path of Night", "loreRef": "path-night" }
+      {
+        "id": "humanity",
+        "label": "Humanity",
+        "loreRef": "humanity"
+      },
+      {
+        "id": "honorable-accord",
+        "label": "Path of Honorable Accord",
+        "loreRef": "path-honorable-accord"
+      },
+      {
+        "id": "caine",
+        "label": "Path of Caine",
+        "loreRef": "path-caine"
+      },
+      {
+        "id": "beast",
+        "label": "Path of the Beast",
+        "loreRef": "path-beast"
+      },
+      {
+        "id": "night",
+        "label": "Path of Night",
+        "loreRef": "path-night"
+      }
     ],
     "virtues": [
       {
         "id": "conscience-conviction",
         "label": "Conscience / Conviction",
         "options": [
-          { "id": "conscience", "label": "Conscience" },
-          { "id": "conviction", "label": "Conviction" }
+          {
+            "id": "conscience",
+            "label": "Conscience"
+          },
+          {
+            "id": "conviction",
+            "label": "Conviction"
+          }
         ],
         "min": 1,
         "max": 5,
@@ -849,8 +861,14 @@
         "id": "self-control-instinct",
         "label": "Self-Control / Instinct",
         "options": [
-          { "id": "self-control", "label": "Self-Control" },
-          { "id": "instinct", "label": "Instinct" }
+          {
+            "id": "self-control",
+            "label": "Self-Control"
+          },
+          {
+            "id": "instinct",
+            "label": "Instinct"
+          }
         ],
         "min": 1,
         "max": 5,

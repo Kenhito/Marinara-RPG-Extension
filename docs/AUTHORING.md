@@ -1,5 +1,7 @@
 # Authoring a new ruleset
 
+> **Phase 5 + 6 schema additions live in [`docs/AUTHORING-PHASE-6.md`](AUTHORING-PHASE-6.md)** — that doc covers the Resources cluster, `sections.order` / `sections.hidden`, autocalc derived stats (`valueFormula` / `tooltipFormula` / `formulaShort` / `rollFormula`), `commitmentModel` + per-resource `commitmentPool`, the `state-banner` resource type, the seven current resolution modes (including roll-under and stance-modal-pool), and the item-level `hardness` / `moteCommitment` / `motePool` auto-inheritance. Read it BEFORE you start authoring — it's additive on top of this guide, but the additions are substantial.
+
 This guide walks through adding a third ruleset to this repo. Time budget: ~2 hours for a rules-light system, ~1 day for a full mid-weight one.
 
 ## Anatomy of a ruleset bundle
@@ -16,16 +18,21 @@ rulesets/your-system/
 
 ## Step 1 — choose a resolution mode
 
-The schema's `resolution.mode` enum has four first-class modes:
+The schema's `resolution.mode` enum has **nine** modes. The four first-class modes documented here cover the most common cases; the other five (added across Phases 5, 6, and the 2026-05 OpenD6-build-remediation round) are documented in **[`docs/AUTHORING-PHASE-6.md`](AUTHORING-PHASE-6.md)** section 1.
 
-| Mode | Used by | Required sub-fields |
-|------|---------|---------------------|
-| `single-roll`     | D&D, Pathfinder, Cypher System | `modifierFormula` |
-| `dice-pool`       | Exalted, oWoD/nWoD, Shadowrun  | `poolFormula`, `target`, `doubles`, `botches` |
-| `d100-percentile` | Call of Cthulhu, BRP-derived   | `skillFormula` |
-| `2d6-stat`        | PbtA (Apocalypse, Dungeon, Monster of the Week) | `modifierFormula`, `bands` |
+| Mode | Used by | Required sub-fields | Documented in |
+|------|---------|---------------------|---------------|
+| `single-roll`     | D&D, Pathfinder, Cypher System | `modifierFormula` | this doc |
+| `dice-pool`       | Exalted, oWoD/nWoD, Shadowrun  | `poolFormula`, `target`, `doubles`, `botches` | this doc |
+| `d100-percentile` | Call of Cthulhu, BRP-derived   | `skillFormula` | this doc |
+| `2d6-stat`        | PbtA (Apocalypse, Dungeon, Monster of the Week) | `modifierFormula`, `bands` | this doc |
+| `fate-ladder`     | Fate Core, Fate Accelerated | `modifierFormula`, `ladder`, `successWithStyle` | AUTHORING-PHASE-6 §1 |
+| `roll-under`      | GURPS, CoC 7e, Pendragon | `diceFormula`, target source, optional crit/fumble | AUTHORING-PHASE-6 §1 |
+| `stance-modal-pool` | Lasers & Feelings, Stewpot, Trophy Dark | `diceFormula`, `stances`, target source, `directionalInvariant` | AUTHORING-PHASE-6 §1 |
+| `dice-pool-sum`   | OpenD6, WEG Star Wars, Mini Six | `poolFormula`, `dieSize`, `difficultyHint`, optional Wild Die | AUTHORING-PHASE-6 §1 |
+| `narrative-handled` | Trophy Dark dark dice, prose-resolved scenes | `description`, optional `noticeText` | AUTHORING-PHASE-6 §1 |
 
-If your system doesn't fit any mode cleanly: pick the closest, encode it as best you can, and document the gap in your `INSTALL.md`. Feel free to open a PR proposing a fifth mode (and the corresponding widget in `extension/RPG-Extension-GM-Mode.js`).
+**If your system's dice mechanic doesn't fit any of the nine modes — STOP.** Don't encode it under the closest one (that produces a sheet/widget that lies to the player). Ask Kenhito in the **Marinara Extension community thread** (linked from the project README) or open an issue at the project's GitHub repo so the mode (or schema extension) can be added properly. Schema additions are Kenhito's job, not yours.
 
 ## Step 2 — copy a starting bundle
 
@@ -153,7 +160,7 @@ The repo is MIT and accepts PRs adding rulesets. Include:
 
 **You wrote a "field" that isn't in the schema.** The schema has `additionalProperties: false`. The validator will tell you exactly which extra field is rejected.
 
-**Your `oneOf` resolution disagrees.** The `resolution` field uses `oneOf` over the four modes — extra fields from another mode (e.g. `target` on a single-roll) make the validator reject under all four branches. Trim to the fields your mode actually requires.
+**Your `oneOf` resolution disagrees.** The `resolution` field uses `oneOf` over the nine modes — extra fields from another mode (e.g. `target` on a single-roll) make the validator reject under all nine branches. Trim to the fields your mode actually requires.
 
 **You used emojis in the JSON.** They're valid JSON, but the project convention is no emojis in committed source files (engine convention; we follow it). Save them for narration.
 

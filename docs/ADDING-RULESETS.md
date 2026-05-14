@@ -18,16 +18,20 @@ The extension and schema live one level up at `extension/RPG-Extension-GM-Mode.{
 
 ## Decision tree — before you start
 
-1. **Does my system fit one of the existing resolution modes?**
+1. **Does my system fit one of the nine existing resolution modes?**
    - d20 + modifier vs DC → `single-roll`
    - dice pool counted against a target → `dice-pool`
    - 1d100 under skill → `d100-percentile`
    - 2d6 + stat with outcome bands → `2d6-stat`
    - 4dF + skill on a verbal ladder → `fate-ladder`
+   - dice total under a target (GURPS, CoC 7e, Pendragon) → `roll-under`
+   - declare-a-stance-per-roll dice pool (L&F, Stewpot, Trophy Dark) → `stance-modal-pool`
+   - Xd6 sum vs difficulty with optional Wild Die (OpenD6, WEG Star Wars, Mini Six) → `dice-pool-sum`
+   - prose-resolved / GM-overrules (Trophy Dark dark dice, freeform scenes) → `narrative-handled`
 
-   If yes, skip to **"Authoring a new bundle"** below — you only edit data files.
+   If yes, skip to **"Authoring a new bundle"** below — you only edit data files. See **[`docs/AUTHORING-PHASE-6.md`](AUTHORING-PHASE-6.md)** section 1 for the full `resolution` block shape of each mode (especially the five added after Phase 5).
 
-2. **If not**, you're adding a new resolution mode. That means a small change to the schema (a new `oneOf` branch under `resolution`) and to the extension (a new constant in `MODES`, a new `buildXWidget` builder, a new `rollX` function, and a new dispatch branch). The Fate-core addition was about 100 lines total. **The recipe is in "Adding a new resolution mode" below.**
+2. **If not — STOP.** Don't author a bundle that pretends to fit the closest mode (that produces a sheet/widget that lies to the player). Adding a new resolution mode requires schema + framework JS changes, not a per-ruleset workaround. **Ask Kenhito in the Marinara Extension community thread** (linked from the project README) or open an issue at the project's GitHub repo. Describe the system, the resolution rule's page reference, the shape of one full roll, and what specifically breaks if you try to fit it under an existing mode. The detailed recipe for adding a new mode is preserved in **"Adding a new resolution mode" below** for reference, but the canonical path is the request-via-thread route — Kenhito's job, not yours.
 
 ## Authoring a new bundle (resolution mode already exists)
 
@@ -94,7 +98,7 @@ User-facing walkthrough. Required because the engine has no marketplace — ever
 
 ## Adding a new resolution mode
 
-This is rarer but is what you do for systems that don't fit any of the five existing modes. **The Fate-ladder mode was added with three changes** — schema, extension, and a new bundle that uses it. Follow the same recipe for your system.
+**Heads-up:** this section is preserved for reference (and for Kenhito's use when prepping a schema addition). If you're a bundle author, the **canonical path now is to ask Kenhito in the Marinara Extension community thread** rather than DIY the mode addition — see Decision tree step 2 above. This is rarer than authoring a fits-existing-mode bundle and was historically the case for systems that don't fit any of the nine existing modes. **The Fate-ladder mode was added with three changes** — schema, extension, and a new bundle that uses it. Follow the same recipe for your system.
 
 ### Step 1 — schema
 

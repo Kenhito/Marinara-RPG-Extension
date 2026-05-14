@@ -123,8 +123,8 @@
     "classLabel": "Trade"
   },
   "diceTagFormat": {
-    "template": "[mrrp-roll: ruleset=stewpot, stance={stance}, stat=Capability, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]",
-    "example": "[mrrp-roll: ruleset=stewpot, stance=stillness, stat=Capability, statValue=3, pool=3, dice=[1,2,3], successes=3, exactMatches=1, tier=harvest, narrationHook=perfect_day]"
+    "template": "[mrr-roll: ruleset=stewpot, stance={stance}, stat=Capability, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]",
+    "example": "[mrr-roll: ruleset=stewpot, stance=stillness, stat=Capability, statValue=3, pool=3, dice=[1,2,3], successes=3, exactMatches=1, tier=harvest, narrationHook=perfect_day]"
   },
   "lorebookKeys": [
     "stewpot",

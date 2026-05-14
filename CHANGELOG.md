@@ -12,6 +12,33 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+## [0.4.2] - 2026-05-14
+
+Trinity grouping, Merits & Flaws section, OpenD6 dogfood remediation, parity fixes, and documentation completeness pass.
+
+### Added — V20 trinity skill grouping + Merits & Flaws section (2026-05-14)
+
+- Framework JS in `extension/RPG-Extension-GM-Mode.js` now consumes `state.ruleset.abilities.groups[]` and buckets a ruleset's `skills[]` under named subheaders. V20 ships with the canonical Talents / Skills / Knowledges trinity (10 + 10 + 10) sourced from the official 4-Page Neonate sheet. Skills not listed in any group fall back under an "Other" subheader. Mechanism generalizes to W20, M20, and any future system that wants D&D-by-attribute-style grouping (config-only — no framework change).
+- New `meritsFlaws` section type rendered between `backgrounds` and `inventory` when a ruleset declares it in `sections.order`. V20 ships with it enabled. Built-in renderer with two subgroups (Merits / Flaws), per-row name + type (Physical / Mental / Social / Supernatural) + points (1-7) + remove button. Storage at `state.sheet.meritsFlaws[]` with explicit `mergeSheet` persistence whitelist. Section name is generic — any system can reuse.
+- Schema enums extended in both `sections.order` and legacy `sheetSections` to include `"meritsFlaws"`.
+
+### Fixed — cross-repo parity drift (2026-05-14)
+
+- **P1 dice-tag prefix fix**: `rulesets/{lasers-and-feelings,stewpot,trophy-dark}/ruleset.json` `diceTagFormat.template` + `.example` were emitting `[mrrp-roll: ...]` (RP-mode prefix) instead of `[mrr-roll: ...]` (GM-mode prefix). Narration models reading these rulesets would have produced tags that didn't match the extension's own emitted format. Affected bundles rebuilt.
+
+### Updated — authoring docs to match current 9-mode schema (2026-05-14)
+
+- `docs/AUTHORING-PHASE-6.md` renamed scope to "Phase 5 / 6 / 7 schema additions"; mode list extended from 7 to 9 (added `dice-pool-sum` with Wild Die and `narrative-handled`); new sections cover `pipGranularity` (OpenD6 sub-die precision), `effects.onSpend` (spend-driven bonuses), `roundCounters[]` (per-round combat penalties), `derivedStats[].track[].penaltyKind` (flat / dice), `abilities.groups[]` (trinity), and `meritsFlaws` (V20-anchored section). New "⚠️ Before you start" callout instructs authors to ask Kenhito in the Marinara Extension community thread if their dice mechanic isn't one of the nine supported modes.
+- `AUTHORING-PROMPT.md` updated to advertise all 9 modes + new schema features; "⚠️ Before authoring" callout added.
+- `docs/AUTHORING.md` and `docs/ADDING-RULESETS.md` updated with 9-mode tables and the "ask Kenhito" escalation path.
+- `docs/ENGINE-CONSTRAINTS.md` updated with 9-mode coverage.
+- `AGENTS.md` section 4.3 + section 7 updated with the 9-mode list and ⚠️ ask-Kenhito callout.
+
+### Updated — README with system-grouped dice list + character-save volatility section (2026-05-14)
+
+- `README.md` now lists the 9 supported resolution mechanics grouped by tabletop family (d20 / Storyteller d10 / Percentile / PbtA / Fate / Roll-under / Stance-modal / OpenD6 / Narrative-handled), with each family naming a sample of supported systems.
+- `## Character data persistence` section expanded with a control-by-control table, an embedded screenshot of the save controls (`docs/screenshots/character-save-controls.png`), and a strong emphasis that localStorage is volatile — players should hit `save` regularly to download a JSON file as the master copy. Lists 7 scenarios where localStorage can be wiped.
+
 ### Added — Trophy Dark + Stewpot rulesets (stance-modal-pool generalization) (2026-05-10)
 
 Two additional rulesets that exercise `stance-modal-pool` beyond L&F — proves the mode generalizes to the polarized-pool family.

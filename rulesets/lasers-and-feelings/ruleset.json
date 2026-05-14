@@ -85,8 +85,8 @@
     "classLabel": "Role"
   },
   "diceTagFormat": {
-    "template": "[mrrp-roll: ruleset=lasers-and-feelings, stance={stance}, stat=Number, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]",
-    "example": "[mrrp-roll: ruleset=lasers-and-feelings, stance=lasers, stat=Number, statValue=4, pool=3, dice=[1,4,5], successes=2, exactMatches=1, tier=good, narrationHook=laser_feelings]"
+    "template": "[mrr-roll: ruleset=lasers-and-feelings, stance={stance}, stat=Number, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]",
+    "example": "[mrr-roll: ruleset=lasers-and-feelings, stance=lasers, stat=Number, statValue=4, pool=3, dice=[1,4,5], successes=2, exactMatches=1, tier=good, narrationHook=laser_feelings]"
   },
   "lorebookKeys": [
     "lasers",

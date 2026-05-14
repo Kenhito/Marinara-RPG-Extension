@@ -144,7 +144,11 @@ The slot dropdown / target dropdown in the item form pulls from the active rules
 
 ### 4.3 Resolution mode (`resolution.oneOf`)
 
-Five resolution modes. The `mode` field selects which branch's required sub-fields apply.
+**Nine resolution modes.** The `mode` field selects which branch's required sub-fields apply. The first five are detailed in this section; the remaining four (`roll-under`, `stance-modal-pool`, `dice-pool-sum`, `narrative-handled`) are documented in **[`docs/AUTHORING-PHASE-6.md`](docs/AUTHORING-PHASE-6.md)** section 1 with full shape examples.
+
+> **⚠️ Before authoring: does the schema support your system's dice mechanic?**
+>
+> The nine modes cover the vast majority of shipping tabletop systems. **If your system's resolution doesn't fit any of the nine, STOP** — don't encode it under the closest mode (that produces a sheet/widget that lies to the player). Ask Kenhito in the **Marinara Extension community thread** (linked from the project README) or open an issue at the project's GitHub repo. Schema additions are Kenhito's job, not yours.
 
 #### `single-roll` — used by D&D, Pathfinder, Cypher
 ```
@@ -197,7 +201,7 @@ Five resolution modes. The `mode` field selects which branch's required sub-fiel
 }
 ```
 
-If your target system fits none of these, see Section 7 ("Adding a new resolution mode").
+If your target system fits none of the **nine** modes (the five shapes above plus `roll-under`, `stance-modal-pool`, `dice-pool-sum`, and `narrative-handled` — see `docs/AUTHORING-PHASE-6.md` section 1), see Section 7 — but read the heads-up at the top of that section first: the canonical path now is to ask Kenhito in the Marinara Extension community thread rather than DIY the schema addition.
 
 ### 4.4 Attributes array
 
@@ -541,7 +545,11 @@ node --check extension/RPG-Extension-GM-Mode.js
 
 Both must pass.
 
-## 7. Adding a new resolution mode (when none of the five fit)
+## 7. Adding a new resolution mode (when none of the nine fit)
+
+> **Heads-up:** as a bundle author you should **NOT** add modes yourself. Ask Kenhito in the **Marinara Extension community thread** (linked from the project README) or open an issue at the project's GitHub repo. Describe: system name + page reference for the resolution rule, shape of one full roll, any special mechanics (exploding dice, opposed rolls, multi-stat pulls), and what specifically breaks if you try to fit it under one of the nine existing modes. Schema additions take a few days when scoped right.
+>
+> The recipe below is preserved for Kenhito's reference (and contributors with explicit sign-off).
 
 Required when your target system has dice math no existing mode captures. Roughly 100 lines of code change across two files.
 

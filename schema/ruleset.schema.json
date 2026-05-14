@@ -360,6 +360,78 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "required": ["mode", "poolFormula", "difficultyHint"],
+          "properties": {
+            "mode": { "const": "dice-pool-sum" },
+            "poolFormula": {
+              "type": "string",
+              "description": "Plain-language formula for pool size in DICE (e.g. \"Attribute + Skill\" for OpenD6, where attribute and skill values are stored as integer dice counts). The dice widget rolls this many `dieSize`-siders, sums their face values, adds the resolved pips (see `pipsField`), and compares to the difficulty entered at roll time. Sister mode to `dice-pool`: dice-pool counts dice meeting a per-die target (Storyteller systems); dice-pool-sum totals face values vs a difficulty number (D6 family — OpenD6, WEG Star Wars, Mini Six, D6 System SRD, MEGS)."
+            },
+            "dieSize": {
+              "type": "integer",
+              "enum": [4, 6, 8, 10, 12],
+              "default": 6,
+              "description": "Face count of each pool die. D6-family systems: 6. Documented enum keeps the dice-widget parser tight."
+            },
+            "pipsField": {
+              "type": "string",
+              "description": "Optional name of the sheet field that carries +pips (the +P in OpenD6's NDX+P notation, where pips are 1/3-of-a-die granularity). The widget adds this resolved integer to the rolled sum before comparing to difficulty. Pair with each attribute/skill's `pipGranularity` block (added in v0.4.2). When omitted, no flat-pip bonus is added."
+            },
+            "difficultyHint": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Recommended default difficulty number the dice widget shows as the difficulty input's placeholder. Player or GM types a different number per roll. OpenD6 Adventure: 15 (Easy 10, Difficult 20, Heroic 30). v0.4.2 limits this to a static integer; opposed-roll formulas deferred to a later release."
+            },
+            "wildDie": {
+              "type": "object",
+              "required": ["enabled"],
+              "additionalProperties": false,
+              "description": "Optional Wild Die mechanic — one die in every pool gets special handling. D6-family canon (OpenD6, WEG Star Wars, Mini Six): explodeFace=6 cascades upward; critFailFace=1 surfaces a critFail flag when the total fell short of difficulty. The widget rolls the Wild Die separately and reports its face + explode chain + critFail flag in the roll result. The narrator resolves the in-fiction effect of a critFail (OpenD6: 'subtract highest other die OR add complication' — GM-fiat). Don't read this as auto-resolution: widget surfaces a flag, narrator picks the consequence.",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Master switch. When false, no Wild Die is designated and the rolled pool is a plain sum."
+                },
+                "explodeFace": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "default": 6,
+                  "description": "Face value that triggers an explode (re-roll, add the new face to the total; cascades while the new face also matches). Typically equal to `dieSize`."
+                },
+                "critFailFace": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 1,
+                  "description": "Face value that signals a potential critical failure. The widget reports `critFail: true` in the roll result when the Wild Die landed on this face AND the rolled total fell short of difficulty. Narrator resolves."
+                },
+                "explodeCap": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 0,
+                  "description": "Maximum chained explosions. 0 means uncapped (canon OpenD6). Set to N to cap at N chained explodes — useful for sanity-bounded pathological streaks."
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "required": ["mode", "description"],
+          "properties": {
+            "mode": { "const": "narrative-handled" },
+            "description": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Plain-language description of how the system resolves checks (e.g. 'Roll the GM-chosen formula; the narrator adjudicates outcomes from prose.'). The dice widget skips automatic resolution and surfaces a generic manual NdX widget the player can drive. Use this mode as a lossy-but-functional path for any system whose dice math doesn't fit the typed resolution modes — the schema validates, the widget runs, the narrator does the math."
+            },
+            "noticeText": {
+              "type": "string",
+              "description": "Optional banner text shown above the manual NdX widget (e.g. 'This ruleset uses narrative resolution — see the gm-agent prompt for adjudication rules.'). Defaults to a generic notice when omitted."
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -408,6 +480,23 @@
             "type": "array",
             "description": "Optional alternate names the LLM may use when emitting [mrr-state: field=\"...\"] tags for this attribute. The abbreviation is auto-recognized and does not need to be repeated here.",
             "items": { "type": "string" }
+          },
+          "pipGranularity": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Optional pip-granularity declaration for ND+P stat ratings (OpenD6, WEG Star Wars, Mini Six, D6 System SRD). When present, the sheet renders this attribute as 'N D+P' instead of just 'N', and the state-mutator accepts delta='+1pip' / '-1pip' / '+1die' separately. The advancement loop converts pips into dice when pip count reaches `pipsPerDie`. Pairs with `resolution.pipsField` on dice-pool-sum mode.",
+            "properties": {
+              "pipsPerDie": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 3,
+                "description": "How many pips equal one die. OpenD6: 3."
+              },
+              "pipsField": {
+                "type": "string",
+                "description": "Name of the sheet sub-field carrying the pip count (defaults to 'pips' if omitted). The dice widget adds this resolved integer to dice-pool-sum rolls; the state-mutator writes pip deltas to this field."
+              }
+            }
           }
         }
       }
@@ -448,6 +537,23 @@
             "type": "array",
             "description": "Optional alternate names the LLM may use when emitting [mrr-state: field=\"...\"] tags for this skill.",
             "items": { "type": "string" }
+          },
+          "pipGranularity": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Optional pip-granularity declaration for ND+P stat ratings (OpenD6, WEG Star Wars, Mini Six). Same shape and semantics as attribute pipGranularity. Pairs with `resolution.pipsField` on dice-pool-sum mode. The advancement loop converts pips to dice when pip count reaches `pipsPerDie`.",
+            "properties": {
+              "pipsPerDie": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 3,
+                "description": "How many pips equal one die. OpenD6: 3."
+              },
+              "pipsField": {
+                "type": "string",
+                "description": "Name of the sheet sub-field carrying the pip count (defaults to 'pips')."
+              }
+            }
           }
         }
       }
@@ -600,6 +706,32 @@
             "enum": ["bar", "value", "track"],
             "default": "value"
           },
+          "effects": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Optional declarative effects this derived stat has on dice rolls when spent (Character Points, Fate Points, Force Points). When the player triggers a spend pre-roll, the dice widget reads these fields and applies the effect to the very-next-roll's pool/dice/modifier. The widget surfaces a 'Spend X?' prompt on roll-start when an enabled spend effect is present; the state-mutator emits the resource decrement as a delta. Multiple resources can each declare their own `effects` block — OpenD6 has Character Points (+1 die per spend) AND Fate Points (double total dice per spend) on separate derived stats.",
+            "properties": {
+              "onSpend": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Effect applied to the next dice-pool-sum roll when this resource is spent pre-roll. Each sub-field is optional; declare what the resource does.",
+                "properties": {
+                  "addDice": {
+                    "type": "integer",
+                    "description": "Number of extra dice added to the pool for the next roll (OpenD6 Character Point: 1)."
+                  },
+                  "doubleDice": {
+                    "type": "boolean",
+                    "description": "When true, doubles the rolled pool size for the next roll (Star Wars D6 Force Point)."
+                  },
+                  "addPip": {
+                    "type": "integer",
+                    "description": "Number of pips added to the next roll's flat-modifier component."
+                  }
+                }
+              }
+            }
+          },
           "track": {
             "type": "array",
             "items": {
@@ -608,7 +740,13 @@
               "additionalProperties": false,
               "properties": {
                 "label": { "type": "string" },
-                "penalty": { "type": "integer" }
+                "penalty": { "type": "integer" },
+                "penaltyKind": {
+                  "type": "string",
+                  "enum": ["flat", "dice"],
+                  "default": "flat",
+                  "description": "How the renderer interprets `penalty` for display and state-reminder text. 'flat' (default, back-compat) — penalty applies as a flat numeric subtraction to the relevant total (Exalted Wound Levels, WoD health-state penalties). 'dice' — penalty applies as a DICE subtraction (OpenD6 / WEG D6 / Mini Six Wound Levels: 'Wounded -1D' removes one die from every pool until healed). When 'dice', the renderer prefixes the cell text with 'D' (e.g. '-1D' instead of '-1') and the state-reminder agent emits 'minus N dice from every pool' instead of 'minus N to total'."
+                }
               }
             },
             "description": "For renderAs=track: ordered cells (e.g. Exalted health levels)."
@@ -676,10 +814,10 @@
     },
     "sheetSections": {
       "type": "array",
-      "description": "Order of sheet sections rendered by the extension. Recognized values: attributes, skills, saves, derived, states, conditions, backgrounds, inventory, charms, intimacies, abilities, notes. (Legacy field; new rulesets should prefer `sections.order` which supports the wider section vocabulary including identity / xp / resources / morality / spellbook.)",
+      "description": "Order of sheet sections rendered by the extension. Recognized values: attributes, skills, saves, derived, states, conditions, backgrounds, meritsFlaws, inventory, charms, intimacies, abilities, notes. (Legacy field; new rulesets should prefer `sections.order` which supports the wider section vocabulary including identity / xp / resources / morality / spellbook.)",
       "items": {
         "type": "string",
-        "enum": ["attributes", "skills", "saves", "derived", "states", "conditions", "backgrounds", "inventory", "charms", "intimacies", "abilities", "notes"]
+        "enum": ["attributes", "skills", "saves", "derived", "states", "conditions", "backgrounds", "meritsFlaws", "inventory", "charms", "intimacies", "abilities", "notes"]
       },
       "uniqueItems": true,
       "default": ["attributes", "skills", "derived", "states"]
@@ -693,7 +831,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["identity", "xp", "resources", "attributes", "skills", "saves", "derived", "abilities", "inventory", "spellbook", "states", "conditions", "backgrounds", "intimacies", "morality", "charms", "disciplines", "notes"]
+            "enum": ["identity", "xp", "resources", "attributes", "skills", "saves", "derived", "abilities", "inventory", "spellbook", "states", "conditions", "backgrounds", "meritsFlaws", "intimacies", "morality", "charms", "disciplines", "notes"]
           },
           "uniqueItems": true,
           "description": "Explicit order of sections on the sheet. Sections not listed render at the end in extension-default order. Sections present in `hidden` are excluded regardless of their position here."
@@ -726,8 +864,8 @@
           },
           "type": {
             "type": "string",
-            "enum": ["bar", "dice", "counter", "pool", "custom"],
-            "description": "Render shape. 'bar' = horizontal fill bar with current/max. 'dice' = pool of dice (each clickable to spend; uses `die` size). 'counter' = numeric stepper. 'pool' = current/max with quick-buttons. 'custom' = registered named renderer via `rendererConfig.component`."
+            "enum": ["bar", "dice", "counter", "pool", "custom", "state-banner"],
+            "description": "Render shape. 'bar' = horizontal fill bar with current/max. 'dice' = pool of dice (each clickable to spend; uses `die` size). 'counter' = numeric stepper. 'pool' = current/max with quick-buttons. 'custom' = registered named renderer via `rendererConfig.component`. 'state-banner' = surface a ruleset-declared state inline in the Resources cluster (uses `stateRef` to name the state) — click cycles through its declared values."
           },
           "max": {
             "type": ["string", "integer"],
@@ -775,6 +913,14 @@
           "stateName": {
             "type": "string",
             "description": "Optional legacy-state binding. When set, the resource reads/writes state.sheet.derived[stateName] instead of the new state.sheet.resources[id].current — keeping the value in the same store the legacy state-mutator chat-tag parser writes to (e.g. [mrr-state: field=\"Personal Motes\" delta=-3]). Used to surface LLM mutations in the Resources cluster automatically and to inherit the persistence path the 'derived' mergeSheet whitelist already supports. Resources without a legacy counterpart (e.g. sorcerous-motes) omit this and use the new resources store directly."
+          },
+          "stateRef": {
+            "type": "string",
+            "description": "For type='state-banner': the name of a state declared in this ruleset's states[] array (e.g. 'Anima Banner'). The renderer reads the state's `values` for its cycle/dropdown and reads/writes state.sheet.states[stateRef] for the current value. List the state-banner's parent state in `sections.hidden` as 'state:<Name>' to avoid double-rendering."
+          },
+          "commitmentPool": {
+            "type": "string",
+            "description": "When set (and the ruleset's commitmentModel is 'mote'), reduces this resource's effective max by the live sum of moteCommitment from equipped items whose `motePool` matches this value. Typical: 'Personal' or 'Peripheral' for Exalted motes. The renderer's commitment reconciler also adjusts the saved spendable on every commit / uncommit / slot-displacement, so equipping a charm-bound artifact locks the motes from the spendable pool and unequipping releases them — through the same code path."
           }
         }
       }
@@ -960,6 +1106,41 @@
                 "description": "If true (default), the category renders collapsed on first open and the count badge tells the player how many abilities are inside."
               }
             }
+          }
+        }
+      }
+    },
+    "roundCounters": {
+      "type": "array",
+      "description": "Optional ephemeral per-round counters that the framework auto-resets on a 'round ended' signal from the combat-adjudicator agent. Use for OpenD6's multi-action penalty (declare N actions → every roll that round takes -(N-1) dice), Mini Six rate-of-fire penalties, or any per-round-only modifier that should NOT persist as a sticky state. The schema declares the counter; v0.4.2 does NOT auto-wire the dice-widget penalty application (that's downstream UX work — Task #5). Authors using v0.4.2 should document the workaround in their gm-agent.md and rely on the narrator to apply the penalty.",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "resetOn"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "Stable kebab-case identifier (e.g. 'action-penalty', 'rof-penalty'). NEVER rename."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Display name shown on the combat panel (e.g. 'Action Penalty')."
+          },
+          "max": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Optional cap on the counter's value."
+          },
+          "resetOn": {
+            "type": "string",
+            "enum": ["next-round", "end-of-encounter"],
+            "description": "When the framework auto-zeroes this counter. 'next-round' clears on the combat-adjudicator's 'round ended' signal. 'end-of-encounter' clears when combat exits."
+          },
+          "penaltyFormula": {
+            "type": "string",
+            "description": "Optional formula describing how this counter penalizes rolls (e.g. '-(N - 1) dice' for OpenD6's multi-action penalty). Reference for the gm-agent / dice widget; v0.4.2 surfaces this as text only — auto-apply to roll pools deferred to Task #5."
           }
         }
       }

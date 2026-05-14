@@ -152,8 +152,8 @@
     "classLabel": "Occupation"
   },
   "diceTagFormat": {
-    "template": "[mrrp-roll: ruleset=trophy-dark, stance={stance}, stat=Risk, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]",
-    "example": "[mrrp-roll: ruleset=trophy-dark, stance=light, stat=Risk, statValue=3, pool=3, dice=[2,4,5], successes=2, exactMatches=0, tier=clean, narrationHook=]"
+    "template": "[mrr-roll: ruleset=trophy-dark, stance={stance}, stat=Risk, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]",
+    "example": "[mrr-roll: ruleset=trophy-dark, stance=light, stat=Risk, statValue=3, pool=3, dice=[2,4,5], successes=2, exactMatches=0, tier=clean, narrationHook=]"
   },
   "lorebookKeys": [
     "trophy",
