@@ -396,6 +396,537 @@
       "position": 0,
       "selective": false,
       "constant": false
+    },
+    {
+      "id": "ex3-cc-flow",
+      "name": "Rule: Character creation flow (Solar)",
+      "keys": ["character creation", "create character", "make a solar", "starting character", "character build"],
+      "content": "Solar PCs are built in eight steps. 1) Concept & Caste (Dawn/Zenith/Twilight/Night/Eclipse). 2) Attributes — split 9 dots across the Primary category, 7 across the Secondary, 5 across the Tertiary (Physical/Social/Mental), every Attribute starts at 1. 3) Abilities — 28 dots over 25 Abilities, max 3 in any one, at least one Caste/Favored Ability at 3. 4) Merits — 10 dots from the Merit lists. 5) Charms — 15 Charms (≥10 must be Solar Charms; up to 5 Martial Arts or other-non-Caste). 6) Intimacies — one Defining plus four Minor/Major. 7) Bonus Points — 15 BP to round out. 8) Finishing Touches — Essence 1, Willpower 5, Limit 0, pick a Limit Trigger, designate the Supernal Ability, derive Health/Initiative/Defense/Resolve/Guile.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-cc-bonus-points",
+      "name": "Rule: Bonus Point costs at creation",
+      "keys": ["bonus point", "bonus points", "BP cost", "creation cost"],
+      "content": "Bonus Point costs (Solar, 15 BP total). Attribute = 4 BP (3 if Caste/Favored). Caste or Favored Ability = 1 BP. Non-Caste/Favored Ability = 2 BP. Specialty = 1 BP. Merit dot = 1 BP. Willpower dot = 2 BP. Caste/Favored Charm = 4 BP, non-Caste Charm = 5 BP. Spell in the sorcerer's highest Circle = 4 BP if Occult is Caste/Favored, 5 if not. Mortals build with 21 BP, cap 7 Merit dots, and get no Charms.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-cc-specialty",
+      "name": "Rule: Specialties",
+      "keys": ["specialty", "specialties", "specialized"],
+      "content": "A Specialty is a narrow application of an Ability (Melee: Daiklaves; Socialize: Court Intrigue; Survival: The Wyld). When it applies to the current roll, +1 die. Up to three Specialties per Ability, each bought separately. Specialty also feeds derived static values — Resolve and Guile include +1 if a Specialty applies in context.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-cc-experienced",
+      "name": "Rule: Experienced Solar build",
+      "keys": ["experienced solar", "veteran solar", "essence 2 build"],
+      "content": "An Experienced Solar starts closer to mid-arc: 13 Merits, 20 Charms (one may be Solar Circle Sorcery if Essence 3+), Essence 2, and 18 Bonus Points. Use when the troupe wants to skip the freshly-Exalted opening or when the campaign concept demands veterans. All other creation rules apply normally.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-castes-abilities",
+      "name": "Rule: Caste Abilities — full reference",
+      "keys": ["dawn abilities", "zenith abilities", "twilight abilities", "night abilities", "eclipse abilities", "caste ability list"],
+      "content": "Each Caste has 8 Caste Abilities; the player picks 5 of those as Caste, then 5 anywhere on the list as Favored. Dawn: Archery, Awareness, Brawl/Martial Arts, Dodge, Melee, Resistance, Thrown, War. Zenith: Athletics, Integrity, Performance, Lore, Presence, Resistance, Survival, War. Twilight: Bureaucracy, Craft, Integrity, Investigation, Linguistics, Lore, Medicine, Occult. Night: Athletics, Awareness, Dodge, Investigation, Larceny, Ride, Stealth, Socialize. Eclipse: Bureaucracy, Larceny, Linguistics, Occult, Presence, Ride, Sail, Socialize. Caste + Favored (10 total) cost less in Charm purchase. One Caste Ability is the Supernal — treated as Essence 5 for Charm prerequisites.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-anima-castes",
+      "name": "Rule: Caste Anima Effects (all five)",
+      "keys": ["anima effect", "caste anima", "dawn anima", "zenith anima", "twilight anima", "night anima", "eclipse anima"],
+      "content": "Each Caste has signature anima-banner effects, paid in motes once anima reaches Burning (11+ Peripheral spent). DAWN — pay 10m to make presence a weapon; enemies who see her suffer Resolve/Initiative-shifting morale penalties, scaling to terror at Iconic. ZENITH — pay 10m once per scene for aggravated damage against the undead/Creatures of Darkness, or to consecrate corpses against rising; her anima beacons inspire mortals and purge minor undead at Iconic. TWILIGHT — pay 10m for soak equal to Essence rating until next turn (defensive radiant cocoon), often extending to allies at Iconic. NIGHT — only Caste whose anima can be SUPPRESSED at Glowing (1m extra per stealth-mote spent) to stay hidden; at higher tiers Night uses anima tricks to confuse witnesses about who struck. ECLIPSE — pay 10m + 1wp to sanctify a binding oath (oath-breakers suffer divine retribution); also grants Heaven-recognized diplomatic safe-passage against spirits and gods.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-rules-attributes",
+      "name": "Rule: The nine Attributes",
+      "keys": ["attribute", "attributes", "strength", "dexterity", "stamina", "charisma", "manipulation", "appearance", "perception", "intelligence", "wits"],
+      "content": "Nine Attributes in three categories. PHYSICAL — Strength (raw power, Feats of Strength), Dexterity (agility, attacks, dodge), Stamina (endurance, soak, resist poison/disease). SOCIAL — Charisma (honest leadership, inspiration), Manipulation (deceit, persuasion against the speaker's interest), Appearance (visual presence, often gates social reach). MENTAL — Perception (noticing, ambush detection), Intelligence (analysis, problem-solving, sorcery shaping), Wits (reflexes, Join Battle, quick thinking). Attributes cap at 5 in play (Charms can effectively exceed). Each starts at 1.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-rules-abilities-list",
+      "name": "Rule: The 25 Abilities (reference)",
+      "keys": ["ability list", "abilities reference", "all abilities"],
+      "content": "The 25 Abilities: Archery, Athletics, Awareness, Brawl, Bureaucracy, Craft, Dodge, Integrity, Investigation, Larceny, Linguistics, Lore, Martial Arts, Medicine, Melee, Occult, Performance, Presence, Resistance, Ride, Sail, Socialize, Stealth, Survival, Thrown, War. Brawl and Martial Arts can both be rated, but Solar Charm cascades branch into Brawl OR Martial Arts trees. Linguistics 1 = one Native + (Linguistics) additional languages. Lore covers academic knowledge, history, and spirit identification. Resistance powers soak, willpower regen, and endurance Charms.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-merits-overview",
+      "name": "Rule: Merit categories",
+      "keys": ["merit", "merits", "innate merit", "purchased merit", "story merit"],
+      "content": "Merits are extra traits beyond Attributes and Abilities. Three categories. INNATE — biological/natural (Strong Lungs, Pain Tolerance, Iron Stomach, Eidetic Memory); cannot be purchased mid-arc, cannot be lost in play. PURCHASED — acquired training or possessions (Resources, Fast Reflexes, Quick Draw, Ambidextrous); bought with BP or XP, may be lost narratively. STORY — defined by ongoing fiction (Allies, Contacts, Mentor, Followers, Manse, Cult); can grow or be lost via play. Merit dots typically run 1-5. Some Merits gate other character options (Manse provides a Hearthstone; Artifact provides equipment that requires attunement).",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-merits-common",
+      "name": "Rule: Common Merits sampler",
+      "keys": ["resources merit", "allies merit", "backing merit", "mentor merit", "followers merit", "manse merit", "demesne merit", "hearthstone merit", "artifact merit", "influence merit", "contacts merit", "cult merit"],
+      "content": "Commonly-taken Merits. Resources (1-5) — cash and material wealth, gates lifestyle and Equipment access. Allies (1-5) — characters who provide aid, ranked by capability. Backing — formal rank within an organization. Mentor — a more powerful figure who teaches or advises. Followers — a group of devoted retainers. Contacts — a network providing information. Cult — worshipers who provide motes through devotion (1 = small shrine, 3 = local cult). Manse (1-5) — a place of geomantic power, generates a Hearthstone of equal rating. Demesne — wild geomantic site without a manse; may aid sorcery. Hearthstone — focused crystal granting specific magical benefits, dot-rated. Artifact (1-5) — a magical item; must be attuned (commit motes) to use. Influence — political pull within a polity or institution.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-merits-supernatural",
+      "name": "Rule: Supernatural Merits",
+      "keys": ["supernatural merit", "wings merit", "claws merit", "wall walking", "tail merit", "gills merit", "venomous merit", "thaumaturgist"],
+      "content": "Supernatural Merits represent non-mortal biology or limited innate magic. Examples: Wings (small = glide; full = flight). Claws/Fangs/Hooves/Horns (natural weapons, stat as light or medium). Wall Walking (cling to vertical surfaces without rolls). Tail (extra grasping limb). Gills (breathe water). Venomous (natural toxin, stat as a Damage/Interval poison). Enhanced Sense (one specific sense at superhuman acuity). Quills, Unusual Hide, Poisoned Body, Subtlety, Chameleon, Extra Limbs, Exalted Healing (mortals only). Thaumaturgist — limited mundane magic outside the Sorcery system. Usually restricted to non-human Exalts, beastfolk, or ST-approved exceptions.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-flaws",
+      "name": "Rule: Flaws & Derangements",
+      "keys": ["flaw", "flaws", "derangement", "addiction", "blind flaw", "amputee", "deaf", "mute", "wyld mutant", "hysteria", "paranoia"],
+      "content": "Flaws are persistent negative traits that grant a small BP refund at character creation (typically 2-4 BP each). Examples: Addiction (must satisfy regularly or suffer penalties); Amputee (missing limb); Blind; Deaf; Mute; Sterile; Wyld Mutant (visibly chaos-touched, social and sometimes mechanical penalties); Derangement (one of five named mental conditions). The five named Derangements: Hysteria (overwhelming emotional response under stress); Madness (full break from reality in extreme moments); Megrims (paralyzing depression cycles); Obsession (fixation on a person/object/idea); Paranoia (persistent unfounded suspicion). Each Derangement has ST-narrated triggers and a recurring mechanical bite.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-limit-great-curse",
+      "name": "Rule: Great Curse, Limit, Limit Trigger",
+      "keys": ["great curse", "limit", "limit trigger", "limit break", "torment"],
+      "content": "The Great Curse is the punishment placed on the Solar Exalted by the Neverborn — a defect in their souls that manifests as a Virtue Flaw chosen at creation. Limit is a 0-10 track. When the Solar's Limit Trigger occurs (an event the player defines at creation, e.g. 'I act against my own Defining Intimacy' or 'someone betrays my trust') the Solar gains 1 Limit. Botched rolls involving a Defining Intimacy, or prolonged abuse of one's nature, can also push Limit up at ST discretion. At Limit 10 the Solar enters Limit Break — a Virtue-Flaw-driven outburst lasting one scene, where behavior is dictated by the chosen flaw. After Limit Break, Limit resets to 0.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-virtue-flaws",
+      "name": "Rule: Virtue Flaws (the nine)",
+      "keys": ["virtue flaw", "all-consuming grief", "berserk anger", "chains of honor", "compassionate martyrdom", "contempt of the virtuous", "crushing doubt", "deliberate cruelty", "heart of flint", "rampaging avarice"],
+      "content": "The nine Virtue Flaws — pick one at creation; it expresses during Limit Break. (1) All-Consuming Grief — collapses into grief, withdraws, refuses to act. (2) Berserk Anger — uncontrolled rage, lashes at the nearest source of frustration. (3) Chains of Honor — bound to a code so rigid that flexibility becomes impossible. (4) Compassionate Martyrdom — sacrifices everything (even tactical sense) for others. (5) Contempt of the Virtuous — sneers at allies and ideals, undermines collaboration. (6) Crushing Doubt — paralyzed by second-guessing. (7) Deliberate Cruelty — calculatedly hurtful in word and deed. (8) Heart of Flint — coldness, refuses connection, pushes away those who matter. (9) Rampaging Avarice — overwhelming hunger for wealth, power, or possession.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-withering-decisive",
+      "name": "Rule: Withering vs Decisive (combat core)",
+      "keys": ["withering", "decisive", "withering attack", "decisive attack", "wear down", "killing blow"],
+      "content": "Two attack modes. WITHERING — pool (Dexterity + Combat Ability + weapon Accuracy) vs Defense; threshold successes + weapon raw damage = raw damage; minus target's soak = Initiative transferred from defender to attacker. Withering NEVER touches the Health track. Goal: build Initiative. DECISIVE — pool (Dexterity + Combat Ability) vs Defense; threshold successes do NOT add to damage; on a hit, roll damage dice equal to current Initiative, apply to Health (bashing/lethal/aggravated by weapon), then reset Initiative to base 3. Decisive does NOT add weapon damage or Initiative to the damage dice — Initiative IS the damage. Initiative Crash (≤0) bars decisive attacks until rebuilt.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-join-battle",
+      "name": "Rule: Join Battle & Initiative tempo",
+      "keys": ["initiative", "join battle", "jb", "combat order"],
+      "content": "When combat begins every participant rolls Join Battle: (Wits + Awareness) + a flat +3 bonus. Successes set starting Initiative. Highest Initiative acts first; ties broken by Wits, then Awareness, then player choice. Initiative shifts during play — withering attacks transfer Initiative between attacker and defender, decisive resets to 3 after launch, Aim adds Initiative, certain Charms add or cost Initiative. At the start of each new round, participants re-sort by current Initiative value before acting. Crashed characters (Initiative ≤0) still act but cannot make decisive attacks.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-crash",
+      "name": "Rule: Initiative Crash & Initiative Break",
+      "keys": ["initiative crash", "crashed", "initiative break"],
+      "content": "Initiative Crash — when a character's Initiative drops to 0 or below from a withering attack. While Crashed: Hardness counts as 0 against decisive attacks targeting the Crashed character, she cannot make decisive attacks, and Perilous Charms are unavailable. She still acts and can rebuild Initiative via withering, Aim, or Charms. Initiative Break — the act of driving a foe from positive Initiative into Crash. The breaker GAINS +5 Initiative immediately as a reward. Hitting Initiative Break is a major tactical win in the Exalted combat economy even before you exploit the Crash itself.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-defense",
+      "name": "Rule: Defense — Parry & Evasion",
+      "keys": ["defense", "parry", "evasion", "static defense"],
+      "content": "Defense is a static value an attacker must beat. Two values; the character picks the higher per attack. Parry = (Dexterity + Brawl, Martial Arts, OR Melee) ÷ 2 rounded up + the equipped weapon's Defense rating + applicable Specialty. Evasion = (Dexterity + Dodge) ÷ 2 rounded up - armor Mobility Penalty + applicable Specialty. Stance Charms and Reflexive defense Charms can raise either. Onslaught penalty (cumulative -1 per attack since the character's last action) reduces the chosen Defense; Onslaught resets when she next acts.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-onslaught",
+      "name": "Rule: Onslaught penalty",
+      "keys": ["onslaught", "multiple attackers"],
+      "content": "Onslaught — a cumulative -1 penalty to Defense for each attack made against a character since her last turn. Resets when she next acts. Onslaught punishes a defender being focus-fired in the same round; by the third or fourth incoming swing, Defense has dropped meaningfully. Mortals get dismantled this way; Exalts use Initiative tempo or Charms to mitigate. Onslaught applies to both Parry and Evasion regardless of which the defender chooses.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-soak-armor",
+      "name": "Rule: Soak & Armor",
+      "keys": ["soak", "armor", "natural soak", "mobility penalty", "buff jacket", "articulated plate"],
+      "content": "Soak = Natural soak (= Stamina) + Armor soak. Reduces withering raw damage one-for-one. Soak does NOT subtract from decisive damage dice — decisive ignores soak; only Hardness or Charm-granted reduction shields against decisive. Sample armor: Buff Jacket (Light) +2 soak, Mobility 0; Reinforced Buff Jacket (Medium) +4 soak, Mobility -1; Articulated Plate (Heavy) +7 soak, Mobility -3. Mobility Penalty subtracts from Evasion and Athletics-driven movement actions. Artifact armor often provides aggravated soak and Hardness ratings impossible for mundane gear.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-damage-types",
+      "name": "Rule: Damage types & healing",
+      "keys": ["bashing", "lethal", "aggravated", "damage type", "healing rate"],
+      "content": "Four damage types. INITIATIVE damage — from withering attacks; transfers Initiative; never touches Health. BASHING — blunt force; mortals heal 1 box/hour, Solars 1 box/15 min. LETHAL — cutting/piercing/devastating force; mortals heal 1 box/day, Solars 1 box/3 hours. AGGRAVATED — supernatural / fire / acid / undeath-corruption damage; mortals heal 1 box/week, Solars 1 box/day. Aggravated cannot be soaked by mundane armor (some artifact armor and Charms grant aggravated soak). An Exalt Incapacitated by aggravated damage is in maximum mortal danger.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-actions",
+      "name": "Rule: Combat actions (per turn)",
+      "keys": ["combat action", "aim action", "defend other", "draw weapon", "full defense", "flurry", "miscellaneous action"],
+      "content": "Standard combat actions. ATTACK (withering or decisive). AIM — next turn's attack ignores cover penalties and gains +3 dice. DEFEND OTHER — a designated ally uses the defender's Parry until the defender's next action. DRAW/READY — draw or sheath a weapon; takes the action unless a Charm or Merit makes it reflexive. FULL DEFENSE — forfeit the attack to gain +2 Defense until next turn. FLURRY — split one action into two separate attacks/effects at -3 dice each and -1 Defense for the round. MISCELLANEOUS — any narrative action that takes the turn. Reflexive actions (Charms, dodges, anima activations) do not use the action slot. Move (one range band) is reflexive in addition to the action.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-range",
+      "name": "Rule: Range bands & movement",
+      "keys": ["range band", "close range", "short range", "medium range", "long range", "extreme range", "rush", "disengage", "withdraw", "rise from prone"],
+      "content": "Five range bands. Close (within arm's reach, melee) → Short (a few paces) → Medium (across a room or alley) → Long (across a hall or street) → Extreme (long bowshot, edge of visibility). One reflexive Move per turn shifts one band. RUSH — close the gap by one band against a target trying to keep distance (contested Dex+Athletics). DISENGAGE — leave melee (Dex+Dodge vs opponent's Dex+Athletics); on success, move one band away. WITHDRAW — fully exit combat range, only when no engaged foe is within Close. RISE FROM PRONE — uses Miscellaneous action. Difficult terrain doubles Move costs or imposes -1 to combat rolls; Charms can ignore.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-cover",
+      "name": "Rule: Take Cover",
+      "keys": ["take cover", "cover bonus", "light cover", "heavy cover", "full cover"],
+      "content": "Cover gives Defense bonuses against ranged and some thrown/area attacks. Light cover (low wall, small obstacle) = +1 Defense vs ranged. Heavy cover (large barrel, doorway) = +2 vs ranged. Full cover (behind a wall, around a corner) = ranged attacks cannot target without line of sight or attack-through-cover Charms. Aim action negates cover for the aimed attack. Cover does not protect against thrown grenades or area-effect attacks.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-gambits",
+      "name": "Rule: Gambits (decisive trick attacks)",
+      "keys": ["gambit", "gambits", "disarm gambit", "unhorse gambit", "distract gambit", "grapple gambit"],
+      "content": "A Gambit is a decisive attack that achieves a tactical effect instead of damage. The attacker rolls the decisive pool; on a hit, instead of damage dice she beats a difficulty using her CURRENT Initiative (paid as gambit cost), minimum 1 success. Her Initiative drops to base 3 afterward. Examples: Disarm (diff 3, knock weapon away). Unhorse (diff 4, dismount rider). Distract (diff 3-5, inflict -1 Defense for next attack or similar one-round effect). Grapple (diff 2, establish a grapple — see grappling rules). Gambits are how to introduce non-damage outcomes without house-ruling.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-grapple",
+      "name": "Rule: Grappling",
+      "keys": ["grapple", "grappled", "grappling", "control roll", "throw", "savage"],
+      "content": "Grappling begins as a Grapple Gambit (diff 2). On success, the attacker gains Control rounds equal to her threshold successes + 1. Each Control round, the grappler picks one effect. HOLD — target loses her turn, -2 Defense. THROW — deal decisive damage as a thrown attack and end the grapple, or hurl the target into a hazard. RESTRAIN — force a contested Strength+Athletics for the target to escape. SAVAGE — automatic withering damage equal to grappler's Strength. At the start of each round in an ongoing grapple, both roll Strength+Athletics; higher result dictates the next round's effect. Crashed characters cannot maintain Control.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-combat-stealth",
+      "name": "Rule: Stealth, Ambush, Surprise",
+      "keys": ["ambush", "surprise attack", "stealth attack", "hold at bay", "go to ground"],
+      "content": "AMBUSH — target had no idea an attack was coming; Defense against the ambush attack is 0 (auto-hit unless she rolls Awareness to detect). SURPRISE ATTACK — target knows there's a threat but didn't see THIS attack coming; -2 Defense against the surprise attack. Both Ambush and Surprise gate on succeeding a contested Dex+Stealth vs target's Perception+Awareness BEFORE the strike. HOLD AT BAY — using a long weapon to keep a closing enemy at Short range; opponent must succeed Dex+Athletics to close. GO TO GROUND — break line of sight in a busy environment, ending immediate combat by hiding (Stealth vs all observers' Awareness).",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-xp-costs",
+      "name": "Rule: Experience point costs",
+      "keys": ["xp", "experience", "xp cost", "buying charm", "raise ability", "raise attribute"],
+      "content": "XP costs (Solar). Attribute = current rating × 4. Caste/Favored Ability = (current × 2) - 1. Non-Caste/Favored Ability = current × 2. New Ability dot 1 = 3. Specialty = 3. Merit = new rating × 3. Willpower = 8 per dot. Caste/Favored Charm = 8 XP (10 if non-Caste). Spell = 8 if Occult Caste/Favored, else 10. Evocation = 10 XP. XP awards are typically 4-8 per session at the ST's discretion. Solar Experience (sxp) — additional Caste-aligned currency awarded for Expression Bonus and Role Bonus play; cannot raise Essence.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-xp-solar",
+      "name": "Rule: Solar Experience (sxp)",
+      "keys": ["solar experience", "sxp", "expression bonus", "role bonus", "caste experience"],
+      "content": "Solar Experience (sxp) is a second currency, spendable only on Caste/Favored Charms, Caste/Favored Abilities, Willpower, or improvements aligned with the Caste's nature. Two sources per session. EXPRESSION BONUS (2 sxp) — emphasize the Solar's nature: share the spotlight, express a Defining Intimacy memorably, take risks aligned with the Solar role. ROLE BONUS (2 sxp) — deliver on the Caste's niche: Dawn wins the field, Twilight unlocks a key secret, Night executes a perfect heist, Zenith inspires the broken, Eclipse brokers an impossible deal. sxp does NOT count toward raising Essence.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-xp-essence",
+      "name": "Rule: Raising Essence",
+      "keys": ["raise essence", "essence rating", "essence advancement", "essence 2", "essence 3", "essence 4", "essence 5"],
+      "content": "Raising the Solar's Essence rating: spend XP (not sxp) at the listed cost, plus a training time (typically a full Story arc per rating). Costs: Essence 2 = 50 xp; Essence 3 = 125 xp; Essence 4 = 200 xp; Essence 5 = 300 xp. The character must also have earned the rating in play — Essence dots represent breakthroughs, not bookkeeping. Each new dot expands Personal and Peripheral pools, unlocks Charms with that Essence prerequisite, and broadens narrative scope (E3 = heroic, E5 = legendary).",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-bg-anatomy",
+      "name": "Rule: Battle Groups — Size, Drill, Might, Magnitude",
+      "keys": ["battle group", "battle groups", "size", "drill", "might", "magnitude", "mass combat", "squad", "unit"],
+      "content": "A Battle Group is an abstracted military unit. Four traits. SIZE 0-5+ (1 = squad, 3 = company, 5 = legion; grants scaling accuracy, raw damage, soak bonuses, plus Magnitude track equal to Size+3). DRILL — Poor (-2 commander rolls, +1 rout-check difficulty against them); Average (baseline +1 Defense); Elite (+2 commander rolls, +2 Defense, harder to rout). MIGHT 0-3 (0 = mortal; 1 = minor supernatural; 2 = lesser exalted/heroic; 3 = Celestial-tier; applies bonuses to accuracy/damage/Defense). MAGNITUDE — the unit's HP track; withering damage fills boxes; full depletion collapses the unit into slaughter or dispersal.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-bg-combat",
+      "name": "Rule: Fighting Battle Groups",
+      "keys": ["attacking battle group", "fight a unit", "area attack", "battle group combat", "inert initiative"],
+      "content": "Battle Groups attack only with withering against single targets, or limited area attacks against multiple targets at -1 die per additional target. Their Initiative is INERT — they do not Crash and do not benefit from Initiative Break bonuses. Decisive attacks against a Battle Group add +1 damage die per 4 dice in the decisive damage roll, modeling the unit's diffuse vulnerability. A single Exalted hero can wound a unit meaningfully but rarely rout it alone; typical fights need multiple PCs or a counter-unit. Charms with area effects, fire, or terror are extraordinarily potent against units.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-bg-rout",
+      "name": "Rule: Rout, Slaughter, Perfect Morale",
+      "keys": ["rout", "rout check", "slaughter", "perfect morale", "broken unit"],
+      "content": "When a Battle Group falls below half Magnitude, loses its commander, suffers a major morale shock, or when the ST calls for it, the unit makes a Rout Check. Roll Willpower (treat commander's Willpower or a default 3 for leaderless mortal units). Difficulty depends on source: 1 mild fear, 3 commander killed in plain sight, 5 supernatural terror. On failure the unit is ROUTED — Defense drops to half, attacks lose 3 dice, the unit attempts to flee. SLAUGHTER — once routed, each successful attack deals double Magnitude damage. PERFECT MORALE — Charms or anima banner effects can prevent or interrupt rout entirely.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-bg-command",
+      "name": "Rule: Command Actions",
+      "keys": ["command action", "order action", "rally", "rally for numbers", "commander"],
+      "content": "A Battle Group commander uses one Command Action per round. Three options. ORDER — direct the unit to a specific action (withering, area attack, take cover, fall back); commander's combat pool substitutes for the unit's where appropriate. RALLY — Charisma+War roll; success restores one box of Magnitude or recovers from Rout. RALLY FOR NUMBERS — extended roll over rounds to gather scattered remnants and reform a routed unit into a working group. Charms attached to War or to the Eclipse anima can extend or amplify Command Actions.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-bg-strategic",
+      "name": "Rule: Strategic Warfare stratagems",
+      "keys": ["strategic warfare", "stratagem", "back to the sea", "demoralized", "fortifications stratagem", "ambush stratagem", "pincer", "strategic placement"],
+      "content": "Pre-combat strategic positioning, resolved as paired Wits+War rolls or scene-prep planning. Each stratagem needs a number of Threshold successes during prep. BACK TO THE SEA (thr 1) — your unit cannot rout, but if Crashed it suffers slaughter conditions. STRATEGIC PLACEMENT (thr 1) — opponent suffers a difficulty penalty on Join Battle. DEMORALIZED (thr 2) — opponent -1 die to attacks for the scene. FORTIFICATIONS (thr 2) — your unit's Defense +2, opponent must spend an action to breach. AMBUSH (thr 3) — your first round is a free attack at Ambush conditions. PINCER (thr 3) — opponent's unit is Crashed at start of combat. Stack with Charm support for shattering force-multiplier effects.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-social-resolve-guile",
+      "name": "Rule: Resolve & Guile (social defense)",
+      "keys": ["resolve", "guile", "social defense", "static social"],
+      "content": "Resolve and Guile are static social defenses. RESOLVE = (Wits + Integrity + relevant Specialty) ÷ 2, rounded up. Resists Instill, Persuade, Threaten, Bargain, Inspire. GUILE = (Manipulation + Socialize + relevant Specialty) ÷ 2, rounded up. Resists Read Intentions. Charms can raise either. Written / formal communication channels grant the target +2 Resolve representing the time to consider. Appearance bonus or penalty modifies social attack rolls based on the relative Appearance dot gap between speaker and target.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-social-intimacy-bonus",
+      "name": "Rule: Intimacy intensity in social conflict",
+      "keys": ["intimacy bonus", "minor intimacy bonus", "major intimacy bonus", "defining intimacy bonus", "supportive intimacy", "opposing intimacy"],
+      "content": "Intimacies bend Resolve in social influence. SUPPORTIVE — when the influence aligns with a target's Intimacy: Minor = +1 die or -1 Resolve, Major = +2 / -2, Defining = +3 / -3 (ST may waive the roll for Defining alignment). OPPOSING — when the influence opposes a Tie/Principle: Minor = -1 die / +1 Resolve, Major = -2 / +2, Defining = -3 / +3, and a Defining-opposing influence CANNOT succeed without first overcoming or weakening that Defining (typically via Instill in earlier scenes). Supportive/opposing assessment is the ST's call based on which Intimacy reads as triggered.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-social-instill",
+      "name": "Rule: Instill action",
+      "keys": ["instill", "build intimacy", "erode intimacy", "weaken intimacy"],
+      "content": "Instill — a social action that creates a new Intimacy in the target or shifts an existing one. Pool: typically (Charisma + Presence/Performance/Socialize) vs target's Resolve. Goal: have the target gain a Minor Intimacy aligned with the pitch (a new Tie toward someone, a new Principle); or weaken an existing opposing Intimacy by one intensity (Defining → Major → Minor → none). Each successful Instill shifts intensity by ONE step. Instilling typically requires the target to be receptive in the moment; a Defining belief cannot be Instilled away in one scene — that takes a story arc of accumulating successful Instills.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-social-persuade",
+      "name": "Rule: Persuade tiers",
+      "keys": ["persuade", "inconvenient persuade", "serious persuade", "life-changing persuade"],
+      "content": "Persuade — convince the target to take a specific course of action. Three tiers by ask. INCONVENIENT — a Minor-Intimacy-level concession (deliver a message, share a small secret, vouch for the speaker); (Charisma+Presence) vs Resolve. SERIOUS — a Major-Intimacy-level commitment (betray a friend, change sides, marry a chosen partner); (Manipulation/Charisma + Presence/Performance) vs Resolve, often modified by Intimacies; a Major-or-stronger contrary Intimacy lets the target invoke a Decision Point and spend Willpower to refuse outright. LIFE-CHANGING — a Defining-Intimacy-level commitment (abandon one's god, kill one's king, swear permanent oath); typically an extended influence campaign across scenes, or single-roll only with Charm support.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-social-other-actions",
+      "name": "Rule: Bargain / Threaten / Inspire / Read Intentions",
+      "keys": ["bargain", "threaten", "inspire", "read intentions"],
+      "content": "Four further social actions. BARGAIN — (Manipulation + Bureaucracy/Socialize) vs Resolve. Offer a concrete exchange; success makes the trade compelling, target must accept or invoke a Decision Point. THREATEN — (Charisma + Presence) vs Resolve. Impose a credible negative consequence to force compliance; substantial failure may inflict fear-related Conditions on the speaker. INSPIRE — (Charisma + Performance/Presence) vs Resolve. Move a group emotionally toward an ideal or action; rally crowds, troops, congregations. READ INTENTIONS — (Perception + Socialize/Investigation) vs target's Guile. Success reveals the target's current emotional state, surface goals, or hints of deception; threshold successes deepen the read.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-social-decision-point",
+      "name": "Rule: Decision Points & Unacceptable Influence",
+      "keys": ["decision point", "spend willpower to resist", "unacceptable influence", "reject social"],
+      "content": "When a social influence SUCCEEDS but the demanded action would betray a Major or Defining Intimacy, the target invokes a DECISION POINT: she may spend 1 Willpower to refuse entirely. The expenditure represents summoning conviction from her Intimacy. UNACCEPTABLE INFLUENCE — an influence asking the target to violate a Defining Intimacy or that the ST deems impossible to accept in character; fails automatically, the target need not even invoke a Decision Point. One-vs-many influence (single speaker addressing a hostile crowd) takes -3 dice unless Charms apply. Written / gestural / non-real-time channels grant target +2 Resolve.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-env-feats-strength",
+      "name": "Rule: Feats of Strength",
+      "keys": ["feat of strength", "feats of strength", "strength feat", "lift", "force"],
+      "content": "Feats of Strength — beyond-mortal physical accomplishments. Pool: Strength + Athletics. Difficulty rises with the feat. Strength 1 can attempt 1-success feats (snap thick rope, smash shoddy door). Strength 3 enables 3-success feats (carry a heavy man across a chasm). Strength 5 enables 5-success feats (lift a horse). Strength 8+ (Charm-augmented Solar tier) enables outrageous feats (pull down a city gate). Charms can reduce difficulty or auto-succeed. Specialties (Lifting, Pushing) add +1 die.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-env-survival",
+      "name": "Rule: Survival, Tracking, Wilderness",
+      "keys": ["survival", "tracking", "wilderness", "forage", "navigate"],
+      "content": "Wilderness rules. FORAGE / FIND SHELTER / NAVIGATE without map: (Perception or Wits + Survival), difficulty 1-3 in familiar terrain, 4-5 in harsh terrain (Wyld, deep desert, ice fields). TRACKING: (Perception + Survival) vs the quarry's evasion modifiers; tracks fade by 1 die of difficulty per hour of weather or 1 day in good conditions. CROSSING DIFFICULT TERRAIN AT SPEED: (Stamina + Athletics) periodic rolls; failure costs time or imposes fatigue. Charms can negate environmental penalties for an entire scene (Hardship-Surviving Mendicant Spirit).",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-env-hazards",
+      "name": "Rule: Environmental hazards & traps",
+      "keys": ["hazard", "environmental hazard", "lava", "acid bath", "sandstorm", "trap", "trap damage"],
+      "content": "Hazards have Damage/Interval (e.g. 4L/round = 4 lethal per round) and Difficulty (the Stamina+Resistance or similar roll to mitigate). Sample table: Acid bath 3L/round (diff 5); Severe heat/cold 1B/hour (diff 1); Bonfire 4L/round (diff 5); Lava 6L/round (diff 5); Severe sandstorm 1L/minute (diff 3); Supernatural ice storm 2L/minute (diff 3); Silent Wind of Hell 4A/round (diff 4). Successes on the resistance roll halve incoming damage or extend the interval. TRAPS work the same way but offer a Perception+Awareness check to spot before triggering, and usually have no ongoing interval — instant-effect bite. Disarming a spotted trap is typically (Dexterity + Larceny) at the same difficulty as spotting.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-env-falling",
+      "name": "Rule: Falling damage",
+      "keys": ["fall", "falling", "falling damage", "drop"],
+      "content": "Falling damage by range band of descent. CLOSE — none. SHORT — 3 levels automatic bashing + 5 dice bashing. MEDIUM — 4 levels automatic lethal + 7 dice bashing. LONG — 5-7 levels automatic lethal + 8-12 dice bashing. EXTREME — 7-10 levels automatic lethal + 10-14 dice bashing. All falling damage ignores soak and Hardness — applied directly to Health like a decisive attack. A good stunt (catching a banner, landing in water, stabbing a dagger into a wall) lets the player adjust the band down by one. Charms and Wings prevent or reduce falling damage entirely.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-body-poison",
+      "name": "Rule: Poisons",
+      "keys": ["poison", "poisoned", "venom", "envenom", "toxin", "antivenin"],
+      "content": "Poison has four stats. DAMAGE/INTERVAL — damage per timed interval (1L/round, 2L/day). DURATION — how long the effect runs (rounds, hours, days). PENALTY — flat dice penalty to all actions while poisoned. VECTOR — how it's contracted (damage, ingestion, inhalation, touch). On exposure, victim rolls (Stamina + Resistance); each success removes one unit of Duration. Exalts can reduce Duration to zero with enough successes; mortals can only halve. Most short-Interval combat poisons deal INITIATIVE damage, not Health damage — a poisoned weapon bleeds the foe's Initiative pool round by round; once the victim is Crashed, the damage often converts to lethal Health damage. Multiple doses of the same poison stack their Durations.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-body-poisons-sample",
+      "name": "Reference: Sample poisons table",
+      "keys": ["arrow frog venom", "arsenic", "curare", "hemlock", "snake venom", "yozi venom"],
+      "content": "Sample poison stats. Arrow Frog Venom — 3i/round (L in Crash), Duration 5 rounds, Penalty -2, Vector Damage or Ingestion. Arsenic — 2L/day, Duration 7 days, Penalty 0, Vector Ingestion. Curare — 1i/round (B in Crash), Duration 10 rounds, Penalty -2, Vector Damage. Hemlock — 2L/hour, Duration 5 hours, Penalty -4, Vector Ingestion. Snake Venom — 2i/round (L in Crash), Duration 3 rounds, Penalty -3, Vector Damage. Yozi Venom — 1L/minute, Duration 10 minutes, Penalty -5, Vector Damage. 'L in Crash' means once Crashed, Initiative damage converts to lethal Health damage.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-body-disease",
+      "name": "Rule: Disease",
+      "keys": ["disease", "diseased", "sickness", "infect", "plague", "virulence", "morbidity"],
+      "content": "Disease has three stats. VIRULENCE — difficulty to avoid contracting on exposure. MORBIDITY — difficulty to keep symptoms from worsening. INTERVAL — time between progression rolls. On exposure: roll (Stamina + Resistance) vs Virulence; failure contracts the disease at Minor Symptom. Each Interval: roll vs Morbidity; failure shifts symptoms one step up (Minor → Major → Defining → Death for mortals), success holds, threshold successes can step the disease back down. Three symptom tiers: MINOR (cosmetic discomfort, no mechanical penalty). MAJOR (one auto-botched action per session at ST discretion, or -1 WP). DEFINING (auto-botch once per scene, narrative impairment). Exalts cannot die from natural disease; mortals can. Supernatural diseases may have additional effects at each tier.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-body-deprivation",
+      "name": "Rule: Deprivation",
+      "keys": ["deprivation", "starvation", "thirst", "suffocate", "drown", "no food", "no water"],
+      "content": "A character endures deprivation for (Stamina) units of time before consequences. AIR — suffocate after (Stamina) MINUTES without; (Stamina × 2) TURNS without air during combat or diving. WATER — die of dehydration after (Stamina) DAYS without. FOOD — perish from starvation after (Stamina) WEEKS without; -3 to all actions kicks in after (Stamina) DAYS without food, and again in the final hours of dehydration. Charms can ignore deprivation for the duration of the scene or longer.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-crime-larceny",
+      "name": "Rule: Larceny actions",
+      "keys": ["larceny", "lockpicking", "pickpocket", "conceal evidence", "disguise", "thievery"],
+      "content": "Larceny covers thievery, disguise, and concealment. CONCEAL EVIDENCE — (Wits + Larceny) vs searchers' (Perception + Investigation). DISGUISE — (Wits or Manipulation + Larceny) sets a static Disguise Rating; observers beat that with (Perception + Investigation) to see through. LOCKPICKING — (Dexterity + Larceny) vs the lock's difficulty (1 simple latch, 5 master locksmith, 7+ magical seal); usually one roll per few minutes. PICKPOCKET — (Dexterity + Larceny) vs target's (Perception + Awareness), executed as a touch-range action; failure may include the target noticing. Charms like Flawless Pickpocketing Technique can auto-succeed.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-crime-investigation",
+      "name": "Rule: Investigation actions",
+      "keys": ["investigation", "case scene", "profile character", "examine clue", "investigate"],
+      "content": "Investigation covers crime scenes and reading people. CASE SCENE — (Perception + Investigation) sweeping a location for clues. Difficulty depends on cover-up quality; threshold successes reveal additional information (who, when, motive, escape route). PROFILE CHARACTER — (Perception + Investigation) studying a person's behavior to deduce profession, recent activities, or hidden agendas (vs target's Guile, or a flat difficulty if the target is unaware of the scrutiny). Some Charms (Judge's Ear Technique) auto-detect deception when triggered.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-crafting-tiers",
+      "name": "Rule: Crafting — four project tiers",
+      "keys": ["crafting", "craft project", "basic project", "major project", "superior project", "legendary project"],
+      "content": "Four crafting tiers. BASIC — small useful items (chair, horseshoe, fletched arrows); no slot used; (Attribute + Craft) vs ST difficulty; reward 2 silver XP per basic objective triggered. MAJOR — significant works (a sword, banquet, statue); uses a Major project slot; 10 silver XP to attempt; (Attribute + Craft) vs difficulty; reward 2 gold + 1 silver per objective. SUPERIOR — artifacts and large constructions; uses a Superior slot (fused from Major slots); 10 gold XP per roll attempt; extended roll difficulty 5, terminus 6, goal 30/50/75/100 by artifact rating; reward 3-9 white XP based on rating. LEGENDARY — N/A-rated First-Age artifice; requires Lore 5, Occult 5, Craft 5; 5 wp to slot; 10 white per attempt; 10 years' labor; goal 200. Botches on Superior/Legendary ruin the project.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-crafting-experience",
+      "name": "Rule: Crafting experience (sxp / gxp / wxp)",
+      "keys": ["crafting xp", "silver xp", "gold xp", "white xp", "project slot"],
+      "content": "Crafters earn three colors of crafting XP, each tier rewarding the level below. SILVER (sxp) — from Basic projects, spent on Major. GOLD (gxp) — from Major, spent on Superior. WHITE (wxp) — from Superior, spent on Legendary. Three basic objectives that grant crafting XP when triggered by a finished project: (a) the project causes another character to gain/strengthen an Intimacy toward you; (b) the project produces a concrete in-game gain (money, a Merit dot, tactical advantage); (c) the project upholds, furthers, or protects one of your Intimacies. Each triggered objective grants the tier's listed reward. Crafters have THREE Major project slots by default; Superior slots are temporarily fused from Majors; Legendary slots are temporary and cost 5 wp to create.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-crafting-artifact",
+      "name": "Rule: Artifacts, Manses, & First-Age artifice",
+      "keys": ["artifact", "create artifact", "daiklave", "forge artifact", "manse", "first age artifice", "craft geomancy"],
+      "content": "Artifacts are rated ●● through ●●●●● plus N/A (legendary First-Age tier). Crafting an artifact = Superior project (10 gold XP per attempt; extended roll diff 5, terminus 6; goal 30 for ●●, 50 ●●●, 75 ●●●●, 100 ●●●●●; minimum work 6 weeks / 3 months / 1 year / 2 years respectively). N/A First-Age artifice requires Craft (First Age Artifice) Ability (cannot be bought without Lore 5, Occult 5, Craft 5, Terrestrial Circle Sorcery, AND a sorcerous design project preceding the craft). Manses are crafted as superior projects in Craft (Geomancy) — 1 year + goal 50 for ●●●, 2 years + goal 100 for ●●●●● — and produce Hearthstones of the same rating. Repairs follow the same tier rules but smaller rewards and no terminus on artifact repair.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-sail-ship-traits",
+      "name": "Rule: Ship traits",
+      "keys": ["ship", "ship traits", "sail", "sailing", "speed", "maneuverability", "hull", "crew"],
+      "content": "Ships are described by four traits. SPEED — variable conditional rating; baseline 0 in dead calm, +1 per favorable current or wind, +1 per oarsmen-deployed condition, plus the ship's design factor. Speed adds to Sail rolls for pursuit and escape. MANEUVERABILITY — how nimbly the ship handles in combat or treacherous waters; adds to Naval Maneuver rolls. HULL — ship's HP track; damage above 0 imposes Sail penalties; at 0 hull the ship is dead in the water (not necessarily sunk — may burn or sink later). CREW — quality rating; commanding captain gets +2 Sail with crew Sail-average 4+, -1 with crew 1 or below.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-sail-naval-combat",
+      "name": "Rule: Naval combat — Momentum & stratagems",
+      "keys": ["naval combat", "naval maneuver", "momentum", "naval stratagem", "boarding action", "broadside", "ram"],
+      "content": "Naval combat is Momentum-driven. Each round, captains pick an opposing ship and a Stratagem; both roll Naval Maneuver = (Wits + Sail + Maneuverability); higher succeeds. Sample stratagems: POSITIONING (no cost) — each success over opponent grants 1 Momentum; universal builder. BROADSIDE (5 Momentum) — anti-ship attack, 1 Hull damage, 2 with magical anti-ship weaponry. ESCAPE (12 Momentum; +Speed) — break engagement entirely. RAM (7 Momentum; +Maneuverability) — 1 Hull damage to target + 1 per 3 threshold over opponent's Maneuver. CONCEALMENT (2 Momentum) — vanish into terrain (fog, rocks); +3 dice to next Maneuver. BOARDING ACTIONS cost 8/10/12/15 Momentum (Boarding / Seize the Initiative! / Shock and Board / Drowning Tide); when triggered, combat drops to normal combat rules on the deck.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-lore-fact",
+      "name": "Rule: Lore — Introducing & Challenging Facts",
+      "keys": ["introducing a fact", "challenging a fact", "lore roll", "lore check", "establish fact"],
+      "content": "Lore lets a player's character introduce or notice setting facts. INTRODUCING — once per scene, Lore 3+ (or Lore 1+ with relevant specialty/background) lets the player propose a fact about Creation's history, geography, culture, politics. ST sets difficulty (1-4 plot-forwarding crumbs, 5-7 genuine challenges for a great mind, 8-10+ sweeping revelations only a Solar Lore master should know). Roll (Intelligence + Lore) vs that difficulty. Success makes the proposed fact canonical; later players cannot introduce a contradictory fact. ST may veto facts that would break ongoing plot. CHALLENGING — when the ST narrates suspect or maliciously-planted information, ST may call for a reflexive (Intelligence + Lore) check. One success notices the falsehood; threshold successes reveal HOW or WHY.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-medicine",
+      "name": "Rule: Medicine — Treating Wounds/Poison/Disease",
+      "keys": ["medicine", "treat wound", "treat poison", "treat disease", "diagnose", "diagnosis"],
+      "content": "Medicine ability handles three care types. TREATING WOUNDS — (Intelligence + Medicine), miscellaneous action; difficulty = current wound penalty (1-5); success stops blood loss and stabilizes; treating yourself adds +1 difficulty. TREATING POISON — at least 1 hour and access to remedies; difficulty 1-2 for mundane poisons, 3-4 for magical/exotic; each threshold success reduces poison Duration by one interval; rushed (action-length) treatment adds +2 difficulty. TREATING DISEASE — protracted: 1 hour per Interval of the disease's duration, with appropriate equipment and herbs; (Intelligence + Medicine) at end of treatment course; the patient may substitute the doctor's higher roll for her own next Morbidity check. DIAGNOSIS — (Perception + Medicine) to notice an ailment's origin or (Intelligence + Medicine) to deduce its cause.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "ex3-leadership-projects",
+      "name": "Rule: Leadership & Projects",
+      "keys": ["leadership", "project", "lead project", "running an organization", "complication"],
+      "content": "Leadership covers long-term organizational projects (running a guild, governing a province, training a militia). Four-step resolution. (1) VIABILITY — (Intelligence + Bureaucracy or War, depending on project) determines if the concept survives initial scrutiny. (2) SUCCEED — the project's defining action roll over time (extended; difficulty by scope). (3) RESPOND TO FAILURE — if a key roll fails, the leader fields a complication (political unrest, loss of assets, war, enemies, assassins, the discovery of new Merits or burdens). (4) RESULT — final outcome (success, partial success, failure, or runaway success that introduces new Merits like Allies, Backing, Cult, or Influence). Charms can smooth specific steps or scale project speed up.",
+      "selective": false,
+      "constant": false,
+      "position": 0
     }
   ]
 }

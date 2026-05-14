@@ -320,16 +320,6 @@
   },
   "derivedStats": [
     {
-      "name": "Essence",
-      "formula": "Permanent rating, 1-5 for player Solars",
-      "max": 10,
-      "renderAs": "value",
-      "aliases": [
-        "essence",
-        "ess"
-      ]
-    },
-    {
       "name": "Personal Motes",
       "formula": "Essence x 3 + 10 (Solar)",
       "maxFormula": "{Essence} * 3 + 10",
@@ -461,6 +451,26 @@
       "valueFormula": "({Manipulation} + {Socialize} + 1) / 2",
       "aliases": [
         "guile"
+      ]
+    },
+    {
+      "name": "Join Battle",
+      "formula": "Wits + Awareness (dice pool; on declare-attack first action)",
+      "renderAs": "value",
+      "valueFormula": "{Wits} + {Awareness}",
+      "aliases": [
+        "joinBattle",
+        "initiative"
+      ]
+    },
+    {
+      "name": "Soak (Natural)",
+      "formula": "Stamina (Exalts use full Stamina; mortals halve, round down)",
+      "renderAs": "value",
+      "valueFormula": "{Stamina}",
+      "aliases": [
+        "naturalSoak",
+        "soakNatural"
       ]
     },
     {
@@ -634,10 +644,31 @@
       "derived:Personal Motes",
       "derived:Peripheral Motes",
       "derived:Willpower",
-      "derived:Health Track"
+      "derived:Health Track",
+      "state:Anima Banner"
     ]
   },
   "resources": [
+    {
+      "id": "anima-banner",
+      "label": "Anima Banner",
+      "type": "state-banner",
+      "stateRef": "Anima Banner",
+      "color": "accent"
+    },
+    {
+      "id": "essence",
+      "label": "Essence",
+      "type": "counter",
+      "max": 10,
+      "current": 3,
+      "color": "accent",
+      "stateName": "Essence",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "+1", "delta": 1 }
+      ]
+    },
     {
       "id": "motes-personal",
       "label": "Motes Personal",
@@ -646,6 +677,7 @@
       "current": "{Essence} * 3 + 10",
       "color": "accent",
       "stateName": "Personal Motes",
+      "commitmentPool": "Personal",
       "quickButtons": [
         { "label": "-1", "delta": -1 },
         { "label": "-5", "delta": -5 },
@@ -660,6 +692,7 @@
       "current": "{Essence} * 7 + 26",
       "color": "accent",
       "stateName": "Peripheral Motes",
+      "commitmentPool": "Peripheral",
       "quickButtons": [
         { "label": "-1", "delta": -1 },
         { "label": "-5", "delta": -5 },
