@@ -11668,6 +11668,13 @@ function reconcileActiveAgents() {
       : ((chat && chat.metadata) || {});
     var existing = Array.isArray(meta.activeAgentIds) ? meta.activeAgentIds : [];
 
+    /* Chat-scoped ruleset stamp prevents cross-ruleset pollution: if the chat is bound to a different ruleset, skip with a warning instead of mixing agents from multiple rulesets into one chat's active list. Stamp round-trips via the engine's pass-through metadata merge (chats.routes.ts:349). */
+    var stamp = meta.mrrChatRulesetId;
+    if (stamp && stamp !== rulesetId) {
+      log("reconcileActiveAgents: chat " + chatId + " is bound to ruleset " + stamp + "; current active is " + rulesetId + " — skipping (switch ruleset to update this chat)");
+      return;
+    }
+
     var managedIds = (Array.isArray(agents) ? agents : [])
       .filter(function (a) {
         var s = parseAgentSettings(a);
@@ -11686,16 +11693,24 @@ function reconcileActiveAgents() {
       if (union.indexOf(id) === -1) { union.push(id); added++; }
     });
 
-    if (added === 0) {
+    /* PATCH if we have new IDs to add OR we need to backfill the stamp on an existing chat that pre-dates Phase 1. */
+    var needsPatch = added > 0 || !stamp;
+    if (!needsPatch) {
       log("reconcileActiveAgents: " + managedIds.length + " managed agents already active in chat " + chatId);
       return;
     }
 
+    var patchBody = { activeAgentIds: union, enableAgents: true };
+    if (!stamp) patchBody.mrrChatRulesetId = rulesetId;
+
     return apiFetch("/chats/" + chatId + "/metadata", {
       method: "PATCH",
-      body: JSON.stringify({ activeAgentIds: union, enableAgents: true })
+      body: JSON.stringify(patchBody)
     }).then(function () {
-      log("reconcileActiveAgents: added " + added + " agent id(s) to chat " + chatId + " for ruleset " + rulesetId);
+      var parts = [];
+      if (added > 0) parts.push("added " + added + " agent id(s)");
+      if (!stamp) parts.push("stamped ruleset " + rulesetId);
+      log("reconcileActiveAgents: " + parts.join(", ") + " — chat " + chatId);
     });
   }).catch(function (e) {
     warn("reconcileActiveAgents failed: " + (e && e.message ? e.message : e));
