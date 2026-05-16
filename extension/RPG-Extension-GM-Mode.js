@@ -11649,6 +11649,59 @@ function syncFieldReferenceToLorebook() {
   });
 }
 
+/* Ensure chat.metadata.activeAgentIds includes every overlay agent for the active ruleset — engine fires agents only on id-in-activeAgentIds, install doesn't auto-add, and game mode hides the per-agent toggle. Idempotent set-union; endpoint is /chats/:id/metadata (not /chats/:id). */
+function reconcileActiveAgents() {
+  if (!state.chatId) return;
+  if (!state.ruleset) return;
+  var chatId = state.chatId;
+  var rulesetId = state.ruleset.id;
+
+  Promise.all([
+    apiFetch("/chats/" + chatId),
+    apiFetch("/agents")
+  ]).then(function (results) {
+    var chat = results[0];
+    var agents = results[1];
+    /* chat.metadata is a JSON string from the engine route; parse before reading. */
+    var meta = (chat && typeof chat.metadata === "string")
+      ? (safeParse(chat.metadata) || {})
+      : ((chat && chat.metadata) || {});
+    var existing = Array.isArray(meta.activeAgentIds) ? meta.activeAgentIds : [];
+
+    var managedIds = (Array.isArray(agents) ? agents : [])
+      .filter(function (a) {
+        var s = parseAgentSettings(a);
+        return s && s.mrrManaged === true && s.mrrRulesetId === rulesetId;
+      })
+      .map(function (a) { return a.id; });
+
+    if (managedIds.length === 0) {
+      log("reconcileActiveAgents: no managed agents for " + rulesetId);
+      return;
+    }
+
+    var union = existing.slice();
+    var added = 0;
+    managedIds.forEach(function (id) {
+      if (union.indexOf(id) === -1) { union.push(id); added++; }
+    });
+
+    if (added === 0) {
+      log("reconcileActiveAgents: " + managedIds.length + " managed agents already active in chat " + chatId);
+      return;
+    }
+
+    return apiFetch("/chats/" + chatId + "/metadata", {
+      method: "PATCH",
+      body: JSON.stringify({ activeAgentIds: union, enableAgents: true })
+    }).then(function () {
+      log("reconcileActiveAgents: added " + added + " agent id(s) to chat " + chatId + " for ruleset " + rulesetId);
+    });
+  }).catch(function (e) {
+    warn("reconcileActiveAgents failed: " + (e && e.message ? e.message : e));
+  });
+}
+
 /* Auto-sync on save: fires a debounced sync 1.5s after the last
    saveSheet call so a burst of typing collapses into a single round of
    PATCHes. Three surfaces fire: the chat's customTrackerFields (UI
@@ -12800,6 +12853,8 @@ function init() {
      as saveSheet so multiple activations on a fast SPA route change
      coalesce into one PATCH. */
   if (typeof scheduleAutoSync === "function") scheduleAutoSync();
+  /* Add this ruleset's overlay agents to the current chat's active list so the engine actually fires them. No-op on subsequent loads once the chat has them. */
+  if (typeof reconcileActiveAgents === "function") reconcileActiveAgents();
 }
 
 /* Console-callable diagnostics. Open DevTools and run:
@@ -12876,6 +12931,8 @@ function watchRouteChanges() {
        — more importantly — historic mutations in this chat would replay
        on the next refresh. */
     loadProcessedMessageIds(state.chatId);
+    /* New chat default activeAgentIds is empty or just ["spotify"]; reconcile so overlay agents fire without manual toggling per chat. */
+    if (typeof reconcileActiveAgents === "function") reconcileActiveAgents();
   }, ROUTE_POLL_MS);
 }
 
