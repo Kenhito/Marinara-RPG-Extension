@@ -458,8 +458,9 @@ function installBundle(bundle, progressCb) {
          re-install. The GET /lorebooks/:id returns { entries: [...] }
          where each entry has an id; we delete each one then post fresh. */
       progress("Clearing managed lorebook entries...");
-      return apiFetch("/lorebooks/" + lbId).then(function (lb) {
-        var existingEntries = (lb && Array.isArray(lb.entries)) ? lb.entries : [];
+      /* Entries live at /lorebooks/:id/entries — GET /lorebooks/:id only returns the lorebook row, not its entries. Earlier code fetched the wrong endpoint, found nothing to delete, and every re-install silently appended on top of prior install's entries. */
+      return apiFetch("/lorebooks/" + lbId + "/entries").then(function (existingEntries) {
+        if (!Array.isArray(existingEntries)) existingEntries = [];
         var deleteChain = Promise.resolve();
         existingEntries.forEach(function (e) {
           if (!e || !e.id) return;
@@ -11602,13 +11603,25 @@ function syncFieldReferenceToLorebook() {
       log("syncFieldReferenceToLorebook: no managed lorebook for " + rulesetId);
       return;
     }
-    return apiFetch("/lorebooks/" + lb.id).then(function (full) {
-      var entries = (full && Array.isArray(full.entries)) ? full.entries : [];
-      var existing = null;
-      for (var i = 0; i < entries.length; i++) {
-        var t = entries[i].tags;
-        if (Array.isArray(t) && t.indexOf(FIELD_REF_TAG) !== -1) { existing = entries[i]; break; }
+    return apiFetch("/lorebooks/" + lb.id + "/entries").then(function (full) {
+      /* GET /lorebooks/:id returns ONLY the lorebook row (no entries). Entries live at /lorebooks/:id/entries — full is the array directly. */
+      var entries = Array.isArray(full) ? full : [];
+      /* Dedup on entry name — lorebookEntries has no tags-array column; the prior tag-based check returned undefined every call and POSTed duplicates forever. */
+      var matches = entries.filter(function (e) {
+        return e.name === "Field Reference (extension-managed)";
+      });
+      var cleanupChain = Promise.resolve();
+      if (matches.length > 1) {
+        log("cleaning up " + (matches.length - 1) + " duplicate field-reference entries");
+        var toDelete = matches.slice(1);
+        cleanupChain = toDelete.reduce(function (chain, dup) {
+          return chain.then(function () {
+            /* apiDeleteRaw, not apiFetch — DELETE with Content-Type: application/json header and empty body trips the engine's Fastify JSON parser with a 400. */
+            return apiDeleteRaw("/lorebooks/" + lb.id + "/entries/" + dup.id).catch(function () {});
+          });
+        }, Promise.resolve());
       }
+      var existing = matches[0] || null;
       var body = {
         name: "Field Reference (extension-managed)",
         content: content,
@@ -11618,16 +11631,18 @@ function syncFieldReferenceToLorebook() {
         keys: keys,
         tags: [MRR_TAG_MANAGED, MRR_TAG_RS_PFX + rulesetId, FIELD_REF_TAG]
       };
-      if (existing) {
-        return apiFetch("/lorebooks/" + lb.id + "/entries/" + existing.id, {
-          method: "PATCH",
+      return cleanupChain.then(function () {
+        if (existing) {
+          return apiFetch("/lorebooks/" + lb.id + "/entries/" + existing.id, {
+            method: "PATCH",
+            body: JSON.stringify(body)
+          }).then(function () { log("synced field reference to lorebook entry " + existing.id); });
+        }
+        return apiFetch("/lorebooks/" + lb.id + "/entries", {
+          method: "POST",
           body: JSON.stringify(body)
-        }).then(function () { log("synced field reference to lorebook entry " + existing.id); });
-      }
-      return apiFetch("/lorebooks/" + lb.id + "/entries", {
-        method: "POST",
-        body: JSON.stringify(body)
-      }).then(function () { log("created field reference lorebook entry"); });
+        }).then(function () { log("created field reference lorebook entry"); });
+      });
     });
   }).catch(function (e) {
     warn("syncFieldReferenceToLorebook failed: " + (e && e.message ? e.message : e));
