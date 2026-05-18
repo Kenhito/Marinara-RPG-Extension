@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "ruleset": {
     "id": "stewpot",
@@ -263,6 +263,77 @@
         ],
         "content": "The Stewpot is NOT an adventure game. Villagers do not leave the village on quests. There are no monsters, no combats, no XP for kills, no treasure pulls. The drama is at-home and inward: who is grieving, who is harvesting, who is leaving the village (rarely, sadly, finally), who is joining (rarely, joyfully, awkwardly), what the council will decide, what is being mended. When players reach for adventure-game beats, the GM gently redirects to the slow-life frame — 'tell me about the morning before the council vote', 'what does your villager carry to the funeral', 'what does the stew need tonight'. The genre is the rule.",
         "position": 0
+      },
+      {
+        "name": "Attribute: Capability (CAP)",
+        "keys": [
+          "Capability",
+          "CAP"
+        ],
+        "content": "The Stewpot attribute. Capability (CAP) — Your one stat, 2-5. High Capability favors ACTION (over) — you are good at making things happen. Low Capability favors STILLNESS (under) — you are good at noticing, holding, receiving. The middle (3 or 4) is the table's most common villager.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Garden",
+        "keys": [
+          "Garden"
+        ],
+        "content": "The Stewpot skill. Garden. Tending plants, reading weather, knowing what wants to grow here. Mark when invested in a gardening scene to add +1d to the pool.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Cook",
+        "keys": [
+          "Cook"
+        ],
+        "content": "The Stewpot skill. Cook. Stewpot-keeping. Bread, broth, the small magic of feeding people. Mark when invested to add +1d.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Mend",
+        "keys": [
+          "Mend"
+        ],
+        "content": "The Stewpot skill. Mend. Patching cloth, fixing fence, putting a thing back together that wanted to fall apart. Mark when invested to add +1d.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Listen",
+        "keys": [
+          "Listen"
+        ],
+        "content": "The Stewpot skill. Listen. Hearing what neighbors aren't saying. Noticing the absent, the grieving, the new. Especially potent under STILLNESS. Mark when invested to add +1d.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Persuade",
+        "keys": [
+          "Persuade"
+        ],
+        "content": "The Stewpot skill. Persuade. Asking neighbors for help, asking the council to vote your way, asking the storm to break later. Especially potent under ACTION. Mark when invested to add +1d.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Hearth",
+        "keys": [
+          "Hearth"
+        ],
+        "content": "The Stewpot derived stat. Hearth — formula: narrative resource: how settled the villager is at home. Refill on Perfect Days; spend on rough scenes the GM calls for.",
+        "position": 0,
+        "selective": false,
+        "constant": false
       }
     ]
   },

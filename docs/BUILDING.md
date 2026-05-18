@@ -193,6 +193,43 @@ Composition order (as of v0.4.x+):
 
 **Deferred — Vector 3.1 (math via script tools):** the engine supports `executionType: "script"` tools whose `scriptBody` runs server-side and returns parameter-driven results — exactly what's needed for deterministic ruleset math (`roll_<id>_check(pool, target)` → `{ successes, ones, tens, botched }`). Two blockers keep this out of v0.4.x default generation: (1) script tools require the engine to be started with `CUSTOM_TOOL_SCRIPT_ENABLED=true` in its env, which the auto-generator can't guarantee for end users; (2) generic dice-pool / single-roll / roll-under JS implementations need careful per-resolution-mode authoring. Bundle authors who run with the flag enabled can ship explicit script tools today via the `customTools:` override block in `ruleset.json`.
 
+### `tools/build-lorebook-expansions.mjs` *(Vector 2 — derived lorebook entries)*
+
+**Input:** ruleset object. **Output:** `LorebookEntry[]` matching the existing lorebook entry shape (`{ name, keys, content, position, selective, constant }`).
+
+**Purpose:** auto-derive ruleset-aware lorebook entries from `ruleset.json` so the engine surfaces ruleset-specific definitions whenever common terms appear in conversation. Closes a coverage gap: hand-authored lorebooks typically include classes / spells / world-flavor but rarely include one entry per attribute or skill. The generator fills those routinely.
+
+**Fields consumed (all optional — generator no-ops on absence):**
+- `attributes[]` — emits one entry per attribute, keyed on the attribute name + abbreviation.
+- `skills[]` — emits one entry per skill, keyed on the skill name; mentions the associated attribute when present.
+- `conditions[]` — emits one entry per condition, keyed on the condition name.
+- `derivedStats[]` — emits one entry per derived stat that has either a description or a `valueFormula`, keyed on the stat name.
+- `difficulties{}` — when present, emits a single "Difficulty ladder reference" entry keyed on `"DC"`, `"difficulty"`, `"target number"`, `"TN"`, `"threshold"`. Lists every difficulty band with its threshold value.
+
+**Override block:** `ruleset.lorebookExpansions` (array). When present, generator returns it verbatim.
+
+**Output shape (one attribute entry):**
+```json
+{
+  "name": "Attribute: Strength (STR)",
+  "keys": ["Strength", "STR"],
+  "content": "Exalted 3rd Edition attribute. Strength (STR) [Physical] — Raw muscle. Lifting, melee damage.",
+  "position": 0,
+  "selective": false,
+  "constant": false
+}
+```
+
+**Merge contract:** `build-bundle.mjs` merges derived entries into the hand-authored `lorebook.json` entries during build. **Hand-authored entries win on name conflict** — if you ship an explicit `"Attribute: Strength (STR)"` entry in `lorebook.json` with richer content, the derived entry is dropped. This is the right precedence — hand-authored is always more specific than auto-derived.
+
+**Idempotency:** the existing bundle install path does delete-then-add for the entire managed lorebook (see `installBundle` in the extension JS). Re-builds change the bundle.json contents; re-installs replace all entries. No install-time tracking field needed; no accumulation across re-installs.
+
+**Worked example (Exalted):** Exalted3e ships 85 hand-authored lorebook entries. The generator derives 48 more (9 attributes + 25 skills + 13 derived/conditions + 1 difficulty ladder). Final bundle: 133 entries. The AI now gets ruleset-aware context whenever any attribute / skill / condition name appears in the chat, even if the hand-authored lorebook didn't cover it.
+
+**Per-ruleset derived counts (10/10 shipping rulesets, 2026-05-17):**
+- coc7e: 61 derived | dnd5e: 42 derived | exalted3e: 48 derived | fate-core: 26 derived | gurps-lite: 36 derived
+- lasers-and-feelings: 2 derived | pathfinder2e: 43 derived | stewpot: 7 derived | trophy-dark: 12 derived | vtmv20: 63 derived
+
 ### `tools/build-agents.mjs`
 
 **Input:** ruleset directory (uses `agents/*.md` + optional per-ruleset overrides). **Output:** `agents.json` in the same directory.
@@ -225,8 +262,7 @@ If a generator can't produce what your ruleset needs, drop one of these blocks i
 |-------|----------|--------|
 | `regexScripts: [...]` | build-regex-scripts.mjs | Generator returns the array as-is. Use when you need a specific surface rewrite the auto-derivation doesn't capture. |
 | `customTools: [...]` | build-custom-tools.mjs | Generator returns the array as-is. Use to ship script-type math tools (requires `CUSTOM_TOOL_SCRIPT_ENABLED=true` on the engine), additional static reference tools, or webhook tools pointing at your own service. |
-
-(Author-override block for `lorebookExpansions` arrives with Vector 2 — section added when it lands.)
+| `lorebookExpansions: [...]` | build-lorebook-expansions.mjs | Generator returns the array as-is. Use when you want custom auto-derived entries (e.g. one entry per class, per spell school, per condition group) that the default attribute/skill/condition derivations don't cover. Hand-authored entries in `lorebook.json` still win on name conflict at merge time. |
 
 ## Bundle schema versioning + backward compat
 
@@ -273,4 +309,4 @@ To have a chatbot AI scaffold a new ruleset for system X:
 
 This doc is the **system of record for the build contract**, equal in standing to the JSON schemas. When a new generator lands, this doc gains a section in the same session that ships the generator. When a generator changes its input/output shape, this doc updates with it. Stale build docs are a system bug.
 
-Last updated: 2026-05-17 (Vector 9 / regex-scripts pipeline + Vector 3 / custom-tool callouts pipeline both shipped). Vector 2 / lorebook expansion section pending Step 3 of this overnight session.
+Last updated: 2026-05-17 (Vector 9 / regex-scripts pipeline, Vector 3 / custom-tool callouts pipeline, and Vector 2 / lorebook expansion pipeline all shipped). Phase 1 vectors remaining: Vector 5 (pre-input transformer) + Vector 8 (persona/scenario defaults) — deferred to future sessions.

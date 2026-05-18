@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "ruleset": {
     "id": "vtmv20",
@@ -1773,6 +1773,650 @@
         "selective": false,
         "constant": false,
         "position": 0
+      },
+      {
+        "name": "Attribute: Strength (STR)",
+        "keys": [
+          "Strength",
+          "STR"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Strength (STR) [Physical] — Raw muscle. Lifting, melee damage, brawling pools.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DEX)",
+        "keys": [
+          "Dexterity",
+          "DEX"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Dexterity (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy, dodging.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Stamina (STA)",
+        "keys": [
+          "Stamina",
+          "STA"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Stamina (STA) [Physical] — Endurance, soak (bashing/lethal), resisting fatigue and damage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Charisma (CHA)",
+        "keys": [
+          "Charisma",
+          "CHA"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Charisma (CHA) [Social] — Force of personality, sincere charm, leadership presence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Manipulation (MAN)",
+        "keys": [
+          "Manipulation",
+          "MAN"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Manipulation (MAN) [Social] — Deceit, guile, indirect influence, getting others to act against their interest.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Appearance (APP)",
+        "keys": [
+          "Appearance",
+          "APP"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Appearance (APP) [Social] — Beauty / presence; affects attraction, intimidation by allure, first-impression rolls.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Perception (PER)",
+        "keys": [
+          "Perception",
+          "PER"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Perception (PER) [Mental] — Spotting, hearing, noticing details and changes in environment.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (INT)",
+        "keys": [
+          "Intelligence",
+          "INT"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Intelligence (INT) [Mental] — Reasoning, learning, recall, abstract analysis.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Wits (WIT)",
+        "keys": [
+          "Wits",
+          "WIT"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Wits (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative pool component.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Alertness",
+        "keys": [
+          "Alertness"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Alertness. Talent. Notice danger and details. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Athletics",
+        "keys": [
+          "Athletics"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Athletics. Talent. Climbing, running, jumping, swimming. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Awareness",
+        "keys": [
+          "Awareness"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Awareness. Talent (V20). Sense supernatural presence and disturbances in the Beast. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Brawl",
+        "keys": [
+          "Brawl"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Brawl. Talent. Unarmed combat; punches, grapples, claw strikes. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Empathy",
+        "keys": [
+          "Empathy"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Empathy. Talent. Read emotions, sense lies of the heart. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Expression",
+        "keys": [
+          "Expression"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Expression. Talent. Communicating ideas, art, oratory, written prose. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Intimidation",
+        "keys": [
+          "Intimidation"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Intimidation. Talent. Threats, looming presence, breaking will. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Leadership",
+        "keys": [
+          "Leadership"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Leadership. Talent. Inspiring loyalty, giving orders, rallying. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Streetwise",
+        "keys": [
+          "Streetwise"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Streetwise. Talent. Navigating urban underbelly, contacts, fences, gossip. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Subterfuge",
+        "keys": [
+          "Subterfuge"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Subterfuge. Talent. Lying, misleading, deflecting questions. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Animal Ken",
+        "keys": [
+          "Animal Ken"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Animal Ken. Skill. Handling and training animals (a vampire's natural problem). Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Crafts",
+        "keys": [
+          "Crafts"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Crafts. Skill. Build, repair, and make physical things by hand. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Drive",
+        "keys": [
+          "Drive"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Drive. Skill. Operate vehicles under stress. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Etiquette",
+        "keys": [
+          "Etiquette"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Etiquette. Skill. Manners, protocol, the unwritten rules of Kindred and mortal society. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Firearms",
+        "keys": [
+          "Firearms"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Firearms. Skill. Handguns, rifles, automatic weapons. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Larceny",
+        "keys": [
+          "Larceny"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Larceny. Skill (V20). Lock-picking, sleight of hand, B&E, forgery. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Melee",
+        "keys": [
+          "Melee"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Melee. Skill. Armed close combat; blades, clubs, improvised. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Performance",
+        "keys": [
+          "Performance"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Performance. Skill. Singing, instrument, acting, dance — the art of performing for an audience. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Stealth. Skill. Move unseen and unheard. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Survival. Skill. Wilderness travel, foraging, weather. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Academics",
+        "keys": [
+          "Academics"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Academics. Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Computer",
+        "keys": [
+          "Computer"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Computer. Knowledge. Software, hardware, networks. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Finance",
+        "keys": [
+          "Finance"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Finance. Knowledge. Money, markets, accounting, business law. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Investigation",
+        "keys": [
+          "Investigation"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Investigation. Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Law",
+        "keys": [
+          "Law"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Law. Knowledge. Statute, precedent, courtroom procedure, criminal law. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Medicine",
+        "keys": [
+          "Medicine"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Medicine. Knowledge. Diagnosis, surgery, pharmacology — and what blood reveals. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Occult",
+        "keys": [
+          "Occult"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Occult. Knowledge. Lore of the supernatural — vampires, mages, ghosts, the Antediluvians. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Politics",
+        "keys": [
+          "Politics"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Politics. Knowledge. Government, faction, who-owes-whom in mortal AND Kindred society. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Science",
+        "keys": [
+          "Science"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Science. Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Technology",
+        "keys": [
+          "Technology"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Technology. Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Generation",
+        "keys": [
+          "Generation"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Generation — formula: Player-set; default 13th. Lower generation costs Background dots at character creation. Bounds the Blood Pool max and the per-turn Blood spend cap (see Generation Table lorebook entry).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Permanent Willpower",
+        "keys": [
+          "Permanent Willpower"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Permanent Willpower — formula: 1-10. The character's permanent Willpower rating — the cap on the Willpower resource pool. V20 RAW: starts equal to Courage at character creation; grows via XP spend (current rating → next rating costs the current rating × 2 XP) or chargen freebies (one freebie per dot). Adjust this stepper directly: set to your Courage at chargen, then click + as you spend XP. Cap 10.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Animalism",
+        "keys": [
+          "Animalism"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Animalism — formula: Common Discipline 0-5. Beast-bond and primal command. Powers per dot are listed in the lorebook entry 'Discipline: Animalism'.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Auspex",
+        "keys": [
+          "Auspex"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Auspex — formula: Common Discipline 0-5. Heightened senses and supernatural perception. Powers per dot in the lorebook.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Celerity",
+        "keys": [
+          "Celerity"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Celerity — formula: Common Discipline 0-5. Vampiric speed; spend 1 Blood per turn for that many extra physical actions (= Celerity rating).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Dominate",
+        "keys": [
+          "Dominate"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Dominate — formula: Common Discipline 0-5. Mind control via eye contact and the imperative voice. Powers per dot in the lorebook.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Fortitude",
+        "keys": [
+          "Fortitude"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Fortitude — formula: Common Discipline 0-5. Each dot adds one die to soak rolls and lets the vampire soak even AGGRAVATED damage (fire, sunlight, supernatural claws). The only widely-available defense against aggravated.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Obfuscate",
+        "keys": [
+          "Obfuscate"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Obfuscate — formula: Common Discipline 0-5. The art of being unseen, unheard, unremembered. Powers per dot in the lorebook.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Potence",
+        "keys": [
+          "Potence"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Potence — formula: Common Discipline 0-5. Vampiric strength; each dot grants ONE automatic success on Strength-based feats and brawl/melee damage rolls.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Presence",
+        "keys": [
+          "Presence"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Presence — formula: Common Discipline 0-5. The supernatural force of personality — magnetism, awe, dread. Powers per dot in the lorebook.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Protean",
+        "keys": [
+          "Protean"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Protean — formula: Common Discipline 0-5. Bodily transformation rooted in Beast and earth; signature of the Gangrel.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Necromancy",
+        "keys": [
+          "Necromancy"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Necromancy — formula: Clan-unique Discipline (Giovanni and Hecata-adjacent). Path/Ritual structure parallel to Thaumaturgy. See lorebook for paths and rituals.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Thaumaturgy",
+        "keys": [
+          "Thaumaturgy"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Thaumaturgy — formula: Clan-unique Discipline (Tremere). Path/Ritual structure: pick a primary Path rated 1-5, learn other Paths at 1 dot each, plus Rituals as separate spells. See lorebook.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Vicissitude",
+        "keys": [
+          "Vicissitude"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Vicissitude — formula: Clan-unique Discipline (Tzimisce; Sabbat-taught). Active fleshcrafting and bonecrafting. See lorebook for power tree.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Initiative",
+        "keys": [
+          "Initiative"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Initiative — formula: {Dexterity} + {Wits}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Bashing)",
+        "keys": [
+          "Soak (Bashing)"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Soak (Bashing) — formula: {Stamina}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Lethal)",
+        "keys": [
+          "Soak (Lethal)"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Soak (Lethal) — formula: {Stamina} + {Fortitude}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Aggravated)",
+        "keys": [
+          "Soak (Aggravated)"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Soak (Aggravated) — formula: {Fortitude}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Humanity",
+        "keys": [
+          "Humanity"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Humanity — formula: 0-10. Sin-hierarchy: lose a dot when you commit an act at or below your current rating without a successful Conscience roll. Most humans sit 6-7. Below 5 is monstrous; 0 is wight.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Path Rating",
+        "keys": [
+          "Path Rating"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Path Rating — formula: 0-10. Use INSTEAD of Humanity if the character is on a Path of Enlightenment. Mechanically identical hierarchy of sins; the act-list differs per Path. Default 0 (= no Path; Humanity is in use).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Conscience",
+        "keys": [
+          "Conscience"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Conscience — formula: 1-5. Standard Virtue (Humanity track). Resists doing acts that would cost Humanity. Replaced by Conviction on a Path of Enlightenment.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Self-Control",
+        "keys": [
+          "Self-Control"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Self-Control — formula: 1-5. Standard Virtue (Humanity track). Resists Frenzy. Replaced by Instinct on a Path of Enlightenment.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Courage",
+        "keys": [
+          "Courage"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Courage — formula: 1-5. Resists Rotschreck (the Red Fear) and shoring up against fear-based effects. Used by both Humanity AND Path characters. Note: when rolling Virtues, the dice cap at the character's Humanity/Path rating, not the Virtue rating.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary difficulty ladder. Threshold values needed for success:\n- Trivial (threshold 4) — Trivial for a competent character. Often waived.\n- Routine (threshold 5) — Routine task; minor pressure.\n- Standard (threshold 6) — V20 default. Average task under normal conditions.\n- Challenging (threshold 7) — Pushes a competent character; pressure or distraction.\n- Difficult (threshold 8) — Few succeed without bonuses or supernatural help.\n- Nigh-Impossible (threshold 9) — Heroic; requires Willpower, Disciplines, or aid.",
+        "position": 0,
+        "selective": false,
+        "constant": false
       }
     ]
   },

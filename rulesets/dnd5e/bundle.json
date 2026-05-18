@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "ruleset": {
     "id": "dnd5e",
@@ -955,6 +955,437 @@
         "content": "Magic item attunement (SRD 5.1). Many magic items require attunement — a one-hour focused process during a short rest — before the wielder can access the item magical properties. A creature can be attuned to at most 3 magic items at once; attempting a 4th attunement requires breaking an existing attunement first. Some items grant their basic effect without attunement (a +1 sword) but lock their full effect behind it (a magic sword that flames on command). Attunement breaks immediately on death, on the item leaving the wearer for 24 hours, or by deliberate choice during a short rest.\n\nState-mutator tag: [mrr-state: field=\"attunement\" item=\"<exact item name>\" attuned=\"true\"] to attune (cap-3 enforced; rejected with toast on overflow). attuned=\"false\" to release. Items must already exist on the player inventory; emit an inventory add tag first if needed.",
         "position": 0,
         "tokenBudget": 200
+      },
+      {
+        "name": "Attribute: Strength (STR)",
+        "keys": [
+          "Strength",
+          "STR"
+        ],
+        "content": "Dungeons & Dragons 5th Edition attribute. Strength (STR) — Raw physical power, athletic training, the extent to which you can exert raw physical force.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DEX)",
+        "keys": [
+          "Dexterity",
+          "DEX"
+        ],
+        "content": "Dungeons & Dragons 5th Edition attribute. Dexterity (DEX) — Agility, reflexes, balance, poise.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Constitution (CON)",
+        "keys": [
+          "Constitution",
+          "CON"
+        ],
+        "content": "Dungeons & Dragons 5th Edition attribute. Constitution (CON) — Health, stamina, vital force.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (INT)",
+        "keys": [
+          "Intelligence",
+          "INT"
+        ],
+        "content": "Dungeons & Dragons 5th Edition attribute. Intelligence (INT) — Mental acuity, accuracy of recall, ability to reason.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Wisdom (WIS)",
+        "keys": [
+          "Wisdom",
+          "WIS"
+        ],
+        "content": "Dungeons & Dragons 5th Edition attribute. Wisdom (WIS) — Awareness, intuition, insight, attunement to surroundings.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Charisma (CHA)",
+        "keys": [
+          "Charisma",
+          "CHA"
+        ],
+        "content": "Dungeons & Dragons 5th Edition attribute. Charisma (CHA) — Force of personality, persuasiveness, leadership.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Acrobatics",
+        "keys": [
+          "Acrobatics"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Acrobatics.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Animal Handling",
+        "keys": [
+          "Animal Handling"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Animal Handling.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Arcana",
+        "keys": [
+          "Arcana"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Arcana.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Athletics",
+        "keys": [
+          "Athletics"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Athletics.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Deception",
+        "keys": [
+          "Deception"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Deception.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: History",
+        "keys": [
+          "History"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. History.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Insight",
+        "keys": [
+          "Insight"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Insight.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Intimidation",
+        "keys": [
+          "Intimidation"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Intimidation.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Investigation",
+        "keys": [
+          "Investigation"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Investigation.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Medicine",
+        "keys": [
+          "Medicine"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Medicine.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Nature",
+        "keys": [
+          "Nature"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Nature.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Perception",
+        "keys": [
+          "Perception"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Perception.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Performance",
+        "keys": [
+          "Performance"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Performance.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Persuasion",
+        "keys": [
+          "Persuasion"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Persuasion.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Religion",
+        "keys": [
+          "Religion"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Religion.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Sleight of Hand",
+        "keys": [
+          "Sleight of Hand"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Sleight of Hand.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Stealth.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "Dungeons & Dragons 5th Edition skill. Survival.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Blinded",
+        "keys": [
+          "Blinded"
+        ],
+        "content": "Dungeons & Dragons 5th Edition condition. Blinded — Cannot see; auto-fails sight checks. Attack rolls are at disadvantage and attacks against have advantage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Charmed",
+        "keys": [
+          "Charmed"
+        ],
+        "content": "Dungeons & Dragons 5th Edition condition. Charmed — Cannot attack the charmer or target them with harmful abilities. Charmer has advantage on social checks against you.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Deafened",
+        "keys": [
+          "Deafened"
+        ],
+        "content": "Dungeons & Dragons 5th Edition condition. Deafened — Cannot hear; auto-fails hearing checks.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Incapacitated",
+        "keys": [
+          "Incapacitated"
+        ],
+        "content": "Dungeons & Dragons 5th Edition condition. Incapacitated — Cannot take actions or reactions.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Invisible",
+        "keys": [
+          "Invisible"
+        ],
+        "content": "Dungeons & Dragons 5th Edition condition. Invisible — Heavily obscured for hiding. Attack rolls have advantage; attacks against have disadvantage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Paralyzed",
+        "keys": [
+          "Paralyzed"
+        ],
+        "content": "Dungeons & Dragons 5th Edition condition. Paralyzed — Incapacitated; cannot move or speak. Auto-fails STR and DEX saves. Attacks against have advantage and crit on hit within 5 ft.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Petrified",
+        "keys": [
+          "Petrified"
+        ],
+        "content": "Dungeons & Dragons 5th Edition condition. Petrified — Transformed to stone; incapacitated; resistance to all damage; immune to poison and disease.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Restrained",
+        "keys": [
+          "Restrained"
+        ],
+        "content": "Dungeons & Dragons 5th Edition condition. Restrained — Speed becomes 0. Disadvantage on attack rolls and DEX saves. Attacks against have advantage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Stunned",
+        "keys": [
+          "Stunned"
+        ],
+        "content": "Dungeons & Dragons 5th Edition condition. Stunned — Incapacitated; cannot move; can speak only falteringly. Auto-fails STR and DEX saves. Attacks against have advantage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Unconscious",
+        "keys": [
+          "Unconscious"
+        ],
+        "content": "Dungeons & Dragons 5th Edition condition. Unconscious — Incapacitated; cannot move or speak; drops what it holds; falls prone. Auto-fails STR and DEX saves. Melee attacks within 5 ft crit on hit.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Exhausted",
+        "keys": [
+          "Exhausted"
+        ],
+        "content": "Dungeons & Dragons 5th Edition condition. Exhausted — Stack 1-6. Disadvantage on ability checks (level 1+); halved speed (level 2+); disadvantage on attacks and saves (level 3+); HP max halved (level 4+); speed reduced to 0 (level 5+); death (level 6).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Hit Points",
+        "keys": [
+          "Hit Points"
+        ],
+        "content": "Dungeons & Dragons 5th Edition derived stat. Hit Points — formula: (class hit die avg) + CON_mod, per level",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Armor Class",
+        "keys": [
+          "Armor Class"
+        ],
+        "content": "Dungeons & Dragons 5th Edition derived stat. Armor Class — formula: 10 + DEX_mod (or armor formula)",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Initiative",
+        "keys": [
+          "Initiative"
+        ],
+        "content": "Dungeons & Dragons 5th Edition derived stat. Initiative — formula: {Dexterity_mod}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Proficiency Bonus",
+        "keys": [
+          "Proficiency Bonus"
+        ],
+        "content": "Dungeons & Dragons 5th Edition derived stat. Proficiency Bonus — formula: 2 + (({Level} - 1) / 4)",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Speed",
+        "keys": [
+          "Speed"
+        ],
+        "content": "Dungeons & Dragons 5th Edition derived stat. Speed — formula: Race base (typically 30 ft)",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Level",
+        "keys": [
+          "Level"
+        ],
+        "content": "Dungeons & Dragons 5th Edition derived stat. Level — formula: Character level, 1-20.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Dungeons & Dragons 5th Edition difficulty ladder. Threshold values needed for success:\n- Very Easy (threshold 5) — Trivial; only roll if a fail is interesting.\n- Easy (threshold 10) — An untrained adult can manage on a good day.\n- Medium (threshold 15) — A trained character expects to succeed.\n- Hard (threshold 20) — A trained character with a good attribute may still fail.\n- Very Hard (threshold 25) — Possible only with high attribute and proficiency, or magic.\n- Nearly Impossible (threshold 30) — Heroic. Stack every advantage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
       }
     ]
   },

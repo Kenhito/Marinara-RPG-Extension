@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "ruleset": {
     "id": "exalted3e",
@@ -2215,6 +2215,500 @@
         "selective": false,
         "constant": false,
         "position": 0
+      },
+      {
+        "name": "Attribute: Strength (STR)",
+        "keys": [
+          "Strength",
+          "STR"
+        ],
+        "content": "Exalted 3rd Edition attribute. Strength (STR) [Physical] — Raw muscle. Lifting, melee damage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DEX)",
+        "keys": [
+          "Dexterity",
+          "DEX"
+        ],
+        "content": "Exalted 3rd Edition attribute. Dexterity (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Stamina (STA)",
+        "keys": [
+          "Stamina",
+          "STA"
+        ],
+        "content": "Exalted 3rd Edition attribute. Stamina (STA) [Physical] — Endurance, soak, resisting fatigue.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Charisma (CHA)",
+        "keys": [
+          "Charisma",
+          "CHA"
+        ],
+        "content": "Exalted 3rd Edition attribute. Charisma (CHA) [Social] — Honest charm, leadership, sincere persuasion.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Manipulation (MAN)",
+        "keys": [
+          "Manipulation",
+          "MAN"
+        ],
+        "content": "Exalted 3rd Edition attribute. Manipulation (MAN) [Social] — Deceit, guile, indirect influence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Appearance (APP)",
+        "keys": [
+          "Appearance",
+          "APP"
+        ],
+        "content": "Exalted 3rd Edition attribute. Appearance (APP) [Social] — Beauty / presence; affects attraction and intimidation.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Perception (PER)",
+        "keys": [
+          "Perception",
+          "PER"
+        ],
+        "content": "Exalted 3rd Edition attribute. Perception (PER) [Mental] — Spotting, hearing, noticing details.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (INT)",
+        "keys": [
+          "Intelligence",
+          "INT"
+        ],
+        "content": "Exalted 3rd Edition attribute. Intelligence (INT) [Mental] — Reasoning, learning, recall, abstract thought.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Wits (WIT)",
+        "keys": [
+          "Wits",
+          "WIT"
+        ],
+        "content": "Exalted 3rd Edition attribute. Wits (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Archery",
+        "keys": [
+          "Archery"
+        ],
+        "content": "Exalted 3rd Edition skill. Archery.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Athletics",
+        "keys": [
+          "Athletics"
+        ],
+        "content": "Exalted 3rd Edition skill. Athletics.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Awareness",
+        "keys": [
+          "Awareness"
+        ],
+        "content": "Exalted 3rd Edition skill. Awareness.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Brawl",
+        "keys": [
+          "Brawl"
+        ],
+        "content": "Exalted 3rd Edition skill. Brawl. Includes Martial Arts when the Martial Artist Merit is taken.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Bureaucracy",
+        "keys": [
+          "Bureaucracy"
+        ],
+        "content": "Exalted 3rd Edition skill. Bureaucracy.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Craft",
+        "keys": [
+          "Craft"
+        ],
+        "content": "Exalted 3rd Edition skill. Craft.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Dodge",
+        "keys": [
+          "Dodge"
+        ],
+        "content": "Exalted 3rd Edition skill. Dodge.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Integrity",
+        "keys": [
+          "Integrity"
+        ],
+        "content": "Exalted 3rd Edition skill. Integrity.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Investigation",
+        "keys": [
+          "Investigation"
+        ],
+        "content": "Exalted 3rd Edition skill. Investigation.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Larceny",
+        "keys": [
+          "Larceny"
+        ],
+        "content": "Exalted 3rd Edition skill. Larceny.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Linguistics",
+        "keys": [
+          "Linguistics"
+        ],
+        "content": "Exalted 3rd Edition skill. Linguistics.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Lore",
+        "keys": [
+          "Lore"
+        ],
+        "content": "Exalted 3rd Edition skill. Lore.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Medicine",
+        "keys": [
+          "Medicine"
+        ],
+        "content": "Exalted 3rd Edition skill. Medicine.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Melee",
+        "keys": [
+          "Melee"
+        ],
+        "content": "Exalted 3rd Edition skill. Melee.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Occult",
+        "keys": [
+          "Occult"
+        ],
+        "content": "Exalted 3rd Edition skill. Occult.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Performance",
+        "keys": [
+          "Performance"
+        ],
+        "content": "Exalted 3rd Edition skill. Performance.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Presence",
+        "keys": [
+          "Presence"
+        ],
+        "content": "Exalted 3rd Edition skill. Presence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Resistance",
+        "keys": [
+          "Resistance"
+        ],
+        "content": "Exalted 3rd Edition skill. Resistance.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Ride",
+        "keys": [
+          "Ride"
+        ],
+        "content": "Exalted 3rd Edition skill. Ride.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Sail",
+        "keys": [
+          "Sail"
+        ],
+        "content": "Exalted 3rd Edition skill. Sail.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Socialize",
+        "keys": [
+          "Socialize"
+        ],
+        "content": "Exalted 3rd Edition skill. Socialize.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Exalted 3rd Edition skill. Stealth.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "Exalted 3rd Edition skill. Survival.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Thrown",
+        "keys": [
+          "Thrown"
+        ],
+        "content": "Exalted 3rd Edition skill. Thrown.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: War",
+        "keys": [
+          "War"
+        ],
+        "content": "Exalted 3rd Edition skill. War.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Personal Motes",
+        "keys": [
+          "Personal Motes"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Personal Motes — formula: Essence x 3 + 10 (Solar)",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Peripheral Motes",
+        "keys": [
+          "Peripheral Motes"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Peripheral Motes — formula: Essence x 7 + 26 (Solar)",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Willpower",
+        "keys": [
+          "Willpower"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Willpower — formula: Per-character cap (typically 5-10 for Solars; max 10). User sets the cap via the max input on the bar; default starts at 5 for fresh Solar sheets.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Health Track",
+        "keys": [
+          "Health Track"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Health Track — formula: 7 levels: -0/-1/-1/-2/-2/-4/Incapacitated. Penalty equals the highest filled box.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Defense (Parry)",
+        "keys": [
+          "Defense (Parry)"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Defense (Parry) — formula: ({Dexterity} + {Melee} + 1) / 2",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Defense (Evasion)",
+        "keys": [
+          "Defense (Evasion)"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Defense (Evasion) — formula: ({Dexterity} + {Dodge} + 1) / 2",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Resolve",
+        "keys": [
+          "Resolve"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Resolve — formula: ({Wits} + {Integrity} + 1) / 2",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Guile",
+        "keys": [
+          "Guile"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Guile — formula: ({Manipulation} + {Socialize} + 1) / 2",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Join Battle",
+        "keys": [
+          "Join Battle"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Join Battle — formula: {Wits} + {Awareness}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Natural)",
+        "keys": [
+          "Soak (Natural)"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Soak (Natural) — formula: {Stamina}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Bashing)",
+        "keys": [
+          "Soak (Bashing)"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Soak (Bashing) — formula: {Stamina} + {bonuses:Bashing Soak}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Lethal)",
+        "keys": [
+          "Soak (Lethal)"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Soak (Lethal) — formula: {Stamina} + {bonuses:Lethal Soak}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Hardness",
+        "keys": [
+          "Hardness"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Hardness — formula: Highest equipped armor's Hardness rating + Charm/magic Hardness bonuses (set base manually; armor and Charms appear as +N suffix from item bonuses targeting \"Hardness\")",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Exalted 3rd Edition difficulty ladder. Threshold values needed for success:\n- Routine (threshold 1) — Trivial for a competent character. Often waived.\n- Standard (threshold 2) — Default opposed baseline.\n- Difficult (threshold 3) — Pushes a skilled mortal.\n- Demanding (threshold 4) — Few mortals can do it reliably.\n- Legendary (threshold 5) — Peak of mortal-scale achievement; songs are sung.\n- Beyond Legendary (threshold 7) — Wyld navigation, First-Age relics, Essence > 5 territory.",
+        "position": 0,
+        "selective": false,
+        "constant": false
       }
     ]
   },

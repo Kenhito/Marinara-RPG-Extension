@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "ruleset": {
     "id": "coc7e",
@@ -776,6 +776,629 @@
         ],
         "content": "Each investigator picks an Occupation that determines starting skill picks, occupation skill points (typically 4xEDU or a mixed formula), and Credit Rating range. Bonds (Key Connection, Significant People, Locations, Possessions, Traits) are narrative anchors the Keeper exploits — invoking a Bond in distress can restore lost Sanity in small amounts; losing a Bond inflicts Sanity. The 1920s is canon era; modern and other periods use era-appropriate skill substitutions (Computer Use exists in modern, not the 20s).",
         "position": 0
+      },
+      {
+        "name": "Attribute: Strength (STR)",
+        "keys": [
+          "Strength",
+          "STR"
+        ],
+        "content": "Call of Cthulhu 7th Edition attribute. Strength (STR) [Physical] — Muscle power, the ability to lift heavy objects, use weapons, and push through physical resistance.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Constitution (CON)",
+        "keys": [
+          "Constitution",
+          "CON"
+        ],
+        "content": "Call of Cthulhu 7th Edition attribute. Constitution (CON) [Physical] — Health, vigour, and vitality. Resistance to disease, poison, and the wearing effects of injury.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Size (SIZ)",
+        "keys": [
+          "Size",
+          "SIZ"
+        ],
+        "content": "Call of Cthulhu 7th Edition attribute. Size (SIZ) [Physical] — A combined measure of height and weight. Contributes to Hit Points and the Damage Bonus.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DEX)",
+        "keys": [
+          "Dexterity",
+          "DEX"
+        ],
+        "content": "Call of Cthulhu 7th Edition attribute. Dexterity (DEX) [Physical] — Quickness, agility, and physical co-ordination. The highest-DEX combatant generally acts first.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Appearance (APP)",
+        "keys": [
+          "Appearance",
+          "APP"
+        ],
+        "content": "Call of Cthulhu 7th Edition attribute. Appearance (APP) [Social] — Physical attractiveness and personal charm — the surface impression an investigator makes on others.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (INT)",
+        "keys": [
+          "Intelligence",
+          "INT"
+        ],
+        "content": "Call of Cthulhu 7th Edition attribute. Intelligence (INT) [Mental] — Cleverness and the ability to reason. Also the value used for the Idea roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Power (POW)",
+        "keys": [
+          "Power",
+          "POW"
+        ],
+        "content": "Call of Cthulhu 7th Edition attribute. Power (POW) [Mental] — Force of will, mental fortitude, and the wellspring of magic. POW seeds starting Sanity and Magic Points.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Education (EDU)",
+        "keys": [
+          "Education",
+          "EDU"
+        ],
+        "content": "Call of Cthulhu 7th Edition attribute. Education (EDU) [Mental] — Formal learning and accumulated knowledge. Drives initial skill picks during occupation selection.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Accounting",
+        "keys": [
+          "Accounting"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Accounting. Examine ledgers, follow money trails, spot financial irregularities.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Anthropology",
+        "keys": [
+          "Anthropology"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Anthropology. Read a culture's customs and infer its beliefs from sparse evidence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Appraise",
+        "keys": [
+          "Appraise"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Appraise. Judge the age, authenticity, and value of objects and artworks.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Archaeology",
+        "keys": [
+          "Archaeology"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Archaeology. Date sites, identify artifacts, and survive ruin exploration.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Art/Craft",
+        "keys": [
+          "Art/Craft"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Art/Craft. Practice a specific creative or technical craft (specify on the character sheet).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Charm",
+        "keys": [
+          "Charm"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Charm. Persuade through warmth, flattery, or attractiveness.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Climb",
+        "keys": [
+          "Climb"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Climb. Scale walls, trees, and other steep surfaces without specialised gear.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Computer Use",
+        "keys": [
+          "Computer Use"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Computer Use. Modern era only. Operate computers, recover data, and follow digital trails.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Credit Rating",
+        "keys": [
+          "Credit Rating"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Credit Rating. Social and financial standing. Drives starting cash and reception by elites.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Cthulhu Mythos",
+        "keys": [
+          "Cthulhu Mythos"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Cthulhu Mythos. Forbidden knowledge of the Mythos. Each point gained is a point of Sanity lost.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Disguise",
+        "keys": [
+          "Disguise"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Disguise. Alter appearance to pass as someone else or escape recognition.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Dodge",
+        "keys": [
+          "Dodge"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Dodge. Avoid an incoming attack or environmental danger. Base value is half of DEX.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Drive Auto",
+        "keys": [
+          "Drive Auto"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Drive Auto. Operate a wheeled motor vehicle under normal and adverse conditions.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Electrical Repair",
+        "keys": [
+          "Electrical Repair"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Electrical Repair. Diagnose and fix electrical systems, from house wiring to radios.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Fast Talk",
+        "keys": [
+          "Fast Talk"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Fast Talk. Bluster, distract, or rapidly persuade without leaving lasting goodwill.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Fighting (Brawl)",
+        "keys": [
+          "Fighting (Brawl)"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Fighting (Brawl). Hand-to-hand combat: fists, improvised weapons, and grappling.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Firearms (Handgun)",
+        "keys": [
+          "Firearms (Handgun)"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Firearms (Handgun). Pistols and revolvers. Single-shot accuracy in stressed conditions.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Firearms (Rifle/Shotgun)",
+        "keys": [
+          "Firearms (Rifle/Shotgun)"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Firearms (Rifle/Shotgun). Long arms. Hunting rifles, shotguns, and military pattern rifles.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: First Aid",
+        "keys": [
+          "First Aid"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. First Aid. Stabilise an injured person and restore a small amount of lost HP.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: History",
+        "keys": [
+          "History"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. History. Recall historical facts, dates, and the significance of past events.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Intimidate",
+        "keys": [
+          "Intimidate"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Intimidate. Compel co-operation through threats, presence, or implication of force.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Jump",
+        "keys": [
+          "Jump"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Jump. Leap horizontally or vertically, or fall safely from a height.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Language (Own)",
+        "keys": [
+          "Language (Own)"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Language (Own). Native tongue. Base value equals EDU.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Language (Other)",
+        "keys": [
+          "Language (Other)"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Language (Other). A second language (specify on the character sheet).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Law",
+        "keys": [
+          "Law"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Law. Knowledge of legal systems, court procedure, and rights.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Library Use",
+        "keys": [
+          "Library Use"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Library Use. Locate a specific piece of information in a library or archive.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Listen",
+        "keys": [
+          "Listen"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Listen. Notice and interpret sound. The investigator's ear for trouble.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Locksmith",
+        "keys": [
+          "Locksmith"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Locksmith. Pick, bypass, or otherwise open locks without their key.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Mechanical Repair",
+        "keys": [
+          "Mechanical Repair"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Mechanical Repair. Diagnose and fix mechanical devices, from clocks to engines.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Medicine",
+        "keys": [
+          "Medicine"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Medicine. Treat illness and injury at a professional level. Slower but stronger than First Aid.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Natural World",
+        "keys": [
+          "Natural World"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Natural World. Folk knowledge of plants, animals, and the natural world.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Navigate",
+        "keys": [
+          "Navigate"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Navigate. Find one's way using landmarks, maps, the stars, or instruments.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Occult",
+        "keys": [
+          "Occult"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Occult. Mundane mystic lore: hauntings, folklore, and traditional ritual.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Operate Heavy Machinery",
+        "keys": [
+          "Operate Heavy Machinery"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Operate Heavy Machinery. Cranes, excavators, and similar large-scale industrial equipment.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Persuade",
+        "keys": [
+          "Persuade"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Persuade. Win agreement through reasoned argument. Lasting effect, slow to deploy.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Pilot",
+        "keys": [
+          "Pilot"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Pilot. Operate an aircraft or vessel (specify type on the character sheet).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Psychoanalysis",
+        "keys": [
+          "Psychoanalysis"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Psychoanalysis. Long-term mental care. Can recover Sanity over extended treatment.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Psychology",
+        "keys": [
+          "Psychology"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Psychology. Read motivations, detect lies, and judge mental state on the fly.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Science",
+        "keys": [
+          "Science"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Science. A specific scientific field (specify on the character sheet).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Sleight of Hand",
+        "keys": [
+          "Sleight of Hand"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Sleight of Hand. Palm objects, pick pockets, and perform other deft hand tricks.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Spot Hidden",
+        "keys": [
+          "Spot Hidden"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Spot Hidden. Notice things that aren't obvious — concealed objects, subtle clues, watchers.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Stealth. Move quietly and remain unseen.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Survival. Endure and travel through a specific hostile environment (specify).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Swim",
+        "keys": [
+          "Swim"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Swim. Stay afloat and move through water under both calm and stressed conditions.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Throw",
+        "keys": [
+          "Throw"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Throw. Hurl an object accurately at a target.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Track",
+        "keys": [
+          "Track"
+        ],
+        "content": "Call of Cthulhu 7th Edition skill. Track. Follow physical trails left by people, animals, or vehicles.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Hit Points",
+        "keys": [
+          "Hit Points"
+        ],
+        "content": "Call of Cthulhu 7th Edition derived stat. Hit Points — formula: (CON + SIZ) / 10, rounded down",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Magic Points",
+        "keys": [
+          "Magic Points"
+        ],
+        "content": "Call of Cthulhu 7th Edition derived stat. Magic Points — formula: POW / 5, rounded down",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Sanity",
+        "keys": [
+          "Sanity"
+        ],
+        "content": "Call of Cthulhu 7th Edition derived stat. Sanity — formula: Starts equal to POW; maximum is 99 minus Cthulhu Mythos",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Move",
+        "keys": [
+          "Move"
+        ],
+        "content": "Call of Cthulhu 7th Edition derived stat. Move — formula: 7 if STR and DEX < SIZ; 9 if both > SIZ; 8 otherwise (modern era)",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Luck",
+        "keys": [
+          "Luck"
+        ],
+        "content": "Call of Cthulhu 7th Edition derived stat. Luck — formula: Roll 3d6 x 5 at character creation (range 15-90)",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Build",
+        "keys": [
+          "Build"
+        ],
+        "content": "Call of Cthulhu 7th Edition derived stat. Build — formula: Derived from combined STR + SIZ on the build table; drives Damage Bonus and grapple",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Call of Cthulhu 7th Edition difficulty ladder. Threshold values needed for success:\n- Regular (threshold 100) — Roll equal to or under the full skill value.\n- Hard (threshold 50) — Roll equal to or under half the skill value (round down).\n- Extreme (threshold 20) — Roll equal to or under one-fifth the skill value (round down).",
+        "position": 0,
+        "selective": false,
+        "constant": false
       }
     ]
   },

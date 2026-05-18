@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "ruleset": {
     "id": "gurps-lite",
@@ -621,6 +621,375 @@
         ],
         "content": "Skills come in four difficulty tiers: Easy (default at attribute), Average (attribute - 1 to learn at attribute level; defaults at attribute - 4), Hard (attribute - 2 to learn at attribute level; defaults at attribute - 5), Very Hard (attribute - 3; no default — must learn at 1 point first). Defaults: untrained characters can attempt most skills at a reduced effective skill (e.g., Climbing defaults to DX-5). Some skills have NO default (Very Hard skills, most magic, technique-specific skills). Bonuses for tools, beneficial conditions, and bonus dice raise the effective skill; penalties from injury, environment, distraction lower it.",
         "position": 0
+      },
+      {
+        "name": "Attribute: Strength (ST)",
+        "keys": [
+          "Strength",
+          "ST"
+        ],
+        "content": "GURPS Lite attribute. Strength (ST) [Physical] — Muscle power and bulk. Drives HP, damage, lifting capacity, and any physical activity that depends on raw force.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DX)",
+        "keys": [
+          "Dexterity",
+          "DX"
+        ],
+        "content": "GURPS Lite attribute. Dexterity (DX) [Physical] — Agility, co-ordination, and reaction speed. Underlies most active physical skills and Basic Speed.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (IQ)",
+        "keys": [
+          "Intelligence",
+          "IQ"
+        ],
+        "content": "GURPS Lite attribute. Intelligence (IQ) [Mental] — Brainpower, alertness, and adaptability. Default for Will, Perception, and most mental skills.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Health (HT)",
+        "keys": [
+          "Health",
+          "HT"
+        ],
+        "content": "GURPS Lite attribute. Health (HT) [Physical] — Endurance, resistance to illness and poison, and the body's reserve. Drives FP and recovery.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Acrobatics",
+        "keys": [
+          "Acrobatics"
+        ],
+        "content": "GURPS Lite skill. Acrobatics. Tumbling, balance, and athletic feats. Hard skill; default DX-6.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Area Knowledge",
+        "keys": [
+          "Area Knowledge"
+        ],
+        "content": "GURPS Lite skill. Area Knowledge. Familiarity with a specific region's people, places, and customs. Easy skill; default IQ.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Brawling",
+        "keys": [
+          "Brawling"
+        ],
+        "content": "GURPS Lite skill. Brawling. Unarmed striking. Easy skill; defaults to DX.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Camouflage",
+        "keys": [
+          "Camouflage"
+        ],
+        "content": "GURPS Lite skill. Camouflage. Conceal an object or oneself by blending into surroundings. Easy skill; default IQ-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Climbing",
+        "keys": [
+          "Climbing"
+        ],
+        "content": "GURPS Lite skill. Climbing. Scale walls, ropes, and natural features. Average skill; default DX-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Driving",
+        "keys": [
+          "Driving"
+        ],
+        "content": "GURPS Lite skill. Driving. Operate a ground vehicle (specify type on the character sheet). Average skill; default DX-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Electronics Operation",
+        "keys": [
+          "Electronics Operation"
+        ],
+        "content": "GURPS Lite skill. Electronics Operation. Use a specific category of electronic gear. Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: First Aid",
+        "keys": [
+          "First Aid"
+        ],
+        "content": "GURPS Lite skill. First Aid. Stop bleeding and stabilise injuries in the field. Easy skill; default IQ-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Forensics",
+        "keys": [
+          "Forensics"
+        ],
+        "content": "GURPS Lite skill. Forensics. Apply scientific method to crime-scene evidence. Hard skill; default IQ-6.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Gunner",
+        "keys": [
+          "Gunner"
+        ],
+        "content": "GURPS Lite skill. Gunner. Operate a vehicle-mounted or heavy weapon. Easy skill; default DX-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Guns",
+        "keys": [
+          "Guns"
+        ],
+        "content": "GURPS Lite skill. Guns. Fire portable firearms (specify category on the character sheet). Easy skill; default DX-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Knife",
+        "keys": [
+          "Knife"
+        ],
+        "content": "GURPS Lite skill. Knife. Wield a knife in melee or thrown. Easy skill; default DX-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Lockpicking",
+        "keys": [
+          "Lockpicking"
+        ],
+        "content": "GURPS Lite skill. Lockpicking. Open a lock without its key. Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Mechanic",
+        "keys": [
+          "Mechanic"
+        ],
+        "content": "GURPS Lite skill. Mechanic. Maintain and repair a class of machine (specify on the character sheet). Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Navigation",
+        "keys": [
+          "Navigation"
+        ],
+        "content": "GURPS Lite skill. Navigation. Find one's way using maps, instruments, or natural cues. Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Observation",
+        "keys": [
+          "Observation"
+        ],
+        "content": "GURPS Lite skill. Observation. Notice details about the environment, people, or activity. Average skill; default Per-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Riding",
+        "keys": [
+          "Riding"
+        ],
+        "content": "GURPS Lite skill. Riding. Control a mount (specify type on the character sheet). Average skill; default DX-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Shadowing",
+        "keys": [
+          "Shadowing"
+        ],
+        "content": "GURPS Lite skill. Shadowing. Follow a person without being noticed. Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "GURPS Lite skill. Stealth. Move quietly and remain unseen. Average skill; default DX-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Streetwise",
+        "keys": [
+          "Streetwise"
+        ],
+        "content": "GURPS Lite skill. Streetwise. Navigate criminal and underground social networks. Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "GURPS Lite skill. Survival. Live off the land in a specific environment. Average skill; default Per-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Swimming",
+        "keys": [
+          "Swimming"
+        ],
+        "content": "GURPS Lite skill. Swimming. Stay afloat and move through water. Easy skill; default HT-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Throwing",
+        "keys": [
+          "Throwing"
+        ],
+        "content": "GURPS Lite skill. Throwing. Hurl an object at a target accurately. Hard skill; default DX-3.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Tracking",
+        "keys": [
+          "Tracking"
+        ],
+        "content": "GURPS Lite skill. Tracking. Follow a trail through outdoor or urban terrain. Average skill; default Per-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Hit Points",
+        "keys": [
+          "Hit Points"
+        ],
+        "content": "GURPS Lite derived stat. Hit Points — formula: Equal to ST at baseline; modifiable by Extra HP advantages",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Fatigue Points",
+        "keys": [
+          "Fatigue Points"
+        ],
+        "content": "GURPS Lite derived stat. Fatigue Points — formula: Equal to HT at baseline; modifiable by Extra FP advantages",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Will",
+        "keys": [
+          "Will"
+        ],
+        "content": "GURPS Lite derived stat. Will — formula: Equal to IQ at baseline; covers mental fortitude and resistance",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Perception",
+        "keys": [
+          "Perception"
+        ],
+        "content": "GURPS Lite derived stat. Perception — formula: Equal to IQ at baseline; the sense-based attribute used for awareness rolls",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Basic Speed",
+        "keys": [
+          "Basic Speed"
+        ],
+        "content": "GURPS Lite derived stat. Basic Speed — formula: (DX + HT) / 4, not rounded",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Basic Move",
+        "keys": [
+          "Basic Move"
+        ],
+        "content": "GURPS Lite derived stat. Basic Move — formula: Basic Speed rounded down; the number of yards moved in a step",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Dodge",
+        "keys": [
+          "Dodge"
+        ],
+        "content": "GURPS Lite derived stat. Dodge — formula: Basic Speed + 3, rounded down; the active defence against attacks",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "GURPS Lite difficulty ladder. Threshold values needed for success:\n- Easy (threshold 0) — Easy skill default — base attribute minus 4.\n- Average (threshold -1) — Average skill default — base attribute minus 5.\n- Hard (threshold -2) — Hard skill default — base attribute minus 6.\n- VeryHard (threshold -3) — Very Hard skill — no default; must be learned. Base attribute minus 9 once trained at 1 point.",
+        "position": 0,
+        "selective": false,
+        "constant": false
       }
     ]
   },

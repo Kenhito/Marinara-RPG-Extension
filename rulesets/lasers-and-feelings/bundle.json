@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "ruleset": {
     "id": "lasers-and-feelings",
@@ -252,6 +252,27 @@
         ],
         "content": "Which Will: 1 destroy a star system, 2 start an interstellar war, 3 enslave a planet, 4 release an ancient evil, 5 cause a temporal paradox, 6 spread to other ships, 7 collapse the Consortium, 8 doom the Raptor's crew, 9 alter reality, 10 erase memories. Roll 1d10 or pick.",
         "position": 0
+      },
+      {
+        "name": "Attribute: Number (NUM)",
+        "keys": [
+          "Number",
+          "NUM"
+        ],
+        "content": "Lasers & Feelings attribute. Number (NUM) — Your single stat. High Number = better at LASERS (science, reason). Low Number = better at FEELINGS (intuition, passion). Choose somewhere in the middle if you want balance; choose an extreme if you want to specialize.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Help",
+        "keys": [
+          "Help"
+        ],
+        "content": "Lasers & Feelings skill. Help. Helping marker. When another player rolls and you describe how you assist, mark this and roll a Help check; on success the originator gains +1d to their pool. Tracked here as a single skill slot to satisfy the framework's per-character skill list; the helping rule itself is GM-resolved per the L&F one-page rules.",
+        "position": 0,
+        "selective": false,
+        "constant": false
       }
     ]
   },

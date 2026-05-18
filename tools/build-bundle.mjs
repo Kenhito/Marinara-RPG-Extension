@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve, basename, join } from "node:path";
 import buildRegexScripts from "./build-regex-scripts.mjs";
 import buildCustomTools from "./build-custom-tools.mjs";
+import buildLorebookExpansions from "./build-lorebook-expansions.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -109,12 +110,29 @@ function buildBundle(dir) {
   const regexScripts = buildRegexScripts(ruleset);
   const customTools = buildCustomTools(ruleset);
 
+  /* Vector 2: derive auto-lorebook entries from ruleset.json
+     (attributes, skills, conditions, derivedStats, difficulties), then
+     merge into the hand-authored lorebook.json entries. Hand-authored
+     entries WIN on name conflict — they're more specific than the
+     generator's defaults.
+
+     Why merge at build time (vs install time): the bundle install
+     pipeline already does delete-then-add for the managed lorebook, so
+     re-builds don't accumulate at install time. The merge needs to
+     happen here so the bundle.json is the single source of truth at
+     install time. */
+  const handAuthoredEntries = (lb.entries || []).map(buildEntry);
+  const derivedEntries = buildLorebookExpansions(ruleset);
+  const handAuthoredNames = new Set(handAuthoredEntries.map(e => e.name));
+  const derivedFiltered = derivedEntries.filter(e => !handAuthoredNames.has(e.name));
+  const mergedEntries = handAuthoredEntries.concat(derivedFiltered);
+
   const bundle = {
     schema: "mrr-bundle",
     version: 1,
     minExtensionVersion: "0.4.0",
     authorId: "kenhito",
-    generator: { name: "build-bundle.mjs", version: "1.3.0" },
+    generator: { name: "build-bundle.mjs", version: "1.4.0" },
     ruleset,
     lorebook: {
       name: lb.name,
@@ -123,7 +141,7 @@ function buildBundle(dir) {
       scanDepth: typeof lb.scanDepth === "number" ? lb.scanDepth : 4,
       tokenBudget: typeof lb.tokenBudget === "number" ? lb.tokenBudget : 1500,
       recursiveScanning: !!lb.recursiveScanning,
-      entries: (lb.entries || []).map(buildEntry)
+      entries: mergedEntries
     }
   };
 
@@ -145,6 +163,8 @@ function buildBundle(dir) {
   return {
     outPath,
     entryCount: bundle.lorebook.entries.length,
+    handAuthoredCount: handAuthoredEntries.length,
+    derivedCount: derivedFiltered.length,
     regexCount: (bundle.regexScripts || []).length,
     toolCount: (bundle.customTools || []).length
   };
@@ -170,8 +190,8 @@ if (args[0] === "--all") {
 let failed = 0;
 for (const dir of dirs) {
   try {
-    const { outPath, entryCount, regexCount, toolCount } = buildBundle(dir);
-    console.log("PASS " + basename(dir) + " -> " + outPath + " (" + entryCount + " entries, " + regexCount + " regex scripts, " + toolCount + " custom tools)");
+    const { outPath, entryCount, handAuthoredCount, derivedCount, regexCount, toolCount } = buildBundle(dir);
+    console.log("PASS " + basename(dir) + " -> " + outPath + " (" + entryCount + " entries [" + handAuthoredCount + " hand + " + derivedCount + " derived], " + regexCount + " regex scripts, " + toolCount + " custom tools)");
   } catch (e) {
     console.error("FAIL " + basename(dir) + " — " + e.message);
     failed++;

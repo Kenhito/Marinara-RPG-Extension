@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "ruleset": {
     "id": "pathfinder2e",
@@ -1024,6 +1024,447 @@
         ],
         "content": "Prepared casters fill spell slots at a daily preparation; spontaneous casters cast known spells from slots of the appropriate rank (PF2e uses 'rank' instead of 'level' for spells post-Remaster). Cantrips are at-will and auto-heighten to half your level rounded up. Focus spells use Focus Points (refocus during a 10-minute rest to regain 1 point per focus spell trained). Heightening a spell at a higher rank often adds dice or extra targets — read the spell's heightened entry. Sustained spells require a sustain action (1 action) on each subsequent turn to remain in effect.",
         "position": 0
+      },
+      {
+        "name": "Attribute: Strength (STR)",
+        "keys": [
+          "Strength",
+          "STR"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Strength (STR) — Raw physical force. Adds to Athletics, melee attack rolls with non-finesse weapons, and melee damage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DEX)",
+        "keys": [
+          "Dexterity",
+          "DEX"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Dexterity (DEX) — Agility, balance, fine motor control. Adds to AC (capped by armor's Dex cap), Reflex saves, ranged attacks, and finesse melee attacks.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Constitution (CON)",
+        "keys": [
+          "Constitution",
+          "CON"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Constitution (CON) — Health and endurance. Adds to Hit Points each level and to Fortitude saves.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (INT)",
+        "keys": [
+          "Intelligence",
+          "INT"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Intelligence (INT) — Memory, reasoning, education. Grants extra trained skills and Lores at character creation; adds to skills like Arcana, Crafting, Society.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Wisdom (WIS)",
+        "keys": [
+          "Wisdom",
+          "WIS"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Wisdom (WIS) — Awareness, intuition, common sense. Adds to Perception, Will saves, and skills like Medicine, Nature, Religion, Survival.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Charisma (CHA)",
+        "keys": [
+          "Charisma",
+          "CHA"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Charisma (CHA) — Presence, persuasion, force of personality. Adds to social skills (Diplomacy, Deception, Intimidation, Performance, Society) and to spell DCs for Charisma-based casters.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Acrobatics",
+        "keys": [
+          "Acrobatics"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Acrobatics. Tumbling, balancing, escaping grabs. Trained-only actions: Maneuver in Flight.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Arcana",
+        "keys": [
+          "Arcana"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Arcana. Knowledge of arcane magic and creatures. Trained-only: Identify Magic, Learn a Spell, Decipher Writing of arcane origin.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Athletics",
+        "keys": [
+          "Athletics"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Athletics. Climbing, jumping, swimming, forceful maneuvers (Grapple, Trip, Shove, Disarm). High Jump and Long Jump are signature actions.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Crafting",
+        "keys": [
+          "Crafting"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Crafting. Making and repairing items. Trained-only: Craft, Repair, Identify Alchemy.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Deception",
+        "keys": [
+          "Deception"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Deception. Lying, disguise, feinting in combat. Trained-only: Impersonate.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Diplomacy",
+        "keys": [
+          "Diplomacy"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Diplomacy. Making requests, gathering information, swaying attitudes. Always available untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Intimidation",
+        "keys": [
+          "Intimidation"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Intimidation. Coercing or demoralizing. Demoralize is a frequent combat action.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Lore",
+        "keys": [
+          "Lore"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Lore. A specific narrow expertise the player chose at character creation (Sailing Lore, Goblin Lore, Absalom Lore, Carpentry Lore, etc.). Each Lore is a separate trained skill; the GM allows it for narrow Recall Knowledge questions.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Medicine",
+        "keys": [
+          "Medicine"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Medicine. First aid, treating poison/disease. Trained-only: Treat Disease, Treat Poison, Treat Wounds.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Nature",
+        "keys": [
+          "Nature"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Nature. Knowledge of plants, animals, weather. Trained-only: Command an Animal, Identify Magic of primal origin.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Occultism",
+        "keys": [
+          "Occultism"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Occultism. Knowledge of the occult — esoteric philosophy, ghosts, aberrations. Trained-only: Identify Magic of occult origin.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Performance",
+        "keys": [
+          "Performance"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Performance. Music, oratory, dance, acting. Trained-only: Perform (extended).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Religion",
+        "keys": [
+          "Religion"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Religion. Knowledge of deities, dogmas, the planes. Trained-only: Identify Magic of divine origin.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Society",
+        "keys": [
+          "Society"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Society. History, etiquette, languages, current affairs. Trained-only: Decipher Writing, Subsist (in civilization).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Stealth. Hiding and sneaking. Used to oppose Perception when avoiding detection.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Survival. Wilderness skills: tracking, foraging, weathering. Trained-only: Cover Tracks, Track.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Thievery",
+        "keys": [
+          "Thievery"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Thievery. Picking locks, picking pockets, disabling traps. Trained-only: Disable Device, Pick a Lock.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Off-Guard",
+        "keys": [
+          "Off-Guard"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Off-Guard — -2 circumstance penalty to AC. Renamed from 'flat-footed' in the Remaster. Triggered by being flanked, prone, grabbed, restrained, climbing, hidden from your attacker, successfully feinted, or affected by an ability that explicitly imposes off-guard.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Frightened",
+        "keys": [
+          "Frightened"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Frightened — Status penalty equal to value to all checks and DCs. Decreases by 1 at end of each turn.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Sickened",
+        "keys": [
+          "Sickened"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Sickened — Status penalty equal to value to all checks and DCs. Spend 1 action and Fortitude save to reduce.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Prone",
+        "keys": [
+          "Prone"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Prone — -2 circumstance to attacks; off-guard. Standing up is a single action.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Drained",
+        "keys": [
+          "Drained"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Drained — Graduated 1-4 status penalty to all Constitution-based checks (including Fortitude saves) and to HP maximum. Initial application also deals immediate level × increase damage. Decreases by 1 per full night's rest; lost HP must be healed normally.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Enfeebled",
+        "keys": [
+          "Enfeebled"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Enfeebled — Status penalty equal to value to Strength-based rolls and damage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Stupefied",
+        "keys": [
+          "Stupefied"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Stupefied — Graduated 1-4 status penalty to all Intelligence-, Wisdom-, and Charisma-based checks, spell DCs, and spell attack rolls. When attempting to Cast a Spell, first attempt a flat check DC 5 + stupefied value; failure makes the spell fizzle and lose its slot/cost. Hits casters particularly hard.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Clumsy",
+        "keys": [
+          "Clumsy"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Clumsy — Status penalty to Dexterity-based rolls and to AC.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Fascinated",
+        "keys": [
+          "Fascinated"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Fascinated — -2 status penalty to Perception and to all skill checks. You cannot use actions with the concentrate trait other than Seek (no Casting Spells, no Sustain). The condition ends automatically if any creature uses hostile action against you or any ally you can perceive, and you can attempt a Will save against the source's DC at the end of each of your turns.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Hit Points",
+        "keys": [
+          "Hit Points"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Hit Points — formula: (class HP per level + CON_mod) per character level + ancestry HP at level 1",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Armor Class",
+        "keys": [
+          "Armor Class"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Armor Class — formula: 10 + DEX_mod (capped by armor) + armor proficiency bonus + armor item bonus",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Class DC",
+        "keys": [
+          "Class DC"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Class DC — formula: 10 + class proficiency bonus + key ability modifier",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Spell DC",
+        "keys": [
+          "Spell DC"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Spell DC — formula: 10 + spell proficiency bonus + casting ability modifier",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Perception",
+        "keys": [
+          "Perception"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Perception — formula: WIS_mod + perception proficiency bonus + item bonus",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Fortitude Save",
+        "keys": [
+          "Fortitude Save"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Fortitude Save — formula: CON_mod + fortitude proficiency bonus + item bonus",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Reflex Save",
+        "keys": [
+          "Reflex Save"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Reflex Save — formula: DEX_mod + reflex proficiency bonus + item bonus",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Will Save",
+        "keys": [
+          "Will Save"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Will Save — formula: WIS_mod + will proficiency bonus + item bonus",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Speed",
+        "keys": [
+          "Speed"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Speed — formula: Ancestry base speed (typically 25 ft) + bonuses",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Level",
+        "keys": [
+          "Level"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Level — formula: Character level, 1-20.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Pathfinder 2nd Edition difficulty ladder. Threshold values needed for success:\n- Trivial (threshold 10) — Untrained character can manage with average stats.\n- Low (threshold 15) — Trained at character's level expects to succeed.\n- Moderate (threshold 20) — The standard challenge for an at-level expert.\n- High (threshold 25) — Pushes a master character; a trained one will need luck.\n- Severe (threshold 30) — A serious test even for a Master at level.\n- Extreme (threshold 40) — Legendary territory. Stack every bonus.",
+        "position": 0,
+        "selective": false,
+        "constant": false
       }
     ]
   },

@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "ruleset": {
     "id": "trophy-dark",
@@ -295,6 +295,127 @@
         ],
         "content": "Trophy Dark is a ONE-SHOT horror game about treasure hunters who entered a haunted wood and will not all return. The treasure pitch is the hook ('the lost vault of the silver-tongue queen, said to ride on the back of an iron stag'); the wood is the antagonist. The game arc is 3-5 scenes called INCURSIONS, each ramping pressure on the Ruin tracks. The expected ending is 1-2 hunters consumed, 0-2 hunters fled with partial treasure, 0-1 hunters dragging the prize home changed forever. Aim for that ratio. Trophy Dark does NOT continue across sessions — start a new one-shot, with new hunters, in a new wood. The doom is the genre.",
         "position": 0
+      },
+      {
+        "name": "Attribute: Risk (RSK)",
+        "keys": [
+          "Risk",
+          "RSK"
+        ],
+        "content": "Trophy Dark attribute. Risk (RSK) — Fixed Trophy Dark threshold (3). Faces 4-6 succeed on light dice; faces 1-3 fail. Held at min=max=3 to model the system's invariant Risk line — Trophy Dark does not vary this stat per character (unlike L&F's Number). Player should not edit.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Burglar",
+        "keys": [
+          "Burglar"
+        ],
+        "content": "Trophy Dark skill. Burglar. Pursuit. Climbing, picking locks, slipping into places that don't want you. When the GM agrees this Pursuit applies, contribute 1 light die to the Risk roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Brute",
+        "keys": [
+          "Brute"
+        ],
+        "content": "Trophy Dark skill. Brute. Pursuit. Strength, intimidation, smashing through obstacles. Contributes 1 light die when applicable.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Sneak",
+        "keys": [
+          "Sneak"
+        ],
+        "content": "Trophy Dark skill. Sneak. Pursuit. Stealth, deception, going unseen. Contributes 1 light die when applicable.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Scholar",
+        "keys": [
+          "Scholar"
+        ],
+        "content": "Trophy Dark skill. Scholar. Pursuit. Lore, languages, reading the unreadable. Contributes 1 light die when applicable.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Cursed",
+        "keys": [
+          "Cursed"
+        ],
+        "content": "Trophy Dark skill. Cursed. Background. A doom rides on your shoulders. When the curse is relevant (often: when something supernatural blocks the path), contribute 1 light die to the Risk roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Doomed",
+        "keys": [
+          "Doomed"
+        ],
+        "content": "Trophy Dark skill. Doomed. Background. You know how you die — you've seen the wood-shape of it. Contributes 1 light die when the doom-vision applies.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Haunted",
+        "keys": [
+          "Haunted"
+        ],
+        "content": "Trophy Dark skill. Haunted. Background. Something dead follows you. Contributes 1 light die when communing with the dead, surviving fear, or facing the wood's spirits.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Soldier",
+        "keys": [
+          "Soldier"
+        ],
+        "content": "Trophy Dark skill. Soldier. Background. You bled in a war and came home wrong. Contributes 1 light die for combat, command, and reading other violent people.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Smuggler",
+        "keys": [
+          "Smuggler"
+        ],
+        "content": "Trophy Dark skill. Smuggler. Background. Routes, contacts, the trick of moving forbidden things. Contributes 1 light die for navigation, contraband, and lies told fast.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Ruin",
+        "keys": [
+          "Ruin"
+        ],
+        "content": "Trophy Dark derived stat. Ruin — formula: ticks accumulated from failed Risk rolls and Devil's Bargains; at Ruin = 6 the character is consumed by the wood",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Burdens",
+        "keys": [
+          "Burdens"
+        ],
+        "content": "Trophy Dark derived stat. Burdens — formula: narrative tracker for accepted Devil's Bargains the GM is holding over the character; not a number that drives dice math",
+        "position": 0,
+        "selective": false,
+        "constant": false
       }
     ]
   },

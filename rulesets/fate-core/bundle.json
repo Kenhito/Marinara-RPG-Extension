@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "ruleset": {
     "id": "fate-core",
@@ -608,6 +608,272 @@
         ],
         "position": 1,
         "tokenBudget": 2000
+      },
+      {
+        "name": "Attribute: Refresh (REF)",
+        "keys": [
+          "Refresh",
+          "REF"
+        ],
+        "content": "Fate Core attribute. Refresh (REF) — Maximum Fate Points the character starts each session with. Each Stunt taken at character creation reduces this by 1; minimum of 1.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Athletics",
+        "keys": [
+          "Athletics"
+        ],
+        "content": "Fate Core skill. Athletics. Running, jumping, climbing, dodging, athletic feats.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Burglary",
+        "keys": [
+          "Burglary"
+        ],
+        "content": "Fate Core skill. Burglary. Picking locks, disabling security, casing locations.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Contacts",
+        "keys": [
+          "Contacts"
+        ],
+        "content": "Fate Core skill. Contacts. Knowing the right person, social network reach.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Crafts",
+        "keys": [
+          "Crafts"
+        ],
+        "content": "Fate Core skill. Crafts. Building, repairing, working with tools and materials.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Deceive",
+        "keys": [
+          "Deceive"
+        ],
+        "content": "Fate Core skill. Deceive. Lying, disguise, misdirection, false impressions.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Drive",
+        "keys": [
+          "Drive"
+        ],
+        "content": "Fate Core skill. Drive. Operating vehicles, chases, stunts behind the wheel.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Empathy",
+        "keys": [
+          "Empathy"
+        ],
+        "content": "Fate Core skill. Empathy. Reading people, sensing motives and lies, recovering Mental stress.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Fight",
+        "keys": [
+          "Fight"
+        ],
+        "content": "Fate Core skill. Fight. Hand-to-hand and melee weapon combat.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Investigate",
+        "keys": [
+          "Investigate"
+        ],
+        "content": "Fate Core skill. Investigate. Active research and deliberate examination of evidence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Lore",
+        "keys": [
+          "Lore"
+        ],
+        "content": "Fate Core skill. Lore. Knowledge — academic, occult, technical depending on character concept.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Notice",
+        "keys": [
+          "Notice"
+        ],
+        "content": "Fate Core skill. Notice. Passive perception, situational awareness, initiative in conflicts.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Physique",
+        "keys": [
+          "Physique"
+        ],
+        "content": "Fate Core skill. Physique. Raw strength and stamina; expands Physical stress track.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Provoke",
+        "keys": [
+          "Provoke"
+        ],
+        "content": "Fate Core skill. Provoke. Goading, intimidating, creating emotional disadvantage on a target.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Rapport",
+        "keys": [
+          "Rapport"
+        ],
+        "content": "Fate Core skill. Rapport. Building friendly connection, persuading honestly, recovering social standing.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Resources",
+        "keys": [
+          "Resources"
+        ],
+        "content": "Fate Core skill. Resources. Wealth and material resources; can substitute for time and gear.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Shoot",
+        "keys": [
+          "Shoot"
+        ],
+        "content": "Fate Core skill. Shoot. Ranged attacks — bows, firearms, thrown weapons.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Fate Core skill. Stealth. Moving unseen, hiding, avoiding pursuit.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Will",
+        "keys": [
+          "Will"
+        ],
+        "content": "Fate Core skill. Will. Mental toughness and discipline; expands Mental stress track.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Fate Points",
+        "keys": [
+          "Fate Points"
+        ],
+        "content": "Fate Core derived stat. Fate Points — formula: Refresh at session start; spent and earned during play.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Physical Stress",
+        "keys": [
+          "Physical Stress"
+        ],
+        "content": "Fate Core derived stat. Physical Stress — formula: 3 boxes baseline; Physique 1-2 grants box 3 already; Physique 3+ adds a 4th box; Physique 5+ adds a 5th.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Mental Stress",
+        "keys": [
+          "Mental Stress"
+        ],
+        "content": "Fate Core derived stat. Mental Stress — formula: 3 boxes baseline; Will 1-2 grants box 3 already; Will 3+ adds a 4th box; Will 5+ adds a 5th.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Mild Consequence",
+        "keys": [
+          "Mild Consequence"
+        ],
+        "content": "Fate Core derived stat. Mild Consequence — formula: Absorbs 2 shifts of stress at the cost of taking on a Mild aspect.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Moderate Consequence",
+        "keys": [
+          "Moderate Consequence"
+        ],
+        "content": "Fate Core derived stat. Moderate Consequence — formula: Absorbs 4 shifts of stress at the cost of taking on a Moderate aspect.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Severe Consequence",
+        "keys": [
+          "Severe Consequence"
+        ],
+        "content": "Fate Core derived stat. Severe Consequence — formula: Absorbs 6 shifts of stress at the cost of taking on a Severe aspect.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Fate Core difficulty ladder. Threshold values needed for success:\n- Trivial (threshold 0) — Mediocre — no roll required unless interesting.\n- Average (threshold 1) — Average — anyone with a related skill should succeed.\n- Fair (threshold 2) — Fair — competent practitioner with some effort.\n- Good (threshold 3) — Good — skilled work; failure here is a real possibility.\n- Great (threshold 4) — Great — expertise required.\n- Superb (threshold 5) — Superb — only the best succeed without aspect support.\n- Fantastic (threshold 6) — Fantastic — heroic feat; expect aspect invocations.\n- Epic (threshold 7) — Epic — legendary effort.\n- Legendary (threshold 8) — Legendary — peak human + something more.",
+        "position": 0,
+        "selective": false,
+        "constant": false
       }
     ]
   },
