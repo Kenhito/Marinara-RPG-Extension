@@ -1,0 +1,990 @@
+{
+  "id": "vtmv20",
+  "name": "Vampire: The Masquerade 20th Anniversary",
+  "version": "0.1.0",
+  "edition": "V:TM 20th Anniversary Edition (V20, 2011, Onyx Path)",
+  "license": "Original mechanics references; clan / Discipline / sect / path names belong to Paradox Interactive AB. No verbatim V20 corebook text reproduced. Distributed under the Dark Pack Agreement (worldofdarkness.com/dark-pack). Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved. This material is NOT official World of Darkness material.",
+  "summary": "Storyteller-system d10 dice pool. Pool = Attribute + Ability. Each die meeting or beating the Storyteller's difficulty is one success (default difficulty 6, varies 6-9). Botch on any roll showing zero successes AND at least one 1. Specialty bonus on rolls within the chosen specialty: each natural 10 is rerolled. Willpower spend = one automatic guaranteed success, max once per turn.",
+  "dice": {
+    "type": "d10",
+    "notation": "Xd10 vs <difficulty>"
+  },
+  "resolution": {
+    "mode": "dice-pool",
+    "poolFormula": "Attribute + Ability (+ specialty 10-rerolls when applicable, + Willpower auto-success once/turn, + Discipline rating dice)",
+    "target": 6,
+    "doubles": {
+      "face": 10,
+      "successes": 1
+    },
+    "botches": {
+      "onFace": 1,
+      "trigger": "any-on-zero-successes"
+    }
+  },
+  "difficulties": {
+    "Trivial": {
+      "threshold": 4,
+      "description": "Trivial for a competent character. Often waived."
+    },
+    "Routine": {
+      "threshold": 5,
+      "description": "Routine task; minor pressure."
+    },
+    "Standard": {
+      "threshold": 6,
+      "description": "V20 default. Average task under normal conditions."
+    },
+    "Challenging": {
+      "threshold": 7,
+      "description": "Pushes a competent character; pressure or distraction."
+    },
+    "Difficult": {
+      "threshold": 8,
+      "description": "Few succeed without bonuses or supernatural help."
+    },
+    "Nigh-Impossible": {
+      "threshold": 9,
+      "description": "Heroic; requires Willpower, Disciplines, or aid."
+    }
+  },
+  "attributes": [
+    {
+      "name": "Strength",
+      "abbreviation": "STR",
+      "group": "Physical",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Raw muscle. Lifting, melee damage, brawling pools."
+    },
+    {
+      "name": "Dexterity",
+      "abbreviation": "DEX",
+      "group": "Physical",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Agility, hand-eye coordination, attack accuracy, dodging."
+    },
+    {
+      "name": "Stamina",
+      "abbreviation": "STA",
+      "group": "Physical",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Endurance, soak (bashing/lethal), resisting fatigue and damage."
+    },
+    {
+      "name": "Charisma",
+      "abbreviation": "CHA",
+      "group": "Social",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Force of personality, sincere charm, leadership presence."
+    },
+    {
+      "name": "Manipulation",
+      "abbreviation": "MAN",
+      "group": "Social",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Deceit, guile, indirect influence, getting others to act against their interest."
+    },
+    {
+      "name": "Appearance",
+      "abbreviation": "APP",
+      "group": "Social",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Beauty / presence; affects attraction, intimidation by allure, first-impression rolls."
+    },
+    {
+      "name": "Perception",
+      "abbreviation": "PER",
+      "group": "Mental",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Spotting, hearing, noticing details and changes in environment."
+    },
+    {
+      "name": "Intelligence",
+      "abbreviation": "INT",
+      "group": "Mental",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Reasoning, learning, recall, abstract analysis."
+    },
+    {
+      "name": "Wits",
+      "abbreviation": "WIT",
+      "group": "Mental",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Reaction speed, on-the-fly thinking, initiative pool component."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Alertness",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Notice danger and details. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Athletics",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Climbing, running, jumping, swimming. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Awareness",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent (V20). Sense supernatural presence and disturbances in the Beast. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Brawl",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Unarmed combat; punches, grapples, claw strikes. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Empathy",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Read emotions, sense lies of the heart. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Expression",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Communicating ideas, art, oratory, written prose. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Intimidation",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Threats, looming presence, breaking will. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Leadership",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Inspiring loyalty, giving orders, rallying. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Streetwise",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Navigating urban underbelly, contacts, fences, gossip. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Subterfuge",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Lying, misleading, deflecting questions. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Animal Ken",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Handling and training animals (a vampire's natural problem). Untrained: cannot roll."
+    },
+    {
+      "name": "Crafts",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Build, repair, and make physical things by hand. Untrained: cannot roll."
+    },
+    {
+      "name": "Drive",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Operate vehicles under stress. Untrained: cannot roll."
+    },
+    {
+      "name": "Etiquette",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Manners, protocol, the unwritten rules of Kindred and mortal society. Untrained: cannot roll."
+    },
+    {
+      "name": "Firearms",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Handguns, rifles, automatic weapons. Untrained: cannot roll."
+    },
+    {
+      "name": "Larceny",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill (V20). Lock-picking, sleight of hand, B&E, forgery. Untrained: cannot roll."
+    },
+    {
+      "name": "Melee",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Armed close combat; blades, clubs, improvised. Untrained: cannot roll."
+    },
+    {
+      "name": "Performance",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Singing, instrument, acting, dance \u2014 the art of performing for an audience. Untrained: cannot roll."
+    },
+    {
+      "name": "Stealth",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Move unseen and unheard. Untrained: cannot roll."
+    },
+    {
+      "name": "Survival",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Wilderness travel, foraging, weather. Untrained: cannot roll."
+    },
+    {
+      "name": "Academics",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material."
+    },
+    {
+      "name": "Computer",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Software, hardware, networks. Untrained: cannot roll."
+    },
+    {
+      "name": "Finance",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Money, markets, accounting, business law. Untrained: cannot roll."
+    },
+    {
+      "name": "Investigation",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll."
+    },
+    {
+      "name": "Law",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Statute, precedent, courtroom procedure, criminal law. Untrained: cannot roll."
+    },
+    {
+      "name": "Medicine",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Diagnosis, surgery, pharmacology \u2014 and what blood reveals. Untrained: cannot roll."
+    },
+    {
+      "name": "Occult",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Lore of the supernatural \u2014 vampires, mages, ghosts, the Antediluvians. Untrained: cannot roll."
+    },
+    {
+      "name": "Politics",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Government, faction, who-owes-whom in mortal AND Kindred society. Untrained: cannot roll."
+    },
+    {
+      "name": "Science",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Physics, chemistry, biology \u2014 the natural sciences. Untrained: cannot roll."
+    },
+    {
+      "name": "Technology",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll."
+    }
+  ],
+  "skillSpecialties": {
+    "enabled": true,
+    "valueLabel": "specialty (10s reroll)",
+    "valueKind": "dice",
+    "defaultValue": 0
+  },
+  "backgrounds": {
+    "enabled": true,
+    "label": "Backgrounds & Merits",
+    "min": 0,
+    "max": 5,
+    "default": 0
+  },
+  "header": {
+    "raceLabel": "Clan",
+    "classLabel": "Sect"
+  },
+  "derivedStats": [
+    {
+      "name": "Generation",
+      "formula": "Player-set; default 13th. Lower generation costs Background dots at character creation. Bounds the Blood Pool max and the per-turn Blood spend cap (see Generation Table lorebook entry).",
+      "default": 13,
+      "renderAs": "value",
+      "aliases": [
+        "gen",
+        "generation"
+      ]
+    },
+    {
+      "name": "Blood Pool",
+      "formula": "Player-set max keyed to Generation (13th=10, 12th=11, 11th=12, 10th=13, 9th=14, 8th=15, 7th=20, 6th=30, 5th=40, 4th=50). Spent for healing, Discipline activation, blushing of life, Physical Attribute boost (cap = generation per-turn limit).",
+      "default": 10,
+      "renderAs": "bar",
+      "aliases": [
+        "blood",
+        "bp",
+        "vitae",
+        "bloodPool"
+      ]
+    },
+    {
+      "name": "Willpower",
+      "formula": "Current/permanent. Max 10. Spend 1 for one automatic success on a single action (max once/turn) or to ignore wound penalties for one turn or to resist Frenzy/derangement triggers. Permanent rating regen +1 per significant scene; current refreshes at full per night's sleep up to permanent.",
+      "default": 5,
+      "renderAs": "bar",
+      "aliases": [
+        "wp",
+        "WP",
+        "willpower"
+      ]
+    },
+    {
+      "name": "Humanity",
+      "formula": "0-10. Sin-hierarchy: lose a dot when you commit an act at or below your current rating without a successful Conscience roll. Most humans sit 6-7. Below 5 is monstrous; 0 is wight.",
+      "default": 7,
+      "renderAs": "bar",
+      "aliases": [
+        "humanity"
+      ]
+    },
+    {
+      "name": "Path Rating",
+      "formula": "0-10. Use INSTEAD of Humanity if the character is on a Path of Enlightenment. Mechanically identical hierarchy of sins; the act-list differs per Path. Default 0 (= no Path; Humanity is in use).",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "path",
+        "pathRating",
+        "pathOfEnlightenment"
+      ]
+    },
+    {
+      "name": "Conscience",
+      "formula": "1-5. Standard Virtue (Humanity track). Resists doing acts that would cost Humanity. Replaced by Conviction on a Path of Enlightenment.",
+      "default": 3,
+      "renderAs": "value",
+      "aliases": [
+        "conscience",
+        "conviction",
+        "ConscienceConviction"
+      ]
+    },
+    {
+      "name": "Self-Control",
+      "formula": "1-5. Standard Virtue (Humanity track). Resists Frenzy. Replaced by Instinct on a Path of Enlightenment.",
+      "default": 3,
+      "renderAs": "value",
+      "aliases": [
+        "selfControl",
+        "instinct",
+        "SelfControlInstinct"
+      ]
+    },
+    {
+      "name": "Courage",
+      "formula": "1-5. Resists Rotschreck (the Red Fear) and shoring up against fear-based effects. Used by both Humanity AND Path characters. Note: when rolling Virtues, the dice cap at the character's Humanity/Path rating, not the Virtue rating.",
+      "default": 3,
+      "renderAs": "value",
+      "aliases": [
+        "courage"
+      ]
+    },
+    {
+      "name": "Animalism",
+      "formula": "Common Discipline 0-5. Beast-bond and primal command. Powers per dot are listed in the lorebook entry 'Discipline: Animalism'.",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "animalism"
+      ]
+    },
+    {
+      "name": "Auspex",
+      "formula": "Common Discipline 0-5. Heightened senses and supernatural perception. Powers per dot in the lorebook.",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "auspex"
+      ]
+    },
+    {
+      "name": "Celerity",
+      "formula": "Common Discipline 0-5. Vampiric speed; spend 1 Blood per turn for that many extra physical actions (= Celerity rating).",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "celerity"
+      ]
+    },
+    {
+      "name": "Dominate",
+      "formula": "Common Discipline 0-5. Mind control via eye contact and the imperative voice. Powers per dot in the lorebook.",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "dominate"
+      ]
+    },
+    {
+      "name": "Fortitude",
+      "formula": "Common Discipline 0-5. Each dot adds one die to soak rolls and lets the vampire soak even AGGRAVATED damage (fire, sunlight, supernatural claws). The only widely-available defense against aggravated.",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "fortitude"
+      ]
+    },
+    {
+      "name": "Obfuscate",
+      "formula": "Common Discipline 0-5. The art of being unseen, unheard, unremembered. Powers per dot in the lorebook.",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "obfuscate"
+      ]
+    },
+    {
+      "name": "Potence",
+      "formula": "Common Discipline 0-5. Vampiric strength; each dot grants ONE automatic success on Strength-based feats and brawl/melee damage rolls.",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "potence"
+      ]
+    },
+    {
+      "name": "Presence",
+      "formula": "Common Discipline 0-5. The supernatural force of personality \u2014 magnetism, awe, dread. Powers per dot in the lorebook.",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "presence"
+      ]
+    },
+    {
+      "name": "Protean",
+      "formula": "Common Discipline 0-5. Bodily transformation rooted in Beast and earth; signature of the Gangrel.",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "protean"
+      ]
+    },
+    {
+      "name": "Necromancy",
+      "formula": "Clan-unique Discipline (Giovanni and Hecata-adjacent). Path/Ritual structure parallel to Thaumaturgy. See lorebook for paths and rituals.",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "necromancy"
+      ]
+    },
+    {
+      "name": "Thaumaturgy",
+      "formula": "Clan-unique Discipline (Tremere). Path/Ritual structure: pick a primary Path rated 1-5, learn other Paths at 1 dot each, plus Rituals as separate spells. See lorebook.",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "thaumaturgy"
+      ]
+    },
+    {
+      "name": "Vicissitude",
+      "formula": "Clan-unique Discipline (Tzimisce; Sabbat-taught). Active fleshcrafting and bonecrafting. See lorebook for power tree.",
+      "default": 0,
+      "renderAs": "value",
+      "aliases": [
+        "vicissitude"
+      ]
+    },
+    {
+      "name": "Initiative",
+      "formula": "(Dexterity + Wits) + 1d10 each combat round. Wound penalties subtract from rating, NOT from the d10.",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity} + {Wits}",
+      "aliases": [
+        "initiative",
+        "init"
+      ]
+    },
+    {
+      "name": "Health Track",
+      "formula": "7 V20 health levels: -0 / -1 / -1 / -2 / -2 / -5 / Incapacitated. Penalty in effect equals the highest filled box and applies to dice pools (Willpower spend ignores it for one turn). Damage types: Bashing (B, severity 0), Lethal (L, severity 1), Aggravated (A, severity 2 \u2014 only Fortitude soaks it).",
+      "renderAs": "track",
+      "track": [
+        {
+          "label": "Bruised",
+          "penalty": 0
+        },
+        {
+          "label": "Hurt -1",
+          "penalty": -1
+        },
+        {
+          "label": "Injured -1",
+          "penalty": -1
+        },
+        {
+          "label": "Wounded -2",
+          "penalty": -2
+        },
+        {
+          "label": "Mauled -2",
+          "penalty": -2
+        },
+        {
+          "label": "Crippled -5",
+          "penalty": -5
+        },
+        {
+          "label": "Incapacitated",
+          "penalty": -99
+        }
+      ],
+      "damageTypes": [
+        {
+          "id": "bashing",
+          "label": "B",
+          "severity": 0,
+          "description": "Blunt or non-lethal damage. Soaked with Stamina. Heals quickly (one level per hour with Blood spend, or naturally over a night)."
+        },
+        {
+          "id": "lethal",
+          "label": "L",
+          "severity": 1,
+          "description": "Edged, piercing, or gunshot. Soaked with Stamina + Fortitude. Heals slower; one level per night with Blood spend."
+        },
+        {
+          "id": "aggravated",
+          "label": "A",
+          "severity": 2,
+          "description": "Fire, sunlight, supernatural claws/fangs, magic. ONLY Fortitude soaks it. Heals very slowly; one level per five nights with full daily blood expenditure."
+        }
+      ],
+      "aliases": [
+        "hp",
+        "HP",
+        "health",
+        "healthTrack"
+      ]
+    },
+    {
+      "name": "Soak (Bashing)",
+      "formula": "Stamina + armor B-soak. Soak rolls cannot botch.",
+      "renderAs": "value",
+      "valueFormula": "{Stamina}",
+      "aliases": [
+        "soakBashing",
+        "bashingSoak"
+      ]
+    },
+    {
+      "name": "Soak (Lethal)",
+      "formula": "Stamina + Fortitude + armor L-soak.",
+      "renderAs": "value",
+      "valueFormula": "{Stamina} + {Fortitude}",
+      "aliases": [
+        "soakLethal",
+        "lethalSoak"
+      ]
+    },
+    {
+      "name": "Soak (Aggravated)",
+      "formula": "Fortitude + supernatural soak only. Mortal armor and Stamina do NOT soak aggravated.",
+      "renderAs": "value",
+      "valueFormula": "{Fortitude}",
+      "aliases": [
+        "soakAggravated",
+        "aggravatedSoak"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "name": "Morality Track",
+      "values": [
+        {
+          "label": "Humanity",
+          "description": "Default morality. Use Conscience + Self-Control as Virtues; sin-hierarchy is the V20 standard chart."
+        },
+        {
+          "label": "Path of Honorable Accord",
+          "description": "Sabbat / knightly Path. Use Conviction + Self-Control as Virtues. Loyalty, oath-keeping, hospitality."
+        },
+        {
+          "label": "Path of Caine",
+          "description": "Sabbat scholar Path. Use Conviction + Instinct. Caine as the only legitimate model; meditate, study, transcend."
+        },
+        {
+          "label": "Path of the Beast",
+          "description": "Sabbat / Gangrel-adjacent Path. Use Conviction + Instinct. The Beast is truth; suppression is the lie."
+        },
+        {
+          "label": "Path of Night",
+          "description": "Lasombra Path. Use Conviction + Instinct (or Conviction + Self-Control on the 'Cold' variant). Vampires as God's instruments of damnation; teach via suffering."
+        }
+      ]
+    },
+    {
+      "name": "Frenzy State",
+      "values": [
+        {
+          "label": "Calm",
+          "description": "Beast contained. Normal action and roleplay."
+        },
+        {
+          "label": "Ride the Wave",
+          "description": "Player is intentionally riding the Beast \u2014 limited steering via Self-Control / Instinct rolls. Some control retained."
+        },
+        {
+          "label": "Frenzy (Hunger)",
+          "description": "Lost to hunger. Drive: kill and feed. Cannot use focused Disciplines, ignores wound penalties, will not respect Masquerade."
+        },
+        {
+          "label": "Frenzy (Anger)",
+          "description": "Lost to rage. Drive: destroy the source of provocation. Same restrictions as Hunger Frenzy."
+        },
+        {
+          "label": "Rotschreck (Red Fear)",
+          "description": "Beast in panic from fire / sunlight / overwhelming threat. Drive: flee mindlessly, smashing obstacles. Resist with Courage alone."
+        }
+      ]
+    },
+    {
+      "name": "Hunger Tier",
+      "values": [
+        {
+          "label": "Sated",
+          "description": "Blood Pool comfortably above (7 - Self-Control or Instinct). Beast quiet."
+        },
+        {
+          "label": "Hungry",
+          "description": "Blood Pool < (7 - Self-Control). Self-Control die pool capped at current Blood Pool for Frenzy resistance. The Beast pays attention."
+        },
+        {
+          "label": "Starving",
+          "description": "Blood Pool 1 or less. Frenzy at the slightest provocation; collapse imminent if pool reaches 0."
+        }
+      ]
+    }
+  ],
+  "diceTagFormat": {
+    "template": "[dice: {pool}d10 vs {difficulty} -> {successes} successes{willpower}{specialty}{botch}]",
+    "example": "[dice: 7d10 vs 6 -> 4 successes, +1 Willpower auto, 2 specialty rerolls]"
+  },
+  "sheetSections": [
+    "attributes",
+    "skills",
+    "derived",
+    "abilities",
+    "states",
+    "backgrounds",
+    "inventory",
+    "notes"
+  ],
+  "sections": {
+    "order": [
+      "identity",
+      "xp",
+      "resources",
+      "morality",
+      "attributes",
+      "skills",
+      "derived",
+      "abilities",
+      "disciplines",
+      "states",
+      "backgrounds",
+      "inventory",
+      "notes"
+    ],
+    "hidden": [
+      "derived:Animalism",
+      "derived:Auspex",
+      "derived:Celerity",
+      "derived:Dominate",
+      "derived:Fortitude",
+      "derived:Obfuscate",
+      "derived:Potence",
+      "derived:Presence",
+      "derived:Protean",
+      "derived:Necromancy",
+      "derived:Thaumaturgy",
+      "derived:Vicissitude"
+    ]
+  },
+  "resources": [
+    {
+      "id": "blood-pool",
+      "label": "Blood Pool",
+      "type": "pool",
+      "max": 10,
+      "current": 10,
+      "color": "bad",
+      "quickButtons": [
+        { "label": "Spend 1", "delta": -1 },
+        { "label": "Spend 5", "delta": -5 },
+        { "label": "Feed", "delta": "max" }
+      ]
+    },
+    {
+      "id": "willpower",
+      "label": "Willpower",
+      "type": "pool",
+      "max": 10,
+      "current": 5,
+      "color": "accent",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "+1", "delta": 1 },
+        { "label": "Refresh", "delta": "max" }
+      ]
+    },
+    {
+      "id": "health",
+      "label": "Health",
+      "type": "custom",
+      "rendererConfig": {
+        "component": "v20-health-track",
+        "levels": [
+          { "label": "Bruised", "penalty": 0 },
+          { "label": "Hurt", "penalty": -1 },
+          { "label": "Injured", "penalty": -1 },
+          { "label": "Wounded", "penalty": -2 },
+          { "label": "Mauled", "penalty": -2 },
+          { "label": "Crippled", "penalty": -5 },
+          { "label": "Incapacitated", "penalty": -99 }
+        ],
+        "damageTypes": [
+          { "id": "bashing", "label": "B", "severity": 0 },
+          { "id": "lethal", "label": "L", "severity": 1 },
+          { "id": "aggravated", "label": "A", "severity": 2 }
+        ]
+      }
+    }
+  ],
+  "morality": {
+    "rating": {
+      "label": "Path Rating",
+      "min": 0,
+      "max": 10,
+      "default": 7
+    },
+    "paths": [
+      { "id": "humanity", "label": "Humanity", "loreRef": "humanity" },
+      { "id": "honorable-accord", "label": "Path of Honorable Accord", "loreRef": "path-honorable-accord" },
+      { "id": "caine", "label": "Path of Caine", "loreRef": "path-caine" },
+      { "id": "beast", "label": "Path of the Beast", "loreRef": "path-beast" },
+      { "id": "night", "label": "Path of Night", "loreRef": "path-night" }
+    ],
+    "virtues": [
+      {
+        "id": "conscience-conviction",
+        "label": "Conscience / Conviction",
+        "options": [
+          { "id": "conscience", "label": "Conscience" },
+          { "id": "conviction", "label": "Conviction" }
+        ],
+        "min": 1,
+        "max": 5,
+        "default": 3
+      },
+      {
+        "id": "self-control-instinct",
+        "label": "Self-Control / Instinct",
+        "options": [
+          { "id": "self-control", "label": "Self-Control" },
+          { "id": "instinct", "label": "Instinct" }
+        ],
+        "min": 1,
+        "max": 5,
+        "default": 3
+      },
+      {
+        "id": "courage",
+        "label": "Courage",
+        "min": 1,
+        "max": 5,
+        "default": 3
+      }
+    ]
+  },
+  "lorebookKeys": [
+    "blood pool",
+    "blood point",
+    "vitae",
+    "discipline",
+    "disciplines",
+    "clan",
+    "generation",
+    "humanity",
+    "path of enlightenment",
+    "willpower",
+    "frenzy",
+    "rotschreck",
+    "the beast",
+    "blood bond",
+    "feeding",
+    "kiss",
+    "torpor",
+    "final death",
+    "diablerie",
+    "masquerade",
+    "camarilla",
+    "sabbat",
+    "anarch",
+    "elysium",
+    "prince",
+    "sire",
+    "embrace",
+    "ghoul",
+    "haven"
+  ],
+  "abilities": {
+    "label": "Disciplines",
+    "groups": [
+      {
+        "id": "talents",
+        "label": "Talents",
+        "members": [
+          "Alertness",
+          "Athletics",
+          "Awareness",
+          "Brawl",
+          "Empathy",
+          "Expression",
+          "Intimidation",
+          "Leadership",
+          "Streetwise",
+          "Subterfuge"
+        ]
+      },
+      {
+        "id": "skills",
+        "label": "Skills",
+        "members": [
+          "Animal Ken",
+          "Crafts",
+          "Drive",
+          "Etiquette",
+          "Firearms",
+          "Larceny",
+          "Melee",
+          "Performance",
+          "Stealth",
+          "Survival"
+        ]
+      },
+      {
+        "id": "knowledges",
+        "label": "Knowledges",
+        "members": [
+          "Academics",
+          "Computer",
+          "Finance",
+          "Investigation",
+          "Law",
+          "Medicine",
+          "Occult",
+          "Politics",
+          "Science",
+          "Technology"
+        ]
+      }
+    ],
+    "categories": [
+      {
+        "id": "animalism",
+        "label": "Animalism"
+      },
+      {
+        "id": "auspex",
+        "label": "Auspex"
+      },
+      {
+        "id": "celerity",
+        "label": "Celerity"
+      },
+      {
+        "id": "dominate",
+        "label": "Dominate"
+      },
+      {
+        "id": "fortitude",
+        "label": "Fortitude"
+      },
+      {
+        "id": "obfuscate",
+        "label": "Obfuscate"
+      },
+      {
+        "id": "potence",
+        "label": "Potence"
+      },
+      {
+        "id": "presence",
+        "label": "Presence"
+      },
+      {
+        "id": "protean",
+        "label": "Protean"
+      }
+    ]
+  }
+}

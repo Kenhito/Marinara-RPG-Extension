@@ -155,6 +155,44 @@ Composition order (as of v0.4.x+):
 
 **Worked example (Exalted):** `node tools/build-regex-scripts.mjs rulesets/exalted3e/ruleset.json` emits two scripts — the skill_check tag rewrite + DC-mention rewrite. dnd5e + pf2e both emit zero (correctly — they're `dice.type: "d20"`).
 
+### `tools/build-custom-tools.mjs` *(Vector 3 — static ruleset reference tools)*
+
+**Input:** ruleset object. **Output:** `CustomTool[]` (engine `CustomTool` shape minus server-assigned `id` / `createdAt` / `updatedAt`).
+
+**Purpose:** derive engine-native CustomTool entries the AI can call mid-generation. Tonight's slice (v0.4.x) ships only `executionType: "static"` tools — they don't require the `CUSTOM_TOOL_SCRIPT_ENABLED` env var and work out of the box on any self-hosted Marinara install where the caller has privileged access. One tool per ruleset: a comprehensive ruleset-reference lookup the AI can call when it needs authoritative dice / resolution / difficulty / attribute / skill detail.
+
+**Fields consumed:**
+- `id` (required) — kebab-case ruleset id is converted to `snake_case` for the tool-name prefix.
+- `name` (required) — appears in the tool description.
+- `summary`, `dice.*`, `resolution.*`, `difficulties`, `attributes`, `skills`, `commitmentModel` — all stitched into the structured Markdown `staticResult`. Missing fields are simply skipped (no error).
+
+**Override block:** `ruleset.customTools` (array). When present, generator returns it verbatim. Authors who want to ship script-type tools (math via `scriptBody`, requires `CUSTOM_TOOL_SCRIPT_ENABLED`) supply them here directly.
+
+**Output shape (one entry):**
+```json
+{
+  "name": "exalted3e_reference",
+  "description": "Returns canonical Exalted 3rd Edition reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+  "parametersSchema": {},
+  "executionType": "static",
+  "webhookUrl": null,
+  "staticResult": "# Exalted 3rd Edition — canonical reference\n\n... structured Markdown ...",
+  "scriptBody": null,
+  "enabled": true
+}
+```
+
+**Engine constraints honored:**
+- Tool name must match `^[a-z][a-z0-9_]*$` (lowercase snake_case, ≤100 chars). The generator emits compliant names; the installer prefixes with `mrr_<rulesetIdSnake>_` (GM-mode) / `mrrp_<rulesetIdSnake>_` (RP-mode) preserving the regex.
+- Description ≤500 chars.
+- Engine POST/PATCH/DELETE on `/custom-tools` requires the privileged-gate middleware to allow the caller. On a self-hosted single-user Marinara install this is typically allowed; if not, the install surfaces a 403 from `apiPostRaw` and the user retries after flipping the gate.
+
+**Idempotency contract:** at install time, the extension prefixes each tool's name with `mrr_<rulesetIdSnake>_`. Re-install does GET → filter by prefix → DELETE matches → POST fresh. Same DELETE-then-POST trade-off as the regex installer (non-atomic; retry recovers).
+
+**Worked example (Exalted):** `node tools/build-custom-tools.mjs rulesets/exalted3e/ruleset.json` emits one static tool, `exalted3e_reference`, containing the full canonical reference (dice, resolution, difficulty ladder, all 9 attributes, all 25 skills, commitment model). The AI calls it once per chat when it needs to ground a mechanic decision.
+
+**Deferred — Vector 3.1 (math via script tools):** the engine supports `executionType: "script"` tools whose `scriptBody` runs server-side and returns parameter-driven results — exactly what's needed for deterministic ruleset math (`roll_<id>_check(pool, target)` → `{ successes, ones, tens, botched }`). Two blockers keep this out of v0.4.x default generation: (1) script tools require the engine to be started with `CUSTOM_TOOL_SCRIPT_ENABLED=true` in its env, which the auto-generator can't guarantee for end users; (2) generic dice-pool / single-roll / roll-under JS implementations need careful per-resolution-mode authoring. Bundle authors who run with the flag enabled can ship explicit script tools today via the `customTools:` override block in `ruleset.json`.
+
 ### `tools/build-agents.mjs`
 
 **Input:** ruleset directory (uses `agents/*.md` + optional per-ruleset overrides). **Output:** `agents.json` in the same directory.
@@ -186,8 +224,9 @@ If a generator can't produce what your ruleset needs, drop one of these blocks i
 | Block | Owned by | Effect |
 |-------|----------|--------|
 | `regexScripts: [...]` | build-regex-scripts.mjs | Generator returns the array as-is. Use when you need a specific surface rewrite the auto-derivation doesn't capture. |
+| `customTools: [...]` | build-custom-tools.mjs | Generator returns the array as-is. Use to ship script-type math tools (requires `CUSTOM_TOOL_SCRIPT_ENABLED=true` on the engine), additional static reference tools, or webhook tools pointing at your own service. |
 
-(Author-override blocks for `customTools` and `lorebookExpansions` arrive with Vectors 3 + 2 — sections will be added here when those land.)
+(Author-override block for `lorebookExpansions` arrives with Vector 2 — section added when it lands.)
 
 ## Bundle schema versioning + backward compat
 
@@ -234,4 +273,4 @@ To have a chatbot AI scaffold a new ruleset for system X:
 
 This doc is the **system of record for the build contract**, equal in standing to the JSON schemas. When a new generator lands, this doc gains a section in the same session that ships the generator. When a generator changes its input/output shape, this doc updates with it. Stale build docs are a system bug.
 
-Last updated: 2026-05-17 (Vector 9 / regex-scripts pipeline shipped). Generators 3 + 2 sections pending Step 2 + Step 3 of this overnight session.
+Last updated: 2026-05-17 (Vector 9 / regex-scripts pipeline + Vector 3 / custom-tool callouts pipeline both shipped). Vector 2 / lorebook expansion section pending Step 3 of this overnight session.

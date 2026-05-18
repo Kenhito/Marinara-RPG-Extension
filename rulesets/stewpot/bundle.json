@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.1.0"
+    "version": "1.3.0"
   },
   "ruleset": {
     "id": "stewpot",
@@ -265,5 +265,34 @@
         "position": 0
       }
     ]
-  }
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → The Stewpot surface"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "stewpot_reference",
+      "description": "Returns canonical The Stewpot reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# The Stewpot — canonical reference\n\nSlow-life cozy village RPG. PCs are villagers who never leave on adventures — they stew. Each villager has one stat (Capability, 2-5) and chooses a stance per roll: ACTION (succeed OVER Capability — making something happen) or STILLNESS (succeed UNDER Capability — observing, recovering, holding space). Roll 2d6, +1d if invested in the activity. Exact-match faces are 'Perfect Days' — a beat of true grace the GM honors with a quiet good thing.\n\n## Dice\n- Type: `d6`\n- Notation: `Pd6 stance=ACTION|STILLNESS vs Capability (2-3 dice typical)`\n\n## Resolution\n- Mode: `stance-modal-pool`\n- Pool formula: 2 + (invested ? 1 : 0) + (helping_neighbors)\n\n## Attributes\n- **Capability** (CAP) — Your one stat, 2-5. High Capability favors ACTION (over) — you are good at making things happen. Low Capability favors STILLNESS (under) — you are good at noticing, holding, receiving. The middle (3 or 4) is the table's most common villager.\n\n## Skills\n- **Garden** — Tending plants, reading weather, knowing what wants to grow here. Mark when invested in a gardening scene to add +1d to the pool.\n- **Cook** — Stewpot-keeping. Bread, broth, the small magic of feeding people. Mark when invested to add +1d.\n- **Mend** — Patching cloth, fixing fence, putting a thing back together that wanted to fall apart. Mark when invested to add +1d.\n- **Listen** — Hearing what neighbors aren't saying. Noticing the absent, the grieving, the new. Especially potent under STILLNESS. Mark when invested to add +1d.\n- **Persuade** — Asking neighbors for help, asking the council to vote your way, asking the storm to break later. Especially potent under ACTION. Mark when invested to add +1d.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ]
 }

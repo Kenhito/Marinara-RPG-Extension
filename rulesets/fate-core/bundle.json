@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.1.0"
+    "version": "1.3.0"
   },
   "ruleset": {
     "id": "fate-core",
@@ -610,5 +610,49 @@
         "tokenBudget": 2000
       }
     ]
-  }
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Fate Core surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s+(\\d+)\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → Fate Core difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "fate_core_reference",
+      "description": "Returns canonical Fate Core reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Fate Core — canonical reference\n\nNarrative-first rules-light system. Resolve actions with 4 Fate dice (4dF, each -1/0/+1) plus a skill rating, compared to a target on the Fate ladder. Fate Points fuel aspect invocations for re-rolls and bonuses; stress and consequences absorb damage at narrative cost.\n\n## Dice\n- Type: `dF`\n- Notation: `4dF + skill`\n\n## Resolution\n- Mode: `fate-ladder`\n\n## Difficulty ladder\n- **Trivial** (threshold 0) — Mediocre — no roll required unless interesting.\n- **Average** (threshold 1) — Average — anyone with a related skill should succeed.\n- **Fair** (threshold 2) — Fair — competent practitioner with some effort.\n- **Good** (threshold 3) — Good — skilled work; failure here is a real possibility.\n- **Great** (threshold 4) — Great — expertise required.\n- **Superb** (threshold 5) — Superb — only the best succeed without aspect support.\n- **Fantastic** (threshold 6) — Fantastic — heroic feat; expect aspect invocations.\n- **Epic** (threshold 7) — Epic — legendary effort.\n- **Legendary** (threshold 8) — Legendary — peak human + something more.\n\n## Attributes\n- **Refresh** (REF) — Maximum Fate Points the character starts each session with. Each Stunt taken at character creation reduces this by 1; minimum of 1.\n\n## Skills\n- **Athletics** — Running, jumping, climbing, dodging, athletic feats.\n- **Burglary** — Picking locks, disabling security, casing locations.\n- **Contacts** — Knowing the right person, social network reach.\n- **Crafts** — Building, repairing, working with tools and materials.\n- **Deceive** — Lying, disguise, misdirection, false impressions.\n- **Drive** — Operating vehicles, chases, stunts behind the wheel.\n- **Empathy** — Reading people, sensing motives and lies, recovering Mental stress.\n- **Fight** — Hand-to-hand and melee weapon combat.\n- **Investigate** — Active research and deliberate examination of evidence.\n- **Lore** — Knowledge — academic, occult, technical depending on character concept.\n- **Notice** — Passive perception, situational awareness, initiative in conflicts.\n- **Physique** — Raw strength and stamina; expands Physical stress track.\n- **Provoke** — Goading, intimidating, creating emotional disadvantage on a target.\n- **Rapport** — Building friendly connection, persuading honestly, recovering social standing.\n- **Resources** — Wealth and material resources; can substitute for time and gear.\n- **Shoot** — Ranged attacks — bows, firearms, thrown weapons.\n- **Stealth** — Moving unseen, hiding, avoiding pursuit.\n- **Will** — Mental toughness and discipline; expands Mental stress track.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ]
 }

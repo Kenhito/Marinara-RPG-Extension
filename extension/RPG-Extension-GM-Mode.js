@@ -43,6 +43,8 @@ var MRR_AGENT_TYPE   = "mrr-overlay-v1";
 var MRR_TAG_MANAGED  = "mrr-managed";
 var MRR_TAG_RS_PFX   = "mrr:";
 var MRR_PROMPT_PFX   = "[mrr-v1:";
+var MRR_REGEX_NAME_PFX = "MRR: "; /* Vector 9: prefix for engine-native regex scripts installed by bundles. Idempotency by name match — engine RegexScript has no tags field. */
+var MRR_TOOL_NAME_PFX = "mrr_"; /* Vector 3: prefix for engine-native custom tools. Tool names enforced ^[a-z][a-z0-9_]*$ — full prefix is mrr_<rulesetIdSnake>_<tool>. Idempotency by name match — engine CustomTool has no tags field. */
 var EMBED_STYLE_ID   = "mrr-embedded-style";
 
 /* EMBEDDED_CSS_BEGIN */
@@ -574,6 +576,132 @@ function installBundle(bundle, progressCb) {
         });
       }, Promise.resolve());
     }).then(function () {
+      /* Vector 9 (Phase 1): install bundle-shipped engine-native regex
+         scripts. Engine RegexScript has no `tags` field, so idempotency
+         lives in the name: every script installed by this bundle is
+         prefixed with `MRR: <rulesetId>: <authorName>`. On re-install we
+         GET /regex-scripts, filter by that prefix, DELETE each match,
+         then POST the fresh set. Matches the lorebook re-install
+         contract (user edits get overwritten on re-install). Optional
+         field; absent/empty array = skip entire step.
+
+         Known limitation: DELETE-then-POST is NOT atomic. If a POST
+         fails mid-batch (network blip, engine validator change), prior
+         managed scripts are already wiped and only a partial set is
+         installed. Recovery is to re-run the bundle install, which
+         repeats the wipe-then-POST cycle. Documented; Phase 1
+         acceptable trade-off vs the complexity of a temp-name swap. */
+      var scripts = Array.isArray(bundle.regexScripts) ? bundle.regexScripts : [];
+      if (scripts.length === 0) return Promise.resolve();
+      var rulesetPrefix = MRR_REGEX_NAME_PFX + rulesetId + ": ";
+      progress("Loading existing regex scripts...");
+      return apiFetch("/regex-scripts", {}).then(function (existing) {
+        var prior = Array.isArray(existing)
+          ? existing.filter(function (s) { return s && typeof s.name === "string" && s.name.indexOf(rulesetPrefix) === 0; })
+          : [];
+        var deleteChain = Promise.resolve();
+        if (prior.length > 0) progress("Removing " + prior.length + " prior managed regex script(s)...");
+        prior.forEach(function (s) {
+          if (!s || !s.id) return;
+          deleteChain = deleteChain.then(function () {
+            return apiDeleteRaw("/regex-scripts/" + s.id).catch(function () {});
+          });
+        });
+        return deleteChain;
+      }).then(function () {
+        progress("Installing " + scripts.length + " regex script(s)...");
+        var addChain = Promise.resolve();
+        scripts.forEach(function (s, i) {
+          addChain = addChain.then(function () {
+            if ((i % 5) === 0) progress("Regex script " + (i + 1) + "/" + scripts.length + "...");
+            var body = {
+              name: rulesetPrefix + (s.name || ("script-" + i)),
+              enabled: s.enabled !== false,
+              findRegex: s.findRegex || "",
+              replaceString: s.replaceString != null ? s.replaceString : "",
+              trimStrings: Array.isArray(s.trimStrings) ? s.trimStrings : [],
+              placement: Array.isArray(s.placement) && s.placement.length > 0 ? s.placement : ["ai_output"],
+              flags: typeof s.flags === "string" ? s.flags : "gi",
+              promptOnly: !!s.promptOnly,
+              order: typeof s.order === "number" ? s.order : 100,
+              minDepth: s.minDepth != null ? s.minDepth : null,
+              maxDepth: s.maxDepth != null ? s.maxDepth : null
+            };
+            return apiPostRaw("/regex-scripts", body);
+          });
+        });
+        return addChain;
+      });
+    }).then(function () {
+      /* Vector 3 (Phase 1): install bundle-shipped engine-native custom
+         tools. Static-type tools only as of v0.4.x — script-type tools
+         require CUSTOM_TOOL_SCRIPT_ENABLED on the engine and are not
+         shipped by the auto-derived generator (script payload is
+         Vector 3.1 future work; bundle authors can still ship explicit
+         script-type tools via `customTools:` override if they accept
+         the env-var requirement).
+
+         Idempotency: engine CustomTool name regex is ^[a-z][a-z0-9_]*$
+         and enforces uniqueness via 409 — we use a `mrr_<rulesetIdSnake>_`
+         prefix and DELETE-then-POST. The ruleset id may contain
+         dashes (kebab-case) so we convert to snake before prefixing.
+
+         Known limitation: same non-atomic DELETE-then-POST trade-off
+         as the regex-script installer. Re-run the bundle install to
+         recover from a mid-batch failure.
+
+         Privileged-access caveat: engine POST/PATCH/DELETE on
+         /custom-tools requires the privileged-gate middleware to
+         allow the caller. On a self-hosted single-user Marinara
+         install this is typically allowed; if not, the install
+         surfaces a 403 from apiPostRaw and the user re-runs after
+         flipping the gate. */
+      var tools = Array.isArray(bundle.customTools) ? bundle.customTools : [];
+      if (tools.length === 0) return Promise.resolve();
+      var rulesetIdSnake = String(rulesetId || "").toLowerCase().replace(/-/g, "_").replace(/[^a-z0-9_]/g, "_");
+      var rulesetToolPrefix = MRR_TOOL_NAME_PFX + rulesetIdSnake + "_";
+      progress("Loading existing custom tools...");
+      return apiFetch("/custom-tools", {}).then(function (existing) {
+        var prior = Array.isArray(existing)
+          ? existing.filter(function (t) { return t && typeof t.name === "string" && t.name.indexOf(rulesetToolPrefix) === 0; })
+          : [];
+        var deleteChain = Promise.resolve();
+        if (prior.length > 0) progress("Removing " + prior.length + " prior managed custom tool(s)...");
+        prior.forEach(function (t) {
+          if (!t || !t.id) return;
+          deleteChain = deleteChain.then(function () {
+            return apiDeleteRaw("/custom-tools/" + t.id).catch(function () {});
+          });
+        });
+        return deleteChain;
+      }).then(function () {
+        progress("Installing " + tools.length + " custom tool(s)...");
+        var addChain = Promise.resolve();
+        tools.forEach(function (t, i) {
+          addChain = addChain.then(function () {
+            if ((i % 3) === 0) progress("Custom tool " + (i + 1) + "/" + tools.length + "...");
+            /* Prefix the tool name with mrr_<rulesetIdSnake>_; the
+               author-shipped name is appended (or just an index if
+               name was missing). */
+            var rawName = (t.name && /^[a-z][a-z0-9_]*$/.test(t.name)) ? t.name : ("tool_" + i);
+            var fullName = rulesetToolPrefix + rawName;
+            if (fullName.length > 100) fullName = fullName.slice(0, 100);
+            var body = {
+              name: fullName,
+              description: typeof t.description === "string" ? t.description.slice(0, 500) : "MRR-managed tool for " + rulesetId,
+              parametersSchema: t.parametersSchema && typeof t.parametersSchema === "object" ? t.parametersSchema : {},
+              executionType: t.executionType === "webhook" || t.executionType === "script" ? t.executionType : "static",
+              webhookUrl: t.webhookUrl != null ? t.webhookUrl : null,
+              staticResult: t.staticResult != null ? t.staticResult : null,
+              scriptBody: t.scriptBody != null ? t.scriptBody : null,
+              enabled: t.enabled !== false
+            };
+            return apiPostRaw("/custom-tools", body);
+          });
+        });
+        return addChain;
+      });
+    }).then(function () {
       progress("Done. Reloading...");
       return { rulesetId: rulesetId, authorId: authorId };
     });
@@ -630,14 +758,27 @@ function uninstallBundleArtifacts(rulesetId, authorId, progressCb) {
   authorId = authorId || "local";
   return Promise.all([
     apiFetch("/lorebooks", {}),
-    apiFetch("/agents", {})
+    apiFetch("/agents", {}),
+    apiFetch("/regex-scripts", {}).catch(function () { return []; }),
+    apiFetch("/custom-tools", {}).catch(function () { return []; })
   ]).then(function (results) {
     var lorebooks = results[0];
     var agents = results[1];
+    var regexScripts = results[2];
+    var customTools = results[3];
     var lb = findManagedLorebook(lorebooks, rulesetId);
     var matches = Array.isArray(agents) ? agents.filter(function (a) {
       var s = parseAgentSettings(a);
       return s.mrrManaged === true && s.mrrRulesetId === rulesetId;
+    }) : [];
+    var rulesetRegexPrefix = MRR_REGEX_NAME_PFX + rulesetId + ": ";
+    var regexMatches = Array.isArray(regexScripts) ? regexScripts.filter(function (s) {
+      return s && typeof s.name === "string" && s.name.indexOf(rulesetRegexPrefix) === 0;
+    }) : [];
+    var rulesetIdSnake = String(rulesetId || "").toLowerCase().replace(/-/g, "_").replace(/[^a-z0-9_]/g, "_");
+    var rulesetToolPrefix = MRR_TOOL_NAME_PFX + rulesetIdSnake + "_";
+    var toolMatches = Array.isArray(customTools) ? customTools.filter(function (t) {
+      return t && typeof t.name === "string" && t.name.indexOf(rulesetToolPrefix) === 0;
     }) : [];
 
     var jobs = [];
@@ -649,6 +790,18 @@ function uninstallBundleArtifacts(rulesetId, authorId, progressCb) {
       progress("Removing " + matches.length + " managed agent(s)...");
       for (var i = 0; i < matches.length; i++) {
         jobs.push(apiDeleteRaw("/agents/" + matches[i].id));
+      }
+    }
+    if (regexMatches.length > 0) {
+      progress("Removing " + regexMatches.length + " managed regex script(s)...");
+      for (var j = 0; j < regexMatches.length; j++) {
+        jobs.push(apiDeleteRaw("/regex-scripts/" + regexMatches[j].id));
+      }
+    }
+    if (toolMatches.length > 0) {
+      progress("Removing " + toolMatches.length + " managed custom tool(s)...");
+      for (var k = 0; k < toolMatches.length; k++) {
+        jobs.push(apiDeleteRaw("/custom-tools/" + toolMatches[k].id));
       }
     }
     if (jobs.length === 0) progress("Nothing to remove.");

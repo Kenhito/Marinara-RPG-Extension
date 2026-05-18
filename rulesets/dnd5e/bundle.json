@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.1.0"
+    "version": "1.3.0"
   },
   "ruleset": {
     "id": "dnd5e",
@@ -957,5 +957,17 @@
         "tokenBudget": 200
       }
     ]
-  }
+  },
+  "customTools": [
+    {
+      "name": "dnd5e_reference",
+      "description": "Returns canonical Dungeons & Dragons 5th Edition reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Dungeons & Dragons 5th Edition — canonical reference\n\nThe classic d20 system. One die, plus an attribute modifier, plus proficiency if trained, against a fixed Difficulty Class. Mirrors Marinara Engine's existing Game Mode default.\n\n## Dice\n- Type: `d20`\n- Notation: `1d20+MOD`\n\n## Resolution\n- Mode: `single-roll`\n\n## Difficulty ladder\n- **Very Easy** (threshold 5) — Trivial; only roll if a fail is interesting.\n- **Easy** (threshold 10) — An untrained adult can manage on a good day.\n- **Medium** (threshold 15) — A trained character expects to succeed.\n- **Hard** (threshold 20) — A trained character with a good attribute may still fail.\n- **Very Hard** (threshold 25) — Possible only with high attribute and proficiency, or magic.\n- **Nearly Impossible** (threshold 30) — Heroic. Stack every advantage.\n\n## Attributes\n- **Strength** (STR) — Raw physical power, athletic training, the extent to which you can exert raw physical force.\n- **Dexterity** (DEX) — Agility, reflexes, balance, poise.\n- **Constitution** (CON) — Health, stamina, vital force.\n- **Intelligence** (INT) — Mental acuity, accuracy of recall, ability to reason.\n- **Wisdom** (WIS) — Awareness, intuition, insight, attunement to surroundings.\n- **Charisma** (CHA) — Force of personality, persuasiveness, leadership.\n\n## Skills\n- **Acrobatics**\n- **Animal Handling**\n- **Arcana**\n- **Athletics**\n- **Deception**\n- **History**\n- **Insight**\n- **Intimidation**\n- **Investigation**\n- **Medicine**\n- **Nature**\n- **Perception**\n- **Performance**\n- **Persuasion**\n- **Religion**\n- **Sleight of Hand**\n- **Stealth**\n- **Survival**\n\n## Commitment\n- Model: `attuned`",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ]
 }

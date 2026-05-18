@@ -144,6 +144,124 @@
         }
       }
     },
+    "regexScripts": {
+      "type": "array",
+      "description": "Optional engine-native RegexScript entries (Vector 9 of the RP→GM port feasibility doc). Each script rewrites engine-emitted surface text in AI output so the user sees ruleset-flavored prose instead of d20-default vocabulary. Bundle ships everything except server-assigned id/createdAt/updatedAt. Idempotency: installer wipes scripts whose name starts with `MRR: <rulesetId>:` then re-POSTs. Author override > derivation — if ruleset.json ships its own regexScripts block, build-regex-scripts.mjs passes it through verbatim.",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "findRegex",
+          "replaceString",
+          "placement"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Display name. Prefixed with `MRR: <rulesetId>: ` by the installer for idempotency."
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "findRegex": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Pattern WITHOUT delimiters (engine wraps it as new RegExp(findRegex, flags))."
+          },
+          "replaceString": {
+            "type": "string",
+            "description": "Replacement; supports $1, $2 backreferences."
+          },
+          "trimStrings": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": []
+          },
+          "placement": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [ "ai_output", "user_input" ]
+            },
+            "minItems": 1
+          },
+          "flags": {
+            "type": "string",
+            "default": "gi"
+          },
+          "promptOnly": {
+            "type": "boolean",
+            "default": false
+          },
+          "order": {
+            "type": "integer",
+            "default": 100
+          },
+          "minDepth": {
+            "type": [ "integer", "null" ],
+            "default": null
+          },
+          "maxDepth": {
+            "type": [ "integer", "null" ],
+            "default": null
+          }
+        }
+      }
+    },
+    "customTools": {
+      "type": "array",
+      "description": "Optional engine-native CustomTool entries (Vector 3 of the RP→GM port feasibility doc). Static reference tools the AI can call mid-generation for authoritative ruleset detail. Bundle ships everything except server-assigned id/createdAt/updatedAt. Idempotency: installer wipes tools by name prefix `mrr_<rulesetIdSnake>_` then re-POSTs. Author override > derivation. SCRIPT-type tools (math via scriptBody) are NOT shipped in v0.4.x bundles — they require CUSTOM_TOOL_SCRIPT_ENABLED on the engine and are reserved for Vector 3.1.",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "executionType"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "description": "Lowercase snake_case tool name. Engine enforces ^[a-z][a-z0-9_]*$ regex. Installer prefixes with `mrr_<rulesetIdSnake>_` for idempotency."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "parametersSchema": {
+            "type": "object",
+            "default": {}
+          },
+          "executionType": {
+            "type": "string",
+            "enum": [ "webhook", "static", "script" ],
+            "default": "static"
+          },
+          "webhookUrl": {
+            "type": [ "string", "null" ],
+            "default": null
+          },
+          "staticResult": {
+            "type": [ "string", "null" ],
+            "default": null
+          },
+          "scriptBody": {
+            "type": [ "string", "null" ],
+            "default": null
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    },
     "lorebook": {
       "type": "object",
       "description": "Lorebook + entries auto-imported into Marinara's lorebook database.",

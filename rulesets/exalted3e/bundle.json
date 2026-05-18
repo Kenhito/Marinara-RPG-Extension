@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.1.0"
+    "version": "1.3.0"
   },
   "ruleset": {
     "id": "exalted3e",
@@ -2217,5 +2217,49 @@
         "position": 0
       }
     ]
-  }
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Exalted 3rd Edition surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s+(\\d+)\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → Exalted 3rd Edition difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "exalted3e_reference",
+      "description": "Returns canonical Exalted 3rd Edition reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Exalted 3rd Edition — canonical reference\n\nStoryteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.\n\n## Dice\n- Type: `d10`\n- Notation: `Xd10 vs 7`\n\n## Resolution\n- Mode: `dice-pool`\n- Pool formula: Attribute + Ability (+ specialty +1, + stunt up to +2, + Charm dice)\n- Default target: 7\n\n## Difficulty ladder\n- **Routine** (threshold 1) — Trivial for a competent character. Often waived.\n- **Standard** (threshold 2) — Default opposed baseline.\n- **Difficult** (threshold 3) — Pushes a skilled mortal.\n- **Demanding** (threshold 4) — Few mortals can do it reliably.\n- **Legendary** (threshold 5) — Peak of mortal-scale achievement; songs are sung.\n- **Beyond Legendary** (threshold 7) — Wyld navigation, First-Age relics, Essence > 5 territory.\n\n## Attributes\n- **Strength** (STR) [Physical] — Raw muscle. Lifting, melee damage.\n- **Dexterity** (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy.\n- **Stamina** (STA) [Physical] — Endurance, soak, resisting fatigue.\n- **Charisma** (CHA) [Social] — Honest charm, leadership, sincere persuasion.\n- **Manipulation** (MAN) [Social] — Deceit, guile, indirect influence.\n- **Appearance** (APP) [Social] — Beauty / presence; affects attraction and intimidation.\n- **Perception** (PER) [Mental] — Spotting, hearing, noticing details.\n- **Intelligence** (INT) [Mental] — Reasoning, learning, recall, abstract thought.\n- **Wits** (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative.\n\n## Skills\n- **Archery**\n- **Athletics**\n- **Awareness**\n- **Brawl** — Includes Martial Arts when the Martial Artist Merit is taken.\n- **Bureaucracy**\n- **Craft**\n- **Dodge**\n- **Integrity**\n- **Investigation**\n- **Larceny**\n- **Linguistics**\n- **Lore**\n- **Medicine**\n- **Melee**\n- **Occult**\n- **Performance**\n- **Presence**\n- **Resistance**\n- **Ride**\n- **Sail**\n- **Socialize**\n- **Stealth**\n- **Survival**\n- **Thrown**\n- **War**\n\n## Commitment\n- Model: `mote`",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ]
 }

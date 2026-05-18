@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.1.0"
+    "version": "1.3.0"
   },
   "ruleset": {
     "id": "pathfinder2e",
@@ -1026,5 +1026,17 @@
         "position": 0
       }
     ]
-  }
+  },
+  "customTools": [
+    {
+      "name": "pathfinder2e_reference",
+      "description": "Returns canonical Pathfinder 2nd Edition reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Pathfinder 2nd Edition — canonical reference\n\nPathfinder 2nd Edition is a tightly mathematical d20 fantasy system. A check is 1d20 + ability modifier + proficiency bonus + item bonus vs. a Difficulty Class, with four degrees of success: critical success at +10 over the DC, success at meeting it, failure under it, critical failure at -10 below. The three-action economy and Multiple Attack Penalty give every turn meaningful tactical choice.\n\n## Dice\n- Type: `d20`\n- Notation: `1d20+MOD`\n\n## Resolution\n- Mode: `single-roll`\n\n## Difficulty ladder\n- **Trivial** (threshold 10) — Untrained character can manage with average stats.\n- **Low** (threshold 15) — Trained at character's level expects to succeed.\n- **Moderate** (threshold 20) — The standard challenge for an at-level expert.\n- **High** (threshold 25) — Pushes a master character; a trained one will need luck.\n- **Severe** (threshold 30) — A serious test even for a Master at level.\n- **Extreme** (threshold 40) — Legendary territory. Stack every bonus.\n\n## Attributes\n- **Strength** (STR) — Raw physical force. Adds to Athletics, melee attack rolls with non-finesse weapons, and melee damage.\n- **Dexterity** (DEX) — Agility, balance, fine motor control. Adds to AC (capped by armor's Dex cap), Reflex saves, ranged attacks, and finesse melee attacks.\n- **Constitution** (CON) — Health and endurance. Adds to Hit Points each level and to Fortitude saves.\n- **Intelligence** (INT) — Memory, reasoning, education. Grants extra trained skills and Lores at character creation; adds to skills like Arcana, Crafting, Society.\n- **Wisdom** (WIS) — Awareness, intuition, common sense. Adds to Perception, Will saves, and skills like Medicine, Nature, Religion, Survival.\n- **Charisma** (CHA) — Presence, persuasion, force of personality. Adds to social skills (Diplomacy, Deception, Intimidation, Performance, Society) and to spell DCs for Charisma-based casters.\n\n## Skills\n- **Acrobatics** — Tumbling, balancing, escaping grabs. Trained-only actions: Maneuver in Flight.\n- **Arcana** — Knowledge of arcane magic and creatures. Trained-only: Identify Magic, Learn a Spell, Decipher Writing of arcane origin.\n- **Athletics** — Climbing, jumping, swimming, forceful maneuvers (Grapple, Trip, Shove, Disarm). High Jump and Long Jump are signature actions.\n- **Crafting** — Making and repairing items. Trained-only: Craft, Repair, Identify Alchemy.\n- **Deception** — Lying, disguise, feinting in combat. Trained-only: Impersonate.\n- **Diplomacy** — Making requests, gathering information, swaying attitudes. Always available untrained.\n- **Intimidation** — Coercing or demoralizing. Demoralize is a frequent combat action.\n- **Lore** — A specific narrow expertise the player chose at character creation (Sailing Lore, Goblin Lore, Absalom Lore, Carpentry Lore, etc.). Each Lore is a separate trained skill; the GM allows it for narrow Recall Knowledge questions.\n- **Medicine** — First aid, treating poison/disease. Trained-only: Treat Disease, Treat Poison, Treat Wounds.\n- **Nature** — Knowledge of plants, animals, weather. Trained-only: Command an Animal, Identify Magic of primal origin.\n- **Occultism** — Knowledge of the occult — esoteric philosophy, ghosts, aberrations. Trained-only: Identify Magic of occult origin.\n- **Performance** — Music, oratory, dance, acting. Trained-only: Perform (extended).\n- **Religion** — Knowledge of deities, dogmas, the planes. Trained-only: Identify Magic of divine origin.\n- **Society** — History, etiquette, languages, current affairs. Trained-only: Decipher Writing, Subsist (in civilization).\n- **Stealth** — Hiding and sneaking. Used to oppose Perception when avoiding detection.\n- **Survival** — Wilderness skills: tracking, foraging, weathering. Trained-only: Cover Tracks, Track.\n- **Thievery** — Picking locks, picking pockets, disabling traps. Trained-only: Disable Device, Pick a Lock.\n\n## Commitment\n- Model: `invested`",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ]
 }

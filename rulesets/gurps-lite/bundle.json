@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.1.0"
+    "version": "1.3.0"
   },
   "ruleset": {
     "id": "gurps-lite",
@@ -623,5 +623,49 @@
         "position": 0
       }
     ]
-  }
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → GURPS Lite surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s+(\\d+)\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → GURPS Lite difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "gurps_lite_reference",
+      "description": "Returns canonical GURPS Lite reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# GURPS Lite — canonical reference\n\nGeneric universal stat-vs-3d6 roll-under system. Each attribute and skill has a target number; roll 3d6 and succeed if the total is at or under that number. Bonuses raise the target (the cap of success), penalties lower it. Critical success on a natural 3 or 4; critical failure on the target plus ten, the natural 17, or the natural 18.\n\n## Dice\n- Type: `d6`\n- Notation: `3d6 vs target`\n\n## Resolution\n- Mode: `roll-under`\n\n## Difficulty ladder\n- **Easy** (threshold 0) — Easy skill default — base attribute minus 4.\n- **Average** (threshold -1) — Average skill default — base attribute minus 5.\n- **Hard** (threshold -2) — Hard skill default — base attribute minus 6.\n- **VeryHard** (threshold -3) — Very Hard skill — no default; must be learned. Base attribute minus 9 once trained at 1 point.\n\n## Attributes\n- **Strength** (ST) [Physical] — Muscle power and bulk. Drives HP, damage, lifting capacity, and any physical activity that depends on raw force.\n- **Dexterity** (DX) [Physical] — Agility, co-ordination, and reaction speed. Underlies most active physical skills and Basic Speed.\n- **Intelligence** (IQ) [Mental] — Brainpower, alertness, and adaptability. Default for Will, Perception, and most mental skills.\n- **Health** (HT) [Physical] — Endurance, resistance to illness and poison, and the body's reserve. Drives FP and recovery.\n\n## Skills\n- **Acrobatics** — Tumbling, balance, and athletic feats. Hard skill; default DX-6.\n- **Area Knowledge** — Familiarity with a specific region's people, places, and customs. Easy skill; default IQ.\n- **Brawling** — Unarmed striking. Easy skill; defaults to DX.\n- **Camouflage** — Conceal an object or oneself by blending into surroundings. Easy skill; default IQ-4.\n- **Climbing** — Scale walls, ropes, and natural features. Average skill; default DX-5.\n- **Driving** — Operate a ground vehicle (specify type on the character sheet). Average skill; default DX-5.\n- **Electronics Operation** — Use a specific category of electronic gear. Average skill; default IQ-5.\n- **First Aid** — Stop bleeding and stabilise injuries in the field. Easy skill; default IQ-4.\n- **Forensics** — Apply scientific method to crime-scene evidence. Hard skill; default IQ-6.\n- **Gunner** — Operate a vehicle-mounted or heavy weapon. Easy skill; default DX-4.\n- **Guns** — Fire portable firearms (specify category on the character sheet). Easy skill; default DX-4.\n- **Knife** — Wield a knife in melee or thrown. Easy skill; default DX-4.\n- **Lockpicking** — Open a lock without its key. Average skill; default IQ-5.\n- **Mechanic** — Maintain and repair a class of machine (specify on the character sheet). Average skill; default IQ-5.\n- **Navigation** — Find one's way using maps, instruments, or natural cues. Average skill; default IQ-5.\n- **Observation** — Notice details about the environment, people, or activity. Average skill; default Per-5.\n- **Riding** — Control a mount (specify type on the character sheet). Average skill; default DX-5.\n- **Shadowing** — Follow a person without being noticed. Average skill; default IQ-5.\n- **Stealth** — Move quietly and remain unseen. Average skill; default DX-5.\n- **Streetwise** — Navigate criminal and underground social networks. Average skill; default IQ-5.\n- **Survival** — Live off the land in a specific environment. Average skill; default Per-5.\n- **Swimming** — Stay afloat and move through water. Easy skill; default HT-4.\n- **Throwing** — Hurl an object at a target accurately. Hard skill; default DX-3.\n- **Tracking** — Follow a trail through outdoor or urban terrain. Average skill; default Per-5.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ]
 }

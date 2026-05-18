@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.1.0"
+    "version": "1.3.0"
   },
   "ruleset": {
     "id": "lasers-and-feelings",
@@ -254,5 +254,34 @@
         "position": 0
       }
     ]
-  }
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Lasers & Feelings surface"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "lasers_and_feelings_reference",
+      "description": "Returns canonical Lasers & Feelings reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Lasers & Feelings — canonical reference\n\nOne-page space-adventure RPG. Each character has a single stat (Number, 2–5). LASERS rolls succeed under Number; FEELINGS rolls succeed over Number; rolling exactly Number is LASER FEELINGS — counts as a success AND grants the player an honest GM answer.\n\n## Dice\n- Type: `d6`\n- Notation: `Pd6 stance=LASERS|FEELINGS vs Number (1–4 dice typical)`\n\n## Resolution\n- Mode: `stance-modal-pool`\n- Pool formula: 1 + (prepared ? 1 : 0) + (expert ? 1 : 0) + assistance_dice\n\n## Attributes\n- **Number** (NUM) — Your single stat. High Number = better at LASERS (science, reason). Low Number = better at FEELINGS (intuition, passion). Choose somewhere in the middle if you want balance; choose an extreme if you want to specialize.\n\n## Skills\n- **Help** — Helping marker. When another player rolls and you describe how you assist, mark this and roll a Help check; on success the originator gains +1d to their pool. Tracked here as a single skill slot to satisfy the framework's per-character skill list; the helping rule itself is GM-resolved per the L&F one-page rules.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ]
 }

@@ -16,6 +16,8 @@
 import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, basename, join } from "node:path";
+import buildRegexScripts from "./build-regex-scripts.mjs";
+import buildCustomTools from "./build-custom-tools.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -104,12 +106,15 @@ function buildBundle(dir) {
      caused duplicate-agent accumulation across re-installs. The
      gm-agent.md and per-ruleset agents/ folders are kept on disk for
      reference and for the RP-mode build pipeline that does ship agents. */
+  const regexScripts = buildRegexScripts(ruleset);
+  const customTools = buildCustomTools(ruleset);
+
   const bundle = {
     schema: "mrr-bundle",
     version: 1,
     minExtensionVersion: "0.4.0",
     authorId: "kenhito",
-    generator: { name: "build-bundle.mjs", version: "1.1.0" },
+    generator: { name: "build-bundle.mjs", version: "1.3.0" },
     ruleset,
     lorebook: {
       name: lb.name,
@@ -122,9 +127,27 @@ function buildBundle(dir) {
     }
   };
 
+  /* Vector 9: only embed regexScripts when the generator emitted at
+     least one. Bundles without scripts stay byte-compatible with v0.4.x
+     readers that don't know the field. */
+  if (Array.isArray(regexScripts) && regexScripts.length > 0) {
+    bundle.regexScripts = regexScripts;
+  }
+
+  /* Vector 3: only embed customTools when the generator emitted at
+     least one. Same back-compat contract as Vector 9. */
+  if (Array.isArray(customTools) && customTools.length > 0) {
+    bundle.customTools = customTools;
+  }
+
   const outPath = join(dir, "bundle.json");
   writeFileSync(outPath, JSON.stringify(bundle, null, 2) + "\n");
-  return { outPath, entryCount: bundle.lorebook.entries.length };
+  return {
+    outPath,
+    entryCount: bundle.lorebook.entries.length,
+    regexCount: (bundle.regexScripts || []).length,
+    toolCount: (bundle.customTools || []).length
+  };
 }
 
 const args = process.argv.slice(2);
@@ -147,8 +170,8 @@ if (args[0] === "--all") {
 let failed = 0;
 for (const dir of dirs) {
   try {
-    const { outPath, entryCount } = buildBundle(dir);
-    console.log("PASS " + basename(dir) + " -> " + outPath + " (" + entryCount + " entries)");
+    const { outPath, entryCount, regexCount, toolCount } = buildBundle(dir);
+    console.log("PASS " + basename(dir) + " -> " + outPath + " (" + entryCount + " entries, " + regexCount + " regex scripts, " + toolCount + " custom tools)");
   } catch (e) {
     console.error("FAIL " + basename(dir) + " — " + e.message);
     failed++;

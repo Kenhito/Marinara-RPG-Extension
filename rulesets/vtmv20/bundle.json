@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.1.0"
+    "version": "1.3.0"
   },
   "ruleset": {
     "id": "vtmv20",
@@ -1775,5 +1775,49 @@
         "position": 0
       }
     ]
-  }
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Vampire: The Masquerade 20th Anniversary surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s+(\\d+)\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → Vampire: The Masquerade 20th Anniversary difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "vtmv20_reference",
+      "description": "Returns canonical Vampire: The Masquerade 20th Anniversary reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Vampire: The Masquerade 20th Anniversary — canonical reference\n\nStoryteller-system d10 dice pool. Pool = Attribute + Ability. Each die meeting or beating the Storyteller's difficulty is one success (default difficulty 6, varies 6-9). Botch on any roll showing zero successes AND at least one 1. Specialty bonus on rolls within the chosen specialty: each natural 10 is rerolled. Willpower spend = one automatic guaranteed success, max once per turn.\n\n## Dice\n- Type: `d10`\n- Notation: `Xd10 vs <difficulty>`\n\n## Resolution\n- Mode: `dice-pool`\n- Pool formula: Attribute + Ability (+ specialty 10-rerolls when applicable, + Willpower auto-success once/turn, + Discipline rating dice)\n- Default target: 6\n\n## Difficulty ladder\n- **Trivial** (threshold 4) — Trivial for a competent character. Often waived.\n- **Routine** (threshold 5) — Routine task; minor pressure.\n- **Standard** (threshold 6) — V20 default. Average task under normal conditions.\n- **Challenging** (threshold 7) — Pushes a competent character; pressure or distraction.\n- **Difficult** (threshold 8) — Few succeed without bonuses or supernatural help.\n- **Nigh-Impossible** (threshold 9) — Heroic; requires Willpower, Disciplines, or aid.\n\n## Attributes\n- **Strength** (STR) [Physical] — Raw muscle. Lifting, melee damage, brawling pools.\n- **Dexterity** (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy, dodging.\n- **Stamina** (STA) [Physical] — Endurance, soak (bashing/lethal), resisting fatigue and damage.\n- **Charisma** (CHA) [Social] — Force of personality, sincere charm, leadership presence.\n- **Manipulation** (MAN) [Social] — Deceit, guile, indirect influence, getting others to act against their interest.\n- **Appearance** (APP) [Social] — Beauty / presence; affects attraction, intimidation by allure, first-impression rolls.\n- **Perception** (PER) [Mental] — Spotting, hearing, noticing details and changes in environment.\n- **Intelligence** (INT) [Mental] — Reasoning, learning, recall, abstract analysis.\n- **Wits** (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative pool component.\n\n## Skills\n- **Alertness** — Talent. Notice danger and details. Usable untrained at +1 difficulty.\n- **Athletics** — Talent. Climbing, running, jumping, swimming. Usable untrained at +1 difficulty.\n- **Awareness** — Talent (V20). Sense supernatural presence and disturbances in the Beast. Usable untrained at +1 difficulty.\n- **Brawl** — Talent. Unarmed combat; punches, grapples, claw strikes. Usable untrained at +1 difficulty.\n- **Empathy** — Talent. Read emotions, sense lies of the heart. Usable untrained at +1 difficulty.\n- **Expression** — Talent. Communicating ideas, art, oratory, written prose. Usable untrained at +1 difficulty.\n- **Intimidation** — Talent. Threats, looming presence, breaking will. Usable untrained at +1 difficulty.\n- **Leadership** — Talent. Inspiring loyalty, giving orders, rallying. Usable untrained at +1 difficulty.\n- **Streetwise** — Talent. Navigating urban underbelly, contacts, fences, gossip. Usable untrained at +1 difficulty.\n- **Subterfuge** — Talent. Lying, misleading, deflecting questions. Usable untrained at +1 difficulty.\n- **Animal Ken** — Skill. Handling and training animals (a vampire's natural problem). Untrained: cannot roll.\n- **Crafts** — Skill. Build, repair, and make physical things by hand. Untrained: cannot roll.\n- **Drive** — Skill. Operate vehicles under stress. Untrained: cannot roll.\n- **Etiquette** — Skill. Manners, protocol, the unwritten rules of Kindred and mortal society. Untrained: cannot roll.\n- **Firearms** — Skill. Handguns, rifles, automatic weapons. Untrained: cannot roll.\n- **Larceny** — Skill (V20). Lock-picking, sleight of hand, B&E, forgery. Untrained: cannot roll.\n- **Melee** — Skill. Armed close combat; blades, clubs, improvised. Untrained: cannot roll.\n- **Performance** — Skill. Singing, instrument, acting, dance — the art of performing for an audience. Untrained: cannot roll.\n- **Stealth** — Skill. Move unseen and unheard. Untrained: cannot roll.\n- **Survival** — Skill. Wilderness travel, foraging, weather. Untrained: cannot roll.\n- **Academics** — Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material.\n- **Computer** — Knowledge. Software, hardware, networks. Untrained: cannot roll.\n- **Finance** — Knowledge. Money, markets, accounting, business law. Untrained: cannot roll.\n- **Investigation** — Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll.\n- **Law** — Knowledge. Statute, precedent, courtroom procedure, criminal law. Untrained: cannot roll.\n- **Medicine** — Knowledge. Diagnosis, surgery, pharmacology — and what blood reveals. Untrained: cannot roll.\n- **Occult** — Knowledge. Lore of the supernatural — vampires, mages, ghosts, the Antediluvians. Untrained: cannot roll.\n- **Politics** — Knowledge. Government, faction, who-owes-whom in mortal AND Kindred society. Untrained: cannot roll.\n- **Science** — Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll.\n- **Technology** — Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ]
 }

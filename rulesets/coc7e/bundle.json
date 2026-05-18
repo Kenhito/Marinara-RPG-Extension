@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.1.0"
+    "version": "1.3.0"
   },
   "ruleset": {
     "id": "coc7e",
@@ -778,5 +778,49 @@
         "position": 0
       }
     ]
-  }
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Call of Cthulhu 7th Edition surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s+(\\d+)\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → Call of Cthulhu 7th Edition difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "coc7e_reference",
+      "description": "Returns canonical Call of Cthulhu 7th Edition reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Call of Cthulhu 7th Edition — canonical reference\n\nPercentile horror investigation rules. Each skill and characteristic is a 1-99 number; roll 1d100 and succeed if the total is at or under that number. Sanity erodes as investigators brush up against the Mythos; success degrees (regular / hard / extreme) reward skilled play and a punishing fumble band keeps tension high.\n\n## Dice\n- Type: `d100`\n- Notation: `1d100 vs skill`\n\n## Resolution\n- Mode: `roll-under`\n\n## Difficulty ladder\n- **Regular** (threshold 100) — Roll equal to or under the full skill value.\n- **Hard** (threshold 50) — Roll equal to or under half the skill value (round down).\n- **Extreme** (threshold 20) — Roll equal to or under one-fifth the skill value (round down).\n\n## Attributes\n- **Strength** (STR) [Physical] — Muscle power, the ability to lift heavy objects, use weapons, and push through physical resistance.\n- **Constitution** (CON) [Physical] — Health, vigour, and vitality. Resistance to disease, poison, and the wearing effects of injury.\n- **Size** (SIZ) [Physical] — A combined measure of height and weight. Contributes to Hit Points and the Damage Bonus.\n- **Dexterity** (DEX) [Physical] — Quickness, agility, and physical co-ordination. The highest-DEX combatant generally acts first.\n- **Appearance** (APP) [Social] — Physical attractiveness and personal charm — the surface impression an investigator makes on others.\n- **Intelligence** (INT) [Mental] — Cleverness and the ability to reason. Also the value used for the Idea roll.\n- **Power** (POW) [Mental] — Force of will, mental fortitude, and the wellspring of magic. POW seeds starting Sanity and Magic Points.\n- **Education** (EDU) [Mental] — Formal learning and accumulated knowledge. Drives initial skill picks during occupation selection.\n\n## Skills\n- **Accounting** — Examine ledgers, follow money trails, spot financial irregularities.\n- **Anthropology** — Read a culture's customs and infer its beliefs from sparse evidence.\n- **Appraise** — Judge the age, authenticity, and value of objects and artworks.\n- **Archaeology** — Date sites, identify artifacts, and survive ruin exploration.\n- **Art/Craft** — Practice a specific creative or technical craft (specify on the character sheet).\n- **Charm** — Persuade through warmth, flattery, or attractiveness.\n- **Climb** — Scale walls, trees, and other steep surfaces without specialised gear.\n- **Computer Use** — Modern era only. Operate computers, recover data, and follow digital trails.\n- **Credit Rating** — Social and financial standing. Drives starting cash and reception by elites.\n- **Cthulhu Mythos** — Forbidden knowledge of the Mythos. Each point gained is a point of Sanity lost.\n- **Disguise** — Alter appearance to pass as someone else or escape recognition.\n- **Dodge** — Avoid an incoming attack or environmental danger. Base value is half of DEX.\n- **Drive Auto** — Operate a wheeled motor vehicle under normal and adverse conditions.\n- **Electrical Repair** — Diagnose and fix electrical systems, from house wiring to radios.\n- **Fast Talk** — Bluster, distract, or rapidly persuade without leaving lasting goodwill.\n- **Fighting (Brawl)** — Hand-to-hand combat: fists, improvised weapons, and grappling.\n- **Firearms (Handgun)** — Pistols and revolvers. Single-shot accuracy in stressed conditions.\n- **Firearms (Rifle/Shotgun)** — Long arms. Hunting rifles, shotguns, and military pattern rifles.\n- **First Aid** — Stabilise an injured person and restore a small amount of lost HP.\n- **History** — Recall historical facts, dates, and the significance of past events.\n- **Intimidate** — Compel co-operation through threats, presence, or implication of force.\n- **Jump** — Leap horizontally or vertically, or fall safely from a height.\n- **Language (Own)** — Native tongue. Base value equals EDU.\n- **Language (Other)** — A second language (specify on the character sheet).\n- **Law** — Knowledge of legal systems, court procedure, and rights.\n- **Library Use** — Locate a specific piece of information in a library or archive.\n- **Listen** — Notice and interpret sound. The investigator's ear for trouble.\n- **Locksmith** — Pick, bypass, or otherwise open locks without their key.\n- **Mechanical Repair** — Diagnose and fix mechanical devices, from clocks to engines.\n- **Medicine** — Treat illness and injury at a professional level. Slower but stronger than First Aid.\n- **Natural World** — Folk knowledge of plants, animals, and the natural world.\n- **Navigate** — Find one's way using landmarks, maps, the stars, or instruments.\n- **Occult** — Mundane mystic lore: hauntings, folklore, and traditional ritual.\n- **Operate Heavy Machinery** — Cranes, excavators, and similar large-scale industrial equipment.\n- **Persuade** — Win agreement through reasoned argument. Lasting effect, slow to deploy.\n- **Pilot** — Operate an aircraft or vessel (specify type on the character sheet).\n- **Psychoanalysis** — Long-term mental care. Can recover Sanity over extended treatment.\n- **Psychology** — Read motivations, detect lies, and judge mental state on the fly.\n- **Science** — A specific scientific field (specify on the character sheet).\n- **Sleight of Hand** — Palm objects, pick pockets, and perform other deft hand tricks.\n- **Spot Hidden** — Notice things that aren't obvious — concealed objects, subtle clues, watchers.\n- **Stealth** — Move quietly and remain unseen.\n- **Survival** — Endure and travel through a specific hostile environment (specify).\n- **Swim** — Stay afloat and move through water under both calm and stressed conditions.\n- **Throw** — Hurl an object accurately at a target.\n- **Track** — Follow physical trails left by people, animals, or vehicles.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ]
 }
