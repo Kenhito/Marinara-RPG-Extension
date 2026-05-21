@@ -19,6 +19,7 @@ import { dirname, resolve, basename, join } from "node:path";
 import buildRegexScripts from "./build-regex-scripts.mjs";
 import buildCustomTools from "./build-custom-tools.mjs";
 import buildLorebookExpansions from "./build-lorebook-expansions.mjs";
+import buildPreInputTransformer from "./build-pre-input-transformer.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -132,7 +133,7 @@ function buildBundle(dir) {
     version: 1,
     minExtensionVersion: "0.4.0",
     authorId: "kenhito",
-    generator: { name: "build-bundle.mjs", version: "1.4.0" },
+    generator: { name: "build-bundle.mjs", version: "1.5.0" },
     ruleset,
     lorebook: {
       name: lb.name,
@@ -158,6 +159,18 @@ function buildBundle(dir) {
     bundle.customTools = customTools;
   }
 
+  /* Vector 5: pre-input transformer agent. The generator returns either
+     a single agent object (from vocabularyHints[] derivation or from
+     ruleset.preInputTransformerAgent override) or null. We attach it
+     into bundle.additionalAgents so the existing additionalAgents
+     install path handles it idempotently (settings.mrrAgentRole keys
+     re-install matching). */
+  const transformerAgent = buildPreInputTransformer(ruleset);
+  if (transformerAgent && typeof transformerAgent === "object") {
+    if (!Array.isArray(bundle.additionalAgents)) bundle.additionalAgents = [];
+    bundle.additionalAgents.push(transformerAgent);
+  }
+
   const outPath = join(dir, "bundle.json");
   writeFileSync(outPath, JSON.stringify(bundle, null, 2) + "\n");
   return {
@@ -166,7 +179,8 @@ function buildBundle(dir) {
     handAuthoredCount: handAuthoredEntries.length,
     derivedCount: derivedFiltered.length,
     regexCount: (bundle.regexScripts || []).length,
-    toolCount: (bundle.customTools || []).length
+    toolCount: (bundle.customTools || []).length,
+    addAgentCount: (bundle.additionalAgents || []).length
   };
 }
 
@@ -190,8 +204,8 @@ if (args[0] === "--all") {
 let failed = 0;
 for (const dir of dirs) {
   try {
-    const { outPath, entryCount, handAuthoredCount, derivedCount, regexCount, toolCount } = buildBundle(dir);
-    console.log("PASS " + basename(dir) + " -> " + outPath + " (" + entryCount + " entries [" + handAuthoredCount + " hand + " + derivedCount + " derived], " + regexCount + " regex scripts, " + toolCount + " custom tools)");
+    const { outPath, entryCount, handAuthoredCount, derivedCount, regexCount, toolCount, addAgentCount } = buildBundle(dir);
+    console.log("PASS " + basename(dir) + " -> " + outPath + " (" + entryCount + " entries [" + handAuthoredCount + " hand + " + derivedCount + " derived], " + regexCount + " regex scripts, " + toolCount + " custom tools, " + addAgentCount + " add'l agents)");
   } catch (e) {
     console.error("FAIL " + basename(dir) + " — " + e.message);
     failed++;

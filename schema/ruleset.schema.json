@@ -687,6 +687,32 @@
         }
       }
     },
+    "vocabularyHints": {
+      "type": "array",
+      "description": "Optional pre-input transformer agent hints (Vector 5). Each entry binds an input pattern to a re-frame guidance string. When present and non-empty, build-pre-input-transformer.mjs derives a pre_generation context-injection agent that annotates matching player input with ruleset-flavored framing BEFORE the narration model sees it. Distinct from regex scripts (Vector 9), which only rewrite AI output. Author override: ruleset.preInputTransformerAgent passes a full agent object through verbatim.",
+      "items": {
+        "type": "object",
+        "required": ["pattern", "hint"],
+        "additionalProperties": false,
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Natural-language match pattern (verb / phrase / mechanic name) the agent recognizes in player input."
+          },
+          "hint": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Re-frame guidance the agent uses to annotate the input (one sentence, ruleset-flavored)."
+          }
+        }
+      }
+    },
+    "preInputTransformerAgent": {
+      "type": "object",
+      "description": "Optional author-override block for Vector 5. When present, build-pre-input-transformer.mjs returns this verbatim and skips deriving the agent from vocabularyHints[].",
+      "additionalProperties": true
+    },
     "derivedStats": {
       "type": "array",
       "description": "Stats computed from attributes/level/etc. Used for HUD readouts.",

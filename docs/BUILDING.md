@@ -230,6 +230,53 @@ Composition order (as of v0.4.x+):
 - coc7e: 61 derived | dnd5e: 42 derived | exalted3e: 48 derived | fate-core: 26 derived | gurps-lite: 36 derived
 - lasers-and-feelings: 2 derived | pathfinder2e: 43 derived | stewpot: 7 derived | trophy-dark: 12 derived | vtmv20: 63 derived
 
+### `tools/build-pre-input-transformer.mjs` *(Vector 5 — pre-input ruleset re-framing)*
+
+**Input:** ruleset object. **Output:** a single agent object shaped to fit `bundle.additionalAgents[]`, or `null` if no hints are declared.
+
+**Purpose:** derive a `pre_generation` agent that recognizes common player-input phrases ("I parry", "I attack", "I spend essence") and annotates them with ruleset-flavored framing BEFORE the main narration model writes the next turn. Distinct from Vector 9 (regex scripts only rewrite AI output) — Vector 5 shapes how the AI THINKS about an action.
+
+**Fields consumed:**
+- `ruleset.vocabularyHints[]` (optional) — array of `{ pattern, hint }` pairs. Each `pattern` is a natural-language match (verb/phrase/mechanic name); each `hint` is one-sentence guidance the agent uses to annotate matching input.
+
+**Override block:** `ruleset.preInputTransformerAgent` (full agent object). When present, generator returns it verbatim — useful when authors want richer prompt content than the hint-table format.
+
+**No-op behavior:** when both `vocabularyHints` is absent/empty AND `preInputTransformerAgent` is absent, generator returns `null` and the bundle ships no transformer.
+
+**Output shape:**
+
+```jsonc
+{
+  "role": "pre-input-transformer",
+  "name": "<Ruleset Name> — Pre-Input Transformer",
+  "description": "Re-frames common player-input phrases in <Ruleset Name>-native vocabulary...",
+  "phase": "pre_generation",
+  "enabled": false,
+  "promptTemplate": "/* Generated prompt with a recognition table from vocabularyHints */",
+  "settings": {}
+}
+```
+
+The agent is pushed into `bundle.additionalAgents[]` at build time, so the existing additionalAgents install path handles it — no separate installer code needed. `enabled: false` keeps the install lean; user opts in via Marinara Settings → Agents.
+
+**Worked example — Exalted vocabularyHints:**
+
+```jsonc
+{
+  "id": "exalted3e",
+  "vocabularyHints": [
+    { "pattern": "I parry / I block (an attack)",
+      "hint": "In Exalted, parry uses Parry DV (Static value; no roll needed unless adding charms). Note the character's stored Parry DV and any active charm modifiers." },
+    { "pattern": "I dodge / I evade (an attack)",
+      "hint": "In Exalted, dodge uses Evasion DV (Static value; no roll). Note Evasion DV; subtract -1 onslaught penalty for each successive attack this round." },
+    { "pattern": "I attack with my weapon",
+      "hint": "In Exalted, an attack rolls Attribute + Ability + accuracy bonus + Charm dice..." }
+  ]
+}
+```
+
+The generated agent recognizes those patterns and annotates each matching turn with `[exalted3e annotation] <re-frame guidance>`, which the main narration model reads before writing the scene.
+
 ### `tools/build-agents.mjs`
 
 **Input:** ruleset directory (uses `agents/*.md` + optional per-ruleset overrides). **Output:** `agents.json` in the same directory.
@@ -416,4 +463,4 @@ To have a chatbot AI scaffold a new ruleset for system X:
 
 This doc is the **system of record for the build contract**, equal in standing to the JSON schemas. When a new generator lands, this doc gains a section in the same session that ships the generator. When a generator changes its input/output shape, this doc updates with it. Stale build docs are a system bug.
 
-Last updated: 2026-05-17 (Vector 9 / regex-scripts pipeline, Vector 3 / custom-tool callouts pipeline, and Vector 2 / lorebook expansion pipeline all shipped). Phase 1 vectors remaining: Vector 5 (pre-input transformer) + Vector 8 (persona/scenario defaults) — deferred to future sessions.
+Last updated: 2026-05-20 (Vectors 9 + 3 + 2 + 5 shipped; Vector 8 next; Phase 1 of the feasibility doc nearly complete).

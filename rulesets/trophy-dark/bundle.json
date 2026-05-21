@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.4.0"
+    "version": "1.5.0"
   },
   "ruleset": {
     "id": "trophy-dark",

@@ -597,7 +597,7 @@
       "values": [
         {
           "label": "Active",
-          "description": "Initiative is at 1 or higher. The character is operating normally in combat — withering attacks add to their Initiative, decisive attacks may be declared, and standard Join Battle ordering applies."
+          "description": "Initiative is at 1 or higher. The character is operating normally in combat \u2014 withering attacks add to their Initiative, decisive attacks may be declared, and standard Join Battle ordering applies."
         },
         {
           "label": "Crashed",
@@ -665,8 +665,14 @@
       "color": "accent",
       "stateName": "Essence",
       "quickButtons": [
-        { "label": "-1", "delta": -1 },
-        { "label": "+1", "delta": 1 }
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "+1",
+          "delta": 1
+        }
       ]
     },
     {
@@ -679,9 +685,18 @@
       "stateName": "Personal Motes",
       "commitmentPool": "Personal",
       "quickButtons": [
-        { "label": "-1", "delta": -1 },
-        { "label": "-5", "delta": -5 },
-        { "label": "Full", "delta": "max" }
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "-5",
+          "delta": -5
+        },
+        {
+          "label": "Full",
+          "delta": "max"
+        }
       ]
     },
     {
@@ -694,9 +709,18 @@
       "stateName": "Peripheral Motes",
       "commitmentPool": "Peripheral",
       "quickButtons": [
-        { "label": "-1", "delta": -1 },
-        { "label": "-5", "delta": -5 },
-        { "label": "Full", "delta": "max" }
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "-5",
+          "delta": -5
+        },
+        {
+          "label": "Full",
+          "delta": "max"
+        }
       ]
     },
     {
@@ -708,9 +732,18 @@
       "color": "accent",
       "stateName": "Willpower",
       "quickButtons": [
-        { "label": "-1", "delta": -1 },
-        { "label": "+1", "delta": 1 },
-        { "label": "Full", "delta": "max" }
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "+1",
+          "delta": 1
+        },
+        {
+          "label": "Full",
+          "delta": "max"
+        }
       ]
     },
     {
@@ -721,8 +754,14 @@
       "current": 0,
       "color": "accent",
       "quickButtons": [
-        { "label": "+1", "delta": 1 },
-        { "label": "Reset", "delta": "max" }
+        {
+          "label": "+1",
+          "delta": 1
+        },
+        {
+          "label": "Reset",
+          "delta": "max"
+        }
       ]
     },
     {
@@ -733,18 +772,51 @@
       "rendererConfig": {
         "component": "exalted-health-track",
         "levels": [
-          { "label": "-0", "penalty": 0 },
-          { "label": "-1", "penalty": -1 },
-          { "label": "-1", "penalty": -1 },
-          { "label": "-2", "penalty": -2 },
-          { "label": "-2", "penalty": -2 },
-          { "label": "-4", "penalty": -4 },
-          { "label": "Inc", "penalty": -99 }
+          {
+            "label": "-0",
+            "penalty": 0
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-4",
+            "penalty": -4
+          },
+          {
+            "label": "Inc",
+            "penalty": -99
+          }
         ],
         "damageTypes": [
-          { "id": "bashing", "label": "B", "severity": 0 },
-          { "id": "lethal", "label": "L", "severity": 1 },
-          { "id": "aggravated", "label": "A", "severity": 2 }
+          {
+            "id": "bashing",
+            "label": "B",
+            "severity": 0
+          },
+          {
+            "id": "lethal",
+            "label": "L",
+            "severity": 1
+          },
+          {
+            "id": "aggravated",
+            "label": "A",
+            "severity": 2
+          }
         ]
       }
     }
@@ -878,5 +950,27 @@
   "header": {
     "raceLabel": "Type",
     "classLabel": "Caste/Aspect"
-  }
+  },
+  "vocabularyHints": [
+    {
+      "pattern": "I parry / I block (an attack)",
+      "hint": "In Exalted, parry uses Parry DV (Static value; no roll needed unless adding charms). Note the character's stored Parry DV and any active charm modifiers."
+    },
+    {
+      "pattern": "I dodge / I evade (an attack)",
+      "hint": "In Exalted, dodge uses Evasion DV (Static value; no roll). Note Evasion DV; subtract -1 onslaught penalty for each successive attack this round."
+    },
+    {
+      "pattern": "I attack with my weapon",
+      "hint": "In Exalted, an attack rolls Attribute + Ability + accuracy bonus + Charm dice. Mention the relevant pool and check whether the player is invoking any Charms before resolving."
+    },
+    {
+      "pattern": "I spend essence / motes",
+      "hint": "Track the spend separately for Personal and Peripheral pools. Personal-only Charms must come from Personal motes; mixed Charms allow the player to choose. Update anima banner if Peripheral spend exceeds threshold."
+    },
+    {
+      "pattern": "I roll initiative / join battle",
+      "hint": "Exalted uses Join Battle (Wits + Awareness) at combat start; initiative is then a fluid tracker that rises/falls with combat actions. Don't roll a fresh JB if combat is already underway."
+    }
+  ]
 }

@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.4.0"
+    "version": "1.5.0"
   },
   "ruleset": {
     "id": "exalted3e",
@@ -959,7 +959,29 @@
     "header": {
       "raceLabel": "Type",
       "classLabel": "Caste/Aspect"
-    }
+    },
+    "vocabularyHints": [
+      {
+        "pattern": "I parry / I block (an attack)",
+        "hint": "In Exalted, parry uses Parry DV (Static value; no roll needed unless adding charms). Note the character's stored Parry DV and any active charm modifiers."
+      },
+      {
+        "pattern": "I dodge / I evade (an attack)",
+        "hint": "In Exalted, dodge uses Evasion DV (Static value; no roll). Note Evasion DV; subtract -1 onslaught penalty for each successive attack this round."
+      },
+      {
+        "pattern": "I attack with my weapon",
+        "hint": "In Exalted, an attack rolls Attribute + Ability + accuracy bonus + Charm dice. Mention the relevant pool and check whether the player is invoking any Charms before resolving."
+      },
+      {
+        "pattern": "I spend essence / motes",
+        "hint": "Track the spend separately for Personal and Peripheral pools. Personal-only Charms must come from Personal motes; mixed Charms allow the player to choose. Update anima banner if Peripheral spend exceeds threshold."
+      },
+      {
+        "pattern": "I roll initiative / join battle",
+        "hint": "Exalted uses Join Battle (Wits + Awareness) at combat start; initiative is then a fluid tracker that rises/falls with combat actions. Don't roll a fresh JB if combat is already underway."
+      }
+    ]
   },
   "lorebook": {
     "name": "Exalted 3e Reference",
@@ -2754,6 +2776,17 @@
       "staticResult": "# Exalted 3rd Edition — canonical reference\n\nStoryteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.\n\n## Dice\n- Type: `d10`\n- Notation: `Xd10 vs 7`\n\n## Resolution\n- Mode: `dice-pool`\n- Pool formula: Attribute + Ability (+ specialty +1, + stunt up to +2, + Charm dice)\n- Default target: 7\n\n## Difficulty ladder\n- **Routine** (threshold 1) — Trivial for a competent character. Often waived.\n- **Standard** (threshold 2) — Default opposed baseline.\n- **Difficult** (threshold 3) — Pushes a skilled mortal.\n- **Demanding** (threshold 4) — Few mortals can do it reliably.\n- **Legendary** (threshold 5) — Peak of mortal-scale achievement; songs are sung.\n- **Beyond Legendary** (threshold 7) — Wyld navigation, First-Age relics, Essence > 5 territory.\n\n## Attributes\n- **Strength** (STR) [Physical] — Raw muscle. Lifting, melee damage.\n- **Dexterity** (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy.\n- **Stamina** (STA) [Physical] — Endurance, soak, resisting fatigue.\n- **Charisma** (CHA) [Social] — Honest charm, leadership, sincere persuasion.\n- **Manipulation** (MAN) [Social] — Deceit, guile, indirect influence.\n- **Appearance** (APP) [Social] — Beauty / presence; affects attraction and intimidation.\n- **Perception** (PER) [Mental] — Spotting, hearing, noticing details.\n- **Intelligence** (INT) [Mental] — Reasoning, learning, recall, abstract thought.\n- **Wits** (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative.\n\n## Skills\n- **Archery**\n- **Athletics**\n- **Awareness**\n- **Brawl** — Includes Martial Arts when the Martial Artist Merit is taken.\n- **Bureaucracy**\n- **Craft**\n- **Dodge**\n- **Integrity**\n- **Investigation**\n- **Larceny**\n- **Linguistics**\n- **Lore**\n- **Medicine**\n- **Melee**\n- **Occult**\n- **Performance**\n- **Presence**\n- **Resistance**\n- **Ride**\n- **Sail**\n- **Socialize**\n- **Stealth**\n- **Survival**\n- **Thrown**\n- **War**\n\n## Commitment\n- Model: `mote`",
       "scriptBody": null,
       "enabled": true
+    }
+  ],
+  "additionalAgents": [
+    {
+      "role": "pre-input-transformer",
+      "name": "Exalted 3rd Edition — Pre-Input Transformer",
+      "description": "Re-frames common player-input phrases in Exalted 3rd Edition-native vocabulary before the narration model sees them.",
+      "phase": "pre_generation",
+      "enabled": false,
+      "promptTemplate": "# Exalted 3rd Edition — pre-input transformer\n\nYou are a pre-generation context-injection agent for an RPG roleplay using the Exalted 3rd Edition ruleset overlay. Your job is to read the player's most recent input and emit a SHORT annotation that re-frames common verbs and action phrases in Exalted 3rd Edition-flavored vocabulary.\n\n## Output format\n\nEmit a context-injection block of the form:\n```\n[exalted3e annotation] <one-sentence re-frame, OR \"No re-frame needed.\">\n```\n\nAnnotate only when one of the recognized patterns matches the player's input. Otherwise output exactly \"No re-frame needed.\" and stop.\n\n## Recognition table\n\n| When player input matches | Re-frame guidance |\n|---|---|\n| I parry / I block (an attack) | In Exalted, parry uses Parry DV (Static value; no roll needed unless adding charms). Note the character's stored Parry DV and any active charm modifiers. |\n| I dodge / I evade (an attack) | In Exalted, dodge uses Evasion DV (Static value; no roll). Note Evasion DV; subtract -1 onslaught penalty for each successive attack this round. |\n| I attack with my weapon | In Exalted, an attack rolls Attribute + Ability + accuracy bonus + Charm dice. Mention the relevant pool and check whether the player is invoking any Charms before resolving. |\n| I spend essence / motes | Track the spend separately for Personal and Peripheral pools. Personal-only Charms must come from Personal motes; mixed Charms allow the player to choose. Update anima banner if Peripheral spend exceeds threshold. |\n| I roll initiative / join battle | Exalted uses Join Battle (Wits + Awareness) at combat start; initiative is then a fluid tracker that rises/falls with combat actions. Don't roll a fresh JB if combat is already underway. |\n\n## Rules\n\n- Match liberally (paraphrase / synonym OK) but never invent annotations for input that doesn't fit any row.\n- Never narrate the scene; never speak as a character; never roll dice.\n- One annotation per turn maximum. If multiple rows match, pick the most specific.\n- Keep the annotation under 25 words.",
+      "settings": {}
     }
   ]
 }
