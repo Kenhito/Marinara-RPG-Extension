@@ -1,5 +1,7 @@
 # Lore Query Helper Agent
 
+> **Legacy as of 2026-05-22:** superseded by the merged `context-fuser` agent, which combines `lore-query + state-reminder` into a single per-turn AI call (~40% reduction in per-turn agent calls when paired with the other merge). When enabling `context-fuser`, DISABLE this agent in Marinara Settings → Agents to avoid double-coverage. Kept in the repo for backward compatibility with v0.4.x installs and for users who prefer per-responsibility focus over token thrift.
+
 A `pre_generation` `context_injection` agent that surfaces ruleset-rules
 answers when the player asks rules questions, so the model doesn't
 improvise or hallucinate system rules.

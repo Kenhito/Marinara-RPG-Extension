@@ -400,6 +400,33 @@ The `hit-dice` resource's count is wired to `{Level}` — so as the player level
 
 **Default-class behavior:** when the sheet is fresh and no class is selected, dice resources fall back to their static `die` field. D&D 5e ships `die: "d8"` as a sensible mid-tier default — the player picks from the dropdown to switch to d6 (Wizard / Sorcerer), d10 (Fighter / Paladin / Ranger), d12 (Barbarian), etc.
 
+## Agent consolidation (recommended v0.5.0+ defaults)
+
+The legacy `agents/` directory shipped five overlay agents — `combat-adjudicator`, `lore-query`, `npc-bookkeeper`, `state-mutator`, `state-reminder` — each enforcing a single responsibility. Enabling all four pre-generation agents (everyone except the post-processing `state-mutator`) costs **four AI calls per turn**.
+
+As of 2026-05-22 the repo ships two merged agents that collapse the pre-generation surface to **two AI calls**:
+
+| Merged agent | Replaces | Responsibility |
+|--------------|----------|----------------|
+| `combat-overseer` | `combat-adjudicator` + `npc-bookkeeper` | Combat math framing (initiative / action economy / attack resolution / damage / conditions / range) AND NPC roster (HP / conditions / state / intent) — both surfaces emitted in one output. |
+| `context-fuser` | `lore-query` + `state-reminder` | Rules-query answers (when asked) AND player-state reminder (HP / resources / conditions / equipped gear / duration effects) — both surfaces in one output. |
+| `state-mutator` | (unchanged) | Post-processing — parses AI output for state changes and writes to the sheet. Different phase; cannot merge with pre-generation agents. |
+
+**Recommended enable set:** `combat-overseer` + `context-fuser` + `state-mutator` = 2 pre-gen calls + 1 post-proc call per turn. That's a **40% reduction** in per-turn agent calls versus enabling all five legacy agents.
+
+**Migration path:**
+
+1. Open Marinara Settings → Agents.
+2. **Disable** `combat-adjudicator`, `npc-bookkeeper`, `lore-query`, and `state-reminder` (the four legacy pre-gen agents). They stay installed but stop firing.
+3. **Enable** `combat-overseer` and `context-fuser` (the two new merged agents). State Mutator stays enabled.
+4. Verify in chat: a turn should now fire three agents (overseer / fuser / state-mutator) instead of five.
+
+**Backward compatibility:** the legacy four agents are NOT removed from the repo. They're marked "Legacy as of 2026-05-22" in their docstrings and remain installable for users who prefer per-responsibility focus over token thrift. The build pipeline (`build-agents.mjs`) emits all seven agents into each ruleset's `agents.json` so both surfaces are available.
+
+**Per-ruleset overrides still apply.** A ruleset can override either merged agent via `rulesets/<id>/agents/combat-overseer.md` or `rulesets/<id>/agents/context-fuser.md` to tune the prompt for that system — same pattern as the legacy four. Exalted's per-ruleset overrides currently target the legacy four; they will stay accurate as long as `combat-adjudicator` etc. remain enabled. To migrate a ruleset's overrides to the merged agents, port the system-specific clauses from each pair into a merged-agent override.
+
+**Token-savings estimate:** each saved AI call is ~one full chat-history-sized prompt (~2000-4000 tokens depending on history length). Over a 100-turn session at typical chat lengths, the consolidation saves ~200k-400k tokens per user. With both merges active simultaneously, that doubles.
+
 ## Custom renderers (open extensibility)
 
 Some sheet UI components are pluggable per-ruleset via the `resources[]` array with `type: "custom"` and a `rendererConfig` object. The extension JS registers named renderer components (e.g. `v20-health-track`); a ruleset declares which renderer to use and supplies the config the renderer reads.

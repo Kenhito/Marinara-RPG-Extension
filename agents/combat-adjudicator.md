@@ -1,5 +1,7 @@
 # Combat Adjudicator Agent
 
+> **Legacy as of 2026-05-22:** superseded by the merged `combat-overseer` agent, which combines `combat-adjudicator + npc-bookkeeper` into a single per-turn AI call (~40% reduction in per-turn agent calls when paired with the other merge). When enabling `combat-overseer`, DISABLE this agent in Marinara Settings → Agents to avoid double-coverage. Kept in the repo for backward compatibility with v0.4.x installs and for users who prefer per-responsibility focus over token thrift.
+
 A `pre_generation` `context_injection` agent that enforces the active
 ruleset's combat math when combat is happening, so the narration model
 doesn't free-form damage / initiative / hit results.
