@@ -713,6 +713,15 @@
       "description": "Optional author-override block for Vector 5. When present, build-pre-input-transformer.mjs returns this verbatim and skips deriving the agent from vocabularyHints[].",
       "additionalProperties": true
     },
+    "scenarioDefault": {
+      "type": "string",
+      "description": "Optional scenario-default text shipped with the bundle (Vector 8). When present, the bundle includes bundle.scenarioDefault as a plain string. The engine reads scenario via chatMeta.groupScenarioText (non-persona surface). Auto-install path is DEFERRED — tonight the data ships, the installer-side per-chat write is next session. Authors who want a stronger framing can also set this AND scenarioDefaultDerive: false (override wins)."
+    },
+    "scenarioDefaultDerive": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true AND scenarioDefault is absent, build-scenario-default.mjs auto-derives a scenario default from ruleset.json (name + summary + dice + resolution mode). When false (default) and scenarioDefault is absent, the bundle ships no scenario default."
+    },
     "derivedStats": {
       "type": "array",
       "description": "Stats computed from attributes/level/etc. Used for HUD readouts.",

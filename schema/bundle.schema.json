@@ -262,6 +262,10 @@
         }
       }
     },
+    "scenarioDefault": {
+      "type": "string",
+      "description": "Optional Vector 8 default scenario text (non-persona). Engine reads scenario via chatMeta.groupScenarioText. Per-chat auto-install deferred — tonight the bundle SHIPS the string; next session's installer can PATCH it onto chat metadata."
+    },
     "lorebook": {
       "type": "object",
       "description": "Lorebook + entries auto-imported into Marinara's lorebook database.",

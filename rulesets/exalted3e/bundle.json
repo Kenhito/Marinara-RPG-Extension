@@ -5,7 +5,7 @@
   "authorId": "kenhito",
   "generator": {
     "name": "build-bundle.mjs",
-    "version": "1.5.0"
+    "version": "1.6.0"
   },
   "ruleset": {
     "id": "exalted3e",
@@ -981,7 +981,8 @@
         "pattern": "I roll initiative / join battle",
         "hint": "Exalted uses Join Battle (Wits + Awareness) at combat start; initiative is then a fluid tracker that rises/falls with combat actions. Don't roll a fresh JB if combat is already underway."
       }
-    ]
+    ],
+    "scenarioDefaultDerive": true
   },
   "lorebook": {
     "name": "Exalted 3e Reference",
@@ -2788,5 +2789,6 @@
       "promptTemplate": "# Exalted 3rd Edition — pre-input transformer\n\nYou are a pre-generation context-injection agent for an RPG roleplay using the Exalted 3rd Edition ruleset overlay. Your job is to read the player's most recent input and emit a SHORT annotation that re-frames common verbs and action phrases in Exalted 3rd Edition-flavored vocabulary.\n\n## Output format\n\nEmit a context-injection block of the form:\n```\n[exalted3e annotation] <one-sentence re-frame, OR \"No re-frame needed.\">\n```\n\nAnnotate only when one of the recognized patterns matches the player's input. Otherwise output exactly \"No re-frame needed.\" and stop.\n\n## Recognition table\n\n| When player input matches | Re-frame guidance |\n|---|---|\n| I parry / I block (an attack) | In Exalted, parry uses Parry DV (Static value; no roll needed unless adding charms). Note the character's stored Parry DV and any active charm modifiers. |\n| I dodge / I evade (an attack) | In Exalted, dodge uses Evasion DV (Static value; no roll). Note Evasion DV; subtract -1 onslaught penalty for each successive attack this round. |\n| I attack with my weapon | In Exalted, an attack rolls Attribute + Ability + accuracy bonus + Charm dice. Mention the relevant pool and check whether the player is invoking any Charms before resolving. |\n| I spend essence / motes | Track the spend separately for Personal and Peripheral pools. Personal-only Charms must come from Personal motes; mixed Charms allow the player to choose. Update anima banner if Peripheral spend exceeds threshold. |\n| I roll initiative / join battle | Exalted uses Join Battle (Wits + Awareness) at combat start; initiative is then a fluid tracker that rises/falls with combat actions. Don't roll a fresh JB if combat is already underway. |\n\n## Rules\n\n- Match liberally (paraphrase / synonym OK) but never invent annotations for input that doesn't fit any row.\n- Never narrate the scene; never speak as a character; never roll dice.\n- One annotation per turn maximum. If multiple rows match, pick the most specific.\n- Keep the annotation under 25 words.",
       "settings": {}
     }
-  ]
+  ],
+  "scenarioDefault": "This chat uses the Exalted 3rd Edition ruleset overlay.\n\nStoryteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.\n\nMechanics: primary die d10, notation Xd10 vs 7.\nResolution: dice-pool.\n\nThe GM should keep narration consistent with Exalted 3rd Edition mechanics. Refer to the lorebook entries for ruleset reference."
 }

@@ -287,6 +287,50 @@ The generated agent recognizes those patterns and annotates each matching turn w
 
 See `docs/AUTHORING.md` Step 5 for the agent-prompt authoring guide.
 
+### `tools/build-scenario-default.mjs` *(Vector 8 — scenario-only default, NO PERSONA)*
+
+**Input:** ruleset object. **Output:** a plain string (the scenario default text), or `null` when neither `scenarioDefault` nor `scenarioDefaultDerive: true` is set.
+
+**Purpose:** ship a default scenario-prose block with the bundle that the engine reads via the **chat metadata `groupScenarioText` override path** — the engine's non-persona scenario surface (verified in `~/Marinara-Engine/packages/server/src/routes/chats.routes.ts` around line 1477). The string lands at `bundle.scenarioDefault`. Per-chat auto-install of this field is **deferred to next session** while a UX question is resolved (apply to all chats? new chats only? user-prompted?). Tonight the data ships; consumption is manual or via a future installer flow.
+
+**EXPLICIT ANTI: this generator does NOT read, derive, or emit any persona-related field.** Persona is the player's personal surface and the bundle does not touch it. The generator includes defensive runtime guards that ignore any `persona` / `personaDefault` field if one ever appears on `ruleset.json`. Per 2026-05-20 user constraint — load-bearing doctrine.
+
+**Fields consumed:**
+- `ruleset.scenarioDefault` (optional string) — author-provided verbatim scenario text. Highest precedence.
+- `ruleset.scenarioDefaultDerive` (optional boolean, default `false`) — when `true` AND `scenarioDefault` is absent, the generator auto-derives a minimal scenario from `name` + `summary` + `dice` + `resolution.mode`. Opt-in so existing bundles stay unchanged.
+
+**Override block:** `ruleset.scenarioDefault` (string) returns verbatim. This IS the override — there's no separate "block" since the output is a single string, not an array.
+
+**Output shape:** when present, `bundle.scenarioDefault` is a string like:
+
+```
+This chat uses the Exalted 3rd Edition ruleset overlay.
+
+Storyteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.
+
+Mechanics: primary die d10, notation Xd10 vs 7.
+Resolution: dice-pool.
+
+The GM should keep narration consistent with Exalted 3rd Edition mechanics. Refer to the lorebook entries for ruleset reference.
+```
+
+**Consumption path tonight (manual):** the user opens a chat, copies `bundle.scenarioDefault` from the JSON, and pastes it into the chat's scenario / group-override field in the Marinara UI. The chat's `groupScenarioText` metadata picks it up and the engine inlines it into every prompt's scenario slot.
+
+**Consumption path next session (deferred installer):** add a step in `installBundle()` that — if `bundle.scenarioDefault` is set AND the user has opted in to per-chat scenario application (UX TBD) — PATCHes `chatMeta.groupScenarioText` on the active chat. Estimated ~30 LOC; the engine API surface (`PATCH /chats/:id/metadata`) is already reused by other installer steps.
+
+**Worked example — Exalted with derive-on:**
+
+```jsonc
+{
+  "id": "exalted3e",
+  "name": "Exalted 3rd Edition",
+  "summary": "Storyteller-system d10 dice pools...",
+  "scenarioDefaultDerive": true
+}
+```
+
+Exalted's bundle now ships a 430-char auto-derived scenario string at `bundle.scenarioDefault`.
+
 ### `tools/build-character-card.mjs`
 
 **Input:** ruleset object. **Output:** ruleset-specific character sheet HTML/structure for the engine's character-card UI.
@@ -463,4 +507,4 @@ To have a chatbot AI scaffold a new ruleset for system X:
 
 This doc is the **system of record for the build contract**, equal in standing to the JSON schemas. When a new generator lands, this doc gains a section in the same session that ships the generator. When a generator changes its input/output shape, this doc updates with it. Stale build docs are a system bug.
 
-Last updated: 2026-05-20 (Vectors 9 + 3 + 2 + 5 shipped; Vector 8 next; Phase 1 of the feasibility doc nearly complete).
+Last updated: 2026-05-20 (Phase 1 vectors 9 + 3 + 2 + 5 + 8 ALL shipped — pipeline complete). Vector 4 (client-side tag rewrite) and Vector 6 (system bootstrap) intentionally deferred per the feasibility doc.

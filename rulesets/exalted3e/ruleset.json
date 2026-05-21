@@ -972,5 +972,6 @@
       "pattern": "I roll initiative / join battle",
       "hint": "Exalted uses Join Battle (Wits + Awareness) at combat start; initiative is then a fluid tracker that rises/falls with combat actions. Don't roll a fresh JB if combat is already underway."
     }
-  ]
+  ],
+  "scenarioDefaultDerive": true
 }

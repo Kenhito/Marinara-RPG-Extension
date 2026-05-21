@@ -20,6 +20,7 @@ import buildRegexScripts from "./build-regex-scripts.mjs";
 import buildCustomTools from "./build-custom-tools.mjs";
 import buildLorebookExpansions from "./build-lorebook-expansions.mjs";
 import buildPreInputTransformer from "./build-pre-input-transformer.mjs";
+import buildScenarioDefault from "./build-scenario-default.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -133,7 +134,7 @@ function buildBundle(dir) {
     version: 1,
     minExtensionVersion: "0.4.0",
     authorId: "kenhito",
-    generator: { name: "build-bundle.mjs", version: "1.5.0" },
+    generator: { name: "build-bundle.mjs", version: "1.6.0" },
     ruleset,
     lorebook: {
       name: lb.name,
@@ -171,6 +172,15 @@ function buildBundle(dir) {
     bundle.additionalAgents.push(transformerAgent);
   }
 
+  /* Vector 8: scenario default (NON-persona). When present the engine
+     reads it via chatMeta.groupScenarioText override. Per-chat
+     auto-install deferred to next session — tonight the bundle just
+     ships the string. */
+  const scenarioDefault = buildScenarioDefault(ruleset);
+  if (typeof scenarioDefault === "string" && scenarioDefault.trim()) {
+    bundle.scenarioDefault = scenarioDefault;
+  }
+
   const outPath = join(dir, "bundle.json");
   writeFileSync(outPath, JSON.stringify(bundle, null, 2) + "\n");
   return {
@@ -180,7 +190,8 @@ function buildBundle(dir) {
     derivedCount: derivedFiltered.length,
     regexCount: (bundle.regexScripts || []).length,
     toolCount: (bundle.customTools || []).length,
-    addAgentCount: (bundle.additionalAgents || []).length
+    addAgentCount: (bundle.additionalAgents || []).length,
+    scenarioBytes: (bundle.scenarioDefault || "").length
   };
 }
 
@@ -204,8 +215,8 @@ if (args[0] === "--all") {
 let failed = 0;
 for (const dir of dirs) {
   try {
-    const { outPath, entryCount, handAuthoredCount, derivedCount, regexCount, toolCount, addAgentCount } = buildBundle(dir);
-    console.log("PASS " + basename(dir) + " -> " + outPath + " (" + entryCount + " entries [" + handAuthoredCount + " hand + " + derivedCount + " derived], " + regexCount + " regex scripts, " + toolCount + " custom tools, " + addAgentCount + " add'l agents)");
+    const { outPath, entryCount, handAuthoredCount, derivedCount, regexCount, toolCount, addAgentCount, scenarioBytes } = buildBundle(dir);
+    console.log("PASS " + basename(dir) + " -> " + outPath + " (" + entryCount + " entries [" + handAuthoredCount + " hand + " + derivedCount + " derived], " + regexCount + " regex scripts, " + toolCount + " custom tools, " + addAgentCount + " add'l agents, " + scenarioBytes + " scenario bytes)");
   } catch (e) {
     console.error("FAIL " + basename(dir) + " — " + e.message);
     failed++;
