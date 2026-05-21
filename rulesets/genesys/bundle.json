@@ -1,0 +1,1095 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.4.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.6.0"
+  },
+  "ruleset": {
+    "id": "genesys",
+    "name": "Genesys",
+    "version": "0.1.0",
+    "edition": "Genesys Core Rulebook (Fantasy Flight Games, 2017)",
+    "license": "Original mechanics references only; trademarked terms (Genesys narrative dice, talent names) belong to Fantasy Flight Games / Edge Studio. No verbatim rulebook text reproduced.",
+    "summary": "Generic narrative-dice system from Fantasy Flight Games. Six custom symbol dice (Boost / Setback / Ability / Difficulty / Proficiency / Challenge) generate Success, Failure, Advantage, Threat, Triumph, and Despair symbols whose interpretation drives narration.",
+    "header": {
+      "raceLabel": "Species",
+      "classLabel": "Career"
+    },
+    "dice": {
+      "type": "d6",
+      "notation": "Genesys narrative dice (Boost/Setback/Ability/Difficulty/Proficiency/Challenge) — AI interprets"
+    },
+    "resolution": {
+      "mode": "narrative-handled",
+      "description": "Genesys uses six custom symbol dice. The pool is built per check: Ability dice (d8, green) from the linked Characteristic, upgraded to Proficiency dice (d12, yellow) by skill ranks; Difficulty dice (d8, purple) from check difficulty, upgraded to Challenge dice (d12, red) by setbacks. Boost dice (d6, blue) from advantageous circumstances and Setback dice (d6, black) from disadvantage roll alongside. Results generate Success/Failure (cancel pairwise), Advantage/Threat (cancel pairwise — independent of pass/fail), Triumph (auto-success + free narrative perk), and Despair (auto-failure-or-cost + free narrative complication). The GM narrates from the surviving symbols. The dice widget runs in manual NdX mode — see the GM agent prompt + lorebook for full symbol interpretation.",
+      "noticeText": "Genesys uses narrative dice — see the gm-agent for symbol interpretation. The widget is manual."
+    },
+    "attributes": [
+      {
+        "name": "Brawn",
+        "abbreviation": "BRN",
+        "group": "Physical",
+        "min": 1,
+        "max": 6,
+        "default": 2,
+        "description": "Raw strength and toughness. Soak, melee damage, wound threshold."
+      },
+      {
+        "name": "Agility",
+        "abbreviation": "AGI",
+        "group": "Physical",
+        "min": 1,
+        "max": 6,
+        "default": 2,
+        "description": "Hand-eye coordination, dexterity, reflexes. Ranged attacks and finesse."
+      },
+      {
+        "name": "Intellect",
+        "abbreviation": "INT",
+        "group": "Mental",
+        "min": 1,
+        "max": 6,
+        "default": 2,
+        "description": "Reasoning, knowledge, lore retrieval. Used for Knowledge skills and Education."
+      },
+      {
+        "name": "Cunning",
+        "abbreviation": "CUN",
+        "group": "Mental",
+        "min": 1,
+        "max": 6,
+        "default": 2,
+        "description": "Practical intelligence, awareness, deceit, survival instinct."
+      },
+      {
+        "name": "Willpower",
+        "abbreviation": "WIL",
+        "group": "Mental",
+        "min": 1,
+        "max": 6,
+        "default": 2,
+        "description": "Mental fortitude, resolve, faith. Discipline and strain threshold."
+      },
+      {
+        "name": "Presence",
+        "abbreviation": "PRE",
+        "group": "Social",
+        "min": 1,
+        "max": 6,
+        "default": 2,
+        "description": "Force of personality, charm, leadership. Social skills."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Astrocartography",
+        "description": "Reading star charts, navigating hyperspace lanes (sci-fi setting).",
+        "linkedAttribute": "Intellect"
+      },
+      {
+        "name": "Athletics",
+        "description": "Climbing, swimming, jumping, running.",
+        "linkedAttribute": "Brawn"
+      },
+      {
+        "name": "Brawl",
+        "description": "Unarmed combat.",
+        "linkedAttribute": "Brawn"
+      },
+      {
+        "name": "Charm",
+        "description": "Friendly persuasion, flattery, putting people at ease.",
+        "linkedAttribute": "Presence"
+      },
+      {
+        "name": "Coercion",
+        "description": "Intimidation, threats.",
+        "linkedAttribute": "Willpower"
+      },
+      {
+        "name": "Computers",
+        "description": "Programming, hacking, slicing.",
+        "linkedAttribute": "Intellect"
+      },
+      {
+        "name": "Cool",
+        "description": "Initiative when prepared; keeping a level head in tension.",
+        "linkedAttribute": "Presence"
+      },
+      {
+        "name": "Coordination",
+        "description": "Acrobatics, balance, dexterity feats.",
+        "linkedAttribute": "Agility"
+      },
+      {
+        "name": "Deception",
+        "description": "Lying, disguises, misdirection.",
+        "linkedAttribute": "Cunning"
+      },
+      {
+        "name": "Discipline",
+        "description": "Mental defense, resisting fear, recovering strain.",
+        "linkedAttribute": "Willpower"
+      },
+      {
+        "name": "Driving",
+        "description": "Ground vehicles.",
+        "linkedAttribute": "Agility"
+      },
+      {
+        "name": "Education",
+        "description": "Formal academic knowledge — history, sciences.",
+        "linkedAttribute": "Intellect"
+      },
+      {
+        "name": "Leadership",
+        "description": "Commanding allies, rallying, inspiring.",
+        "linkedAttribute": "Presence"
+      },
+      {
+        "name": "Lore",
+        "description": "Esoteric / occult / mythic knowledge (fantasy setting).",
+        "linkedAttribute": "Intellect"
+      },
+      {
+        "name": "Mechanics",
+        "description": "Repairing, modifying, building machinery.",
+        "linkedAttribute": "Intellect"
+      },
+      {
+        "name": "Medicine",
+        "description": "Healing wounds, diagnosing illness.",
+        "linkedAttribute": "Intellect"
+      },
+      {
+        "name": "Melee",
+        "description": "Armed melee combat (swords, axes, polearms).",
+        "linkedAttribute": "Brawn"
+      },
+      {
+        "name": "Negotiation",
+        "description": "Diplomatic bargaining, business, treaty work.",
+        "linkedAttribute": "Presence"
+      },
+      {
+        "name": "Operating",
+        "description": "Crewed industrial / military equipment — tanks, walkers, heavy weapons.",
+        "linkedAttribute": "Intellect"
+      },
+      {
+        "name": "Perception",
+        "description": "Active senses, scanning a room, noticing details.",
+        "linkedAttribute": "Cunning"
+      },
+      {
+        "name": "Piloting",
+        "description": "Aircraft, starships, watercraft.",
+        "linkedAttribute": "Agility"
+      },
+      {
+        "name": "Ranged (Heavy)",
+        "description": "Rifles, bows, heavy weapons.",
+        "linkedAttribute": "Agility"
+      },
+      {
+        "name": "Ranged (Light)",
+        "description": "Pistols, hand-thrown weapons, small ranged.",
+        "linkedAttribute": "Agility"
+      },
+      {
+        "name": "Resilience",
+        "description": "Enduring environment, fatigue, hunger.",
+        "linkedAttribute": "Brawn"
+      },
+      {
+        "name": "Riding",
+        "description": "Mounted beasts.",
+        "linkedAttribute": "Agility"
+      },
+      {
+        "name": "Skulduggery",
+        "description": "Stealing, picking locks, sleight of hand.",
+        "linkedAttribute": "Cunning"
+      },
+      {
+        "name": "Stealth",
+        "description": "Sneaking, hiding.",
+        "linkedAttribute": "Agility"
+      },
+      {
+        "name": "Streetwise",
+        "description": "Urban underworld knowledge, fences, contacts.",
+        "linkedAttribute": "Cunning"
+      },
+      {
+        "name": "Survival",
+        "description": "Wilderness travel, foraging, tracking.",
+        "linkedAttribute": "Cunning"
+      },
+      {
+        "name": "Vigilance",
+        "description": "Initiative when ambushed; passive alertness.",
+        "linkedAttribute": "Willpower"
+      },
+      {
+        "name": "Warfare",
+        "description": "Tactics, strategy, military doctrine.",
+        "linkedAttribute": "Intellect"
+      }
+    ],
+    "difficulties": {
+      "Simple": {
+        "threshold": 0,
+        "description": "No roll needed. Don't bother."
+      },
+      "Easy": {
+        "threshold": 1,
+        "description": "1 purple Difficulty die."
+      },
+      "Average": {
+        "threshold": 2,
+        "description": "2 purple Difficulty dice."
+      },
+      "Hard": {
+        "threshold": 3,
+        "description": "3 purple Difficulty dice."
+      },
+      "Daunting": {
+        "threshold": 4,
+        "description": "4 purple Difficulty dice."
+      },
+      "Formidable": {
+        "threshold": 5,
+        "description": "5 purple Difficulty dice."
+      }
+    },
+    "derivedStats": [
+      {
+        "name": "Wound Threshold",
+        "formula": "Brawn + species bonus (typically 10-12 for PCs).",
+        "default": 12,
+        "max": 30,
+        "renderAs": "value",
+        "aliases": [
+          "wt",
+          "WT",
+          "woundThreshold"
+        ]
+      },
+      {
+        "name": "Strain Threshold",
+        "formula": "Willpower + species bonus (typically 10-12 for PCs).",
+        "default": 12,
+        "max": 30,
+        "renderAs": "value",
+        "aliases": [
+          "st",
+          "ST",
+          "strainThreshold"
+        ]
+      },
+      {
+        "name": "Soak",
+        "formula": "Brawn + armor soak.",
+        "default": 2,
+        "max": 20,
+        "renderAs": "value",
+        "aliases": [
+          "soak"
+        ]
+      },
+      {
+        "name": "Defense (Melee)",
+        "formula": "From armor / cover / talents. Adds purple Difficulty dice to enemy attacks.",
+        "default": 0,
+        "max": 6,
+        "renderAs": "value"
+      },
+      {
+        "name": "Defense (Ranged)",
+        "formula": "From armor / cover / talents. Adds purple Difficulty dice to ranged attacks.",
+        "default": 0,
+        "max": 6,
+        "renderAs": "value"
+      }
+    ],
+    "resources": [
+      {
+        "id": "wounds",
+        "label": "Wounds",
+        "type": "bar",
+        "max": "{Wound Threshold}",
+        "current": 0,
+        "color": "bad",
+        "quickButtons": [
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "+5",
+            "delta": 5
+          },
+          {
+            "label": "Heal",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "strain",
+        "label": "Strain",
+        "type": "bar",
+        "max": "{Strain Threshold}",
+        "current": 0,
+        "color": "warn",
+        "quickButtons": [
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Recover",
+            "delta": -1
+          }
+        ]
+      },
+      {
+        "id": "story-points",
+        "label": "Story Points",
+        "type": "counter",
+        "max": 5,
+        "current": 1,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "Spend",
+            "delta": -1
+          },
+          {
+            "label": "Earn",
+            "delta": 1
+          }
+        ]
+      }
+    ],
+    "scenarioDefaultDerive": true,
+    "vocabularyHints": [
+      {
+        "pattern": "I attack with my weapon",
+        "hint": "In Genesys, melee attacks roll Brawn + Melee skill; ranged attacks roll Agility + Ranged. Difficulty starts Average (2 purple) and is upgraded by Defense + setbacks. Note Triumph (auto-success + free perk) and Despair (auto-fail-or-cost) on the result."
+      },
+      {
+        "pattern": "I take a Maneuver / I aim / I take cover",
+        "hint": "In Genesys, a Maneuver is an action sub-step that does NOT roll dice — Aim adds a Boost die to next attack; Cover adds 1 Setback to enemy attacks. Note which maneuver the player declared."
+      },
+      {
+        "pattern": "I spend a Story Point",
+        "hint": "Player flips a Light-side Story Point to Dark for an upgrade (Ability → Proficiency die OR downgrade enemy's Proficiency → Ability die). Update the Story Points counter on the sheet."
+      },
+      {
+        "pattern": "I roll Perception / Vigilance for initiative",
+        "hint": "In Genesys, Cool is initiative when the PC was prepared; Vigilance is initiative when ambushed. The GM should pick which based on scene framing, not auto-select."
+      },
+      {
+        "pattern": "I recover from strain",
+        "hint": "Strain recovery: at end of an encounter, roll Discipline check; successes recover that much strain. Cool/Resilience can recover too in specific contexts."
+      }
+    ]
+  },
+  "lorebook": {
+    "name": "Genesys core reference",
+    "description": "Keyword-triggered ruleset reference for Genesys narrative-dice play.",
+    "category": "world",
+    "scanDepth": 5,
+    "tokenBudget": 1800,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "name": "Mechanic: narrative dice symbols",
+        "keys": [
+          "success",
+          "failure",
+          "advantage",
+          "threat",
+          "triumph",
+          "despair",
+          "boost",
+          "setback",
+          "ability",
+          "difficulty",
+          "proficiency",
+          "challenge",
+          "narrative dice",
+          "symbols"
+        ],
+        "content": "Genesys narrative-dice symbols and their resolution.\n\n**Success** vs **Failure**: cancel pairwise. Net successes ≥1 → the action's primary outcome happens.\n**Advantage** vs **Threat**: cancel pairwise. Independent of pass/fail. Net Advantage = free narrative perk for the PC (recover strain, give boost to ally, useful detail discovered). Net Threat = free complication for the GM (lose ammo, strained, weapon malfunction, scene complication).\n**Triumph**: a Triumph counts as a Success AND is uncancellable. Each Triumph = significant narrative perk (critical hit, lasting advantage, plot opportunity).\n**Despair**: a Despair counts as a Failure AND is uncancellable. Each Despair = significant narrative complication (weapon broken, alarm raised, ally hit, scene goes wrong).\n\nDice colors at a glance: BLUE Boost (advantageous, d6 narrow faces), BLACK Setback (disadvantageous, d6 narrow faces), GREEN Ability (skill, d8), YELLOW Proficiency (skill rank upgraded, d12), PURPLE Difficulty (challenge level, d8), RED Challenge (Difficulty upgraded by setback, d12).",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: skill check pool assembly",
+        "keys": [
+          "skill check",
+          "rolling",
+          "make a check",
+          "test",
+          "check"
+        ],
+        "content": "Step 1: Pick the relevant skill and its linked characteristic. Step 2: Build the Ability pool — count = MAX(characteristic, skill ranks); upgrade Ability → Proficiency dice equal to MIN(characteristic, skill ranks). Step 3: GM sets Difficulty dice based on check Difficulty (Easy=1, Average=2, Hard=3, Daunting=4, Formidable=5); upgrade Difficulty → Challenge dice equal to enemy's relevant skill ranks (opposed checks) or environmental setback level. Step 4: Add Boost dice for advantages (Aim, ally help, good gear). Add Setback dice for disadvantages (poor lighting, distraction, light cover). Step 5: Roll the whole pool; resolve symbols.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Story Points",
+        "keys": [
+          "story point",
+          "story points",
+          "light side",
+          "dark side"
+        ],
+        "content": "Group resource. Players have N Light-side points; GM has the inverted pool of Dark-side. Spending: flip a Light → Dark to upgrade an Ability die to Proficiency on your own check, OR downgrade an enemy's Proficiency to Ability. GM does the inverse with Dark-side. Each spend flips one point. Group starts with PCs-count Light + 1 Dark; some careers/talents adjust starting count.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Wounds and Strain (twin tracks)",
+        "keys": [
+          "wound",
+          "wounds",
+          "strain",
+          "incapacitated",
+          "knocked out"
+        ],
+        "content": "Wounds = physical damage. Each Wound = 1 point against Wound Threshold (Brawn + species). At threshold, PC is incapacitated and rolls on the Critical Injury table.\nStrain = mental / fatigue. Each Strain = 1 point against Strain Threshold (Willpower + species). At threshold, PC is knocked unconscious. Strain can be voluntary-spent for extra maneuvers (1 per turn beyond the first free one costs 2 strain; up to 1 voluntary per turn).\nRecovery: Wounds heal slowly with rest/medicine. Strain recovers at encounter end (Discipline check) or with talents.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Initiative (Cool vs Vigilance)",
+        "keys": [
+          "initiative",
+          "cool",
+          "vigilance",
+          "ambush",
+          "surprise"
+        ],
+        "content": "Genesys uses TWO initiative skills depending on scene framing:\n- **Cool** = initiative when the PC was PREPARED for trouble (entered combat by choice, scouting first, etc.).\n- **Vigilance** = initiative when AMBUSHED (didn't see it coming).\nGM picks. Both roll the pool against zero Difficulty; successes order the turn lineup. NPCs roll the same way. Initiative slots are PC vs NPC — once turns are assigned, ANY player can take a PC slot on their team's turn (flexible turn order within sides).",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Maneuvers, Actions, Incidental",
+        "keys": [
+          "maneuver",
+          "action",
+          "incidental",
+          "turn structure"
+        ],
+        "content": "Per turn structure: 1 Action + 1 Maneuver (+1 more Maneuver by spending 2 Strain OR 2 Advantages from another check) + unlimited Incidentals (a Word, a quick look). Action = the check you roll (attack, skill check). Maneuvers do NOT roll: Aim (+Boost to next combat check), Move (1 range band), Take cover (+Setback to enemies), Draw weapon, Reload, Interact with object, etc.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: range bands (no grid)",
+        "keys": [
+          "range",
+          "engaged",
+          "short",
+          "medium",
+          "long",
+          "extreme"
+        ],
+        "content": "Genesys does NOT use grids or feet. Range is abstract:\n- **Engaged**: adjacent, melee range. 1 Maneuver to leave Engaged.\n- **Short**: a few steps away. Pistol's home range.\n- **Medium**: across a room.\n- **Long**: across a courtyard / open ground. Rifle range.\n- **Extreme**: very far; long rifle, scoped, generally requires Aim.\nWeapons declare their effective range band; firing beyond it adds Difficulty.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Critical Injuries",
+        "keys": [
+          "critical",
+          "critical injury",
+          "crit",
+          "lasting damage"
+        ],
+        "content": "A weapon with a Critical rating activates by spending Advantages on a hit. Cost = weapon's Crit rating (e.g. 3 means 3 Advantages). Roll d100 + 10 per existing Critical the target has; cross-reference Critical Injury table (Easy injury, Average injury, Hard injury, Daunting injury) for lasting effect. Triumph on the attack roll automatically activates a Critical at base cost.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Talents (career-driven)",
+        "keys": [
+          "talent",
+          "talents",
+          "career",
+          "talent tree",
+          "specialization"
+        ],
+        "content": "Talents are bought with XP, organized in a per-career talent tree. Each tier (1-5) costs 5 XP × tier per talent. Talents range from passive bonuses (+1 Soak) to active abilities (spend 2 Strain to add Boost to allies' next check). The talent tree shape encodes career identity. The character sheet's Career field selects which tree the player is buying into.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Obligation / Duty / Favor (setting flavor)",
+        "keys": [
+          "obligation",
+          "duty",
+          "favor",
+          "favors"
+        ],
+        "content": "Genesys settings often add a long-term motivation track per character — Obligation (debt, family, addiction) for gritty / criminal settings, Duty (loyalty score) for military, Favor (social capital) for political. Track starts at ~5-20 per character; goes up/down with story choices. At session start, roll d100 — if the result is within someone's Obligation/Duty value, that PC's track triggers and shapes the session's tension or opportunity.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: spending Advantage and Threat in combat",
+        "keys": [
+          "spend advantage",
+          "spend threat",
+          "advantage spend",
+          "threat spend"
+        ],
+        "content": "Common Advantage spends (PC-favoring): activate critical injury (cost = weapon Crit), recover 1 Strain (1 Adv), add Boost to next ally's check (1 Adv), give Boost to next own check (1 Adv), inflict 1 Strain on target (2 Adv), disarm target (3 Adv), perform a free Maneuver (2 Adv).\nCommon Threat spends (GM): inflict 1 Strain on PC (1 Threat), PC's weapon loses an ammo/charge (1), PC drops or fumbles (2), opponent's next check gets a Boost (1), scene complication (2-3 Threat).",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: social encounters",
+        "keys": [
+          "social",
+          "negotiation",
+          "persuade",
+          "charm",
+          "coerce",
+          "social conflict"
+        ],
+        "content": "Social conflicts use Strain as the resource (not Wounds). The 'attacker' rolls Charm / Negotiation / Coercion; success reduces target's Strain toward unconsciousness (= social defeat — they agree, retreat, capitulate). Advantage = surface relationship details, get the other party to reveal motivations. Triumph = pivotal concession (a secret divulged, an oath sworn). Despair = relationship break (you've insulted them; they will not forgive easily).",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: magic (setting-specific)",
+        "keys": [
+          "magic",
+          "spell",
+          "casting",
+          "arcane",
+          "rune"
+        ],
+        "content": "Genesys is system-agnostic — magic exists when the setting includes it. The Realms of Terrinoth setting (FFG's published fantasy framework) uses a 'select a spell effect, then add Effects (range, target, damage type) by adding Difficulty' style — each Effect raises the check Difficulty and may cost Strain. Without a setting, the GM improvises. The GM agent should signal which magic system (if any) is in play.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: vehicle combat",
+        "keys": [
+          "vehicle",
+          "ship",
+          "starship",
+          "speeder",
+          "chase"
+        ],
+        "content": "Vehicles have their own Wounds / System Strain / Defense / Speed. Combat happens at the vehicle scale — characters inside roll Piloting/Gunnery/Computers/Mechanics, not personal skills. Chases use vehicle Speed as the resource: pursuer vs target Piloting check; net Successes = closing range bands. Vehicle weapons typically inflict 1 wound vs personal scale = 10 wounds vs vehicle scale (silhouette difference).",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: silhouette and scale",
+        "keys": [
+          "silhouette",
+          "scale",
+          "personal scale",
+          "vehicle scale"
+        ],
+        "content": "Targets and weapons have a Silhouette (sil) from 0 (mouse) through 1 (PC) to 9 (starship). When sil-1 weapon hits sil-5 target, only Triumph-level damage matters. Reverse: starship weapons against PCs = bad day. The GM should call out when a silhouette mismatch makes a check trivial or impossible.",
+        "position": 0
+      },
+      {
+        "name": "Attribute: Brawn (BRN)",
+        "keys": [
+          "Brawn",
+          "BRN"
+        ],
+        "content": "Genesys attribute. Brawn (BRN) [Physical] — Raw strength and toughness. Soak, melee damage, wound threshold.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Agility (AGI)",
+        "keys": [
+          "Agility",
+          "AGI"
+        ],
+        "content": "Genesys attribute. Agility (AGI) [Physical] — Hand-eye coordination, dexterity, reflexes. Ranged attacks and finesse.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intellect (INT)",
+        "keys": [
+          "Intellect",
+          "INT"
+        ],
+        "content": "Genesys attribute. Intellect (INT) [Mental] — Reasoning, knowledge, lore retrieval. Used for Knowledge skills and Education.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Cunning (CUN)",
+        "keys": [
+          "Cunning",
+          "CUN"
+        ],
+        "content": "Genesys attribute. Cunning (CUN) [Mental] — Practical intelligence, awareness, deceit, survival instinct.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Willpower (WIL)",
+        "keys": [
+          "Willpower",
+          "WIL"
+        ],
+        "content": "Genesys attribute. Willpower (WIL) [Mental] — Mental fortitude, resolve, faith. Discipline and strain threshold.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Presence (PRE)",
+        "keys": [
+          "Presence",
+          "PRE"
+        ],
+        "content": "Genesys attribute. Presence (PRE) [Social] — Force of personality, charm, leadership. Social skills.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Astrocartography",
+        "keys": [
+          "Astrocartography"
+        ],
+        "content": "Genesys skill. Astrocartography. Reading star charts, navigating hyperspace lanes (sci-fi setting).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Athletics",
+        "keys": [
+          "Athletics"
+        ],
+        "content": "Genesys skill. Athletics. Climbing, swimming, jumping, running.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Brawl",
+        "keys": [
+          "Brawl"
+        ],
+        "content": "Genesys skill. Brawl. Unarmed combat.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Charm",
+        "keys": [
+          "Charm"
+        ],
+        "content": "Genesys skill. Charm. Friendly persuasion, flattery, putting people at ease.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Coercion",
+        "keys": [
+          "Coercion"
+        ],
+        "content": "Genesys skill. Coercion. Intimidation, threats.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Computers",
+        "keys": [
+          "Computers"
+        ],
+        "content": "Genesys skill. Computers. Programming, hacking, slicing.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Cool",
+        "keys": [
+          "Cool"
+        ],
+        "content": "Genesys skill. Cool. Initiative when prepared; keeping a level head in tension.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Coordination",
+        "keys": [
+          "Coordination"
+        ],
+        "content": "Genesys skill. Coordination. Acrobatics, balance, dexterity feats.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Deception",
+        "keys": [
+          "Deception"
+        ],
+        "content": "Genesys skill. Deception. Lying, disguises, misdirection.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Discipline",
+        "keys": [
+          "Discipline"
+        ],
+        "content": "Genesys skill. Discipline. Mental defense, resisting fear, recovering strain.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Driving",
+        "keys": [
+          "Driving"
+        ],
+        "content": "Genesys skill. Driving. Ground vehicles.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Education",
+        "keys": [
+          "Education"
+        ],
+        "content": "Genesys skill. Education. Formal academic knowledge — history, sciences.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Leadership",
+        "keys": [
+          "Leadership"
+        ],
+        "content": "Genesys skill. Leadership. Commanding allies, rallying, inspiring.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Lore",
+        "keys": [
+          "Lore"
+        ],
+        "content": "Genesys skill. Lore. Esoteric / occult / mythic knowledge (fantasy setting).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Mechanics",
+        "keys": [
+          "Mechanics"
+        ],
+        "content": "Genesys skill. Mechanics. Repairing, modifying, building machinery.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Medicine",
+        "keys": [
+          "Medicine"
+        ],
+        "content": "Genesys skill. Medicine. Healing wounds, diagnosing illness.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Melee",
+        "keys": [
+          "Melee"
+        ],
+        "content": "Genesys skill. Melee. Armed melee combat (swords, axes, polearms).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Negotiation",
+        "keys": [
+          "Negotiation"
+        ],
+        "content": "Genesys skill. Negotiation. Diplomatic bargaining, business, treaty work.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Operating",
+        "keys": [
+          "Operating"
+        ],
+        "content": "Genesys skill. Operating. Crewed industrial / military equipment — tanks, walkers, heavy weapons.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Perception",
+        "keys": [
+          "Perception"
+        ],
+        "content": "Genesys skill. Perception. Active senses, scanning a room, noticing details.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Piloting",
+        "keys": [
+          "Piloting"
+        ],
+        "content": "Genesys skill. Piloting. Aircraft, starships, watercraft.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Ranged (Heavy)",
+        "keys": [
+          "Ranged (Heavy)"
+        ],
+        "content": "Genesys skill. Ranged (Heavy). Rifles, bows, heavy weapons.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Ranged (Light)",
+        "keys": [
+          "Ranged (Light)"
+        ],
+        "content": "Genesys skill. Ranged (Light). Pistols, hand-thrown weapons, small ranged.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Resilience",
+        "keys": [
+          "Resilience"
+        ],
+        "content": "Genesys skill. Resilience. Enduring environment, fatigue, hunger.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Riding",
+        "keys": [
+          "Riding"
+        ],
+        "content": "Genesys skill. Riding. Mounted beasts.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Skulduggery",
+        "keys": [
+          "Skulduggery"
+        ],
+        "content": "Genesys skill. Skulduggery. Stealing, picking locks, sleight of hand.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Genesys skill. Stealth. Sneaking, hiding.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Streetwise",
+        "keys": [
+          "Streetwise"
+        ],
+        "content": "Genesys skill. Streetwise. Urban underworld knowledge, fences, contacts.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "Genesys skill. Survival. Wilderness travel, foraging, tracking.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Vigilance",
+        "keys": [
+          "Vigilance"
+        ],
+        "content": "Genesys skill. Vigilance. Initiative when ambushed; passive alertness.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Warfare",
+        "keys": [
+          "Warfare"
+        ],
+        "content": "Genesys skill. Warfare. Tactics, strategy, military doctrine.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Wound Threshold",
+        "keys": [
+          "Wound Threshold"
+        ],
+        "content": "Genesys derived stat. Wound Threshold — formula: Brawn + species bonus (typically 10-12 for PCs).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Strain Threshold",
+        "keys": [
+          "Strain Threshold"
+        ],
+        "content": "Genesys derived stat. Strain Threshold — formula: Willpower + species bonus (typically 10-12 for PCs).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak",
+        "keys": [
+          "Soak"
+        ],
+        "content": "Genesys derived stat. Soak — formula: Brawn + armor soak.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Defense (Melee)",
+        "keys": [
+          "Defense (Melee)"
+        ],
+        "content": "Genesys derived stat. Defense (Melee) — formula: From armor / cover / talents. Adds purple Difficulty dice to enemy attacks.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Defense (Ranged)",
+        "keys": [
+          "Defense (Ranged)"
+        ],
+        "content": "Genesys derived stat. Defense (Ranged) — formula: From armor / cover / talents. Adds purple Difficulty dice to ranged attacks.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Genesys difficulty ladder. Threshold values needed for success:\n- Simple (threshold 0) — No roll needed. Don't bother.\n- Easy (threshold 1) — 1 purple Difficulty die.\n- Average (threshold 2) — 2 purple Difficulty dice.\n- Hard (threshold 3) — 3 purple Difficulty dice.\n- Daunting (threshold 4) — 4 purple Difficulty dice.\n- Formidable (threshold 5) — 5 purple Difficulty dice.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      }
+    ]
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Genesys surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s+(\\d+)\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → Genesys difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "genesys_reference",
+      "description": "Returns canonical Genesys reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Genesys — canonical reference\n\nGeneric narrative-dice system from Fantasy Flight Games. Six custom symbol dice (Boost / Setback / Ability / Difficulty / Proficiency / Challenge) generate Success, Failure, Advantage, Threat, Triumph, and Despair symbols whose interpretation drives narration.\n\n## Dice\n- Type: `d6`\n- Notation: `Genesys narrative dice (Boost/Setback/Ability/Difficulty/Proficiency/Challenge) — AI interprets`\n\n## Resolution\n- Mode: `narrative-handled`\n\n## Difficulty ladder\n- **Simple** (threshold 0) — No roll needed. Don't bother.\n- **Easy** (threshold 1) — 1 purple Difficulty die.\n- **Average** (threshold 2) — 2 purple Difficulty dice.\n- **Hard** (threshold 3) — 3 purple Difficulty dice.\n- **Daunting** (threshold 4) — 4 purple Difficulty dice.\n- **Formidable** (threshold 5) — 5 purple Difficulty dice.\n\n## Attributes\n- **Brawn** (BRN) [Physical] — Raw strength and toughness. Soak, melee damage, wound threshold.\n- **Agility** (AGI) [Physical] — Hand-eye coordination, dexterity, reflexes. Ranged attacks and finesse.\n- **Intellect** (INT) [Mental] — Reasoning, knowledge, lore retrieval. Used for Knowledge skills and Education.\n- **Cunning** (CUN) [Mental] — Practical intelligence, awareness, deceit, survival instinct.\n- **Willpower** (WIL) [Mental] — Mental fortitude, resolve, faith. Discipline and strain threshold.\n- **Presence** (PRE) [Social] — Force of personality, charm, leadership. Social skills.\n\n## Skills\n- **Astrocartography** — Reading star charts, navigating hyperspace lanes (sci-fi setting).\n- **Athletics** — Climbing, swimming, jumping, running.\n- **Brawl** — Unarmed combat.\n- **Charm** — Friendly persuasion, flattery, putting people at ease.\n- **Coercion** — Intimidation, threats.\n- **Computers** — Programming, hacking, slicing.\n- **Cool** — Initiative when prepared; keeping a level head in tension.\n- **Coordination** — Acrobatics, balance, dexterity feats.\n- **Deception** — Lying, disguises, misdirection.\n- **Discipline** — Mental defense, resisting fear, recovering strain.\n- **Driving** — Ground vehicles.\n- **Education** — Formal academic knowledge — history, sciences.\n- **Leadership** — Commanding allies, rallying, inspiring.\n- **Lore** — Esoteric / occult / mythic knowledge (fantasy setting).\n- **Mechanics** — Repairing, modifying, building machinery.\n- **Medicine** — Healing wounds, diagnosing illness.\n- **Melee** — Armed melee combat (swords, axes, polearms).\n- **Negotiation** — Diplomatic bargaining, business, treaty work.\n- **Operating** — Crewed industrial / military equipment — tanks, walkers, heavy weapons.\n- **Perception** — Active senses, scanning a room, noticing details.\n- **Piloting** — Aircraft, starships, watercraft.\n- **Ranged (Heavy)** — Rifles, bows, heavy weapons.\n- **Ranged (Light)** — Pistols, hand-thrown weapons, small ranged.\n- **Resilience** — Enduring environment, fatigue, hunger.\n- **Riding** — Mounted beasts.\n- **Skulduggery** — Stealing, picking locks, sleight of hand.\n- **Stealth** — Sneaking, hiding.\n- **Streetwise** — Urban underworld knowledge, fences, contacts.\n- **Survival** — Wilderness travel, foraging, tracking.\n- **Vigilance** — Initiative when ambushed; passive alertness.\n- **Warfare** — Tactics, strategy, military doctrine.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ],
+  "additionalAgents": [
+    {
+      "role": "pre-input-transformer",
+      "name": "Genesys — Pre-Input Transformer",
+      "description": "Re-frames common player-input phrases in Genesys-native vocabulary before the narration model sees them.",
+      "phase": "pre_generation",
+      "enabled": false,
+      "promptTemplate": "# Genesys — pre-input transformer\n\nYou are a pre-generation context-injection agent for an RPG roleplay using the Genesys ruleset overlay. Your job is to read the player's most recent input and emit a SHORT annotation that re-frames common verbs and action phrases in Genesys-flavored vocabulary.\n\n## Output format\n\nEmit a context-injection block of the form:\n```\n[genesys annotation] <one-sentence re-frame, OR \"No re-frame needed.\">\n```\n\nAnnotate only when one of the recognized patterns matches the player's input. Otherwise output exactly \"No re-frame needed.\" and stop.\n\n## Recognition table\n\n| When player input matches | Re-frame guidance |\n|---|---|\n| I attack with my weapon | In Genesys, melee attacks roll Brawn + Melee skill; ranged attacks roll Agility + Ranged. Difficulty starts Average (2 purple) and is upgraded by Defense + setbacks. Note Triumph (auto-success + free perk) and Despair (auto-fail-or-cost) on the result. |\n| I take a Maneuver / I aim / I take cover | In Genesys, a Maneuver is an action sub-step that does NOT roll dice — Aim adds a Boost die to next attack; Cover adds 1 Setback to enemy attacks. Note which maneuver the player declared. |\n| I spend a Story Point | Player flips a Light-side Story Point to Dark for an upgrade (Ability → Proficiency die OR downgrade enemy's Proficiency → Ability die). Update the Story Points counter on the sheet. |\n| I roll Perception / Vigilance for initiative | In Genesys, Cool is initiative when the PC was prepared; Vigilance is initiative when ambushed. The GM should pick which based on scene framing, not auto-select. |\n| I recover from strain | Strain recovery: at end of an encounter, roll Discipline check; successes recover that much strain. Cool/Resilience can recover too in specific contexts. |\n\n## Rules\n\n- Match liberally (paraphrase / synonym OK) but never invent annotations for input that doesn't fit any row.\n- Never narrate the scene; never speak as a character; never roll dice.\n- One annotation per turn maximum. If multiple rows match, pick the most specific.\n- Keep the annotation under 25 words.",
+      "settings": {}
+    }
+  ],
+  "scenarioDefault": "This chat uses the Genesys ruleset overlay.\n\nGeneric narrative-dice system from Fantasy Flight Games. Six custom symbol dice (Boost / Setback / Ability / Difficulty / Proficiency / Challenge) generate Success, Failure, Advantage, Threat, Triumph, and Despair symbols whose interpretation drives narration.\n\nMechanics: primary die d6, notation Genesys narrative dice (Boost/Setback/Ability/Difficulty/Proficiency/Challenge) — AI interprets.\nResolution: narrative-handled.\n\nThe GM should keep narration consistent with Genesys mechanics. Refer to the lorebook entries for ruleset reference."
+}

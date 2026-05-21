@@ -1,0 +1,393 @@
+{
+  "id": "genesys",
+  "name": "Genesys",
+  "version": "0.1.0",
+  "edition": "Genesys Core Rulebook (Fantasy Flight Games, 2017)",
+  "license": "Original mechanics references only; trademarked terms (Genesys narrative dice, talent names) belong to Fantasy Flight Games / Edge Studio. No verbatim rulebook text reproduced.",
+  "summary": "Generic narrative-dice system from Fantasy Flight Games. Six custom symbol dice (Boost / Setback / Ability / Difficulty / Proficiency / Challenge) generate Success, Failure, Advantage, Threat, Triumph, and Despair symbols whose interpretation drives narration.",
+  "header": {
+    "raceLabel": "Species",
+    "classLabel": "Career"
+  },
+  "dice": {
+    "type": "d6",
+    "notation": "Genesys narrative dice (Boost/Setback/Ability/Difficulty/Proficiency/Challenge) \u2014 AI interprets"
+  },
+  "resolution": {
+    "mode": "narrative-handled",
+    "description": "Genesys uses six custom symbol dice. The pool is built per check: Ability dice (d8, green) from the linked Characteristic, upgraded to Proficiency dice (d12, yellow) by skill ranks; Difficulty dice (d8, purple) from check difficulty, upgraded to Challenge dice (d12, red) by setbacks. Boost dice (d6, blue) from advantageous circumstances and Setback dice (d6, black) from disadvantage roll alongside. Results generate Success/Failure (cancel pairwise), Advantage/Threat (cancel pairwise \u2014 independent of pass/fail), Triumph (auto-success + free narrative perk), and Despair (auto-failure-or-cost + free narrative complication). The GM narrates from the surviving symbols. The dice widget runs in manual NdX mode \u2014 see the GM agent prompt + lorebook for full symbol interpretation.",
+    "noticeText": "Genesys uses narrative dice \u2014 see the gm-agent for symbol interpretation. The widget is manual."
+  },
+  "attributes": [
+    {
+      "name": "Brawn",
+      "abbreviation": "BRN",
+      "group": "Physical",
+      "min": 1,
+      "max": 6,
+      "default": 2,
+      "description": "Raw strength and toughness. Soak, melee damage, wound threshold."
+    },
+    {
+      "name": "Agility",
+      "abbreviation": "AGI",
+      "group": "Physical",
+      "min": 1,
+      "max": 6,
+      "default": 2,
+      "description": "Hand-eye coordination, dexterity, reflexes. Ranged attacks and finesse."
+    },
+    {
+      "name": "Intellect",
+      "abbreviation": "INT",
+      "group": "Mental",
+      "min": 1,
+      "max": 6,
+      "default": 2,
+      "description": "Reasoning, knowledge, lore retrieval. Used for Knowledge skills and Education."
+    },
+    {
+      "name": "Cunning",
+      "abbreviation": "CUN",
+      "group": "Mental",
+      "min": 1,
+      "max": 6,
+      "default": 2,
+      "description": "Practical intelligence, awareness, deceit, survival instinct."
+    },
+    {
+      "name": "Willpower",
+      "abbreviation": "WIL",
+      "group": "Mental",
+      "min": 1,
+      "max": 6,
+      "default": 2,
+      "description": "Mental fortitude, resolve, faith. Discipline and strain threshold."
+    },
+    {
+      "name": "Presence",
+      "abbreviation": "PRE",
+      "group": "Social",
+      "min": 1,
+      "max": 6,
+      "default": 2,
+      "description": "Force of personality, charm, leadership. Social skills."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Astrocartography",
+      "description": "Reading star charts, navigating hyperspace lanes (sci-fi setting).",
+      "linkedAttribute": "Intellect"
+    },
+    {
+      "name": "Athletics",
+      "description": "Climbing, swimming, jumping, running.",
+      "linkedAttribute": "Brawn"
+    },
+    {
+      "name": "Brawl",
+      "description": "Unarmed combat.",
+      "linkedAttribute": "Brawn"
+    },
+    {
+      "name": "Charm",
+      "description": "Friendly persuasion, flattery, putting people at ease.",
+      "linkedAttribute": "Presence"
+    },
+    {
+      "name": "Coercion",
+      "description": "Intimidation, threats.",
+      "linkedAttribute": "Willpower"
+    },
+    {
+      "name": "Computers",
+      "description": "Programming, hacking, slicing.",
+      "linkedAttribute": "Intellect"
+    },
+    {
+      "name": "Cool",
+      "description": "Initiative when prepared; keeping a level head in tension.",
+      "linkedAttribute": "Presence"
+    },
+    {
+      "name": "Coordination",
+      "description": "Acrobatics, balance, dexterity feats.",
+      "linkedAttribute": "Agility"
+    },
+    {
+      "name": "Deception",
+      "description": "Lying, disguises, misdirection.",
+      "linkedAttribute": "Cunning"
+    },
+    {
+      "name": "Discipline",
+      "description": "Mental defense, resisting fear, recovering strain.",
+      "linkedAttribute": "Willpower"
+    },
+    {
+      "name": "Driving",
+      "description": "Ground vehicles.",
+      "linkedAttribute": "Agility"
+    },
+    {
+      "name": "Education",
+      "description": "Formal academic knowledge \u2014 history, sciences.",
+      "linkedAttribute": "Intellect"
+    },
+    {
+      "name": "Leadership",
+      "description": "Commanding allies, rallying, inspiring.",
+      "linkedAttribute": "Presence"
+    },
+    {
+      "name": "Lore",
+      "description": "Esoteric / occult / mythic knowledge (fantasy setting).",
+      "linkedAttribute": "Intellect"
+    },
+    {
+      "name": "Mechanics",
+      "description": "Repairing, modifying, building machinery.",
+      "linkedAttribute": "Intellect"
+    },
+    {
+      "name": "Medicine",
+      "description": "Healing wounds, diagnosing illness.",
+      "linkedAttribute": "Intellect"
+    },
+    {
+      "name": "Melee",
+      "description": "Armed melee combat (swords, axes, polearms).",
+      "linkedAttribute": "Brawn"
+    },
+    {
+      "name": "Negotiation",
+      "description": "Diplomatic bargaining, business, treaty work.",
+      "linkedAttribute": "Presence"
+    },
+    {
+      "name": "Operating",
+      "description": "Crewed industrial / military equipment \u2014 tanks, walkers, heavy weapons.",
+      "linkedAttribute": "Intellect"
+    },
+    {
+      "name": "Perception",
+      "description": "Active senses, scanning a room, noticing details.",
+      "linkedAttribute": "Cunning"
+    },
+    {
+      "name": "Piloting",
+      "description": "Aircraft, starships, watercraft.",
+      "linkedAttribute": "Agility"
+    },
+    {
+      "name": "Ranged (Heavy)",
+      "description": "Rifles, bows, heavy weapons.",
+      "linkedAttribute": "Agility"
+    },
+    {
+      "name": "Ranged (Light)",
+      "description": "Pistols, hand-thrown weapons, small ranged.",
+      "linkedAttribute": "Agility"
+    },
+    {
+      "name": "Resilience",
+      "description": "Enduring environment, fatigue, hunger.",
+      "linkedAttribute": "Brawn"
+    },
+    {
+      "name": "Riding",
+      "description": "Mounted beasts.",
+      "linkedAttribute": "Agility"
+    },
+    {
+      "name": "Skulduggery",
+      "description": "Stealing, picking locks, sleight of hand.",
+      "linkedAttribute": "Cunning"
+    },
+    {
+      "name": "Stealth",
+      "description": "Sneaking, hiding.",
+      "linkedAttribute": "Agility"
+    },
+    {
+      "name": "Streetwise",
+      "description": "Urban underworld knowledge, fences, contacts.",
+      "linkedAttribute": "Cunning"
+    },
+    {
+      "name": "Survival",
+      "description": "Wilderness travel, foraging, tracking.",
+      "linkedAttribute": "Cunning"
+    },
+    {
+      "name": "Vigilance",
+      "description": "Initiative when ambushed; passive alertness.",
+      "linkedAttribute": "Willpower"
+    },
+    {
+      "name": "Warfare",
+      "description": "Tactics, strategy, military doctrine.",
+      "linkedAttribute": "Intellect"
+    }
+  ],
+  "difficulties": {
+    "Simple": {
+      "threshold": 0,
+      "description": "No roll needed. Don't bother."
+    },
+    "Easy": {
+      "threshold": 1,
+      "description": "1 purple Difficulty die."
+    },
+    "Average": {
+      "threshold": 2,
+      "description": "2 purple Difficulty dice."
+    },
+    "Hard": {
+      "threshold": 3,
+      "description": "3 purple Difficulty dice."
+    },
+    "Daunting": {
+      "threshold": 4,
+      "description": "4 purple Difficulty dice."
+    },
+    "Formidable": {
+      "threshold": 5,
+      "description": "5 purple Difficulty dice."
+    }
+  },
+  "derivedStats": [
+    {
+      "name": "Wound Threshold",
+      "formula": "Brawn + species bonus (typically 10-12 for PCs).",
+      "default": 12,
+      "max": 30,
+      "renderAs": "value",
+      "aliases": [
+        "wt",
+        "WT",
+        "woundThreshold"
+      ]
+    },
+    {
+      "name": "Strain Threshold",
+      "formula": "Willpower + species bonus (typically 10-12 for PCs).",
+      "default": 12,
+      "max": 30,
+      "renderAs": "value",
+      "aliases": [
+        "st",
+        "ST",
+        "strainThreshold"
+      ]
+    },
+    {
+      "name": "Soak",
+      "formula": "Brawn + armor soak.",
+      "default": 2,
+      "max": 20,
+      "renderAs": "value",
+      "aliases": [
+        "soak"
+      ]
+    },
+    {
+      "name": "Defense (Melee)",
+      "formula": "From armor / cover / talents. Adds purple Difficulty dice to enemy attacks.",
+      "default": 0,
+      "max": 6,
+      "renderAs": "value"
+    },
+    {
+      "name": "Defense (Ranged)",
+      "formula": "From armor / cover / talents. Adds purple Difficulty dice to ranged attacks.",
+      "default": 0,
+      "max": 6,
+      "renderAs": "value"
+    }
+  ],
+  "resources": [
+    {
+      "id": "wounds",
+      "label": "Wounds",
+      "type": "bar",
+      "max": "{Wound Threshold}",
+      "current": 0,
+      "color": "bad",
+      "quickButtons": [
+        {
+          "label": "+1",
+          "delta": 1
+        },
+        {
+          "label": "+5",
+          "delta": 5
+        },
+        {
+          "label": "Heal",
+          "delta": "max"
+        }
+      ]
+    },
+    {
+      "id": "strain",
+      "label": "Strain",
+      "type": "bar",
+      "max": "{Strain Threshold}",
+      "current": 0,
+      "color": "warn",
+      "quickButtons": [
+        {
+          "label": "+1",
+          "delta": 1
+        },
+        {
+          "label": "Recover",
+          "delta": -1
+        }
+      ]
+    },
+    {
+      "id": "story-points",
+      "label": "Story Points",
+      "type": "counter",
+      "max": 5,
+      "current": 1,
+      "color": "accent",
+      "quickButtons": [
+        {
+          "label": "Spend",
+          "delta": -1
+        },
+        {
+          "label": "Earn",
+          "delta": 1
+        }
+      ]
+    }
+  ],
+  "scenarioDefaultDerive": true,
+  "vocabularyHints": [
+    {
+      "pattern": "I attack with my weapon",
+      "hint": "In Genesys, melee attacks roll Brawn + Melee skill; ranged attacks roll Agility + Ranged. Difficulty starts Average (2 purple) and is upgraded by Defense + setbacks. Note Triumph (auto-success + free perk) and Despair (auto-fail-or-cost) on the result."
+    },
+    {
+      "pattern": "I take a Maneuver / I aim / I take cover",
+      "hint": "In Genesys, a Maneuver is an action sub-step that does NOT roll dice \u2014 Aim adds a Boost die to next attack; Cover adds 1 Setback to enemy attacks. Note which maneuver the player declared."
+    },
+    {
+      "pattern": "I spend a Story Point",
+      "hint": "Player flips a Light-side Story Point to Dark for an upgrade (Ability \u2192 Proficiency die OR downgrade enemy's Proficiency \u2192 Ability die). Update the Story Points counter on the sheet."
+    },
+    {
+      "pattern": "I roll Perception / Vigilance for initiative",
+      "hint": "In Genesys, Cool is initiative when the PC was prepared; Vigilance is initiative when ambushed. The GM should pick which based on scene framing, not auto-select."
+    },
+    {
+      "pattern": "I recover from strain",
+      "hint": "Strain recovery: at end of an encounter, roll Discipline check; successes recover that much strain. Cool/Resilience can recover too in specific contexts."
+    }
+  ]
+}

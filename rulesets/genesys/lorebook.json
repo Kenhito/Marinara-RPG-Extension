@@ -1,0 +1,115 @@
+{
+  "name": "Genesys core reference",
+  "description": "Keyword-triggered ruleset reference for Genesys narrative-dice play.",
+  "category": "world",
+  "scanDepth": 5,
+  "tokenBudget": 1800,
+  "recursiveScanning": false,
+  "entries": [
+    {
+      "id": "narrative-dice-symbols",
+      "name": "Mechanic: narrative dice symbols",
+      "keys": ["success", "failure", "advantage", "threat", "triumph", "despair", "boost", "setback", "ability", "difficulty", "proficiency", "challenge", "narrative dice", "symbols"],
+      "content": "Genesys narrative-dice symbols and their resolution.\n\n**Success** vs **Failure**: cancel pairwise. Net successes ≥1 → the action's primary outcome happens.\n**Advantage** vs **Threat**: cancel pairwise. Independent of pass/fail. Net Advantage = free narrative perk for the PC (recover strain, give boost to ally, useful detail discovered). Net Threat = free complication for the GM (lose ammo, strained, weapon malfunction, scene complication).\n**Triumph**: a Triumph counts as a Success AND is uncancellable. Each Triumph = significant narrative perk (critical hit, lasting advantage, plot opportunity).\n**Despair**: a Despair counts as a Failure AND is uncancellable. Each Despair = significant narrative complication (weapon broken, alarm raised, ally hit, scene goes wrong).\n\nDice colors at a glance: BLUE Boost (advantageous, d6 narrow faces), BLACK Setback (disadvantageous, d6 narrow faces), GREEN Ability (skill, d8), YELLOW Proficiency (skill rank upgraded, d12), PURPLE Difficulty (challenge level, d8), RED Challenge (Difficulty upgraded by setback, d12).",
+      "position": 0
+    },
+    {
+      "id": "skill-check-flow",
+      "name": "Mechanic: skill check pool assembly",
+      "keys": ["skill check", "rolling", "make a check", "test", "check"],
+      "content": "Step 1: Pick the relevant skill and its linked characteristic. Step 2: Build the Ability pool — count = MAX(characteristic, skill ranks); upgrade Ability → Proficiency dice equal to MIN(characteristic, skill ranks). Step 3: GM sets Difficulty dice based on check Difficulty (Easy=1, Average=2, Hard=3, Daunting=4, Formidable=5); upgrade Difficulty → Challenge dice equal to enemy's relevant skill ranks (opposed checks) or environmental setback level. Step 4: Add Boost dice for advantages (Aim, ally help, good gear). Add Setback dice for disadvantages (poor lighting, distraction, light cover). Step 5: Roll the whole pool; resolve symbols.",
+      "position": 0
+    },
+    {
+      "id": "story-points",
+      "name": "Mechanic: Story Points",
+      "keys": ["story point", "story points", "light side", "dark side"],
+      "content": "Group resource. Players have N Light-side points; GM has the inverted pool of Dark-side. Spending: flip a Light → Dark to upgrade an Ability die to Proficiency on your own check, OR downgrade an enemy's Proficiency to Ability. GM does the inverse with Dark-side. Each spend flips one point. Group starts with PCs-count Light + 1 Dark; some careers/talents adjust starting count.",
+      "position": 0
+    },
+    {
+      "id": "wounds-strain",
+      "name": "Mechanic: Wounds and Strain (twin tracks)",
+      "keys": ["wound", "wounds", "strain", "incapacitated", "knocked out"],
+      "content": "Wounds = physical damage. Each Wound = 1 point against Wound Threshold (Brawn + species). At threshold, PC is incapacitated and rolls on the Critical Injury table.\nStrain = mental / fatigue. Each Strain = 1 point against Strain Threshold (Willpower + species). At threshold, PC is knocked unconscious. Strain can be voluntary-spent for extra maneuvers (1 per turn beyond the first free one costs 2 strain; up to 1 voluntary per turn).\nRecovery: Wounds heal slowly with rest/medicine. Strain recovers at encounter end (Discipline check) or with talents.",
+      "position": 0
+    },
+    {
+      "id": "initiative-cool-vigilance",
+      "name": "Mechanic: Initiative (Cool vs Vigilance)",
+      "keys": ["initiative", "cool", "vigilance", "ambush", "surprise"],
+      "content": "Genesys uses TWO initiative skills depending on scene framing:\n- **Cool** = initiative when the PC was PREPARED for trouble (entered combat by choice, scouting first, etc.).\n- **Vigilance** = initiative when AMBUSHED (didn't see it coming).\nGM picks. Both roll the pool against zero Difficulty; successes order the turn lineup. NPCs roll the same way. Initiative slots are PC vs NPC — once turns are assigned, ANY player can take a PC slot on their team's turn (flexible turn order within sides).",
+      "position": 0
+    },
+    {
+      "id": "maneuvers-actions",
+      "name": "Mechanic: Maneuvers, Actions, Incidental",
+      "keys": ["maneuver", "action", "incidental", "turn structure"],
+      "content": "Per turn structure: 1 Action + 1 Maneuver (+1 more Maneuver by spending 2 Strain OR 2 Advantages from another check) + unlimited Incidentals (a Word, a quick look). Action = the check you roll (attack, skill check). Maneuvers do NOT roll: Aim (+Boost to next combat check), Move (1 range band), Take cover (+Setback to enemies), Draw weapon, Reload, Interact with object, etc.",
+      "position": 0
+    },
+    {
+      "id": "range-bands",
+      "name": "Mechanic: range bands (no grid)",
+      "keys": ["range", "engaged", "short", "medium", "long", "extreme"],
+      "content": "Genesys does NOT use grids or feet. Range is abstract:\n- **Engaged**: adjacent, melee range. 1 Maneuver to leave Engaged.\n- **Short**: a few steps away. Pistol's home range.\n- **Medium**: across a room.\n- **Long**: across a courtyard / open ground. Rifle range.\n- **Extreme**: very far; long rifle, scoped, generally requires Aim.\nWeapons declare their effective range band; firing beyond it adds Difficulty.",
+      "position": 0
+    },
+    {
+      "id": "critical-injuries",
+      "name": "Mechanic: Critical Injuries",
+      "keys": ["critical", "critical injury", "crit", "lasting damage"],
+      "content": "A weapon with a Critical rating activates by spending Advantages on a hit. Cost = weapon's Crit rating (e.g. 3 means 3 Advantages). Roll d100 + 10 per existing Critical the target has; cross-reference Critical Injury table (Easy injury, Average injury, Hard injury, Daunting injury) for lasting effect. Triumph on the attack roll automatically activates a Critical at base cost.",
+      "position": 0
+    },
+    {
+      "id": "talents",
+      "name": "Mechanic: Talents (career-driven)",
+      "keys": ["talent", "talents", "career", "talent tree", "specialization"],
+      "content": "Talents are bought with XP, organized in a per-career talent tree. Each tier (1-5) costs 5 XP × tier per talent. Talents range from passive bonuses (+1 Soak) to active abilities (spend 2 Strain to add Boost to allies' next check). The talent tree shape encodes career identity. The character sheet's Career field selects which tree the player is buying into.",
+      "position": 0
+    },
+    {
+      "id": "obligation-duty-favor",
+      "name": "Mechanic: Obligation / Duty / Favor (setting flavor)",
+      "keys": ["obligation", "duty", "favor", "favors"],
+      "content": "Genesys settings often add a long-term motivation track per character — Obligation (debt, family, addiction) for gritty / criminal settings, Duty (loyalty score) for military, Favor (social capital) for political. Track starts at ~5-20 per character; goes up/down with story choices. At session start, roll d100 — if the result is within someone's Obligation/Duty value, that PC's track triggers and shapes the session's tension or opportunity.",
+      "position": 0
+    },
+    {
+      "id": "spending-advantage-threat",
+      "name": "Mechanic: spending Advantage and Threat in combat",
+      "keys": ["spend advantage", "spend threat", "advantage spend", "threat spend"],
+      "content": "Common Advantage spends (PC-favoring): activate critical injury (cost = weapon Crit), recover 1 Strain (1 Adv), add Boost to next ally's check (1 Adv), give Boost to next own check (1 Adv), inflict 1 Strain on target (2 Adv), disarm target (3 Adv), perform a free Maneuver (2 Adv).\nCommon Threat spends (GM): inflict 1 Strain on PC (1 Threat), PC's weapon loses an ammo/charge (1), PC drops or fumbles (2), opponent's next check gets a Boost (1), scene complication (2-3 Threat).",
+      "position": 0
+    },
+    {
+      "id": "social-encounters",
+      "name": "Mechanic: social encounters",
+      "keys": ["social", "negotiation", "persuade", "charm", "coerce", "social conflict"],
+      "content": "Social conflicts use Strain as the resource (not Wounds). The 'attacker' rolls Charm / Negotiation / Coercion; success reduces target's Strain toward unconsciousness (= social defeat — they agree, retreat, capitulate). Advantage = surface relationship details, get the other party to reveal motivations. Triumph = pivotal concession (a secret divulged, an oath sworn). Despair = relationship break (you've insulted them; they will not forgive easily).",
+      "position": 0
+    },
+    {
+      "id": "magic-systems-setting-specific",
+      "name": "Mechanic: magic (setting-specific)",
+      "keys": ["magic", "spell", "casting", "arcane", "rune"],
+      "content": "Genesys is system-agnostic — magic exists when the setting includes it. The Realms of Terrinoth setting (FFG's published fantasy framework) uses a 'select a spell effect, then add Effects (range, target, damage type) by adding Difficulty' style — each Effect raises the check Difficulty and may cost Strain. Without a setting, the GM improvises. The GM agent should signal which magic system (if any) is in play.",
+      "position": 0
+    },
+    {
+      "id": "vehicle-combat",
+      "name": "Mechanic: vehicle combat",
+      "keys": ["vehicle", "ship", "starship", "speeder", "chase"],
+      "content": "Vehicles have their own Wounds / System Strain / Defense / Speed. Combat happens at the vehicle scale — characters inside roll Piloting/Gunnery/Computers/Mechanics, not personal skills. Chases use vehicle Speed as the resource: pursuer vs target Piloting check; net Successes = closing range bands. Vehicle weapons typically inflict 1 wound vs personal scale = 10 wounds vs vehicle scale (silhouette difference).",
+      "position": 0
+    },
+    {
+      "id": "scaling-personal-vs-vehicle",
+      "name": "Mechanic: silhouette and scale",
+      "keys": ["silhouette", "scale", "personal scale", "vehicle scale"],
+      "content": "Targets and weapons have a Silhouette (sil) from 0 (mouse) through 1 (PC) to 9 (starship). When sil-1 weapon hits sil-5 target, only Triumph-level damage matters. Reverse: starship weapons against PCs = bad day. The GM should call out when a silhouette mismatch makes a check trivial or impossible.",
+      "position": 0
+    }
+  ]
+}
