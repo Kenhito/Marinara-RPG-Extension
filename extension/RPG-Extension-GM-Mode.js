@@ -4891,7 +4891,7 @@ function mrrP3RenderDerivedPoolCard(parent, d) {
      / under modes use their own roll widgets and don't surface a per-
      derived roll here. */
   if (typeof d.rollFormula === "string" && d.rollFormula
-      && state.ruleset.resolution && state.ruleset.resolution.mode === MODES.SINGLE) {
+      && state.ruleset.resolution && derivedRollSupported(state.ruleset.resolution.mode)) {
     var rollBtn = marinara.addElement(card, "button", {
       "class": "mrr-derived-pool-card__roll",
       textContent: "roll"
@@ -6561,14 +6561,42 @@ function quickRollForSave(save) {
   setDiceInput("equip", bonuses.value);
 }
 
+/* Resolution modes that support rolling a derived stat via `rollFormula`.
+   Centralized so the render-side button gate and the click-side handler
+   gate stay in sync. Adding a new mode here requires a matching branch
+   in `quickRollForDerived` below. */
+function derivedRollSupported(mode) {
+  return mode === MODES.SINGLE
+      || mode === MODES.UNDER
+      || mode === MODES.STANCE
+      || mode === MODES.POOL;
+}
+
 /* Quick-roll a derived stat (Initiative, Perception, etc.) when its
    `rollFormula` is declared. Evaluates the formula against the current
    stat context to produce the bonus, then opens the dice widget. */
 function quickRollForDerived(derived) {
   if (!state.ruleset) return;
   var mode = state.ruleset.resolution.mode;
-  if (mode !== MODES.SINGLE && mode !== MODES.UNDER && mode !== MODES.STANCE) return;
+  if (mode !== MODES.SINGLE && mode !== MODES.UNDER && mode !== MODES.STANCE && mode !== MODES.POOL) return;
   if (!derived || typeof derived.rollFormula !== "string" || !derived.rollFormula) return;
+  if (mode === MODES.POOL) {
+    /* Dice-pool derived rolls (Exalted Initiative as Wits + Awareness +
+       Sphere, VtM Soak as Stamina + Fortitude, etc.). The rollFormula
+       evaluates to an integer pool size; we seed the widget's `pool`
+       input and let the player roll. Equipped pool-bonuses from items
+       targeting this derived stat are folded in via the `equip` field
+       the existing dice-pool widget already exposes. */
+    var ctxP = statContext();
+    var derivedBonuses = equippedBonuses(derived.name);
+    var poolVal = evalFormula(derived.rollFormula, ctxP);
+    var poolSize = (typeof poolVal === "number" && isFinite(poolVal)) ? Math.max(0, Math.floor(poolVal)) : 0;
+    showDice(true);
+    state.diceContext = { derivedName: derived.name, base: { pool: poolSize } };
+    setDiceInput("pool",  poolSize);
+    setDiceInput("equip", derivedBonuses.dice);
+    return;
+  }
   if (mode === MODES.STANCE) {
     /* Stance-modal-pool derived rolls. The rollFormula is irrelevant — in
        L&F-style systems every roll resolves against the single stat with
@@ -7172,7 +7200,7 @@ function renderValue(parent, derived) {
        Skipped on derived without a rollFormula because there's nothing
        to roll — Hit Points, Armor Class, Speed are values, not checks. */
     if (typeof derived.rollFormula === "string" && derived.rollFormula
-        && state.ruleset.resolution && state.ruleset.resolution.mode === MODES.SINGLE) {
+        && state.ruleset.resolution && derivedRollSupported(state.ruleset.resolution.mode)) {
       var rollD = marinara.addElement(row, "button", { textContent: "roll", "class": "mrr-row__roll" });
       if (rollD) marinara.on(rollD, "click", function (e) {
         if (e && typeof e.stopPropagation === "function") e.stopPropagation();

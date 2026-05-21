@@ -264,6 +264,67 @@ If a generator can't produce what your ruleset needs, drop one of these blocks i
 | `customTools: [...]` | build-custom-tools.mjs | Generator returns the array as-is. Use to ship script-type math tools (requires `CUSTOM_TOOL_SCRIPT_ENABLED=true` on the engine), additional static reference tools, or webhook tools pointing at your own service. |
 | `lorebookExpansions: [...]` | build-lorebook-expansions.mjs | Generator returns the array as-is. Use when you want custom auto-derived entries (e.g. one entry per class, per spell school, per condition group) that the default attribute/skill/condition derivations don't cover. Hand-authored entries in `lorebook.json` still win on name conflict at merge time. |
 
+## Custom renderers (open extensibility)
+
+Some sheet UI components are pluggable per-ruleset via the `resources[]` array with `type: "custom"` and a `rendererConfig` object. The extension JS registers named renderer components (e.g. `v20-health-track`); a ruleset declares which renderer to use and supplies the config the renderer reads.
+
+**The `rendererConfig` field is intentionally open** (`additionalProperties: true` on the schema). Renderers iterate over arrays and read configured shapes — they don't hardcode counts or specific entries. That means a ruleset author can extend the configured data without touching extension code, as long as the renderer's iteration logic accommodates the variation.
+
+### Worked example: V20 → W20 wound-penalty ladder
+
+The `v20-health-track` renderer reads `rendererConfig.levels[]` and renders one box per entry, applying each entry's `penalty` when wound severity reaches that row. **The array length is not capped** — the renderer iterates `levels.forEach(...)` (see `RPG-Extension-GM-Mode.js` line 13526).
+
+V20 ships seven levels (Bruised 0 / Hurt -1 / Injured -1 / Wounded -2 / Mauled -2 / Crippled -5 / Incapacitated -99). A W20-flavored bundle that wants additional intermediate rows or a different penalty curve simply declares its own ladder:
+
+```jsonc
+{
+  "id": "w20-werewolf",
+  "name": "Werewolf: The Apocalypse 20th",
+  /* ... rest of ruleset.json ... */
+  "resources": [
+    {
+      "id": "health",
+      "label": "Health",
+      "type": "custom",
+      "rendererConfig": {
+        "component": "v20-health-track",
+        "levels": [
+          { "label": "Bruised",       "penalty":  0 },
+          { "label": "Hurt",          "penalty": -1 },
+          { "label": "Injured",       "penalty": -1 },
+          { "label": "Wounded",       "penalty": -2 },
+          { "label": "Mauled",        "penalty": -2 },
+          { "label": "Crippled",      "penalty": -5 },
+          { "label": "Crippled (W20)", "penalty": -5 },
+          { "label": "Incapacitated", "penalty": -99 }
+        ],
+        "damageTypes": [
+          { "id": "bashing",    "label": "B", "severity": 0 },
+          { "id": "lethal",     "label": "L", "severity": 1 },
+          { "id": "aggravated", "label": "A", "severity": 2 }
+        ]
+      }
+    }
+  ]
+}
+```
+
+The extra `Crippled (W20)` row renders as its own box with its own −5 penalty. Each box's tooltip uses its `label`; the wound-summary line aggregates the highest active penalty.
+
+**What you can change per ruleset without touching extension code:**
+- Number of levels (array length is unconstrained)
+- Label of each level
+- Penalty value of each level (positive penalty values are also accepted — useful for systems with bonus tiers)
+- Damage type list (the renderer iterates `damageTypes[]` the same way)
+- Severity ordering of damage types
+
+**What you can't change without extension code:**
+- The visual layout (boxes in a row with severity-stacked icons)
+- The chat-tag protocol for damage application (state-mutator parses `[mrr-state: field="bashing" delta="+3"]` with fixed field names)
+- The renderer's `component` name itself
+
+For systems whose health-track shape is fundamentally different (e.g. exhaustion levels with non-uniform effects), a new renderer component would need to be registered in extension JS — out of scope for spec-only bundle authoring.
+
 ## Bundle schema versioning + backward compat
 
 - `bundle.schema` is `"mrr-bundle"` (GM-mode) / `"mrrp-bundle"` (RP-mode). Discriminator the extension uses to route bundle vs plain ruleset paste.

@@ -508,7 +508,8 @@
         "aliases": [
           "initiative",
           "init"
-        ]
+        ],
+        "rollFormula": "{Dexterity} + {Wits}"
       },
       {
         "name": "Soak (Bashing)",

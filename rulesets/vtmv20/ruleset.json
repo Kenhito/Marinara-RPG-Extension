@@ -256,7 +256,7 @@
       "min": 0,
       "max": 5,
       "default": 0,
-      "description": "Skill. Singing, instrument, acting, dance — the art of performing for an audience. Untrained: cannot roll."
+      "description": "Skill. Singing, instrument, acting, dance \u2014 the art of performing for an audience. Untrained: cannot roll."
     },
     {
       "name": "Stealth",
@@ -312,14 +312,14 @@
       "min": 0,
       "max": 5,
       "default": 0,
-      "description": "Knowledge. Diagnosis, surgery, pharmacology — and what blood reveals. Untrained: cannot roll."
+      "description": "Knowledge. Diagnosis, surgery, pharmacology \u2014 and what blood reveals. Untrained: cannot roll."
     },
     {
       "name": "Occult",
       "min": 0,
       "max": 5,
       "default": 0,
-      "description": "Knowledge. Lore of the supernatural — vampires, mages, ghosts, the Antediluvians. Untrained: cannot roll."
+      "description": "Knowledge. Lore of the supernatural \u2014 vampires, mages, ghosts, the Antediluvians. Untrained: cannot roll."
     },
     {
       "name": "Politics",
@@ -333,7 +333,7 @@
       "min": 0,
       "max": 5,
       "default": 0,
-      "description": "Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll."
+      "description": "Knowledge. Physics, chemistry, biology \u2014 the natural sciences. Untrained: cannot roll."
     },
     {
       "name": "Technology",
@@ -373,7 +373,7 @@
     },
     {
       "name": "Permanent Willpower",
-      "formula": "1-10. The character's permanent Willpower rating — the cap on the Willpower resource pool. V20 RAW: starts equal to Courage at character creation; grows via XP spend (current rating → next rating costs the current rating × 2 XP) or chargen freebies (one freebie per dot). Adjust this stepper directly: set to your Courage at chargen, then click + as you spend XP. Cap 10.",
+      "formula": "1-10. The character's permanent Willpower rating \u2014 the cap on the Willpower resource pool. V20 RAW: starts equal to Courage at character creation; grows via XP spend (current rating \u2192 next rating costs the current rating \u00d7 2 XP) or chargen freebies (one freebie per dot). Adjust this stepper directly: set to your Courage at chargen, then click + as you spend XP. Cap 10.",
       "default": 3,
       "renderAs": "value",
       "aliases": [
@@ -448,7 +448,7 @@
     },
     {
       "name": "Presence",
-      "formula": "Common Discipline 0-5. The supernatural force of personality — magnetism, awe, dread. Powers per dot in the lorebook.",
+      "formula": "Common Discipline 0-5. The supernatural force of personality \u2014 magnetism, awe, dread. Powers per dot in the lorebook.",
       "default": 0,
       "renderAs": "value",
       "aliases": [
@@ -499,7 +499,8 @@
       "aliases": [
         "initiative",
         "init"
-      ]
+      ],
+      "rollFormula": "{Dexterity} + {Wits}"
     },
     {
       "name": "Soak (Bashing)",
@@ -618,7 +619,7 @@
         },
         {
           "label": "Ride the Wave",
-          "description": "Player is intentionally riding the Beast — limited steering via Self-Control / Instinct rolls. Some control retained."
+          "description": "Player is intentionally riding the Beast \u2014 limited steering via Self-Control / Instinct rolls. Some control retained."
         },
         {
           "label": "Frenzy (Hunger)",

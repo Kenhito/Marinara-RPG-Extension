@@ -694,7 +694,7 @@
           },
           "rollFormula": {
             "type": "string",
-            "description": "Optional roll formula. When set on a single-roll-mode ruleset, the derived stat row shows a \"roll\" button that opens the dice widget pre-filled with 1d20 + this formula's value. Use for stats the player rolls directly (Initiative = \"{Dexterity_mod}\", Perception in PF2e = \"{Wisdom_mod} + {tierBonus}\")."
+            "description": "Optional roll formula. When set, the derived stat row shows a \"roll\" button that opens the dice widget pre-filled with the formula's evaluated value. Supported resolution modes (2026-05-20): single-roll (uses value as mod, rolls 1d20 + mod), dice-pool (uses value as the pool size), roll-under (uses derived.formula as target, NOT rollFormula), stance-modal-pool (resolution.stat seeds the widget; pool starts at 1). Other modes ignore rollFormula and render no roll button. Examples: D&D Initiative = \"{Dexterity_mod}\"; PF2e Perception = \"{Wisdom_mod} + {tierBonus}\"; Exalted Initiative = \"{Wits} + {Awareness}\"."
           },
           "aliases": {
             "type": "array",
