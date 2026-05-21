@@ -1,0 +1,733 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.4.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.6.0"
+  },
+  "ruleset": {
+    "id": "blades-in-the-dark",
+    "name": "Blades in the Dark",
+    "version": "0.1.0",
+    "edition": "Blades in the Dark Core (John Harper / Evil Hat / One Seven Design, 2017)",
+    "license": "Original mechanics references; Blades in the Dark is published by John Harper / Evil Hat. The Forged in the Dark SRD is open-licensed; this bundle stays clear of trademarked Doskvol setting prose.",
+    "summary": "Forged in the Dark heist game. Roll N d6 = Action rating ± modifiers; highest die determines outcome — 6 = success, 4-5 = partial, 1-3 = failure, multiple 6s = critical. GM declares Position (Controlled / Risky / Desperate) and Effect (Limited / Standard / Great) BEFORE the roll; both axes negotiate before dice hit the table.",
+    "header": {
+      "raceLabel": "Heritage",
+      "classLabel": "Playbook"
+    },
+    "dice": {
+      "type": "d6",
+      "notation": "Nd6 take highest (Action rating dice pool)"
+    },
+    "resolution": {
+      "mode": "narrative-handled",
+      "description": "Blades rolls N d6 where N = Action rating (0-4) plus modifiers (assist +1, push yourself +1 for 2 stress, devil's bargain +1). The HIGHEST die determines the outcome: 6 = success, 4-5 = partial (you get it but with cost), 1-3 = failure. MULTIPLE 6s = critical (extra effect or no cost). Action 0 means rolling 2d6 and taking the WORST (desperate fumbling). The GM declares Position (Controlled / Risky / Desperate — sets consequence severity) AND Effect (Limited / Standard / Great — sets how much the success advances the goal) BEFORE the roll. Both axes are negotiable in fiction; pushing, devil's bargain, and assist can buy improvements at stress cost. The dice widget runs in manual NdX mode; the GM agent prompt teaches all the moves and consequences.",
+      "noticeText": "Blades uses Nd6-take-highest with Position + Effect. The widget is manual — see gm-agent for full resolution flow."
+    },
+    "attributes": [
+      {
+        "name": "Insight",
+        "abbreviation": "INS",
+        "group": "Action Category",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Quick-thinking, perception, study. Covers Hunt / Study / Survey / Tinker Actions. Resists harm to mind / sense / cleverness — Insight resistance roll."
+      },
+      {
+        "name": "Prowess",
+        "abbreviation": "PRO",
+        "group": "Action Category",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Physical capability, stealth, combat. Covers Finesse / Prowl / Skirmish / Wreck Actions. Resists harm to body / position — Prowess resistance roll."
+      },
+      {
+        "name": "Resolve",
+        "abbreviation": "RES",
+        "group": "Action Category",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Willpower, conviction, social presence. Covers Attune / Command / Consort / Sway Actions. Resists harm to morale / heart / will — Resolve resistance roll."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Hunt",
+        "linkedAttribute": "Insight",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Track, ambush, attack at range. Catching prey before they escape."
+      },
+      {
+        "name": "Study",
+        "linkedAttribute": "Insight",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Examine details, decipher meaning, recall lore. Reading a person or text."
+      },
+      {
+        "name": "Survey",
+        "linkedAttribute": "Insight",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Observe a situation, predict events, look around. Casing a place."
+      },
+      {
+        "name": "Tinker",
+        "linkedAttribute": "Insight",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Fiddle with devices, pick locks, disarm traps, modify gear."
+      },
+      {
+        "name": "Finesse",
+        "linkedAttribute": "Prowess",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Sleight of hand, riding, controlling vehicles, dueling with quick precision."
+      },
+      {
+        "name": "Prowl",
+        "linkedAttribute": "Prowess",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Sneak, hide, move quietly, parkour through unfamiliar terrain."
+      },
+      {
+        "name": "Skirmish",
+        "linkedAttribute": "Prowess",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Engage in close combat, fight savagely, brawl. Up-close violence."
+      },
+      {
+        "name": "Wreck",
+        "linkedAttribute": "Prowess",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Break things, demolish, sunder. Smashing through obstacles."
+      },
+      {
+        "name": "Attune",
+        "linkedAttribute": "Resolve",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Sense, channel, or contact the ghost field. Resist spectral / electroplasmic threats."
+      },
+      {
+        "name": "Command",
+        "linkedAttribute": "Resolve",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Intimidate, lead, demand obedience. Force someone to act against their preference."
+      },
+      {
+        "name": "Consort",
+        "linkedAttribute": "Resolve",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Socialize, schmooze, network. Negotiate from a position of mutual interest."
+      },
+      {
+        "name": "Sway",
+        "linkedAttribute": "Resolve",
+        "min": 0,
+        "max": 4,
+        "default": 0,
+        "description": "Persuade, deceive, charm. Convince someone to see things your way."
+      }
+    ],
+    "difficulties": {
+      "Controlled": {
+        "threshold": 0,
+        "description": "Position: you act from a position of advantage. Failure costs minor — withdraw, reduced Effect, a small complication."
+      },
+      "Risky": {
+        "threshold": 1,
+        "description": "Position: you act in the danger zone. Failure costs standard — harm, lost opportunity, escalating trouble."
+      },
+      "Desperate": {
+        "threshold": 2,
+        "description": "Position: you act under dire pressure. Failure costs severe — serious harm, lost objective, fatal complication."
+      },
+      "Limited": {
+        "threshold": 3,
+        "description": "Effect: even success advances the goal only slightly. Use when conditions or scale work against the PC."
+      },
+      "Standard": {
+        "threshold": 4,
+        "description": "Effect: success advances the goal as the player intended."
+      },
+      "Great": {
+        "threshold": 5,
+        "description": "Effect: success advances the goal further than expected — extra clock ticks, bonus information, broader impact."
+      }
+    },
+    "derivedStats": [
+      {
+        "name": "Position",
+        "formula": "GM-set per roll. Controlled / Risky / Desperate. Negotiable in fiction.",
+        "default": 1,
+        "max": 2,
+        "renderAs": "value",
+        "aliases": [
+          "position",
+          "pos"
+        ]
+      },
+      {
+        "name": "Effect",
+        "formula": "GM-set per roll. Limited / Standard / Great. Negotiable.",
+        "default": 1,
+        "max": 2,
+        "renderAs": "value",
+        "aliases": [
+          "effect"
+        ]
+      }
+    ],
+    "resources": [
+      {
+        "id": "stress",
+        "label": "Stress",
+        "type": "bar",
+        "max": 9,
+        "current": 0,
+        "color": "warn",
+        "quickButtons": [
+          {
+            "label": "+1 Push",
+            "delta": 1
+          },
+          {
+            "label": "+2 Resist",
+            "delta": 2
+          },
+          {
+            "label": "-1 Vice",
+            "delta": -1
+          },
+          {
+            "label": "Clear (Vice)",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "trauma",
+        "label": "Trauma",
+        "type": "counter",
+        "max": 4,
+        "current": 0,
+        "color": "bad",
+        "quickButtons": [
+          {
+            "label": "+1 Take Trauma",
+            "delta": 1
+          }
+        ]
+      },
+      {
+        "id": "coin",
+        "label": "Coin",
+        "type": "counter",
+        "max": 4,
+        "current": 2,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          }
+        ]
+      },
+      {
+        "id": "load",
+        "label": "Load",
+        "type": "counter",
+        "max": 6,
+        "current": 0,
+        "color": "ok",
+        "quickButtons": [
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Reset",
+            "delta": "max"
+          }
+        ]
+      }
+    ],
+    "scenarioDefaultDerive": true,
+    "vocabularyHints": [
+      {
+        "pattern": "I attack / I fight / I shoot",
+        "hint": "In Blades: pick an Action rating (Skirmish for melee, Hunt for ranged, Finesse for fencing-style). Roll dice = rating. GM declares Position (Controlled/Risky/Desperate) and Effect (Limited/Standard/Great) BEFORE the roll. Highest die: 6 = success, 4-5 = partial (with cost), 1-3 = bad outcome."
+      },
+      {
+        "pattern": "I sneak / I hide / I prowl",
+        "hint": "Prowl action. GM should declare Position based on guards / lighting / distance. Effect typically Standard unless circumstances are unusual."
+      },
+      {
+        "pattern": "I push myself",
+        "hint": "Player gains +1d to the roll OR +1 Effect OR perform an action you couldn't otherwise (e.g. supernaturally hard feat). Cost: 2 Stress. Mark stress on the sheet."
+      },
+      {
+        "pattern": "I accept a devil's bargain",
+        "hint": "GM offers a complication (collateral damage, double-crossed friend, attention drawn) in exchange for +1d. Player accepts or declines. If accepted, the complication WILL happen regardless of roll."
+      },
+      {
+        "pattern": "I resist (a consequence)",
+        "hint": "After taking a consequence (harm, lost ground, breakdown), the player rolls the appropriate Attribute (Insight/Prowess/Resolve) as Nd6 take highest. 6 = avoid it entirely; 4-5 = reduce it; 1-3 = take it. Cost: 6 - highest die in Stress (so a 6 = 0 stress, a 1 = 5 stress)."
+      },
+      {
+        "pattern": "I indulge my Vice",
+        "hint": "Downtime activity. Roll the lowest action rating in the Vice's category (or just 1d). Result = stress cleared. Watch for Overindulgence — rolling more dice than current stress can trigger a Vice complication."
+      }
+    ]
+  },
+  "lorebook": {
+    "name": "Blades in the Dark core reference",
+    "description": "Keyword-triggered ruleset reference for Blades in the Dark's Action+Position+Effect resolution and Score/Downtime loop.",
+    "category": "world",
+    "scanDepth": 5,
+    "tokenBudget": 1800,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "name": "Mechanic: action roll (Nd6 take highest)",
+        "keys": [
+          "action roll",
+          "roll",
+          "rolling",
+          "dice pool",
+          "take highest"
+        ],
+        "content": "An Action Roll resolves PC actions under uncertainty.\n\n**Pool size:** N = the relevant Action rating (0-4), modified by:\n- +1d Assist (an ally takes 1 stress to help)\n- +1d Push Yourself (PC takes 2 stress)\n- +1d Devil's Bargain (PC accepts a complication offered by the GM)\n\nIf the rating is 0, the PC rolls 2d6 and takes the WORST result (desperate fumbling).\n\n**Resolution:** look at the HIGHEST die rolled.\n- 6 = success — the action works.\n- 4-5 = partial success — the action works, but with a cost (lesser consequence, complication, escalated Position).\n- 1-3 = bad outcome — the action fails, and a consequence lands.\n- Multiple 6s = critical — increased Effect or removed Cost.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Position (Controlled / Risky / Desperate)",
+        "keys": [
+          "position",
+          "controlled",
+          "risky",
+          "desperate"
+        ],
+        "content": "**Position** sets the SEVERITY of consequence on a failed or partial roll. The GM declares Position BEFORE the roll, based on fictional positioning.\n\n- **Controlled** — you have the upper hand. Failure cost is mild: withdraw, reduced Effect, minor complication, optional retry.\n- **Risky** — you're in the danger zone. Failure cost is standard: harm level 2, lost opportunity, escalating trouble.\n- **Desperate** — you're under dire pressure. Failure cost is severe: harm level 3, lost objective, major complication, fatal escalation possible.\n\nPosition is NEGOTIABLE in fiction. Players can propose changes (\"I'll spend stress to lurk in the rafters first — does that bring it to Controlled?\"). The GM can also escalate Position mid-scene as circumstances change.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Effect (Limited / Standard / Great)",
+        "keys": [
+          "effect",
+          "limited",
+          "standard",
+          "great",
+          "effect rating"
+        ],
+        "content": "**Effect** sets HOW MUCH a success advances the goal. The GM declares Effect BEFORE the roll, based on quality, scale, potency, and other factors.\n\n- **Limited** — even success advances only slightly. Use when scale, gear, or conditions work against the PC (fighting a colossus with a knife, picking a finely-tuned lock with a butter knife).\n- **Standard** — success advances as the player intended.\n- **Great** — success advances further than expected (extra clock ticks, bonus info, broader scope).\n\nEffect is also negotiable. Players can spend stress to push for +1 Effect; gear, allies, and tier/quality can also boost.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Stress and Trauma",
+        "keys": [
+          "stress",
+          "trauma",
+          "stress track",
+          "burned out"
+        ],
+        "content": "**Stress** (track of 9): the resource for pushing, resisting, and special abilities. Filled by:\n- Push Yourself (+2 stress for +1d / +1 Effect / impossible feat)\n- Resist a consequence (cost = 6 - highest die from a resistance roll)\n- Special ability triggers (varies)\n\nWhen the Stress track fills to 9: the PC is **Stressed Out** — they take a Trauma and reset to 0.\n\n**Trauma** (max 4 of: Cold, Haunted, Obsessed, Paranoid, Reckless, Soft, Unstable, Vicious). At 4 Trauma, the PC retires from the dangerous life.\n\nStress recovers through downtime Indulge Vice activities; Trauma stays unless special abilities clear it.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Resistance rolls",
+        "keys": [
+          "resist",
+          "resistance",
+          "resistance roll"
+        ],
+        "content": "When the GM declares a consequence the PC doesn't want to accept, the PC can ROLL TO RESIST.\n\n1. Pick the relevant attribute (Insight for mental / clever consequences; Prowess for physical / positional; Resolve for emotional / supernatural).\n2. Roll Nd6 where N = current rating of that attribute (or 1d if rating is 0).\n3. Look at the HIGHEST die.\n4. Cost in Stress = 6 - highest die.\n   - 6 = 0 stress (resist freely)\n   - 5 = 1 stress\n   - 4 = 2 stress\n   - 3 = 3 stress\n   - 2 = 4 stress\n   - 1 = 5 stress\n5. Critical (multiple 6s) = clear 1 stress instead.\n\nThe consequence is reduced in severity OR negated entirely (GM's call based on the roll).",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Harm levels",
+        "keys": [
+          "harm",
+          "level 1 harm",
+          "level 2 harm",
+          "level 3 harm",
+          "lesser",
+          "moderate",
+          "severe"
+        ],
+        "content": "Harm is tracked at 3 levels with descriptive tags.\n\n- **Level 1 (Lesser)**: Bruised, Scared, Off-balance. -0 dice (no effect on rolls).\n- **Level 2 (Moderate)**: Battered, Drained, Furious. -1 die on any roll the harm interferes with.\n- **Level 3 (Severe)**: Impaled, Terrified, Broken. PC cannot do the things that harm impedes; -1 to all rolls.\n- **Level 4 (Death/Incapacitation)**: only reached if you can't resist; PC is taken out (unconscious / dying / catatonic).\n\nWhen the PC takes a harm that would go to a row already filled, the existing harm escalates UP one level. Healing happens during downtime Recover activity.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Playbooks (PC archetypes)",
+        "keys": [
+          "playbook",
+          "cutter",
+          "hound",
+          "leech",
+          "lurk",
+          "slide",
+          "spider",
+          "whisper"
+        ],
+        "content": "Blades uses 7 PC playbooks, each with distinct special abilities and starting Action distributions:\n\n- **Cutter** — aggressive enforcer. Pressure / Battleborn.\n- **Hound** — sharpshooter / scout. Sharpshooter / Sense of Doom.\n- **Leech** — alchemist / tinkerer. Alchemist / Saboteur.\n- **Lurk** — infiltrator. Ambush / Shadow.\n- **Slide** — face / con artist. Like Looks / Cloak & Dagger.\n- **Spider** — mastermind / fixer. Foresight / Connected.\n- **Whisper** — occult specialist. Compel / Ghost Voice.\n\nThe Playbook field on the sheet header should be set to one of these. Each playbook unlocks unique downtime moves and special abilities purchased with XP.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Score → Downtime loop",
+        "keys": [
+          "score",
+          "downtime",
+          "free play",
+          "engagement roll"
+        ],
+        "content": "**Free Play** — open-ended scenes, gathering info, choosing the next score.\n\n**Score** — a heist. GM picks the kind (Assault, Deception, Stealth, Occult, Social, Transport). Players pick the Plan (Plan archetype + Detail). Engagement Roll determines starting Position. Then the score plays out as a series of Action rolls.\n\n**Downtime** — after a score. Each PC gets ≥2 downtime activities: Acquire Asset (gear / connection / leverage), Long-Term Project (work toward something multi-session), Recover (heal harm), Reduce Heat, Train (XP), Indulge Vice (clear stress). Then the cycle resumes with Free Play.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Load (flexible gear)",
+        "keys": [
+          "load",
+          "gear",
+          "encumbrance",
+          "light",
+          "normal",
+          "heavy"
+        ],
+        "content": "Blades does NOT track gear pre-mission. Instead the PC declares their **Load** at score start:\n\n- **Light (3)**: stealthy, fast. Fewer items available to flashback-equip.\n- **Normal (5)**: balanced.\n- **Heavy (6)**: combat-ready. Slower, more conspicuous.\n\nDuring the score, the player **flashback-equips** items: \"I have a smokebomb\" — mark 1 Load if there's space. The Playbook's gear sheet lists what's available; tier and quality of gear gates effectiveness.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Flashback (retroactive prep)",
+        "keys": [
+          "flashback",
+          "retroactive",
+          "prep",
+          "we planned ahead"
+        ],
+        "content": "Player declares a flashback to establish that the PC prepared something earlier. Cost in Stress = GM's call based on plausibility:\n\n- 0 stress — trivial (\"I bought a torch in the market that morning\").\n- 1 stress — moderate (\"I bribed the guard captain to look the other way\").\n- 2 stress — major (\"I'd already broken into the safe and replaced the deed with a fake\").\n\nThe flashback resolves with normal action rolls if needed. Mechanically equivalent to having done it in fiction, but unlocked retroactively.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Crew and Heat",
+        "keys": [
+          "crew",
+          "heat",
+          "wanted level",
+          "rep",
+          "reputation"
+        ],
+        "content": "Players collectively run a **Crew** with its own playbook (Assassins, Bravos, Cult, Hawkers, Shadows, Smugglers). Crew tier scales contacts, reach, and starting Heat. \n\n**Heat** = how hot the score made the Crew with city authorities. Each score adds Heat based on: noisy / violent / killed (1-4 Heat). At 9+ Heat, the Crew gains a **Wanted Level**, attracting law-enforcement attention until reduced via downtime.\n\n**Rep** = how the underworld knows the Crew. Earned each score; spent to advance Crew tier (more contacts, better gear, larger turf).",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Ghosts, Electroplasm, Occult",
+        "keys": [
+          "ghost",
+          "spirit",
+          "electroplasm",
+          "occult",
+          "leviathan",
+          "wraith"
+        ],
+        "content": "Doskvol setting flavor — ghosts are real and visible to those attuned. Electroplasm fuels the city. Spirit wells, lightning barriers, demon contracts.\n\n**Attune** is the relevant skill. Ghost-touched PCs (Whisper playbook) can ritualize, see across the veil, and bargain with spirits. Long-Term Project: research a ritual; pays out in setting-specific occult power.",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: XP and advancement",
+        "keys": [
+          "xp",
+          "experience",
+          "advancement",
+          "level up"
+        ],
+        "content": "Each PC gets XP at the end of every score based on Playbook trigger fulfillment + general triggers (each Action category): \"You addressed a challenge with desperate action or great effect\" — 1 XP in the relevant attribute's category.\n\nAt 6 XP in a category, gain a new dot OR a Playbook special ability. Special abilities unlock new mechanical levers (e.g. Slide's 'Like Looks' lets them flashback to a charm play; Whisper's 'Ghost Voice' lets them communicate with spirits).",
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Vice and Overindulgence",
+        "keys": [
+          "vice",
+          "indulge",
+          "overindulge",
+          "vice purveyor"
+        ],
+        "content": "Every PC has a Vice (Faith, Gambling, Luxury, Obligation, Pleasure, Stupor, Weird). Each downtime, the PC may Indulge Vice to clear stress.\n\n**Indulge roll**: 1d for each open Action box in the Vice's category, OR 1d minimum. The result clears that much stress.\n\n**Overindulgence**: if the roll clears more stress than current, the PC has overindulged. GM picks a Vice complication: PC is Trapped, Brag, Lost, or Tapped (depending on Vice + result).",
+        "position": 0
+      },
+      {
+        "name": "Attribute: Insight (INS)",
+        "keys": [
+          "Insight",
+          "INS"
+        ],
+        "content": "Blades in the Dark attribute. Insight (INS) [Action Category] — Quick-thinking, perception, study. Covers Hunt / Study / Survey / Tinker Actions. Resists harm to mind / sense / cleverness — Insight resistance roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Prowess (PRO)",
+        "keys": [
+          "Prowess",
+          "PRO"
+        ],
+        "content": "Blades in the Dark attribute. Prowess (PRO) [Action Category] — Physical capability, stealth, combat. Covers Finesse / Prowl / Skirmish / Wreck Actions. Resists harm to body / position — Prowess resistance roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Resolve (RES)",
+        "keys": [
+          "Resolve",
+          "RES"
+        ],
+        "content": "Blades in the Dark attribute. Resolve (RES) [Action Category] — Willpower, conviction, social presence. Covers Attune / Command / Consort / Sway Actions. Resists harm to morale / heart / will — Resolve resistance roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Hunt",
+        "keys": [
+          "Hunt"
+        ],
+        "content": "Blades in the Dark skill. Hunt. Track, ambush, attack at range. Catching prey before they escape.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Study",
+        "keys": [
+          "Study"
+        ],
+        "content": "Blades in the Dark skill. Study. Examine details, decipher meaning, recall lore. Reading a person or text.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survey",
+        "keys": [
+          "Survey"
+        ],
+        "content": "Blades in the Dark skill. Survey. Observe a situation, predict events, look around. Casing a place.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Tinker",
+        "keys": [
+          "Tinker"
+        ],
+        "content": "Blades in the Dark skill. Tinker. Fiddle with devices, pick locks, disarm traps, modify gear.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Finesse",
+        "keys": [
+          "Finesse"
+        ],
+        "content": "Blades in the Dark skill. Finesse. Sleight of hand, riding, controlling vehicles, dueling with quick precision.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Prowl",
+        "keys": [
+          "Prowl"
+        ],
+        "content": "Blades in the Dark skill. Prowl. Sneak, hide, move quietly, parkour through unfamiliar terrain.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Skirmish",
+        "keys": [
+          "Skirmish"
+        ],
+        "content": "Blades in the Dark skill. Skirmish. Engage in close combat, fight savagely, brawl. Up-close violence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Wreck",
+        "keys": [
+          "Wreck"
+        ],
+        "content": "Blades in the Dark skill. Wreck. Break things, demolish, sunder. Smashing through obstacles.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Attune",
+        "keys": [
+          "Attune"
+        ],
+        "content": "Blades in the Dark skill. Attune. Sense, channel, or contact the ghost field. Resist spectral / electroplasmic threats.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Command",
+        "keys": [
+          "Command"
+        ],
+        "content": "Blades in the Dark skill. Command. Intimidate, lead, demand obedience. Force someone to act against their preference.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Consort",
+        "keys": [
+          "Consort"
+        ],
+        "content": "Blades in the Dark skill. Consort. Socialize, schmooze, network. Negotiate from a position of mutual interest.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Sway",
+        "keys": [
+          "Sway"
+        ],
+        "content": "Blades in the Dark skill. Sway. Persuade, deceive, charm. Convince someone to see things your way.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Position",
+        "keys": [
+          "Position"
+        ],
+        "content": "Blades in the Dark derived stat. Position — formula: GM-set per roll. Controlled / Risky / Desperate. Negotiable in fiction.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Effect",
+        "keys": [
+          "Effect"
+        ],
+        "content": "Blades in the Dark derived stat. Effect — formula: GM-set per roll. Limited / Standard / Great. Negotiable.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Blades in the Dark difficulty ladder. Threshold values needed for success:\n- Controlled (threshold 0) — Position: you act from a position of advantage. Failure costs minor — withdraw, reduced Effect, a small complication.\n- Risky (threshold 1) — Position: you act in the danger zone. Failure costs standard — harm, lost opportunity, escalating trouble.\n- Desperate (threshold 2) — Position: you act under dire pressure. Failure costs severe — serious harm, lost objective, fatal complication.\n- Limited (threshold 3) — Effect: even success advances the goal only slightly. Use when conditions or scale work against the PC.\n- Standard (threshold 4) — Effect: success advances the goal as the player intended.\n- Great (threshold 5) — Effect: success advances the goal further than expected — extra clock ticks, bonus information, broader impact.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      }
+    ]
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Blades in the Dark surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s+(\\d+)\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → Blades in the Dark difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "blades_in_the_dark_reference",
+      "description": "Returns canonical Blades in the Dark reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Blades in the Dark — canonical reference\n\nForged in the Dark heist game. Roll N d6 = Action rating ± modifiers; highest die determines outcome — 6 = success, 4-5 = partial, 1-3 = failure, multiple 6s = critical. GM declares Position (Controlled / Risky / Desperate) and Effect (Limited / Standard / Great) BEFORE the roll; both axes negotiate before dice hit the table.\n\n## Dice\n- Type: `d6`\n- Notation: `Nd6 take highest (Action rating dice pool)`\n\n## Resolution\n- Mode: `narrative-handled`\n\n## Difficulty ladder\n- **Controlled** (threshold 0) — Position: you act from a position of advantage. Failure costs minor — withdraw, reduced Effect, a small complication.\n- **Risky** (threshold 1) — Position: you act in the danger zone. Failure costs standard — harm, lost opportunity, escalating trouble.\n- **Desperate** (threshold 2) — Position: you act under dire pressure. Failure costs severe — serious harm, lost objective, fatal complication.\n- **Limited** (threshold 3) — Effect: even success advances the goal only slightly. Use when conditions or scale work against the PC.\n- **Standard** (threshold 4) — Effect: success advances the goal as the player intended.\n- **Great** (threshold 5) — Effect: success advances the goal further than expected — extra clock ticks, bonus information, broader impact.\n\n## Attributes\n- **Insight** (INS) [Action Category] — Quick-thinking, perception, study. Covers Hunt / Study / Survey / Tinker Actions. Resists harm to mind / sense / cleverness — Insight resistance roll.\n- **Prowess** (PRO) [Action Category] — Physical capability, stealth, combat. Covers Finesse / Prowl / Skirmish / Wreck Actions. Resists harm to body / position — Prowess resistance roll.\n- **Resolve** (RES) [Action Category] — Willpower, conviction, social presence. Covers Attune / Command / Consort / Sway Actions. Resists harm to morale / heart / will — Resolve resistance roll.\n\n## Skills\n- **Hunt** — Track, ambush, attack at range. Catching prey before they escape.\n- **Study** — Examine details, decipher meaning, recall lore. Reading a person or text.\n- **Survey** — Observe a situation, predict events, look around. Casing a place.\n- **Tinker** — Fiddle with devices, pick locks, disarm traps, modify gear.\n- **Finesse** — Sleight of hand, riding, controlling vehicles, dueling with quick precision.\n- **Prowl** — Sneak, hide, move quietly, parkour through unfamiliar terrain.\n- **Skirmish** — Engage in close combat, fight savagely, brawl. Up-close violence.\n- **Wreck** — Break things, demolish, sunder. Smashing through obstacles.\n- **Attune** — Sense, channel, or contact the ghost field. Resist spectral / electroplasmic threats.\n- **Command** — Intimidate, lead, demand obedience. Force someone to act against their preference.\n- **Consort** — Socialize, schmooze, network. Negotiate from a position of mutual interest.\n- **Sway** — Persuade, deceive, charm. Convince someone to see things your way.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ],
+  "additionalAgents": [
+    {
+      "role": "pre-input-transformer",
+      "name": "Blades in the Dark — Pre-Input Transformer",
+      "description": "Re-frames common player-input phrases in Blades in the Dark-native vocabulary before the narration model sees them.",
+      "phase": "pre_generation",
+      "enabled": false,
+      "promptTemplate": "# Blades in the Dark — pre-input transformer\n\nYou are a pre-generation context-injection agent for an RPG roleplay using the Blades in the Dark ruleset overlay. Your job is to read the player's most recent input and emit a SHORT annotation that re-frames common verbs and action phrases in Blades in the Dark-flavored vocabulary.\n\n## Output format\n\nEmit a context-injection block of the form:\n```\n[blades-in-the-dark annotation] <one-sentence re-frame, OR \"No re-frame needed.\">\n```\n\nAnnotate only when one of the recognized patterns matches the player's input. Otherwise output exactly \"No re-frame needed.\" and stop.\n\n## Recognition table\n\n| When player input matches | Re-frame guidance |\n|---|---|\n| I attack / I fight / I shoot | In Blades: pick an Action rating (Skirmish for melee, Hunt for ranged, Finesse for fencing-style). Roll dice = rating. GM declares Position (Controlled/Risky/Desperate) and Effect (Limited/Standard/Great) BEFORE the roll. Highest die: 6 = success, 4-5 = partial (with cost), 1-3 = bad outcome. |\n| I sneak / I hide / I prowl | Prowl action. GM should declare Position based on guards / lighting / distance. Effect typically Standard unless circumstances are unusual. |\n| I push myself | Player gains +1d to the roll OR +1 Effect OR perform an action you couldn't otherwise (e.g. supernaturally hard feat). Cost: 2 Stress. Mark stress on the sheet. |\n| I accept a devil's bargain | GM offers a complication (collateral damage, double-crossed friend, attention drawn) in exchange for +1d. Player accepts or declines. If accepted, the complication WILL happen regardless of roll. |\n| I resist (a consequence) | After taking a consequence (harm, lost ground, breakdown), the player rolls the appropriate Attribute (Insight/Prowess/Resolve) as Nd6 take highest. 6 = avoid it entirely; 4-5 = reduce it; 1-3 = take it. Cost: 6 - highest die in Stress (so a 6 = 0 stress, a 1 = 5 stress). |\n| I indulge my Vice | Downtime activity. Roll the lowest action rating in the Vice's category (or just 1d). Result = stress cleared. Watch for Overindulgence — rolling more dice than current stress can trigger a Vice complication. |\n\n## Rules\n\n- Match liberally (paraphrase / synonym OK) but never invent annotations for input that doesn't fit any row.\n- Never narrate the scene; never speak as a character; never roll dice.\n- One annotation per turn maximum. If multiple rows match, pick the most specific.\n- Keep the annotation under 25 words.",
+      "settings": {}
+    }
+  ],
+  "scenarioDefault": "This chat uses the Blades in the Dark ruleset overlay.\n\nForged in the Dark heist game. Roll N d6 = Action rating ± modifiers; highest die determines outcome — 6 = success, 4-5 = partial, 1-3 = failure, multiple 6s = critical. GM declares Position (Controlled / Risky / Desperate) and Effect (Limited / Standard / Great) BEFORE the roll; both axes negotiate before dice hit the table.\n\nMechanics: primary die d6, notation Nd6 take highest (Action rating dice pool).\nResolution: narrative-handled.\n\nThe GM should keep narration consistent with Blades in the Dark mechanics. Refer to the lorebook entries for ruleset reference."
+}
