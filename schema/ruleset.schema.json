@@ -662,6 +662,31 @@
         }
       }
     },
+    "classOptions": {
+      "type": "array",
+      "description": "Optional list of class / playbook / archetype choices the player picks from in the sheet header. Each entry binds a hit-die size (and optionally other class-specific defaults) to the class name. When populated, the existing free-text Class field becomes a select (renderer wiring deferred — see docs/BUILDING.md \"Class-driven dropdown\" handoff). Resources with a `dieFromClass: true` flag pick up `hitDie` from the selected class. D&D 5e ships the canonical example (12 classes mapping to d6/d8/d10/d12); Pathfinder 2e, Mörk Borg, and other class-driven systems use the same shape.",
+      "items": {
+        "type": "object",
+        "required": ["name", "hitDie"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Display name of the class (e.g. \"Fighter\", \"Sorcerer\", \"Cutter playbook\")."
+          },
+          "hitDie": {
+            "type": "string",
+            "pattern": "^d[0-9]+$",
+            "description": "Hit-die size for this class (e.g. \"d6\", \"d8\", \"d10\", \"d12\")."
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional one-line class flavor for the dropdown's hint text."
+          }
+        }
+      }
+    },
     "derivedStats": {
       "type": "array",
       "description": "Stats computed from attributes/level/etc. Used for HUD readouts.",
@@ -880,6 +905,11 @@
             "pattern": "^d[0-9]+$",
             "description": "Die size for type=dice (e.g. d6, d8, d10). Required when type=dice; ignored otherwise."
           },
+        "dieFromClass": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true AND ruleset.classOptions is populated, the renderer ignores the static `die` value and instead uses the selected class's hitDie. Static `die` remains the fallback when no class is selected. Renderer support: deferred to next session (planned 2026-05-21+); the spec field ships in v0.4.x so authors can declare the binding now and it activates when the renderer lands."
+        },
           "group": {
             "type": "string",
             "description": "Optional sub-group label (e.g. 'Spell Slots: Level 1'). Adjacent resources sharing a group render under a shared subheader."

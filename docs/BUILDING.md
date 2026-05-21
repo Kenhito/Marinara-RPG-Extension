@@ -264,6 +264,52 @@ If a generator can't produce what your ruleset needs, drop one of these blocks i
 | `customTools: [...]` | build-custom-tools.mjs | Generator returns the array as-is. Use to ship script-type math tools (requires `CUSTOM_TOOL_SCRIPT_ENABLED=true` on the engine), additional static reference tools, or webhook tools pointing at your own service. |
 | `lorebookExpansions: [...]` | build-lorebook-expansions.mjs | Generator returns the array as-is. Use when you want custom auto-derived entries (e.g. one entry per class, per spell school, per condition group) that the default attribute/skill/condition derivations don't cover. Hand-authored entries in `lorebook.json` still win on name conflict at merge time. |
 
+## Class-driven hit dice (D&D / PF2e / class-based systems)
+
+For class-based systems where the hit-die size depends on the chosen class, the schema provides two coordinated fields:
+
+- **`ruleset.classOptions[]`** — list of class/playbook choices the sheet header picks from. Each entry is `{ name, hitDie, description? }`.
+- **`resources[].dieFromClass: true`** — opt-in flag on any `type: "dice"` resource that signals "use the selected class's `hitDie` instead of my static `die` field".
+
+**Spec layer (shipped today):** `classOptions[]` populates and validates. Resources can declare `dieFromClass: true`. The static `die` continues to be applied as the current behavior — see "Renderer wiring deferred" below.
+
+**Worked example — D&D 5e:**
+
+```jsonc
+{
+  "id": "dnd5e",
+  "name": "D&D 5th Edition",
+  "classOptions": [
+    { "name": "Artificer", "hitDie": "d8",  "description": "Magical inventor — half-caster, item-creation focus." },
+    { "name": "Barbarian", "hitDie": "d12", "description": "Rage-fueled martial; highest base HP per level." },
+    { "name": "Fighter",   "hitDie": "d10", "description": "Martial specialist, Action Surge." },
+    { "name": "Sorcerer",  "hitDie": "d6",  "description": "Innate full caster, Metamagic." },
+    /* ...9 more classes... */
+  ],
+  "resources": [
+    {
+      "id": "hit-dice",
+      "label": "Hit Dice",
+      "type": "dice",
+      "die": "d8",
+      "dieFromClass": true,
+      "max": "{Level}",
+      "current": "{Level}"
+    }
+  ]
+}
+```
+
+The `hit-dice` resource's count is wired to `{Level}` — so as the player levels up, the resource's max increases automatically. The die size will switch to match the selected class once renderer wiring lands.
+
+**Renderer wiring deferred (handoff for next session):**
+- The Class header field is currently free-text (`raceLabel` / `classLabel` from `header`). To honor `classOptions[]`, the renderer needs to detect the field's presence and replace the text input with a `<select>` driven by the array.
+- The selected class needs to write into a state slot (e.g. `state.sheet.derived.__selectedClass`).
+- `type: "dice"` resources with `dieFromClass: true` need to read that state and substitute `die` at render time.
+- Estimated scope: ~50-100 lines in `RPG-Extension-GM-Mode.js`. Tracked as a next-session deliverable.
+
+**Why ship the spec without the renderer tonight:** the dual-layer split lets ruleset authors declare class-driven hit dice TODAY (the data lands in `bundle.json`, validates against schema, persists across re-builds). When the renderer ships, every existing class-driven ruleset activates without further author work. The alternative — wait until the renderer is also done — would leave the spec under-tested and delay value.
+
 ## Custom renderers (open extensibility)
 
 Some sheet UI components are pluggable per-ruleset via the `resources[]` array with `type: "custom"` and a `rendererConfig` object. The extension JS registers named renderer components (e.g. `v20-health-track`); a ruleset declares which renderer to use and supplies the config the renderer reads.

@@ -483,7 +483,8 @@
             "label": "Long Rest",
             "delta": "max"
           }
-        ]
+        ],
+        "dieFromClass": true
       },
       {
         "id": "spell-slots-1",
@@ -719,6 +720,73 @@
         "imposesDisadvantageOn": [
           "skill"
         ]
+      }
+    ],
+    "classOptions": [
+      {
+        "name": "Artificer",
+        "hitDie": "d8",
+        "description": "Magical inventor — half-caster, item-creation focus (Eberron / TCE)."
+      },
+      {
+        "name": "Barbarian",
+        "hitDie": "d12",
+        "description": "Rage-fueled martial; highest base HP per level."
+      },
+      {
+        "name": "Bard",
+        "hitDie": "d8",
+        "description": "Full caster, social/utility hybrid, Bardic Inspiration."
+      },
+      {
+        "name": "Cleric",
+        "hitDie": "d8",
+        "description": "Full divine caster, domain-driven channel divinity."
+      },
+      {
+        "name": "Druid",
+        "hitDie": "d8",
+        "description": "Full nature caster, Wild Shape."
+      },
+      {
+        "name": "Fighter",
+        "hitDie": "d10",
+        "description": "Martial specialist, Action Surge, multiple attacks."
+      },
+      {
+        "name": "Monk",
+        "hitDie": "d8",
+        "description": "Ki-fueled martial artist, unarmored defense."
+      },
+      {
+        "name": "Paladin",
+        "hitDie": "d10",
+        "description": "Half-caster smiter, oath-bound, divine smite + auras."
+      },
+      {
+        "name": "Ranger",
+        "hitDie": "d10",
+        "description": "Half-caster scout, favored enemy / terrain."
+      },
+      {
+        "name": "Rogue",
+        "hitDie": "d8",
+        "description": "Skirmisher, Sneak Attack, expertise."
+      },
+      {
+        "name": "Sorcerer",
+        "hitDie": "d6",
+        "description": "Innate full caster, Metamagic / Sorcery Points."
+      },
+      {
+        "name": "Warlock",
+        "hitDie": "d8",
+        "description": "Pact-bound half-ish caster, short-rest slots."
+      },
+      {
+        "name": "Wizard",
+        "hitDie": "d6",
+        "description": "Studied full caster, spell preparation + rituals."
       }
     ]
   },

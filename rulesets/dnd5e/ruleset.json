@@ -7,26 +7,86 @@
   "summary": "The classic d20 system. One die, plus an attribute modifier, plus proficiency if trained, against a fixed Difficulty Class. Mirrors Marinara Engine's existing Game Mode default.",
   "commitmentModel": "attuned",
   "xpTable": [
-    { "level": 1, "xp": 0 },
-    { "level": 2, "xp": 300 },
-    { "level": 3, "xp": 900 },
-    { "level": 4, "xp": 2700 },
-    { "level": 5, "xp": 6500 },
-    { "level": 6, "xp": 14000 },
-    { "level": 7, "xp": 23000 },
-    { "level": 8, "xp": 34000 },
-    { "level": 9, "xp": 48000 },
-    { "level": 10, "xp": 64000 },
-    { "level": 11, "xp": 85000 },
-    { "level": 12, "xp": 100000 },
-    { "level": 13, "xp": 120000 },
-    { "level": 14, "xp": 140000 },
-    { "level": 15, "xp": 165000 },
-    { "level": 16, "xp": 195000 },
-    { "level": 17, "xp": 225000 },
-    { "level": 18, "xp": 265000 },
-    { "level": 19, "xp": 305000 },
-    { "level": 20, "xp": 355000 }
+    {
+      "level": 1,
+      "xp": 0
+    },
+    {
+      "level": 2,
+      "xp": 300
+    },
+    {
+      "level": 3,
+      "xp": 900
+    },
+    {
+      "level": 4,
+      "xp": 2700
+    },
+    {
+      "level": 5,
+      "xp": 6500
+    },
+    {
+      "level": 6,
+      "xp": 14000
+    },
+    {
+      "level": 7,
+      "xp": 23000
+    },
+    {
+      "level": 8,
+      "xp": 34000
+    },
+    {
+      "level": 9,
+      "xp": 48000
+    },
+    {
+      "level": 10,
+      "xp": 64000
+    },
+    {
+      "level": 11,
+      "xp": 85000
+    },
+    {
+      "level": 12,
+      "xp": 100000
+    },
+    {
+      "level": 13,
+      "xp": 120000
+    },
+    {
+      "level": 14,
+      "xp": 140000
+    },
+    {
+      "level": 15,
+      "xp": 165000
+    },
+    {
+      "level": 16,
+      "xp": 195000
+    },
+    {
+      "level": 17,
+      "xp": 225000
+    },
+    {
+      "level": 18,
+      "xp": 265000
+    },
+    {
+      "level": 19,
+      "xp": 305000
+    },
+    {
+      "level": 20,
+      "xp": 355000
+    }
   ],
   "dice": {
     "type": "d20",
@@ -383,9 +443,18 @@
       "current": 8,
       "color": "bad",
       "quickButtons": [
-        { "label": "-1", "delta": -1 },
-        { "label": "-5", "delta": -5 },
-        { "label": "Heal", "delta": "max" }
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "-5",
+          "delta": -5
+        },
+        {
+          "label": "Heal",
+          "delta": "max"
+        }
       ]
     },
     {
@@ -397,9 +466,16 @@
       "current": "{Level}",
       "color": "ok",
       "quickButtons": [
-        { "label": "-1", "delta": -1 },
-        { "label": "Long Rest", "delta": "max" }
-      ]
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "Long Rest",
+          "delta": "max"
+        }
+      ],
+      "dieFromClass": true
     },
     {
       "id": "spell-slots-1",
@@ -410,8 +486,14 @@
       "current": 0,
       "color": "accent",
       "quickButtons": [
-        { "label": "-1", "delta": -1 },
-        { "label": "Long Rest", "delta": "max" }
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "Long Rest",
+          "delta": "max"
+        }
       ]
     },
     {
@@ -423,8 +505,14 @@
       "current": 0,
       "color": "accent",
       "quickButtons": [
-        { "label": "-1", "delta": -1 },
-        { "label": "Long Rest", "delta": "max" }
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "Long Rest",
+          "delta": "max"
+        }
       ]
     },
     {
@@ -436,8 +524,14 @@
       "current": 0,
       "color": "accent",
       "quickButtons": [
-        { "label": "-1", "delta": -1 },
-        { "label": "Long Rest", "delta": "max" }
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "Long Rest",
+          "delta": "max"
+        }
       ]
     }
   ],
@@ -617,6 +711,73 @@
       "imposesDisadvantageOn": [
         "skill"
       ]
+    }
+  ],
+  "classOptions": [
+    {
+      "name": "Artificer",
+      "hitDie": "d8",
+      "description": "Magical inventor \u2014 half-caster, item-creation focus (Eberron / TCE)."
+    },
+    {
+      "name": "Barbarian",
+      "hitDie": "d12",
+      "description": "Rage-fueled martial; highest base HP per level."
+    },
+    {
+      "name": "Bard",
+      "hitDie": "d8",
+      "description": "Full caster, social/utility hybrid, Bardic Inspiration."
+    },
+    {
+      "name": "Cleric",
+      "hitDie": "d8",
+      "description": "Full divine caster, domain-driven channel divinity."
+    },
+    {
+      "name": "Druid",
+      "hitDie": "d8",
+      "description": "Full nature caster, Wild Shape."
+    },
+    {
+      "name": "Fighter",
+      "hitDie": "d10",
+      "description": "Martial specialist, Action Surge, multiple attacks."
+    },
+    {
+      "name": "Monk",
+      "hitDie": "d8",
+      "description": "Ki-fueled martial artist, unarmored defense."
+    },
+    {
+      "name": "Paladin",
+      "hitDie": "d10",
+      "description": "Half-caster smiter, oath-bound, divine smite + auras."
+    },
+    {
+      "name": "Ranger",
+      "hitDie": "d10",
+      "description": "Half-caster scout, favored enemy / terrain."
+    },
+    {
+      "name": "Rogue",
+      "hitDie": "d8",
+      "description": "Skirmisher, Sneak Attack, expertise."
+    },
+    {
+      "name": "Sorcerer",
+      "hitDie": "d6",
+      "description": "Innate full caster, Metamagic / Sorcery Points."
+    },
+    {
+      "name": "Warlock",
+      "hitDie": "d8",
+      "description": "Pact-bound half-ish caster, short-rest slots."
+    },
+    {
+      "name": "Wizard",
+      "hitDie": "d6",
+      "description": "Studied full caster, spell preparation + rituals."
     }
   ]
 }
