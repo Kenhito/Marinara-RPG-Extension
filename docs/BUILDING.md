@@ -362,7 +362,7 @@ For class-based systems where the hit-die size depends on the chosen class, the 
 - **`ruleset.classOptions[]`** — list of class/playbook choices the sheet header picks from. Each entry is `{ name, hitDie, description? }`.
 - **`resources[].dieFromClass: true`** — opt-in flag on any `type: "dice"` resource that signals "use the selected class's `hitDie` instead of my static `die` field".
 
-**Spec layer (shipped today):** `classOptions[]` populates and validates. Resources can declare `dieFromClass: true`. The static `die` continues to be applied as the current behavior — see "Renderer wiring deferred" below.
+**Status (2026-05-22):** spec + renderer BOTH SHIPPED. Authors declare `classOptions[]`; the Class header field renders as a `<select>` driven by that array; dice resources with `dieFromClass: true` look up the selected class's `hitDie` and substitute at render time. Static `die` remains the fallback when no class is selected.
 
 **Worked example — D&D 5e:**
 
@@ -393,13 +393,12 @@ For class-based systems where the hit-die size depends on the chosen class, the 
 
 The `hit-dice` resource's count is wired to `{Level}` — so as the player levels up, the resource's max increases automatically. The die size will switch to match the selected class once renderer wiring lands.
 
-**Renderer wiring deferred (handoff for next session):**
-- The Class header field is currently free-text (`raceLabel` / `classLabel` from `header`). To honor `classOptions[]`, the renderer needs to detect the field's presence and replace the text input with a `<select>` driven by the array.
-- The selected class needs to write into a state slot (e.g. `state.sheet.derived.__selectedClass`).
-- `type: "dice"` resources with `dieFromClass: true` need to read that state and substitute `die` at render time.
-- Estimated scope: ~50-100 lines in `RPG-Extension-GM-Mode.js`. Tracked as a next-session deliverable.
+**Renderer implementation notes (shipped 2026-05-22):**
+- `mrrRenderIdentitySubField` detects `key === "class"` + `ruleset.classOptions[]` and renders a `<select>` instead of `<input>`. Empty placeholder option appears when no class is selected; selection persists in `state.sheet.identity.class` (same storage as the legacy free-text path, so save / load / character-card migration paths are unchanged).
+- On `change`, the handler saves the sheet AND calls `renderSheet()` so any `dieFromClass: true` dice resources re-render with the new die.
+- `mrrResolveResourceDie(resource)` is the single source of truth for die-substitution: returns `resource.die` (fallback) unless `dieFromClass: true` AND `classOptions[]` is declared AND the selected class is present in `classOptions[]` with a `hitDie` string. RP-mode has the same helper as `mrrpResolveResourceDie`.
 
-**Why ship the spec without the renderer tonight:** the dual-layer split lets ruleset authors declare class-driven hit dice TODAY (the data lands in `bundle.json`, validates against schema, persists across re-builds). When the renderer ships, every existing class-driven ruleset activates without further author work. The alternative — wait until the renderer is also done — would leave the spec under-tested and delay value.
+**Default-class behavior:** when the sheet is fresh and no class is selected, dice resources fall back to their static `die` field. D&D 5e ships `die: "d8"` as a sensible mid-tier default — the player picks from the dropdown to switch to d6 (Wizard / Sorcerer), d10 (Fighter / Paladin / Ranger), d12 (Barbarian), etc.
 
 ## Custom renderers (open extensibility)
 
