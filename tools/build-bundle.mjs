@@ -59,6 +59,18 @@ function titleCase(s) {
   return s.split(/[-_]/).map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(" ");
 }
 
+/* See build-agents.mjs for the source of truth. Kept in sync here defensively
+   — loadAdditionalAgents below is currently dead in GM-mode but used to be
+   the bundle-side install path and may be revived; either way, both should
+   parse Phase identically so a future revival doesn't silently regress. */
+function extractPhase(md) {
+  const m = md.match(/^\s*\*\*Phase:\*\*\s*`?([a-zA-Z_]+)`?/m);
+  if (!m) return "pre_generation";
+  const declared = (m[1] || "").trim().toLowerCase();
+  const ALLOWED = new Set(["pre_generation", "post_generation", "parallel"]);
+  return ALLOWED.has(declared) ? declared : "pre_generation";
+}
+
 function loadAdditionalAgents(rulesetName, rulesetDir) {
   /* Resolve agent prompts with per-ruleset override precedence:
      prefer rulesets/<id>/agents/<role>.md, fall back to <repo>/agents/<role>.md.
@@ -84,6 +96,7 @@ function loadAdditionalAgents(rulesetName, rulesetDir) {
     try { md = readFileSync(overridePath, "utf8"); isOverride = true; }
     catch (e) { md = readFileSync(join(sharedDir, role + ".md"), "utf8"); isOverride = false; }
     const promptTemplate = extractPromptBlock(md);
+    const phase = extractPhase(md);
     const firstHeading = (md.match(/^#\s+(.+)$/m) || [])[1] || titleCase(role);
     const tunedNote = isOverride
       ? " — tuned for " + rulesetName
@@ -92,7 +105,7 @@ function loadAdditionalAgents(rulesetName, rulesetDir) {
       role,
       name: rulesetName + " — " + firstHeading.replace(/\s+Agent\s*$/i, ""),
       description: "Focused " + role.replace(/-/g, " ") + " agent for " + rulesetName + tunedNote + ".",
-      phase: "pre_generation",
+      phase,
       promptTemplate,
       settings: {}
     };
@@ -102,13 +115,21 @@ function loadAdditionalAgents(rulesetName, rulesetDir) {
 function buildBundle(dir) {
   const ruleset = JSON.parse(readFileSync(join(dir, "ruleset.json"), "utf8"));
   const lb = JSON.parse(readFileSync(join(dir, "lorebook.json"), "utf8"));
+  const gmMd = readFileSync(join(dir, "gm-agent.md"), "utf8");
+  const mainPromptTemplate = extractPromptBlock(gmMd);
 
-  /* GM-mode bundles ship ruleset + lorebook only as of v0.4. Agents have
-     been decoupled from the bundle and are NOT installed here — GM-mode
-     does not use the MRR-managed agents in practice, and embedding them
-     caused duplicate-agent accumulation across re-installs. The
-     gm-agent.md and per-ruleset agents/ folders are kept on disk for
-     reference and for the RP-mode build pipeline that does ship agents. */
+  /* GM-mode bundles embed both the main GM agent (bundle.gmAgent) AND
+     role agents (bundle.additionalAgents), all enabled:true. GM-mode
+     does not expose an Import Agents dialog or per-agent toggle, so
+     agents must arrive installed-and-live with the ruleset bundle.
+     The extension's existing install path keys idempotently on
+     settings.mrrAgentRole (and on mrrRulesetId for the main agent),
+     so re-installs update in place rather than accumulating duplicates.
+     RP-mode keeps a separate agents.json import flow because RP users
+     CAN toggle. */
+  const roleAgents = loadAdditionalAgents(ruleset.name, dir).map(function (ag) {
+    return Object.assign({}, ag, { enabled: true });
+  });
   const regexScripts = buildRegexScripts(ruleset);
   const customTools = buildCustomTools(ruleset);
 
@@ -134,8 +155,15 @@ function buildBundle(dir) {
     version: 1,
     minExtensionVersion: "0.4.0",
     authorId: "kenhito",
-    generator: { name: "build-bundle.mjs", version: "1.6.0" },
+    generator: { name: "build-bundle.mjs", version: "1.7.0" },
     ruleset,
+    gmAgent: {
+      name: ruleset.name + " Ruleset Helper",
+      description: "Auto-installed by GM-mode bundle. Provides " + ruleset.name + " skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
+      phase: "pre_generation",
+      promptTemplate: mainPromptTemplate,
+      settings: {}
+    },
     lorebook: {
       name: lb.name,
       description: lb.description || "",
@@ -160,16 +188,25 @@ function buildBundle(dir) {
     bundle.customTools = customTools;
   }
 
+  /* Role agents (combat-overseer, context-fuser, state-mutator, plus any
+     per-system parallel overlays). Loaded above as roleAgents with
+     enabled:true forced. Empty array is fine — no key set. */
+  if (roleAgents.length > 0) {
+    if (!Array.isArray(bundle.additionalAgents)) bundle.additionalAgents = [];
+    for (const ag of roleAgents) bundle.additionalAgents.push(ag);
+  }
+
   /* Vector 5: pre-input transformer agent. The generator returns either
      a single agent object (from vocabularyHints[] derivation or from
      ruleset.preInputTransformerAgent override) or null. We attach it
      into bundle.additionalAgents so the existing additionalAgents
      install path handles it idempotently (settings.mrrAgentRole keys
-     re-install matching). */
+     re-install matching). GM-mode policy: force enabled:true since the
+     mode has no per-agent toggle UI. */
   const transformerAgent = buildPreInputTransformer(ruleset);
   if (transformerAgent && typeof transformerAgent === "object") {
     if (!Array.isArray(bundle.additionalAgents)) bundle.additionalAgents = [];
-    bundle.additionalAgents.push(transformerAgent);
+    bundle.additionalAgents.push(Object.assign({}, transformerAgent, { enabled: true }));
   }
 
   /* Vector 8: scenario default (NON-persona). When present the engine

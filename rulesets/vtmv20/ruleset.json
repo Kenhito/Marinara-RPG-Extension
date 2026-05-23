@@ -1005,5 +1005,28 @@
         "label": "Protean"
       }
     ]
-  }
+  },
+  "vocabularyHints": [
+    {
+      "pattern": "I attack / I bite / I claw",
+      "hint": "VTM combat uses dice pools — Strength + Brawl for unarmed/bite, Strength + Melee for weapons, Dexterity + Firearms for guns. Difficulty defaults to 6; 1s subtract successes, all-1s with no successes is a botch. Note Celerity bonus actions and Potence auto-successes."
+    },
+    {
+      "pattern": "I spend blood / I rouse the blood / I heal",
+      "hint": "Track Blood Pool changes explicitly. Per-turn cap on spend equals Generation (13th=1, 12th=1, 11th=1, 10th=2, etc.). One blood point heals one bashing/lethal level (aggravated takes longer + multiple points). Disciplines like Celerity, Potence, Fortitude cost 1 blood per scene/use."
+    },
+    {
+      "pattern": "I use a Discipline / I activate (Celerity, Auspex, Dominate, etc.)",
+      "hint": "Most Disciplines require a blood spend (1 point unless noted) and may need a dice pool roll. Higher-level powers cost more. Note Generation cap on per-turn spend. Mention any humanity/path implications (Dominate = potential Path/Humanity check for victim) where applicable."
+    },
+    {
+      "pattern": "I check frenzy / I'm provoked / I see fire / I see sunlight",
+      "hint": "Frenzy is a Self-Control or Instincts check against a situational difficulty (provoked=6, hunger=varies by Blood Pool, fire=8, sunlight=7). Failure means the Beast takes over. Path of Humanity uses Self-Control; other Paths use Instincts. Successes determine how long they hold the Beast back."
+    },
+    {
+      "pattern": "I roll initiative",
+      "hint": "VTM initiative is Dexterity + Wits + 1d10 (no botches on initiative). Celerity adds dice equal to current Celerity rating to the pool. Higher result acts first; ties favor higher Dex."
+    }
+  ],
+  "scenarioDefaultDerive": true
 }

@@ -1,11 +1,10 @@
 # Context Fuser Agent
 
-A `pre_generation` `context_injection` agent that merges the responsibilities of the legacy `lore-query` + `state-reminder` into one AI call per turn. Answers rules questions when asked AND surfaces current sheet state — both context-injection workloads handled in one prompt.
+A `pre_generation` `context_injection` agent that answers rules questions when asked AND surfaces current sheet state — both context-injection workloads handled in one prompt so the narration model gets ruleset reference and player state in one coordinated block per turn.
 
 **Role identifier:** `context-fuser`
 **Phase:** `pre_generation`
 **Result type:** `context_injection`
-**Supersedes:** `lore-query`, `state-reminder` (legacy — disable when this one is enabled).
 
 ## Prompt template
 

@@ -10925,6 +10925,14 @@ function openDialog() {
         installBundle(parsed, function (status) { setMsg(msg, status, "info"); })
           .then(function () {
             if (urlInput && urlInput.value) lsSet(LS_RULESET_URL, urlInput.value);
+            /* Vector 8 per-chat auto-install. The bundle ships scenarioDefault
+               as a string; the helper prompts the user (window.confirm) and
+               PATCHes the active chat's groupScenarioText if approved. The
+               install is considered successful regardless of the helper's
+               outcome — it never throws, only reports. */
+            return applyScenarioDefaultToCurrentChat(parsed.scenarioDefault, function (status) { setMsg(msg, status, "info"); });
+          })
+          .then(function () {
             setMsg(msg, "Bundle installed. Reloading ...", "ok");
             marinara.setTimeout(function () { window.location.reload(); }, RELOAD_DELAY_MS);
           })
@@ -11892,6 +11900,43 @@ function syncFieldReferenceToLorebook() {
     });
   }).catch(function (e) {
     warn("syncFieldReferenceToLorebook failed: " + (e && e.message ? e.message : e));
+  });
+}
+
+/* Vector 8 — per-chat auto-install of bundle.scenarioDefault. Caller invokes
+   this after installBundle resolves; the helper checks for an active chat,
+   prompts the user once (window.confirm), and PATCHes /chats/:id/metadata
+   with { groupScenarioText: scenarioDefault }. Endpoint, method, and body
+   shape mirror reconcileActiveAgents below — same pass-through metadata
+   merge contract documented in chats.routes.ts:349. "All my chats" is out
+   of scope for the first pass; per-chat with explicit confirmation is the
+   safer minimum-viable closure. Helper resolves on success, on user cancel,
+   on missing-chat, and on PATCH failure — the install pipeline never throws
+   from this step (scenario default is a UX nicety, not a correctness gate). */
+function applyScenarioDefaultToCurrentChat(scenarioDefault, progressCb) {
+  function report(s) { if (progressCb) progressCb(s); }
+  if (!state.chatId) {
+    report("No active chat — scenario default ships in the bundle but won't auto-apply.");
+    return Promise.resolve();
+  }
+  if (!scenarioDefault || typeof scenarioDefault !== "string") {
+    return Promise.resolve();
+  }
+  var prompt = "Apply the bundle's scenario default to this chat now?\n\n"
+    + "This sets the chat's groupScenarioText override (the engine reads it during prompt assembly).\n\n"
+    + "Click Cancel to leave the chat's scenario text alone — you can paste it manually later from the bundle's scenarioDefault field.";
+  if (!window.confirm(prompt)) {
+    report("Scenario default not applied — chat scenario text unchanged.");
+    return Promise.resolve();
+  }
+  report("Applying scenario default to chat " + state.chatId + " ...");
+  return apiFetch("/chats/" + state.chatId + "/metadata", {
+    method: "PATCH",
+    body: JSON.stringify({ groupScenarioText: scenarioDefault })
+  }).then(function () {
+    report("Scenario default applied to current chat.");
+  }).catch(function (e) {
+    report("Failed to apply scenario default: " + (e && e.message ? e.message : e));
   });
 }
 

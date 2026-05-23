@@ -779,5 +779,28 @@
       "hitDie": "d6",
       "description": "Studied full caster, spell preparation + rituals."
     }
-  ]
+  ],
+  "vocabularyHints": [
+    {
+      "pattern": "I attack / I swing / I shoot",
+      "hint": "In D&D 5e, an attack roll is 1d20 + proficiency bonus (if proficient with the weapon) + ability modifier (STR for melee, DEX for finesse/ranged) vs target AC. Note advantage/disadvantage from cover, conditions, or features."
+    },
+    {
+      "pattern": "I cast a spell / I cast a cantrip",
+      "hint": "Cantrips cost no slot; leveled spells consume a spell slot of the spell's level (or higher to upcast). Verify the caster has slots remaining and that the spell is prepared/known. Note Concentration if a current spell would be broken."
+    },
+    {
+      "pattern": "I make a saving throw / I save",
+      "hint": "Saves are 1d20 + ability modifier + proficiency bonus only if proficient in that save. Note advantage/disadvantage from conditions (Frightened on STR/DEX, Restrained on DEX, etc.) and class features (Aura of Protection, Magic Resistance)."
+    },
+    {
+      "pattern": "I take an action / I use my action",
+      "hint": "Each turn allows one Action, one Bonus Action (only if a feature grants it), one Reaction (off-turn), Movement up to speed, and free Object Interaction. Confirm which the player is spending; multiclass features stack on the same turn."
+    },
+    {
+      "pattern": "I roll initiative",
+      "hint": "Initiative is 1d20 + Dexterity modifier. Apply Alert feat (+5) and any racial/class bonuses. Note that surprise gives -no- attack on round 1, not a flat denied action — surprised creatures can't move or take actions/reactions until end of turn."
+    }
+  ],
+  "scenarioDefaultDerive": true
 }

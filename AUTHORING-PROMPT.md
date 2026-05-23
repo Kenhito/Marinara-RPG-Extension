@@ -92,13 +92,22 @@ not split it across multiple responses. Do not add commentary inside the JSON
 
 ---
 
-## Optional sub-agents (`additionalAgents[]`)
+## Sub-agents (`additionalAgents[]`)
 
-A bundle MAY include up to five focused `pre_generation` sub-agents in `additionalAgents[]`: `state-mutator`, `state-reminder`, `combat-adjudicator`, `lore-query`, `npc-bookkeeper`. Each is a distinct agent with its own promptTemplate and `role`-based idempotency key. The five reference prompts live at `agents/<role>.md` in this repo — copy their content into the bundle's `additionalAgents[].promptTemplate` for parity with what the existing reference bundles ship.
+GM-mode bundles SHIP the canonical sub-agent pool in `additionalAgents[]`, all `enabled:true`:
 
-**Install posture (v0.3+):** sub-agents install **disabled by default**. The user opts in per-agent in Marinara → Settings → Agents. If a specific sub-agent is so essential to your bundle that it should fire on first install, set `"enabled": true` on that item in `additionalAgents[]` — the installer reads the field and creates the agent enabled. Use sparingly; every enabled sub-agent costs one model call per turn.
+- `combat-overseer` (pre_generation) — combat-math framing + NPC roster.
+- `context-fuser` (pre_generation) — rules-query answers + player-state reminder.
+- `state-mutator` (post_processing) — parses GM model output for `[mrr-state: ...]` tags and writes deltas to the sheet.
 
-**On re-install (PATCH), the user's enabled-toggle is preserved.** The installer carries `enabled` only on the initial CREATE. So a user who toggled a sub-agent on after install still has it on after re-install of the bundle. Ship the bundle confidently; you're not clobbering user choice.
+Optional additions when the ruleset needs them:
+
+- `pre-input-transformer` (pre_generation) — auto-derived from `ruleset.vocabularyHints[]` (or a full author override at `ruleset.preInputTransformerAgent`). Translates D&D-flavored player input into ruleset vocabulary.
+- Per-system parallel-phase overlays (e.g. `anima-banner-monitor` and `charm-cooldown-tracker` for `exalted3e`; `blood-pool-tracker` for `vtmv20`) — system-specific resource trackers that run alongside the narrator without blocking it.
+
+Reference prompts for the three universal agents live at `agents/<role>.md`. Drop a per-system override at `rulesets/<your-system>/agents/<role>.md` to tune any of them; otherwise the shared baseline applies. Per-system parallel overlays live only at `rulesets/<your-system>/agents/<role>.md` — they're not shared because the resources they track are unique to that system. Each sub-agent has its own `role`-based idempotency key (`mrrAgentRole`) so the installer matches and updates in place on re-install instead of accumulating duplicates.
+
+**Install posture (GM-mode):** sub-agents install **enabled by default**. GM-mode has no per-agent toggle UI in Marinara, so the bundle IS the install — users do not pick and choose. Users who want to opt out must remove the agent from Marinara directly. Migration from v0.4.x legacy installs (the old `combat-adjudicator` / `npc-bookkeeper` / `lore-query` / `state-reminder` set) requires uninstalling the ruleset and reinstalling from the current bundle; the legacy four no longer exist in this repo and the new build pipeline never re-creates them.
 
 **Document each sub-agent in the lorebook.** Conventionally, ship one lorebook entry titled "Optional Sub-Agents — what they do and how to enable" that lists each agent's purpose + the Settings → Agents flow. The dnd5e and exalted3e reference bundles in this repo show the canonical content.
 

@@ -728,5 +728,28 @@
   "header": {
     "raceLabel": "Ancestry",
     "classLabel": "Class"
-  }
+  },
+  "vocabularyHints": [
+    {
+      "pattern": "I attack / I strike",
+      "hint": "Pathfinder 2e Strike: 1d20 + Strength (melee) or Dexterity (ranged/finesse) + proficiency + item bonus vs target AC. Each subsequent Strike in the same turn takes a Multiple Attack Penalty: -5 on the second, -10 on the third (or -4/-8 with agile). Confirm action cost and current MAP before resolving."
+    },
+    {
+      "pattern": "I take an action / I cast / I use a feat",
+      "hint": "Each turn provides 3 actions plus 1 reaction. Spells cost actions equal to their cast time (usually 2 actions for most spells, 1 or 3 for variants). Activities (Stride, Strike, Cast a Spell, Demoralize, etc.) are bundles of actions. Free actions and reactions are separate budgets — don't conflate."
+    },
+    {
+      "pattern": "I make a saving throw / I save",
+      "hint": "Saves are 1d20 + Fortitude/Reflex/Will modifier (ability + proficiency + item). Degrees of success: Crit Success (≥10 over DC), Success (≥DC), Failure (<DC), Crit Failure (≤10 under DC). Nat-20 bumps result one step up; nat-1 bumps one step down."
+    },
+    {
+      "pattern": "I cast a spell / I cast a cantrip",
+      "hint": "Cantrips heighten to half-level rounded up automatically; leveled spells consume a slot of their rank (or higher to heighten). Verify caster has slots, the spell is prepared/known (prepared casters lose the slot after cast; spontaneous use signature spells or known list). Note metamagic feats add an action."
+    },
+    {
+      "pattern": "I roll initiative",
+      "hint": "Pathfinder 2e initiative uses Perception by default, but a skill the GM rules appropriate (Stealth in ambush, Diplomacy in social) is fair. Highest result acts first; ties favor PCs over NPCs. No special bonuses unless from feats (Incredible Initiative +2)."
+    }
+  ],
+  "scenarioDefaultDerive": true
 }

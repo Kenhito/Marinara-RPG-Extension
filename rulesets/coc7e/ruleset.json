@@ -304,5 +304,28 @@
     "max": 5,
     "default": 0,
     "textOnly": true
-  }
+  },
+  "vocabularyHints": [
+    {
+      "pattern": "I attempt / I try / I roll (a skill)",
+      "hint": "Call of Cthulhu uses roll-under d100. Roll 1d100; succeed if at-or-under the skill value (Regular). For Hard, the threshold is half the skill (round down); for Extreme, one-fifth. Difficulty is set by the Keeper based on circumstance — name the difficulty level before resolving."
+    },
+    {
+      "pattern": "I push the roll / I try again",
+      "hint": "Pushing a roll lets a failed skill check be re-rolled ONCE, but only if the investigator narrates a meaningful additional risk or effort. Failing a pushed roll triggers a significantly worse consequence than a simple failure. Sanity-related and combat rolls generally cannot be pushed."
+    },
+    {
+      "pattern": "I spend Luck / I use Luck points",
+      "hint": "Investigators can spend Luck points 1-for-1 to reduce a failed d100 roll's value down to the success threshold. Luck cannot be spent on Sanity or damage rolls. Luck refreshes only at the end of a scenario (or as the Keeper rules); track current Luck explicitly."
+    },
+    {
+      "pattern": "I check my Sanity / I'm exposed to the Mythos",
+      "hint": "Sanity checks roll 1d100 against current Sanity. Success loses the lower listed loss; failure loses the higher. Major losses (5+ in a single check) trigger Bouts of Madness. Track temporary, indefinite, and permanent insanity separately. Cthulhu Mythos rating caps maximum Sanity."
+    },
+    {
+      "pattern": "I shoot / I attack / I fight back",
+      "hint": "Combat uses standard skill rolls (Fighting (Brawl), Firearms (Handgun/Rifle/etc.), Throw). Range and called-shot penalties apply as Hard or Extreme difficulty. Damage is the weapon's listed dice plus Damage Bonus for melee/thrown attacks (str/siz table)."
+    }
+  ],
+  "scenarioDefaultDerive": true
 }

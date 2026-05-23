@@ -469,7 +469,7 @@ For systems with combat penalties that reset every round (OpenD6 multi-action `-
 ]
 ```
 
-The combat-adjudicator agent's "round ended" signal triggers the framework to zero `resetOn: "next-round"` counters. (Auto-apply of `penaltyFormula` to roll pools is Task #5 — currently the gm-agent.md should instruct the narrator to apply the penalty by hand.)
+The `combat-overseer` agent's "round ended" signal triggers the framework to zero `resetOn: "next-round"` counters. (Auto-apply of `penaltyFormula` to roll pools is Task #5 — currently the gm-agent.md should instruct the narrator to apply the penalty by hand.)
 
 ---
 

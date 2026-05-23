@@ -1,11 +1,10 @@
 # Combat Overseer Agent
 
-A `pre_generation` `context_injection` agent that merges the responsibilities of the legacy `combat-adjudicator` + `npc-bookkeeper` into one AI call per turn. Enforces combat math when combat is happening AND keeps NPC state visible — both surfaces handled in one prompt to cut per-turn token cost roughly in half versus enabling both legacy agents.
+A `pre_generation` `context_injection` agent that enforces combat math when combat is happening AND keeps NPC state visible — both surfaces handled in one prompt so the narration model sees one coordinated combat context block per turn instead of two separate ones.
 
 **Role identifier:** `combat-overseer`
 **Phase:** `pre_generation`
 **Result type:** `context_injection`
-**Supersedes:** `combat-adjudicator`, `npc-bookkeeper` (legacy — disable when this one is enabled).
 
 ## Prompt template
 

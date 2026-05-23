@@ -39,6 +39,21 @@ function extractPromptBlock(md) {
   );
 }
 
+/* Vector 7 enabler. The agent .md convention declares phase as a bold-prefixed
+   line in the prose body — `**Phase:** parallel`, `**Phase:** pre_generation`,
+   etc. Earlier versions of this generator hardcoded pre_generation regardless
+   of what the source declared, which silently downgraded parallel-phase agents
+   to pre_generation and broke the V7 path. We honor the declaration here;
+   anything outside the engine's accepted enum falls back to pre_generation
+   (defensive default — keeps existing seven shared agents unchanged). */
+function extractPhase(md) {
+  const m = md.match(/^\s*\*\*Phase:\*\*\s*`?([a-zA-Z_]+)`?/m);
+  if (!m) return "pre_generation";
+  const declared = (m[1] || "").trim().toLowerCase();
+  const ALLOWED = new Set(["pre_generation", "post_generation", "parallel"]);
+  return ALLOWED.has(declared) ? declared : "pre_generation";
+}
+
 function titleCase(s) {
   return s.split(/[-_]/).map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(" ");
 }
@@ -62,14 +77,15 @@ function loadRoleAgents(rulesetName, rulesetDir) {
     try { md = readFileSync(overridePath, "utf8"); isOverride = true; }
     catch (e) { md = readFileSync(join(sharedDir, role + ".md"), "utf8"); isOverride = false; }
     const promptTemplate = extractPromptBlock(md);
+    const phase = extractPhase(md);
     const firstHeading = (md.match(/^#\s+(.+)$/m) || [])[1] || titleCase(role);
     const tunedNote = isOverride ? " — tuned for " + rulesetName : " — shared baseline";
     return {
       role,
       name: rulesetName + " — " + firstHeading.replace(/\s+Agent\s*$/i, ""),
       description: "Focused " + role.replace(/-/g, " ") + " agent for " + rulesetName + tunedNote + ".",
-      phase: "pre_generation",
-      enabled: false,
+      phase,
+      enabled: true,
       promptTemplate,
       settings: {}
     };

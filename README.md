@@ -25,7 +25,7 @@ The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps
 
 - **Typed damage** on health-style tracks: declare `damageTypes` and the renderer color-codes each cell, severity-stacks the worst damage leftmost, and gives the state-mutator per-type field names (`field="bashing" delta="+3"`).
 - **Sorcery / multi-turn casting category** in the spellbook. Spells filed under `"sorcery"` get auto-tagged in their lorebook entries, signaling the state-mutator to use multi-turn shape-sorcery flow (declare → accumulate sorcerous motes → unleash with Willpower refund).
-- **Agents decoupled from bundle.** New `tools/build-agents.mjs` produces `agents.json` separately from the bundle. Users import via Marinara's Import Agents dialog (delete-then-replace, no duplicate accumulation). Prompt updates ship without forcing users to reinstall the entire ruleset.
+- **Agents bundled and auto-installed.** GM-mode bundles ship the canonical agent pool — Ruleset Helper, `combat-overseer`, `context-fuser`, `state-mutator`, an optional pre-input-transformer, and any per-system parallel-phase overlays (e.g. Exalted's anima-banner-monitor + charm-cooldown-tracker, VTM's blood-pool-tracker). All `enabled:true` because GM-mode has no per-agent toggle UI; the bundle IS the install. Idempotent `mrrAgentRole` keying handles re-installs in place.
 - **CSP-safe formula evaluator.** The `{StatName}*N+M` parser uses recursive descent instead of `new Function`. Marinara pages with strict CSP that blocks `'unsafe-eval'` now compute bar maxes correctly.
 - **State-mutator field-name normalization** + max-clamp on numeric deltas + persisted dedupe across reloads.
 - **Lorebook install path rewritten** to fix the silent-failure bulk endpoint. Per-entry POST with delete-then-add for clean re-installs.
@@ -201,7 +201,7 @@ Open **`AUTHORING-PROMPT.md`**, copy it whole into a chat with a frontier model 
 | `docs/ADDING-RULESETS.md` | Full walkthrough using Fate Core as a worked example. |
 | `docs/AUTHORING.md` | Bundle anatomy, eight-step authoring process, common pitfalls. |
 | `docs/ENGINE-CONSTRAINTS.md` | Honest list of what the overlay can and cannot do (combat-modal stays d20-shaped, server-side encounter routes hardcoded, 50-char reputation action cap). |
-| `agents/*.md` | The five optional sub-agent prompt sources (state-mutator, state-reminder, combat-adjudicator, lore-query, npc-bookkeeper). |
+| `agents/*.md` | The three canonical sub-agent prompt sources (`combat-overseer`, `context-fuser`, `state-mutator`). Per-system overrides may live at `rulesets/<id>/agents/<role>.md`; per-system parallel-phase overlays live there too (no shared baseline). |
 | One reference bundle (`rulesets/dnd5e/bundle.json` for d20, `exalted3e` for dice pool, `fate-core` for fate ladder, `pathfinder2e` for d20 with the three-action economy) | Concrete example of every field populated correctly. |
 
 Hard requirements your AI's output MUST hit:
@@ -210,7 +210,7 @@ Hard requirements your AI's output MUST hit:
 - **Integer `position` 0 | 1 | 2** on every lorebook entry (not strings like `"before_an"` — that was the v0.2 footgun, fixed in v0.3).
 - **`schema: "mrr-bundle"`** discriminator literal.
 - **For Game-Mode chats specifically:** keep the 50-character reputation tag action-string cap workaround paragraph in your `gmAgent.promptTemplate` — Marinara validates `[reputation: …]` action strings at 50 chars and silently fails longer ones.
-- **Sub-agents install disabled by default** as of v0.3+. If your bundle ships sub-agents in `additionalAgents[]` that you genuinely want enabled on install, set `"enabled": true` on that item explicitly. Otherwise the user toggles them on per-agent in Settings → Agents.
+- **Sub-agents install enabled by default in GM-mode.** GM-mode has no per-agent toggle UI in Marinara Settings, so bundles ship every `additionalAgents[]` item with `"enabled": true` — the bundle IS the install. Migration from v0.4.x legacy installs (which shipped `combat-adjudicator` / `npc-bookkeeper` / `lore-query` / `state-reminder` as disabled-by-default) requires uninstalling the ruleset and reinstalling the current bundle; the legacy four no longer exist in this repo.
 - **Character cards:** if you ship one, use the V2 spec (`spec: "chara_card_v2"`, `spec_version: "2.0"`, `data` envelope).
 
 Run `node tools/validate-bundle.mjs rulesets/your-system/bundle.json` after the AI hands back the result to catch shape errors. The validator emits `path/expected/got/hint` records — paste any errors back to the AI for a corrected bundle.
@@ -226,7 +226,7 @@ For a more deliberate authoring loop:
 3. Run `node tools/validate-ruleset.mjs rulesets/your-system/ruleset.json` to confirm.
 4. Edit `gm-agent.md` to teach the GM your mechanics and dice-tag format.
 5. Build `lorebook.json` for your system's rules reference (keyword-triggered entries; integer positions; tune `tokenBudget` to ~1500–2000).
-6. (Optional) Edit `agents/<role>.md` for any sub-agents you want to ship — see the existing five at the repo root's `agents/`.
+6. (Optional) Tune a sub-agent for your system by dropping `rulesets/your-system/agents/<role>.md` — the three universal baselines are at the repo root's `agents/` (`combat-overseer`, `context-fuser`, `state-mutator`). Per-system parallel-phase overlays live ONLY at `rulesets/your-system/agents/<role>.md` — no shared baseline, since they track system-specific resources.
 7. Write `INSTALL.md` for the per-ruleset install instructions (audience: end users on Marinara).
 8. Run `node tools/build-bundle.mjs rulesets/your-system/` to assemble the inputs into `bundle.json`.
 9. Run `node tools/validate-bundle.mjs rulesets/your-system/bundle.json` to confirm shape.
