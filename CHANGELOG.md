@@ -12,6 +12,60 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+## [0.5.0] - 2026-05-22
+
+**BREAKING for v0.4.x users.** GM-mode now ships only the canonical sub-agent pool (no menu), auto-installed and enabled at ruleset import. Migration is uninstall-then-reinstall the ruleset. Two new reference rulesets (Blades in the Dark, Genesys), three new per-system parallel-phase overlays (Exalted's anima banner + Charm cooldowns, VTM's blood pool), and the Vector 8 per-chat scenario-default install path also land. Companion to RP-mode v0.3.0 which preserves the toggleable two-path model.
+
+### Breaking — legacy four sub-agents removed (2026-05-22)
+
+- Deleted shared baselines: `agents/combat-adjudicator.md`, `agents/npc-bookkeeper.md`, `agents/lore-query.md`, `agents/state-reminder.md`. The merged `combat-overseer` and `context-fuser` agents now cover those four responsibilities in two prompts instead of four AI calls.
+- Deleted per-ruleset legacy overrides under `rulesets/{dnd5e,exalted3e,fate-core,vtmv20}/agents/`.
+- The build pipeline (`build-agents.mjs`) no longer emits any legacy-named agent into `agents.json`. Marinara's stock agent UI can still hold legacy sub-agents from an older v0.4.x install — those are orphaned and should be removed manually after the v0.5.0 reinstall.
+- **Migration path:** uninstall the ruleset in Marinara (clears the lorebook, GM agent, and any bundle-installed sub-agents), then reinstall the v0.5.0 bundle. The new `mrrAgentRole` idempotency keying handles the install cleanly.
+
+### Added — canonical agent pool auto-installs via bundle (2026-05-22)
+
+- `tools/build-bundle.mjs` now populates **`bundle.gmAgent`** from the ruleset's `gm-agent.md` (was missing since the v0.4 decoupling — extension's auto-install was silently skipping the main GM agent in GM-mode). Generator version bumped to `1.7.0`.
+- `tools/build-bundle.mjs` wires the previously-dead `loadAdditionalAgents()` into `buildBundle()`, pushing role agents into `bundle.additionalAgents[]` with `enabled:true` forced. GM-mode has no per-agent toggle UI in Marinara Settings → Agents, so the bundle IS the install.
+- `tools/build-agents.mjs` sub-agent `enabled` default flipped `false` → `true` for the same reason.
+- Idempotent install: each agent's `settings.mrrAgentRole` keys the install so re-installs update in place rather than accumulating duplicates.
+
+### Added — per-system parallel-phase overlays (2026-05-22)
+
+- `rulesets/exalted3e/agents/anima-banner-monitor.md` — `parallel`-phase `context_injection` agent tracking each Solar/Lunar/Sidereal/Dragon-Blooded character's anima banner level based on Peripheral mote spend across the scene. Runs alongside the narrator without blocking — zero added per-turn latency.
+- `rulesets/exalted3e/agents/charm-cooldown-tracker.md` — `parallel`-phase agent scanning recent turns for Charm activations and emitting a per-scene cooldown summary (per-scene Charms used, simple Charms with reflexive cost, Excellencies drawn from the cap).
+- `rulesets/vtmv20/agents/blood-pool-tracker.md` — `parallel`-phase agent tracking each Kindred character's current Blood Pool, per-turn generation cap, and recent significant changes (rouse, heal, frenzy, sunrise).
+- Per-system parallel overlays cannot be folded into universal agents because the resources they track exist only in their system. They are emitted alongside the universal pool in both `agents.json` and `bundle.additionalAgents[]`.
+
+### Added — two new reference rulesets (since v0.4.2)
+
+- **Blades in the Dark** (`blades-in-the-dark`) — narrative-handled resolution mode (Forged in the Dark mechanics).
+- **Genesys** (`genesys`) — narrative-handled resolution mode (Star Wars / Genesys narrative dice).
+- v0.5.0 ships twelve total reference rulesets: blades-in-the-dark, coc7e, dnd5e, exalted3e, fate-core, genesys, gurps-lite, lasers-and-feelings, pathfinder2e, stewpot, trophy-dark, vtmv20.
+
+### Added — Vector 8 per-chat scenario-default install (2026-05-22)
+
+- `tools/build-scenario-default.mjs` already ships `bundle.scenarioDefault` (introduced in 0.4.2). The Vector 8 close-the-loop install step now lives in `extension/RPG-Extension-GM-Mode.js`: after `installBundle()` resolves, `applyScenarioDefaultToCurrentChat(scenarioDefault, progressCb)` prompts the user once via `window.confirm` and PATCHes `chatMeta.groupScenarioText` on the active chat if approved. The install pipeline never throws from this step — scenario default is a UX nicety, not a correctness gate.
+- `coc7e`, `dnd5e`, `pathfinder2e`, `vtmv20` ruleset.json files gained `scenarioDefault` blocks alongside the existing `exalted3e` derivation.
+
+### Changed — sub-agent enable defaults flipped to true in GM-mode (2026-05-22)
+
+- `tools/build-agents.mjs` `loadRoleAgents()` returns each sub-agent with `enabled: true` instead of `false`. The pre-input-transformer agent also forced to `enabled:true` at the call site in `build-bundle.mjs`. Rationale: GM-mode has no per-agent toggle UI in Marinara Settings, so bundles must arrive installed-and-live; the user cannot opt in later.
+
+### Changed — agent file headers simplified (2026-05-22)
+
+- `agents/combat-overseer.md` and `agents/context-fuser.md` lost their "Supersedes:" headers since the agents they superseded no longer exist in this repo. The opening descriptions now describe what each agent does rather than what it replaced.
+
+### Docs — README + AGENTS + BUILDING + AUTHORING-PROMPT rewritten (2026-05-22)
+
+- `README.md`: legacy "Agents decoupled from bundle" bullet rewritten as "Agents bundled and auto-installed"; file-reference table updated to "three canonical sub-agents"; sub-agent install posture rewritten as GM-mode enabled-by-default policy with v0.4.x uninstall/reinstall migration note; developer-path checklist updated for the three canonical baselines + per-system overlay convention.
+- `docs/BUILDING.md`: replaced "Agent consolidation (recommended v0.5.0+ defaults)" with **"Canonical agent pool (GM-mode bundle contract)"** — describes universal pool, per-system parallel overlays, per-turn cost math, the uninstall/reinstall v0.4.x migration, and the per-ruleset override surface. `build-agents.mjs` reference also updated.
+- `AGENTS.md`: "Five role agents" architectural bullet rewritten as "Three role agents + per-system parallel-phase overlays" with the GM-mode `enabled:true` policy spelled out.
+- `AUTHORING-PROMPT.md`: optional-sub-agents section rewritten so AI authors generating new rulesets target the canonical pool, not the legacy five.
+- `docs/AUTHORING-PHASE-6.md`: single `combat-adjudicator` reference updated to `combat-overseer`.
+- `schema/bundle.schema.json`: `additionalAgents.description` rewritten with canonical names + GM-mode policy note.
+- Release packaged at `releases/v0.5.0/` + matching `releases/Marinara-RPG-Extension-v0.5.0.zip` (849K).
+
 ## [0.4.2] - 2026-05-14
 
 Trinity grouping, Merits & Flaws section, OpenD6 dogfood remediation, parity fixes, and documentation completeness pass.
