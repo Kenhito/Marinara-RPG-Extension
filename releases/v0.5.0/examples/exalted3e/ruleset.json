@@ -1,0 +1,977 @@
+{
+  "id": "exalted3e",
+  "name": "Exalted 3rd Edition",
+  "version": "1.1.0",
+  "edition": "Exalted 3rd Edition Core (2016, Onyx Path)",
+  "license": "Original mechanics references; charm names belong to Onyx Path Publishing. No verbatim Onyx Path text reproduced.",
+  "summary": "Storyteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.",
+  "commitmentModel": "mote",
+  "dice": {
+    "type": "d10",
+    "notation": "Xd10 vs 7"
+  },
+  "resolution": {
+    "mode": "dice-pool",
+    "poolFormula": "Attribute + Ability (+ specialty +1, + stunt up to +2, + Charm dice)",
+    "target": 7,
+    "doubles": {
+      "face": 10,
+      "successes": 2
+    },
+    "botches": {
+      "onFace": 1,
+      "trigger": "any-on-zero-successes"
+    }
+  },
+  "difficulties": {
+    "Routine": {
+      "threshold": 1,
+      "description": "Trivial for a competent character. Often waived."
+    },
+    "Standard": {
+      "threshold": 2,
+      "description": "Default opposed baseline."
+    },
+    "Difficult": {
+      "threshold": 3,
+      "description": "Pushes a skilled mortal."
+    },
+    "Demanding": {
+      "threshold": 4,
+      "description": "Few mortals can do it reliably."
+    },
+    "Legendary": {
+      "threshold": 5,
+      "description": "Peak of mortal-scale achievement; songs are sung."
+    },
+    "Beyond Legendary": {
+      "threshold": 7,
+      "description": "Wyld navigation, First-Age relics, Essence > 5 territory."
+    }
+  },
+  "attributes": [
+    {
+      "name": "Strength",
+      "abbreviation": "STR",
+      "group": "Physical",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Raw muscle. Lifting, melee damage."
+    },
+    {
+      "name": "Dexterity",
+      "abbreviation": "DEX",
+      "group": "Physical",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Agility, hand-eye coordination, attack accuracy."
+    },
+    {
+      "name": "Stamina",
+      "abbreviation": "STA",
+      "group": "Physical",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Endurance, soak, resisting fatigue."
+    },
+    {
+      "name": "Charisma",
+      "abbreviation": "CHA",
+      "group": "Social",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Honest charm, leadership, sincere persuasion."
+    },
+    {
+      "name": "Manipulation",
+      "abbreviation": "MAN",
+      "group": "Social",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Deceit, guile, indirect influence."
+    },
+    {
+      "name": "Appearance",
+      "abbreviation": "APP",
+      "group": "Social",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Beauty / presence; affects attraction and intimidation."
+    },
+    {
+      "name": "Perception",
+      "abbreviation": "PER",
+      "group": "Mental",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Spotting, hearing, noticing details."
+    },
+    {
+      "name": "Intelligence",
+      "abbreviation": "INT",
+      "group": "Mental",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Reasoning, learning, recall, abstract thought."
+    },
+    {
+      "name": "Wits",
+      "abbreviation": "WIT",
+      "group": "Mental",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Reaction speed, on-the-fly thinking, initiative."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Archery",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Athletics",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Awareness",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Brawl",
+      "min": 0,
+      "max": 10,
+      "default": 0,
+      "description": "Includes Martial Arts when the Martial Artist Merit is taken."
+    },
+    {
+      "name": "Bureaucracy",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Craft",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Dodge",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Integrity",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Investigation",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Larceny",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Linguistics",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Lore",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Medicine",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Melee",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Occult",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Performance",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Presence",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Resistance",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Ride",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Sail",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Socialize",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Stealth",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Survival",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "Thrown",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    },
+    {
+      "name": "War",
+      "min": 0,
+      "max": 10,
+      "default": 0
+    }
+  ],
+  "skillProficiency": {
+    "tiers": [
+      {
+        "code": "U",
+        "label": "Unskilled",
+        "rollBonusFormula": "0"
+      },
+      {
+        "code": "C",
+        "label": "Caste",
+        "rollBonusFormula": "0"
+      },
+      {
+        "code": "F",
+        "label": "Favored",
+        "rollBonusFormula": "0"
+      }
+    ],
+    "default": "U"
+  },
+  "skillSpecialties": {
+    "enabled": true,
+    "valueLabel": "+ dice",
+    "valueKind": "dice",
+    "defaultValue": 1
+  },
+  "backgrounds": {
+    "enabled": true,
+    "label": "Backgrounds & Merits",
+    "min": 0,
+    "max": 5,
+    "default": 0
+  },
+  "derivedStats": [
+    {
+      "name": "Personal Motes",
+      "formula": "Essence x 3 + 10 (Solar)",
+      "maxFormula": "{Essence} * 3 + 10",
+      "renderAs": "bar",
+      "aliases": [
+        "motes",
+        "personalMotes",
+        "personal",
+        "pm"
+      ]
+    },
+    {
+      "name": "Peripheral Motes",
+      "formula": "Essence x 7 + 26 (Solar)",
+      "maxFormula": "{Essence} * 7 + 26",
+      "renderAs": "bar",
+      "aliases": [
+        "peripheralMotes",
+        "peripheral",
+        "peri",
+        "pp"
+      ]
+    },
+    {
+      "name": "Willpower",
+      "formula": "Per-character cap (typically 5-10 for Solars; max 10). User sets the cap via the max input on the bar; default starts at 5 for fresh Solar sheets.",
+      "renderAs": "bar",
+      "aliases": [
+        "wp",
+        "WP",
+        "willpower"
+      ]
+    },
+    {
+      "name": "Health Track",
+      "formula": "7 levels: -0/-1/-1/-2/-2/-4/Incapacitated. Penalty equals the highest filled box.",
+      "renderAs": "track",
+      "track": [
+        {
+          "label": "-0",
+          "penalty": 0
+        },
+        {
+          "label": "-1",
+          "penalty": -1
+        },
+        {
+          "label": "-1",
+          "penalty": -1
+        },
+        {
+          "label": "-2",
+          "penalty": -2
+        },
+        {
+          "label": "-2",
+          "penalty": -2
+        },
+        {
+          "label": "-4",
+          "penalty": -4
+        },
+        {
+          "label": "Incapacitated",
+          "penalty": -99
+        }
+      ],
+      "damageTypes": [
+        {
+          "id": "bashing",
+          "label": "B",
+          "severity": 0,
+          "description": "Blunt or non-lethal. Heals quickly. Pushed to the right when worse damage stacks on top."
+        },
+        {
+          "id": "lethal",
+          "label": "L",
+          "severity": 1,
+          "description": "Edged or piercing. Slow to heal. Sits between bashing and aggravated."
+        },
+        {
+          "id": "aggravated",
+          "label": "A",
+          "severity": 2,
+          "description": "Soulsteel, fire, dragon-blood claws. Heals only with magical aid. Always leftmost in the damage stack."
+        }
+      ],
+      "aliases": [
+        "hp",
+        "HP",
+        "health",
+        "health track",
+        "healthTrack"
+      ]
+    },
+    {
+      "name": "Defense (Parry)",
+      "formula": "(Dexterity + Melee) / 2, round up; armor and Charms apply",
+      "renderAs": "value",
+      "valueFormula": "({Dexterity} + {Melee} + 1) / 2",
+      "aliases": [
+        "parry",
+        "parryDefense"
+      ]
+    },
+    {
+      "name": "Defense (Evasion)",
+      "formula": "(Dexterity + Dodge) / 2, round up; armor penalty applies",
+      "renderAs": "value",
+      "valueFormula": "({Dexterity} + {Dodge} + 1) / 2",
+      "aliases": [
+        "evasion",
+        "evasionDefense"
+      ]
+    },
+    {
+      "name": "Resolve",
+      "formula": "(Wits + Integrity) / 2, round up",
+      "renderAs": "value",
+      "valueFormula": "({Wits} + {Integrity} + 1) / 2",
+      "aliases": [
+        "resolve"
+      ]
+    },
+    {
+      "name": "Guile",
+      "formula": "(Manipulation + Socialize) / 2, round up",
+      "renderAs": "value",
+      "valueFormula": "({Manipulation} + {Socialize} + 1) / 2",
+      "aliases": [
+        "guile"
+      ]
+    },
+    {
+      "name": "Join Battle",
+      "formula": "Wits + Awareness (dice pool; on declare-attack first action)",
+      "renderAs": "value",
+      "valueFormula": "{Wits} + {Awareness}",
+      "aliases": [
+        "joinBattle",
+        "initiative"
+      ]
+    },
+    {
+      "name": "Soak (Natural)",
+      "formula": "Stamina (Exalts use full Stamina; mortals halve, round down)",
+      "renderAs": "value",
+      "valueFormula": "{Stamina}",
+      "aliases": [
+        "naturalSoak",
+        "soakNatural"
+      ]
+    },
+    {
+      "name": "Soak (Bashing)",
+      "formula": "Stamina + armor B-soak",
+      "renderAs": "value",
+      "valueFormula": "{Stamina} + {bonuses:Bashing Soak}",
+      "tooltipFormula": "{Stamina} + {bonuses:Bashing Soak}",
+      "aliases": [
+        "soakBashing",
+        "bashingSoak",
+        "bSoak"
+      ]
+    },
+    {
+      "name": "Soak (Lethal)",
+      "formula": "Stamina + armor L-soak (Exalts use FULL Stamina; mortals use Stamina/2 rounded down)",
+      "renderAs": "value",
+      "valueFormula": "{Stamina} + {bonuses:Lethal Soak}",
+      "tooltipFormula": "{Stamina} + {bonuses:Lethal Soak}",
+      "aliases": [
+        "soakLethal",
+        "lethalSoak",
+        "lSoak"
+      ]
+    },
+    {
+      "name": "Hardness",
+      "formula": "Highest equipped armor's Hardness rating + Charm/magic Hardness bonuses (set base manually; armor and Charms appear as +N suffix from item bonuses targeting \"Hardness\")",
+      "renderAs": "value",
+      "default": 0,
+      "aliases": [
+        "hardness"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "name": "Anima Banner",
+      "values": [
+        {
+          "label": "Suppressed",
+          "description": "Anima banner is suppressed or unlit. No outward flare; caste mark dormant. Use when the Exalt has spent no Peripheral motes this action, is intentionally damping the banner (Charm or stunt), or is a non-Exalt who simply has no anima."
+        },
+        {
+          "label": "Dim",
+          "trigger": "0-4 Peripheral motes spent in one action; only the caste mark glints when motes are spent."
+        },
+        {
+          "label": "Glowing",
+          "trigger": "5-10 Peripheral motes spent in one action; faint nimbus, caste mark steady."
+        },
+        {
+          "label": "Burning",
+          "trigger": "11-15 Peripheral motes spent in one action; bright glow, surrounding flicker."
+        },
+        {
+          "label": "Bonfire",
+          "trigger": "16+ Peripheral motes spent in one action; massive radiance, illuminates the scene."
+        },
+        {
+          "label": "Iconic",
+          "trigger": "Sustained Bonfire or specific Charm triggers; full totemic spirit-shape."
+        }
+      ]
+    },
+    {
+      "name": "Stunt Tier",
+      "values": [
+        {
+          "label": "None",
+          "description": "Plain action description."
+        },
+        {
+          "label": "1-die",
+          "description": "Vivid, environment-aware. Reward: +2 dice OR +1 to a static value."
+        },
+        {
+          "label": "2-die",
+          "description": "Genuinely creative, integrates fiction. Reward: +2 dice OR +2 static, plus 1 mote OR 1 Willpower."
+        },
+        {
+          "label": "3-die",
+          "description": "Spontaneous, table-applauds. Reward: +2 dice OR +3 static, plus 2 motes OR 2 Willpower (can exceed cap). Rare by GM design."
+        }
+      ]
+    },
+    {
+      "name": "Sorcery Circle",
+      "values": [
+        {
+          "label": "None",
+          "description": "Has not yet learned any Sorcery (or is not a sorcerer)."
+        },
+        {
+          "label": "Terrestrial",
+          "description": "Emerald Circle. Open to Solars, Lunars, Sidereals, Dragon-Blooded, Liminals, and rare mortals. Foundation tier."
+        },
+        {
+          "label": "Celestial",
+          "description": "Sapphire Circle. Solars, Lunars, Sidereals only. Higher mysteries; cannot be learned without first mastering Terrestrial."
+        },
+        {
+          "label": "Solar",
+          "description": "Adamant Circle. Solar Exalted only. The peak of mortal sorcerous power; legends and rumors only since the Sun's Chosen disappeared."
+        }
+      ]
+    },
+    {
+      "name": "Shaping Spell",
+      "values": [
+        {
+          "label": "None",
+          "description": "Not currently shaping a spell."
+        },
+        {
+          "label": "Shaping",
+          "description": "A spell is being shaped. The spell name should be tracked as a 'Shaping: <spell name>' condition; sorcerous motes accumulate in the Sorcerous Motes counter; 1 Willpower is committed up front and refunded only on successful cast."
+        }
+      ]
+    },
+    {
+      "name": "Initiative",
+      "values": [
+        {
+          "label": "Active",
+          "description": "Initiative is at 1 or higher. The character is operating normally in combat \u2014 withering attacks add to their Initiative, decisive attacks may be declared, and standard Join Battle ordering applies."
+        },
+        {
+          "label": "Crashed",
+          "trigger": "Initiative drops to 0 or below as a result of withering damage or specific Charm effects.",
+          "description": "Initiative crashed. The character cannot make decisive attacks until they reset to base, suffers Onslaught penalties more readily, and is the prime target for finishing decisive attacks. Reset to base Initiative occurs after 3 turns (or 5 if crashed below -5), at which point the Crash Recovery bonus applies and the character returns to Active."
+        }
+      ]
+    }
+  ],
+  "diceTagFormat": {
+    "template": "[dice: {pool}d10 vs 7 -> {successes} successes{tens}{botch}]",
+    "example": "[dice: 8d10 vs 7 -> 5 successes, 2 tens doubled]"
+  },
+  "sheetSections": [
+    "attributes",
+    "skills",
+    "derived",
+    "states",
+    "abilities",
+    "charms",
+    "intimacies",
+    "backgrounds",
+    "inventory",
+    "notes"
+  ],
+  "sections": {
+    "order": [
+      "identity",
+      "xp",
+      "resources",
+      "attributes",
+      "skills",
+      "derived",
+      "abilities",
+      "states",
+      "intimacies",
+      "backgrounds",
+      "inventory",
+      "notes"
+    ],
+    "hidden": [
+      "derived:Sorcery Circle",
+      "derived:Sorcerous Motes",
+      "derived:Personal Motes",
+      "derived:Peripheral Motes",
+      "derived:Willpower",
+      "derived:Health Track",
+      "state:Anima Banner"
+    ]
+  },
+  "resources": [
+    {
+      "id": "anima-banner",
+      "label": "Anima Banner",
+      "type": "state-banner",
+      "stateRef": "Anima Banner",
+      "color": "accent"
+    },
+    {
+      "id": "essence",
+      "label": "Essence",
+      "type": "counter",
+      "max": 10,
+      "current": 3,
+      "color": "accent",
+      "stateName": "Essence",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "+1",
+          "delta": 1
+        }
+      ]
+    },
+    {
+      "id": "motes-personal",
+      "label": "Motes Personal",
+      "type": "bar",
+      "max": "{Essence} * 3 + 10",
+      "current": "{Essence} * 3 + 10",
+      "color": "accent",
+      "stateName": "Personal Motes",
+      "commitmentPool": "Personal",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "-5",
+          "delta": -5
+        },
+        {
+          "label": "Full",
+          "delta": "max"
+        }
+      ]
+    },
+    {
+      "id": "motes-peripheral",
+      "label": "Motes Peripheral",
+      "type": "bar",
+      "max": "{Essence} * 7 + 26",
+      "current": "{Essence} * 7 + 26",
+      "color": "accent",
+      "stateName": "Peripheral Motes",
+      "commitmentPool": "Peripheral",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "-5",
+          "delta": -5
+        },
+        {
+          "label": "Full",
+          "delta": "max"
+        }
+      ]
+    },
+    {
+      "id": "willpower",
+      "label": "Willpower",
+      "type": "pool",
+      "max": 10,
+      "current": 10,
+      "color": "accent",
+      "stateName": "Willpower",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "+1",
+          "delta": 1
+        },
+        {
+          "label": "Full",
+          "delta": "max"
+        }
+      ]
+    },
+    {
+      "id": "sorcerous-motes",
+      "label": "Sorcerous Motes",
+      "type": "counter",
+      "max": "{Essence} + {Wits}",
+      "current": 0,
+      "color": "accent",
+      "quickButtons": [
+        {
+          "label": "+1",
+          "delta": 1
+        },
+        {
+          "label": "Reset",
+          "delta": "max"
+        }
+      ]
+    },
+    {
+      "id": "health-track",
+      "label": "Health Track",
+      "type": "custom",
+      "color": "bad",
+      "rendererConfig": {
+        "component": "exalted-health-track",
+        "levels": [
+          {
+            "label": "-0",
+            "penalty": 0
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-4",
+            "penalty": -4
+          },
+          {
+            "label": "Inc",
+            "penalty": -99
+          }
+        ],
+        "damageTypes": [
+          {
+            "id": "bashing",
+            "label": "B",
+            "severity": 0
+          },
+          {
+            "id": "lethal",
+            "label": "L",
+            "severity": 1
+          },
+          {
+            "id": "aggravated",
+            "label": "A",
+            "severity": 2
+          }
+        ]
+      }
+    }
+  ],
+  "lorebookKeys": [
+    "charm",
+    "anima",
+    "essence",
+    "mote",
+    "willpower",
+    "stunt",
+    "intimacy",
+    "intimacies",
+    "tie",
+    "principle",
+    "hardness",
+    "overwhelming",
+    "limit",
+    "caste",
+    "supernal"
+  ],
+  "abilities": {
+    "label": "Charms",
+    "categories": [
+      {
+        "id": "archery",
+        "label": "Archery"
+      },
+      {
+        "id": "athletics",
+        "label": "Athletics"
+      },
+      {
+        "id": "awareness",
+        "label": "Awareness"
+      },
+      {
+        "id": "brawl",
+        "label": "Brawl / Martial Arts"
+      },
+      {
+        "id": "bureaucracy",
+        "label": "Bureaucracy"
+      },
+      {
+        "id": "craft",
+        "label": "Craft"
+      },
+      {
+        "id": "dodge",
+        "label": "Dodge"
+      },
+      {
+        "id": "integrity",
+        "label": "Integrity"
+      },
+      {
+        "id": "investigation",
+        "label": "Investigation"
+      },
+      {
+        "id": "larceny",
+        "label": "Larceny"
+      },
+      {
+        "id": "linguistics",
+        "label": "Linguistics"
+      },
+      {
+        "id": "lore",
+        "label": "Lore"
+      },
+      {
+        "id": "medicine",
+        "label": "Medicine"
+      },
+      {
+        "id": "melee",
+        "label": "Melee"
+      },
+      {
+        "id": "occult",
+        "label": "Occult"
+      },
+      {
+        "id": "performance",
+        "label": "Performance"
+      },
+      {
+        "id": "presence",
+        "label": "Presence"
+      },
+      {
+        "id": "resistance",
+        "label": "Resistance"
+      },
+      {
+        "id": "ride",
+        "label": "Ride"
+      },
+      {
+        "id": "sail",
+        "label": "Sail"
+      },
+      {
+        "id": "socialize",
+        "label": "Socialize"
+      },
+      {
+        "id": "stealth",
+        "label": "Stealth"
+      },
+      {
+        "id": "survival",
+        "label": "Survival"
+      },
+      {
+        "id": "thrown",
+        "label": "Thrown"
+      },
+      {
+        "id": "war",
+        "label": "War"
+      },
+      {
+        "id": "sorcery",
+        "label": "Sorceries"
+      }
+    ]
+  },
+  "header": {
+    "raceLabel": "Type",
+    "classLabel": "Caste/Aspect"
+  },
+  "vocabularyHints": [
+    {
+      "pattern": "I parry / I block (an attack)",
+      "hint": "In Exalted, parry uses Parry DV (Static value; no roll needed unless adding charms). Note the character's stored Parry DV and any active charm modifiers."
+    },
+    {
+      "pattern": "I dodge / I evade (an attack)",
+      "hint": "In Exalted, dodge uses Evasion DV (Static value; no roll). Note Evasion DV; subtract -1 onslaught penalty for each successive attack this round."
+    },
+    {
+      "pattern": "I attack with my weapon",
+      "hint": "In Exalted, an attack rolls Attribute + Ability + accuracy bonus + Charm dice. Mention the relevant pool and check whether the player is invoking any Charms before resolving."
+    },
+    {
+      "pattern": "I spend essence / motes",
+      "hint": "Track the spend separately for Personal and Peripheral pools. Personal-only Charms must come from Personal motes; mixed Charms allow the player to choose. Update anima banner if Peripheral spend exceeds threshold."
+    },
+    {
+      "pattern": "I roll initiative / join battle",
+      "hint": "Exalted uses Join Battle (Wits + Awareness) at combat start; initiative is then a fluid tracker that rises/falls with combat actions. Don't roll a fresh JB if combat is already underway."
+    }
+  ],
+  "scenarioDefaultDerive": true
+}

@@ -1,0 +1,806 @@
+{
+  "id": "dnd5e",
+  "name": "Dungeons & Dragons 5th Edition",
+  "version": "1.0.0",
+  "edition": "5e (SRD 5.1)",
+  "license": "CC-BY-4.0 (D&D 5.1 SRD), Wizards of the Coast",
+  "summary": "The classic d20 system. One die, plus an attribute modifier, plus proficiency if trained, against a fixed Difficulty Class. Mirrors Marinara Engine's existing Game Mode default.",
+  "commitmentModel": "attuned",
+  "xpTable": [
+    {
+      "level": 1,
+      "xp": 0
+    },
+    {
+      "level": 2,
+      "xp": 300
+    },
+    {
+      "level": 3,
+      "xp": 900
+    },
+    {
+      "level": 4,
+      "xp": 2700
+    },
+    {
+      "level": 5,
+      "xp": 6500
+    },
+    {
+      "level": 6,
+      "xp": 14000
+    },
+    {
+      "level": 7,
+      "xp": 23000
+    },
+    {
+      "level": 8,
+      "xp": 34000
+    },
+    {
+      "level": 9,
+      "xp": 48000
+    },
+    {
+      "level": 10,
+      "xp": 64000
+    },
+    {
+      "level": 11,
+      "xp": 85000
+    },
+    {
+      "level": 12,
+      "xp": 100000
+    },
+    {
+      "level": 13,
+      "xp": 120000
+    },
+    {
+      "level": 14,
+      "xp": 140000
+    },
+    {
+      "level": 15,
+      "xp": 165000
+    },
+    {
+      "level": 16,
+      "xp": 195000
+    },
+    {
+      "level": 17,
+      "xp": 225000
+    },
+    {
+      "level": 18,
+      "xp": 265000
+    },
+    {
+      "level": 19,
+      "xp": 305000
+    },
+    {
+      "level": 20,
+      "xp": 355000
+    }
+  ],
+  "dice": {
+    "type": "d20",
+    "notation": "1d20+MOD"
+  },
+  "resolution": {
+    "mode": "single-roll",
+    "modifierFormula": "1d20 + ability_mod + (proficient ? proficiency_bonus : 0)",
+    "skillBonusFormula": "{linkedAttribute_mod} + {tierBonus}",
+    "spellSaveDcFormula": "8 + {Proficiency Bonus} + {spellcastingAttribute_mod}",
+    "attackProficiencyFormula": "{Proficiency Bonus}"
+  },
+  "difficulties": {
+    "Very Easy": {
+      "threshold": 5,
+      "description": "Trivial; only roll if a fail is interesting."
+    },
+    "Easy": {
+      "threshold": 10,
+      "description": "An untrained adult can manage on a good day."
+    },
+    "Medium": {
+      "threshold": 15,
+      "description": "A trained character expects to succeed."
+    },
+    "Hard": {
+      "threshold": 20,
+      "description": "A trained character with a good attribute may still fail."
+    },
+    "Very Hard": {
+      "threshold": 25,
+      "description": "Possible only with high attribute and proficiency, or magic."
+    },
+    "Nearly Impossible": {
+      "threshold": 30,
+      "description": "Heroic. Stack every advantage."
+    }
+  },
+  "attributes": [
+    {
+      "name": "Strength",
+      "abbreviation": "STR",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Raw physical power, athletic training, the extent to which you can exert raw physical force.",
+      "modifierFormula": "({Score} - 10) / 2"
+    },
+    {
+      "name": "Dexterity",
+      "abbreviation": "DEX",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Agility, reflexes, balance, poise.",
+      "modifierFormula": "({Score} - 10) / 2"
+    },
+    {
+      "name": "Constitution",
+      "abbreviation": "CON",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Health, stamina, vital force.",
+      "modifierFormula": "({Score} - 10) / 2"
+    },
+    {
+      "name": "Intelligence",
+      "abbreviation": "INT",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Mental acuity, accuracy of recall, ability to reason.",
+      "modifierFormula": "({Score} - 10) / 2"
+    },
+    {
+      "name": "Wisdom",
+      "abbreviation": "WIS",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Awareness, intuition, insight, attunement to surroundings.",
+      "modifierFormula": "({Score} - 10) / 2"
+    },
+    {
+      "name": "Charisma",
+      "abbreviation": "CHA",
+      "min": 1,
+      "max": 30,
+      "default": 10,
+      "description": "Force of personality, persuasiveness, leadership.",
+      "modifierFormula": "({Score} - 10) / 2"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Acrobatics",
+      "linkedAttribute": "Dexterity",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Animal Handling",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Arcana",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Athletics",
+      "linkedAttribute": "Strength",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Deception",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "History",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Insight",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Intimidation",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Investigation",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Medicine",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Nature",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Perception",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Performance",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Persuasion",
+      "linkedAttribute": "Charisma",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Religion",
+      "linkedAttribute": "Intelligence",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Sleight of Hand",
+      "linkedAttribute": "Dexterity",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Stealth",
+      "linkedAttribute": "Dexterity",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    },
+    {
+      "name": "Survival",
+      "linkedAttribute": "Wisdom",
+      "min": 0,
+      "max": 30,
+      "default": 0
+    }
+  ],
+  "skillProficiency": {
+    "tiers": [
+      {
+        "code": "U",
+        "label": "Untrained",
+        "rollBonusFormula": "0"
+      },
+      {
+        "code": "T",
+        "label": "Trained",
+        "rollBonusFormula": "{Proficiency Bonus}"
+      },
+      {
+        "code": "E",
+        "label": "Expertise",
+        "rollBonusFormula": "2 * {Proficiency Bonus}"
+      }
+    ],
+    "default": "U"
+  },
+  "derivedStats": [
+    {
+      "name": "Hit Points",
+      "formula": "(class hit die avg) + CON_mod, per level",
+      "renderAs": "bar",
+      "aliases": [
+        "hp",
+        "HP",
+        "hitPoints",
+        "hitpoints"
+      ]
+    },
+    {
+      "name": "Armor Class",
+      "formula": "10 + DEX_mod (or armor formula)",
+      "renderAs": "value",
+      "default": 10,
+      "tooltipFormula": "10 + {Dexterity_mod} + {bonuses:Armor Class}",
+      "aliases": [
+        "ac",
+        "AC",
+        "armorClass"
+      ]
+    },
+    {
+      "name": "Initiative",
+      "formula": "DEX_mod",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity_mod}",
+      "rollFormula": "{Dexterity_mod}",
+      "tooltipFormula": "{Dexterity_mod} + {bonuses:Initiative}",
+      "aliases": [
+        "init",
+        "initiative"
+      ]
+    },
+    {
+      "name": "Proficiency Bonus",
+      "formula": "+2 at level 1-4, +3 at 5-8, +4 at 9-12, +5 at 13-16, +6 at 17-20",
+      "renderAs": "value",
+      "valueFormula": "2 + (({Level} - 1) / 4)",
+      "aliases": [
+        "prof",
+        "proficiency",
+        "proficiencyBonus",
+        "PB"
+      ]
+    },
+    {
+      "name": "Speed",
+      "formula": "Race base (typically 30 ft)",
+      "renderAs": "value",
+      "aliases": [
+        "speed",
+        "movement"
+      ]
+    },
+    {
+      "name": "Level",
+      "formula": "Character level, 1-20.",
+      "max": 20,
+      "default": 1,
+      "renderAs": "value",
+      "aliases": [
+        "level",
+        "lvl",
+        "LVL",
+        "characterLevel"
+      ]
+    }
+  ],
+  "states": [],
+  "diceTagFormat": {
+    "template": "[dice: 1d20{+MOD}{+PROF} vs DC{DC} = {result}]",
+    "example": "[dice: 1d20+3+2 vs DC15 = 17 success]"
+  },
+  "sheetSections": [
+    "attributes",
+    "saves",
+    "skills",
+    "derived",
+    "states",
+    "conditions",
+    "backgrounds",
+    "inventory",
+    "abilities",
+    "notes"
+  ],
+  "sections": {
+    "order": [
+      "identity",
+      "xp",
+      "resources",
+      "attributes",
+      "saves",
+      "skills",
+      "derived",
+      "abilities",
+      "states",
+      "conditions",
+      "backgrounds",
+      "inventory",
+      "notes"
+    ]
+  },
+  "resources": [
+    {
+      "id": "hit-points",
+      "label": "HP",
+      "type": "bar",
+      "max": 8,
+      "current": 8,
+      "color": "bad",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "-5",
+          "delta": -5
+        },
+        {
+          "label": "Heal",
+          "delta": "max"
+        }
+      ]
+    },
+    {
+      "id": "hit-dice",
+      "label": "Hit Dice",
+      "type": "dice",
+      "die": "d8",
+      "max": "{Level}",
+      "current": "{Level}",
+      "color": "ok",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "Long Rest",
+          "delta": "max"
+        }
+      ],
+      "dieFromClass": true
+    },
+    {
+      "id": "spell-slots-1",
+      "label": "Spell Slots (1st)",
+      "type": "counter",
+      "group": "Spell Slots",
+      "max": 0,
+      "current": 0,
+      "color": "accent",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "Long Rest",
+          "delta": "max"
+        }
+      ]
+    },
+    {
+      "id": "spell-slots-2",
+      "label": "Spell Slots (2nd)",
+      "type": "counter",
+      "group": "Spell Slots",
+      "max": 0,
+      "current": 0,
+      "color": "accent",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "Long Rest",
+          "delta": "max"
+        }
+      ]
+    },
+    {
+      "id": "spell-slots-3",
+      "label": "Spell Slots (3rd)",
+      "type": "counter",
+      "group": "Spell Slots",
+      "max": 0,
+      "current": 0,
+      "color": "accent",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "Long Rest",
+          "delta": "max"
+        }
+      ]
+    }
+  ],
+  "lorebookKeys": [
+    "spell",
+    "class",
+    "subclass",
+    "condition",
+    "feat",
+    "race",
+    "background"
+  ],
+  "abilities": {
+    "label": "Spellbook",
+    "categories": [
+      {
+        "id": "cantrip",
+        "label": "Cantrips"
+      },
+      {
+        "id": "level-1",
+        "label": "1st Level"
+      },
+      {
+        "id": "level-2",
+        "label": "2nd Level"
+      },
+      {
+        "id": "level-3",
+        "label": "3rd Level"
+      },
+      {
+        "id": "level-4",
+        "label": "4th Level"
+      },
+      {
+        "id": "level-5",
+        "label": "5th Level"
+      },
+      {
+        "id": "level-6",
+        "label": "6th Level"
+      },
+      {
+        "id": "level-7",
+        "label": "7th Level"
+      },
+      {
+        "id": "level-8",
+        "label": "8th Level"
+      },
+      {
+        "id": "level-9",
+        "label": "9th Level"
+      }
+    ]
+  },
+  "header": {
+    "raceLabel": "Race",
+    "classLabel": "Class"
+  },
+  "backgrounds": {
+    "enabled": true,
+    "label": "Feats",
+    "min": 0,
+    "max": 5,
+    "default": 0,
+    "textOnly": true
+  },
+  "saves": [
+    {
+      "name": "Strength Save",
+      "linkedAttribute": "Strength"
+    },
+    {
+      "name": "Dexterity Save",
+      "linkedAttribute": "Dexterity"
+    },
+    {
+      "name": "Constitution Save",
+      "linkedAttribute": "Constitution"
+    },
+    {
+      "name": "Intelligence Save",
+      "linkedAttribute": "Intelligence"
+    },
+    {
+      "name": "Wisdom Save",
+      "linkedAttribute": "Wisdom"
+    },
+    {
+      "name": "Charisma Save",
+      "linkedAttribute": "Charisma"
+    }
+  ],
+  "conditions": [
+    {
+      "name": "Blinded",
+      "description": "Cannot see; auto-fails sight checks. Attack rolls are at disadvantage and attacks against have advantage.",
+      "imposesDisadvantageOn": [
+        "attack"
+      ]
+    },
+    {
+      "name": "Charmed",
+      "description": "Cannot attack the charmer or target them with harmful abilities. Charmer has advantage on social checks against you."
+    },
+    {
+      "name": "Deafened",
+      "description": "Cannot hear; auto-fails hearing checks."
+    },
+    {
+      "name": "Frightened",
+      "description": "Disadvantage on ability checks and attack rolls while source of fear is in line of sight. Cannot move closer to source.",
+      "imposesDisadvantageOn": [
+        "attack",
+        "skill"
+      ]
+    },
+    {
+      "name": "Grappled",
+      "description": "Speed becomes 0; ends if grappler is incapacitated."
+    },
+    {
+      "name": "Incapacitated",
+      "description": "Cannot take actions or reactions."
+    },
+    {
+      "name": "Invisible",
+      "description": "Heavily obscured for hiding. Attack rolls have advantage; attacks against have disadvantage.",
+      "grantsAdvantageOn": [
+        "attack"
+      ]
+    },
+    {
+      "name": "Paralyzed",
+      "description": "Incapacitated; cannot move or speak. Auto-fails STR and DEX saves. Attacks against have advantage and crit on hit within 5 ft."
+    },
+    {
+      "name": "Petrified",
+      "description": "Transformed to stone; incapacitated; resistance to all damage; immune to poison and disease."
+    },
+    {
+      "name": "Poisoned",
+      "description": "Disadvantage on attack rolls and ability checks.",
+      "imposesDisadvantageOn": [
+        "attack",
+        "skill"
+      ]
+    },
+    {
+      "name": "Prone",
+      "description": "Disadvantage on attack rolls. Attackers within 5 ft have advantage; attackers further away have disadvantage.",
+      "imposesDisadvantageOn": [
+        "attack"
+      ]
+    },
+    {
+      "name": "Restrained",
+      "description": "Speed becomes 0. Disadvantage on attack rolls and DEX saves. Attacks against have advantage.",
+      "imposesDisadvantageOn": [
+        "attack",
+        "save"
+      ]
+    },
+    {
+      "name": "Stunned",
+      "description": "Incapacitated; cannot move; can speak only falteringly. Auto-fails STR and DEX saves. Attacks against have advantage."
+    },
+    {
+      "name": "Unconscious",
+      "description": "Incapacitated; cannot move or speak; drops what it holds; falls prone. Auto-fails STR and DEX saves. Melee attacks within 5 ft crit on hit."
+    },
+    {
+      "name": "Exhausted",
+      "description": "Stack 1-6. Disadvantage on ability checks (level 1+); halved speed (level 2+); disadvantage on attacks and saves (level 3+); HP max halved (level 4+); speed reduced to 0 (level 5+); death (level 6).",
+      "imposesDisadvantageOn": [
+        "skill"
+      ]
+    }
+  ],
+  "classOptions": [
+    {
+      "name": "Artificer",
+      "hitDie": "d8",
+      "description": "Magical inventor \u2014 half-caster, item-creation focus (Eberron / TCE)."
+    },
+    {
+      "name": "Barbarian",
+      "hitDie": "d12",
+      "description": "Rage-fueled martial; highest base HP per level."
+    },
+    {
+      "name": "Bard",
+      "hitDie": "d8",
+      "description": "Full caster, social/utility hybrid, Bardic Inspiration."
+    },
+    {
+      "name": "Cleric",
+      "hitDie": "d8",
+      "description": "Full divine caster, domain-driven channel divinity."
+    },
+    {
+      "name": "Druid",
+      "hitDie": "d8",
+      "description": "Full nature caster, Wild Shape."
+    },
+    {
+      "name": "Fighter",
+      "hitDie": "d10",
+      "description": "Martial specialist, Action Surge, multiple attacks."
+    },
+    {
+      "name": "Monk",
+      "hitDie": "d8",
+      "description": "Ki-fueled martial artist, unarmored defense."
+    },
+    {
+      "name": "Paladin",
+      "hitDie": "d10",
+      "description": "Half-caster smiter, oath-bound, divine smite + auras."
+    },
+    {
+      "name": "Ranger",
+      "hitDie": "d10",
+      "description": "Half-caster scout, favored enemy / terrain."
+    },
+    {
+      "name": "Rogue",
+      "hitDie": "d8",
+      "description": "Skirmisher, Sneak Attack, expertise."
+    },
+    {
+      "name": "Sorcerer",
+      "hitDie": "d6",
+      "description": "Innate full caster, Metamagic / Sorcery Points."
+    },
+    {
+      "name": "Warlock",
+      "hitDie": "d8",
+      "description": "Pact-bound half-ish caster, short-rest slots."
+    },
+    {
+      "name": "Wizard",
+      "hitDie": "d6",
+      "description": "Studied full caster, spell preparation + rituals."
+    }
+  ],
+  "vocabularyHints": [
+    {
+      "pattern": "I attack / I swing / I shoot",
+      "hint": "In D&D 5e, an attack roll is 1d20 + proficiency bonus (if proficient with the weapon) + ability modifier (STR for melee, DEX for finesse/ranged) vs target AC. Note advantage/disadvantage from cover, conditions, or features."
+    },
+    {
+      "pattern": "I cast a spell / I cast a cantrip",
+      "hint": "Cantrips cost no slot; leveled spells consume a spell slot of the spell's level (or higher to upcast). Verify the caster has slots remaining and that the spell is prepared/known. Note Concentration if a current spell would be broken."
+    },
+    {
+      "pattern": "I make a saving throw / I save",
+      "hint": "Saves are 1d20 + ability modifier + proficiency bonus only if proficient in that save. Note advantage/disadvantage from conditions (Frightened on STR/DEX, Restrained on DEX, etc.) and class features (Aura of Protection, Magic Resistance)."
+    },
+    {
+      "pattern": "I take an action / I use my action",
+      "hint": "Each turn allows one Action, one Bonus Action (only if a feature grants it), one Reaction (off-turn), Movement up to speed, and free Object Interaction. Confirm which the player is spending; multiclass features stack on the same turn."
+    },
+    {
+      "pattern": "I roll initiative",
+      "hint": "Initiative is 1d20 + Dexterity modifier. Apply Alert feat (+5) and any racial/class bonuses. Note that surprise gives -no- attack on round 1, not a flat denied action — surprised creatures can't move or take actions/reactions until end of turn."
+    }
+  ],
+  "scenarioDefaultDerive": true
+}
