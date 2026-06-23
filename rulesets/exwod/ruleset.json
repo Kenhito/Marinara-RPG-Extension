@@ -1,0 +1,877 @@
+{
+  "id": "exwod",
+  "name": "Exalted Versus World of Darkness",
+  "version": "0.1.0",
+  "edition": "Exalted vs World of Darkness (Revised), a fan crossover running Exalted-style Chosen on the World of Darkness 20th-anniversary Storyteller chassis.",
+  "license": "Original mechanics references only; no verbatim text from the ExvWoD document, Exalted, or any World of Darkness corebook is reproduced. Exalted and its Charm/Caste names belong to Onyx Path Publishing; World of Darkness clan/Discipline/sect names belong to Paradox Interactive AB. Distributed in the spirit of the Dark Pack Agreement (worldofdarkness.com/dark-pack). This is unofficial, non-commercial, fan-made material and is NOT official World of Darkness or Exalted material.",
+  "summary": "Storyteller-system d10 dice pool on the V20 baseline. Pool = Attribute + Ability. Each die at or above the chosen difficulty (default 6, range 6-9, capped at 9) is one success. A 1 subtracts one success EXCEPT on a Caste/Aspect/Key Ability, where 1s do not subtract. Botch only on zero successes AND at least one 1. 10s count as one success unless a Charm says otherwise. Power runs on a single fungible Essence/mote pool spent on Charms; no blood, no Humanity, no Frenzy. Intimacies anchor the character and resist supernatural compulsion (Willpower vs 8).",
+  "commitmentModel": "mote",
+  "dice": {
+    "type": "d10",
+    "notation": "Xd10 vs <difficulty>"
+  },
+  "resolution": {
+    "mode": "dice-pool",
+    "poolFormula": "Attribute + Ability (+ specialty +1, + Charm dice). On a Caste/Aspect/Key Ability, 1s do not subtract successes.",
+    "target": 6,
+    "doubles": {
+      "face": 10,
+      "successes": 1
+    },
+    "botches": {
+      "onFace": 1,
+      "trigger": "any-on-zero-successes"
+    }
+  },
+  "difficulties": {
+    "Trivial": {
+      "threshold": 4,
+      "description": "Trivial for a competent character. Often waived."
+    },
+    "Routine": {
+      "threshold": 5,
+      "description": "Routine task; minor pressure."
+    },
+    "Standard": {
+      "threshold": 6,
+      "description": "ExvWoD / V20 default. Average task under normal conditions."
+    },
+    "Challenging": {
+      "threshold": 7,
+      "description": "Pushes a competent character; pressure or distraction."
+    },
+    "Difficult": {
+      "threshold": 8,
+      "description": "Few mortals succeed without supernatural aid."
+    },
+    "Nigh-Impossible": {
+      "threshold": 9,
+      "description": "Heroic. Difficulty never exceeds 9 in ExvWoD, regardless of modifiers."
+    }
+  },
+  "attributes": [
+    {
+      "name": "Strength",
+      "abbreviation": "STR",
+      "group": "Physical",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Raw muscle. Lifting, melee damage, brawling pools."
+    },
+    {
+      "name": "Dexterity",
+      "abbreviation": "DEX",
+      "group": "Physical",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Agility, hand-eye coordination, attack accuracy, dodging."
+    },
+    {
+      "name": "Stamina",
+      "abbreviation": "STA",
+      "group": "Physical",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Endurance, soak (Exalts soak all damage types), resisting fatigue."
+    },
+    {
+      "name": "Charisma",
+      "abbreviation": "CHA",
+      "group": "Social",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Force of personality, sincere charm, leadership presence."
+    },
+    {
+      "name": "Manipulation",
+      "abbreviation": "MAN",
+      "group": "Social",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Deceit, guile, indirect influence, getting others to act against their interest."
+    },
+    {
+      "name": "Appearance",
+      "abbreviation": "APP",
+      "group": "Social",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Beauty / presence; affects attraction, allure, first-impression rolls."
+    },
+    {
+      "name": "Perception",
+      "abbreviation": "PER",
+      "group": "Mental",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Spotting, hearing, noticing details and changes in environment."
+    },
+    {
+      "name": "Intelligence",
+      "abbreviation": "INT",
+      "group": "Mental",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Reasoning, learning, recall, abstract analysis."
+    },
+    {
+      "name": "Wits",
+      "abbreviation": "WIT",
+      "group": "Mental",
+      "min": 1,
+      "max": 10,
+      "default": 1,
+      "description": "Reaction speed, on-the-fly thinking, initiative component."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Alertness",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Notice danger and details. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Athletics",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Climbing, running, jumping, swimming, dodging. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Awareness",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent (ExvWoD). Sensitivity to uncanny phenomena — noticing ghosts gathering, Essence disturbances, supernatural presence. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Brawl",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Unarmed combat; punches, grapples, claw strikes. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Empathy",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Read emotions, sense lies of the heart. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Expression",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Communicating ideas, art, oratory, written prose. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Intimidation",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Threats, looming presence, breaking will. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Leadership",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Inspiring loyalty, giving orders, rallying. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Streetwise",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Navigating urban underbelly, contacts, fences, gossip. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Subterfuge",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Talent. Lying, misleading, deflecting questions. Usable untrained at +1 difficulty."
+    },
+    {
+      "name": "Animal Ken",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Handling and training animals. Untrained: cannot roll."
+    },
+    {
+      "name": "Crafts",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Build, repair, and make physical things by hand. Untrained: cannot roll."
+    },
+    {
+      "name": "Drive",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Operate vehicles under stress. Untrained: cannot roll."
+    },
+    {
+      "name": "Etiquette",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Manners, protocol, the unwritten rules of mortal and supernatural society. Untrained: cannot roll."
+    },
+    {
+      "name": "Firearms",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Handguns, rifles, automatic weapons. Untrained: cannot roll."
+    },
+    {
+      "name": "Larceny",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill (ExvWoD). Lock-picking, sleight of hand, breaking and entering, defeating security systems, pickpocketing, forgery. Untrained: cannot roll."
+    },
+    {
+      "name": "Melee",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Armed close combat; blades, clubs, improvised. Untrained: cannot roll."
+    },
+    {
+      "name": "Performance",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Singing, instrument, acting, dance — performing for an audience. Untrained: cannot roll."
+    },
+    {
+      "name": "Stealth",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Move unseen and unheard. Untrained: cannot roll."
+    },
+    {
+      "name": "Survival",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Skill. Wilderness travel, foraging, weather. Untrained: cannot roll."
+    },
+    {
+      "name": "Academics",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material."
+    },
+    {
+      "name": "Computer",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Software, hardware, networks. Untrained: cannot roll."
+    },
+    {
+      "name": "Finance",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge (ExvWoD). Commerce, markets, accounting, financial systems. Untrained: cannot roll."
+    },
+    {
+      "name": "Investigation",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll."
+    },
+    {
+      "name": "Law",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Statute, precedent, courtroom procedure. Untrained: cannot roll."
+    },
+    {
+      "name": "Medicine",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Diagnosis, surgery, pharmacology. Untrained: cannot roll."
+    },
+    {
+      "name": "Occult",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Lore of the supernatural — spirits, the Exalted, the Underworld, the Wyld, the other denizens of the World of Darkness. Required for Ancient Sorcery. Untrained: cannot roll."
+    },
+    {
+      "name": "Politics",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Government, faction, who-owes-whom in mortal AND supernatural society. Untrained: cannot roll."
+    },
+    {
+      "name": "Science",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll."
+    },
+    {
+      "name": "Technology",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "description": "Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll."
+    }
+  ],
+  "skillProficiency": {
+    "tiers": [
+      {
+        "code": "U",
+        "label": "Unskilled",
+        "rollBonusFormula": "0"
+      },
+      {
+        "code": "C",
+        "label": "Caste/Aspect",
+        "rollBonusFormula": "0"
+      },
+      {
+        "code": "F",
+        "label": "Favoured",
+        "rollBonusFormula": "0"
+      }
+    ],
+    "default": "U"
+  },
+  "skillSpecialties": {
+    "enabled": true,
+    "valueLabel": "specialty (+1 die in scope)",
+    "valueKind": "dice",
+    "defaultValue": 0
+  },
+  "backgrounds": {
+    "enabled": true,
+    "label": "Backgrounds",
+    "min": 0,
+    "max": 5,
+    "default": 0
+  },
+  "header": {
+    "raceLabel": "Exalt Type",
+    "classLabel": "Caste / Aspect"
+  },
+  "scenarioDefaultDerive": true,
+  "derivedStats": [
+    {
+      "name": "Motes",
+      "formula": "The single fungible Essence pool (called the Essence Pool in the rules; named Motes here so it is not confused with the Essence rating). Charms and committed artifacts spend from this one pool. Its maximum is set by the 'Mote Pool' stat.",
+      "renderAs": "bar",
+      "aliases": [
+        "motes",
+        "mote",
+        "essencePool",
+        "essence pool",
+        "personal motes",
+        "peripheral motes",
+        "m"
+      ]
+    },
+    {
+      "name": "Permanent Willpower",
+      "formula": "The character's permanent Willpower rating, 1-10 (all Exalted begin at 5). This is the CAP on the Willpower pool shown in the Resources cluster. Adjust this stepper directly — raise it as the character spends XP. Temporary Willpower refreshes to this rating on a full rest; regain 1 (once per session) for strongly affirming an Intimacy.",
+      "default": 5,
+      "renderAs": "value",
+      "max": 10,
+      "aliases": [
+        "permanentWillpower",
+        "willpowerMax",
+        "willpowerRating",
+        "wp",
+        "willpower"
+      ]
+    },
+    {
+      "name": "Mote Pool",
+      "formula": "The maximum size of the Motes (Essence) pool. It depends on BOTH Exalt type and Essence rating, so there is no single formula — set this stepper from the table in the 'Rule: Essence Pools (per Exalt type)' lorebook entry. Solars/Abyssals/Infernals: E1=10, E2=12, E3=15, E4=17, E5=20. Lunars/Sidereals/Alchemicals: E1=8, E2=10, E3=12, E4=14, E5=15. Dragon-Blooded: E1=5, E2=6, E3=7, E4=8, E5=10. Liminals: E1=6, E2=8, E3=10, E4=11, E5=12. Raise it when your Essence rating goes up. The Motes bar in the Resources cluster uses this as its cap.",
+      "default": 10,
+      "renderAs": "value",
+      "max": 20,
+      "aliases": [
+        "motePool",
+        "moteMax",
+        "maxMotes",
+        "essencePoolMax"
+      ]
+    },
+    {
+      "name": "Health Track",
+      "formula": "7 levels (V20 baseline): Bruised(-0) / Hurt(-1) / Injured(-1) / Wounded(-2) / Maimed(-2) / Crippled(-5) / Incapacitated. Penalty in effect = the highest filled box. Bashing/Lethal/Aggravated tracked separately. Charms (Ox-Body Technique, Flesh-aspect levels, Mutations) ADD levels at runtime via the track's 'Add level' buttons.",
+      "renderAs": "track",
+      "track": [
+        {
+          "label": "-0",
+          "penalty": 0
+        },
+        {
+          "label": "-1",
+          "penalty": -1
+        },
+        {
+          "label": "-1",
+          "penalty": -1
+        },
+        {
+          "label": "-2",
+          "penalty": -2
+        },
+        {
+          "label": "-2",
+          "penalty": -2
+        },
+        {
+          "label": "-5",
+          "penalty": -5
+        },
+        {
+          "label": "Incapacitated",
+          "penalty": -99
+        }
+      ],
+      "damageTypes": [
+        {
+          "id": "bashing",
+          "label": "B",
+          "severity": 0,
+          "description": "Blunt or non-lethal. Exalts soak with Stamina + armour at difficulty 6. Heals in ~30 minutes per level."
+        },
+        {
+          "id": "lethal",
+          "label": "L",
+          "severity": 1,
+          "description": "Edged, piercing, gunfire. Exalts soak with Stamina + armour at difficulty 6 (mortals need armour). Heals in ~30 minutes per level (1 hour for Maimed/Crippled)."
+        },
+        {
+          "id": "aggravated",
+          "label": "A",
+          "severity": 2,
+          "description": "Fire, sunlight (to vulnerable types), supernatural claws, divine effects. Exalts may still soak it (Stamina + armour, difficulty 6). Heals slowest; Incapacitated aggravated takes ~12 hours."
+        }
+      ],
+      "aliases": [
+        "hp",
+        "HP",
+        "health",
+        "health track",
+        "healthTrack"
+      ]
+    },
+    {
+      "name": "Join Battle",
+      "formula": "Dexterity + Wits + 1d10 each combat. Act highest to lowest; ties to highest Dexterity + Wits. Wound penalty subtracts from the rating, not the d10.",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity} + {Wits}",
+      "aliases": [
+        "joinBattle",
+        "initiative",
+        "init"
+      ]
+    },
+    {
+      "name": "Melee Attack",
+      "formula": "Dexterity + Melee. Armed close-combat attack pool (blades, clubs, daiklaves). Charms and weapons modify it.",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity} + {Melee}",
+      "aliases": [
+        "meleeAttack",
+        "melee attack"
+      ]
+    },
+    {
+      "name": "Ranged Attack",
+      "formula": "Dexterity + Firearms. Ranged attack pool (range modifiers add difficulty: +1 medium, +2 long). Charms and weapons modify it.",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity} + {Firearms}",
+      "aliases": [
+        "rangedAttack",
+        "ranged attack",
+        "firearmsAttack"
+      ]
+    },
+    {
+      "name": "Unarmed Attack",
+      "formula": "Dexterity + Brawl. Unarmed attack pool (punches, grapples, claw strikes). Charms modify it.",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity} + {Brawl}",
+      "aliases": [
+        "unarmedAttack",
+        "unarmed attack",
+        "brawlAttack"
+      ]
+    },
+    {
+      "name": "Soak",
+      "formula": "Stamina + armour soak dice, rolled at difficulty 6. Exalts soak ALL THREE damage types (bashing, lethal, AND aggravated) with the same Stamina + armour pool — unlike most WoD creatures, who cannot soak lethal/aggravated without armour. Optional rule: if the Storyteller uses Dangerous Aggravated, aggravated soak is difficulty 8 instead of 6. Soak rolls cannot botch.",
+      "renderAs": "value",
+      "valueFormula": "{Stamina} + {bonuses:Soak}",
+      "tooltipFormula": "{Stamina} + {bonuses:Soak}",
+      "aliases": [
+        "soak",
+        "soakBashing",
+        "soakLethal",
+        "soakAggravated"
+      ]
+    },
+    {
+      "name": "Parry",
+      "formula": "Dexterity + Melee (or Dexterity + Brawl unarmed). Defence pool versus close attacks. Charms and weapons modify it.",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity} + {Melee}",
+      "aliases": [
+        "parry",
+        "parryDefense"
+      ]
+    },
+    {
+      "name": "Evade",
+      "formula": "Dexterity + Athletics. Defence pool to avoid an attack entirely. ExvWoD has no Dodge Ability — Athletics covers evasion.",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity} + {Athletics}",
+      "aliases": [
+        "evade",
+        "evasion",
+        "dodge"
+      ]
+    },
+    {
+      "name": "Limit / Alienation",
+      "formula": "0-10. Liminals track Alienation here (gained from botches, betraying Nature/Intimacy, horror reactions, harming the lifeline; at 10 = Alienation state). Other Exalt types with a Great-Curse-style Flaw (Solar Intemperate, Lunar Bestial Fury, Dragon-Blooded Driven by the Elements, Infernal Thrall of the Wyrm, Sidereal Brittle Reality) track their Limit here. Most characters leave this at 0.",
+      "renderAs": "value",
+      "default": 0,
+      "max": 10,
+      "aliases": [
+        "limit",
+        "alienation"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "name": "Anima Banner",
+      "values": [
+        {
+          "label": "Dormant",
+          "description": "No outward flare. The spiritual aura is invisible; the Caste mark is dormant. Use when the Exalt has spent fewer than 3 Essence this scene, or is a non-Exalt."
+        },
+        {
+          "label": "Glimmering",
+          "description": "1-2 Essence spent this scene. Faint shimmer; the Caste mark glints when Essence is spent but the banner is not yet alight."
+        },
+        {
+          "label": "Bonfire",
+          "trigger": "3+ points of Essence spent in a single scene.",
+          "description": "Anima banner becomes visible — in the depleted World of Darkness it rises only a few feet, bright as a burning bonfire, in the colour/texture of the Exalt's brand. The Caste mark involuntarily blazes on the forehead (Dragon-Blooded show Aspect markings / elemental flux instead; Fire Aspects deal 2 lethal/turn to adjacent beings, others 1 lethal/turn). Fades (Essence rating x 3) minutes after the Exalt stops spending Essence."
+        },
+        {
+          "label": "Iconic",
+          "description": "Sustained bonfire or specific Charm triggers. The banner takes on the Exalt's full totemic / divine spirit-shape. Unmistakable; everyone present knows a great power walks among them."
+        }
+      ]
+    },
+    {
+      "name": "Sorcery",
+      "values": [
+        {
+          "label": "None",
+          "description": "Has not learned Ancient Sorcery."
+        },
+        {
+          "label": "Ancient Sorcerer",
+          "description": "Has the Hedge Magic / Ancient Sorcery training (Occult 3+, plus a mentor, grimoire, or Brigid's Heir). Spells are cast as extended Wits + Occult rolls (difficulty 7-9) with an Essence cost and ritual time."
+        }
+      ]
+    }
+  ],
+  "diceTagFormat": {
+    "template": "[dice: {pool}d10 vs {difficulty} -> {successes} successes{botch}]",
+    "example": "[dice: 8d10 vs 6 -> 4 successes]"
+  },
+  "sheetSections": [
+    "attributes",
+    "skills",
+    "derived",
+    "states",
+    "abilities",
+    "charms",
+    "intimacies",
+    "backgrounds",
+    "meritsFlaws",
+    "inventory",
+    "notes"
+  ],
+  "sections": {
+    "order": [
+      "identity",
+      "xp",
+      "resources",
+      "attributes",
+      "skills",
+      "derived",
+      "abilities",
+      "states",
+      "intimacies",
+      "backgrounds",
+      "meritsFlaws",
+      "inventory",
+      "notes"
+    ],
+    "hidden": [
+      "derived:Motes",
+      "derived:Health Track",
+      "state:Anima Banner"
+    ]
+  },
+  "resources": [
+    {
+      "id": "anima-banner",
+      "label": "Anima Banner",
+      "type": "state-banner",
+      "stateRef": "Anima Banner",
+      "color": "accent"
+    },
+    {
+      "id": "essence",
+      "label": "Essence (rating)",
+      "type": "counter",
+      "max": 5,
+      "current": 1,
+      "color": "accent",
+      "stateName": "Essence",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "+1",
+          "delta": 1
+        }
+      ]
+    },
+    {
+      "id": "motes",
+      "label": "Motes (Essence pool; cap = Mote Pool stat)",
+      "type": "bar",
+      "max": "{Mote Pool}",
+      "current": "{Mote Pool}",
+      "color": "accent",
+      "stateName": "Motes",
+      "commitmentPool": "Personal",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "-5",
+          "delta": -5
+        },
+        {
+          "label": "Full",
+          "delta": "max"
+        }
+      ]
+    },
+    {
+      "id": "willpower",
+      "label": "Willpower (max = Permanent Willpower)",
+      "type": "pool",
+      "max": "{Permanent Willpower}",
+      "current": "{Permanent Willpower}",
+      "color": "accent",
+      "stateName": "Willpower",
+      "quickButtons": [
+        {
+          "label": "-1",
+          "delta": -1
+        },
+        {
+          "label": "+1",
+          "delta": 1
+        },
+        {
+          "label": "Refresh",
+          "delta": "max"
+        }
+      ]
+    },
+    {
+      "id": "health-track",
+      "label": "Health Track",
+      "type": "custom",
+      "color": "bad",
+      "rendererConfig": {
+        "component": "exalted-health-track",
+        "levels": [
+          {
+            "label": "-0",
+            "penalty": 0
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-5",
+            "penalty": -5
+          },
+          {
+            "label": "Inc",
+            "penalty": -99
+          }
+        ],
+        "damageTypes": [
+          {
+            "id": "bashing",
+            "label": "B",
+            "severity": 0
+          },
+          {
+            "id": "lethal",
+            "label": "L",
+            "severity": 1
+          },
+          {
+            "id": "aggravated",
+            "label": "A",
+            "severity": 2
+          }
+        ]
+      }
+    }
+  ],
+  "lorebookKeys": [
+    "charm",
+    "charms",
+    "anima",
+    "anima banner",
+    "essence",
+    "mote",
+    "motes",
+    "willpower",
+    "stunt",
+    "intimacy",
+    "intimacies",
+    "caste",
+    "aspect",
+    "exalt",
+    "exalted",
+    "sorcery",
+    "ancient sorcery",
+    "limit",
+    "alienation",
+    "dragon nest",
+    "solar",
+    "lunar",
+    "dragon-blooded",
+    "sidereal",
+    "abyssal",
+    "infernal",
+    "alchemical",
+    "liminal",
+    "dragon king"
+  ],
+  "abilities": {
+    "label": "Charms",
+    "groups": [
+      {
+        "id": "talents",
+        "label": "Talents",
+        "members": [
+          "Alertness",
+          "Athletics",
+          "Awareness",
+          "Brawl",
+          "Empathy",
+          "Expression",
+          "Intimidation",
+          "Leadership",
+          "Streetwise",
+          "Subterfuge"
+        ]
+      },
+      {
+        "id": "skills",
+        "label": "Skills",
+        "members": [
+          "Animal Ken",
+          "Crafts",
+          "Drive",
+          "Etiquette",
+          "Firearms",
+          "Larceny",
+          "Melee",
+          "Performance",
+          "Stealth",
+          "Survival"
+        ]
+      },
+      {
+        "id": "knowledges",
+        "label": "Knowledges",
+        "members": [
+          "Academics",
+          "Computer",
+          "Finance",
+          "Investigation",
+          "Law",
+          "Medicine",
+          "Occult",
+          "Politics",
+          "Science",
+          "Technology"
+        ]
+      }
+    ],
+    "categories": [
+      { "id": "caste-aspect-charms", "label": "Caste / Aspect Charms" },
+      { "id": "favoured-key-charms", "label": "Favoured / Key Charms" },
+      { "id": "other-charms", "label": "Other Charms" },
+      { "id": "shapeshifting", "label": "Shapeshifting (Lunar)" },
+      { "id": "anima", "label": "Anima / Caste Power" },
+      { "id": "sorcery", "label": "Ancient Sorcery" }
+    ]
+  }
+}

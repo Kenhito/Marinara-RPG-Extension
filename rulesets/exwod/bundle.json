@@ -1,0 +1,2025 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.4.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.7.0"
+  },
+  "ruleset": {
+    "id": "exwod",
+    "name": "Exalted Versus World of Darkness",
+    "version": "0.1.0",
+    "edition": "Exalted vs World of Darkness (Revised), a fan crossover running Exalted-style Chosen on the World of Darkness 20th-anniversary Storyteller chassis.",
+    "license": "Original mechanics references only; no verbatim text from the ExvWoD document, Exalted, or any World of Darkness corebook is reproduced. Exalted and its Charm/Caste names belong to Onyx Path Publishing; World of Darkness clan/Discipline/sect names belong to Paradox Interactive AB. Distributed in the spirit of the Dark Pack Agreement (worldofdarkness.com/dark-pack). This is unofficial, non-commercial, fan-made material and is NOT official World of Darkness or Exalted material.",
+    "summary": "Storyteller-system d10 dice pool on the V20 baseline. Pool = Attribute + Ability. Each die at or above the chosen difficulty (default 6, range 6-9, capped at 9) is one success. A 1 subtracts one success EXCEPT on a Caste/Aspect/Key Ability, where 1s do not subtract. Botch only on zero successes AND at least one 1. 10s count as one success unless a Charm says otherwise. Power runs on a single fungible Essence/mote pool spent on Charms; no blood, no Humanity, no Frenzy. Intimacies anchor the character and resist supernatural compulsion (Willpower vs 8).",
+    "commitmentModel": "mote",
+    "dice": {
+      "type": "d10",
+      "notation": "Xd10 vs <difficulty>"
+    },
+    "resolution": {
+      "mode": "dice-pool",
+      "poolFormula": "Attribute + Ability (+ specialty +1, + Charm dice). On a Caste/Aspect/Key Ability, 1s do not subtract successes.",
+      "target": 6,
+      "doubles": {
+        "face": 10,
+        "successes": 1
+      },
+      "botches": {
+        "onFace": 1,
+        "trigger": "any-on-zero-successes"
+      }
+    },
+    "difficulties": {
+      "Trivial": {
+        "threshold": 4,
+        "description": "Trivial for a competent character. Often waived."
+      },
+      "Routine": {
+        "threshold": 5,
+        "description": "Routine task; minor pressure."
+      },
+      "Standard": {
+        "threshold": 6,
+        "description": "ExvWoD / V20 default. Average task under normal conditions."
+      },
+      "Challenging": {
+        "threshold": 7,
+        "description": "Pushes a competent character; pressure or distraction."
+      },
+      "Difficult": {
+        "threshold": 8,
+        "description": "Few mortals succeed without supernatural aid."
+      },
+      "Nigh-Impossible": {
+        "threshold": 9,
+        "description": "Heroic. Difficulty never exceeds 9 in ExvWoD, regardless of modifiers."
+      }
+    },
+    "attributes": [
+      {
+        "name": "Strength",
+        "abbreviation": "STR",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Raw muscle. Lifting, melee damage, brawling pools."
+      },
+      {
+        "name": "Dexterity",
+        "abbreviation": "DEX",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Agility, hand-eye coordination, attack accuracy, dodging."
+      },
+      {
+        "name": "Stamina",
+        "abbreviation": "STA",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Endurance, soak (Exalts soak all damage types), resisting fatigue."
+      },
+      {
+        "name": "Charisma",
+        "abbreviation": "CHA",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Force of personality, sincere charm, leadership presence."
+      },
+      {
+        "name": "Manipulation",
+        "abbreviation": "MAN",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Deceit, guile, indirect influence, getting others to act against their interest."
+      },
+      {
+        "name": "Appearance",
+        "abbreviation": "APP",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Beauty / presence; affects attraction, allure, first-impression rolls."
+      },
+      {
+        "name": "Perception",
+        "abbreviation": "PER",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Spotting, hearing, noticing details and changes in environment."
+      },
+      {
+        "name": "Intelligence",
+        "abbreviation": "INT",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Reasoning, learning, recall, abstract analysis."
+      },
+      {
+        "name": "Wits",
+        "abbreviation": "WIT",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Reaction speed, on-the-fly thinking, initiative component."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Alertness",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Notice danger and details. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Athletics",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Climbing, running, jumping, swimming, dodging. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Awareness",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent (ExvWoD). Sensitivity to uncanny phenomena — noticing ghosts gathering, Essence disturbances, supernatural presence. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Brawl",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Unarmed combat; punches, grapples, claw strikes. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Empathy",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Read emotions, sense lies of the heart. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Expression",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Communicating ideas, art, oratory, written prose. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Intimidation",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Threats, looming presence, breaking will. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Leadership",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Inspiring loyalty, giving orders, rallying. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Streetwise",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Navigating urban underbelly, contacts, fences, gossip. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Subterfuge",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Lying, misleading, deflecting questions. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Animal Ken",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Handling and training animals. Untrained: cannot roll."
+      },
+      {
+        "name": "Crafts",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Build, repair, and make physical things by hand. Untrained: cannot roll."
+      },
+      {
+        "name": "Drive",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Operate vehicles under stress. Untrained: cannot roll."
+      },
+      {
+        "name": "Etiquette",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Manners, protocol, the unwritten rules of mortal and supernatural society. Untrained: cannot roll."
+      },
+      {
+        "name": "Firearms",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Handguns, rifles, automatic weapons. Untrained: cannot roll."
+      },
+      {
+        "name": "Larceny",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill (ExvWoD). Lock-picking, sleight of hand, breaking and entering, defeating security systems, pickpocketing, forgery. Untrained: cannot roll."
+      },
+      {
+        "name": "Melee",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Armed close combat; blades, clubs, improvised. Untrained: cannot roll."
+      },
+      {
+        "name": "Performance",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Singing, instrument, acting, dance — performing for an audience. Untrained: cannot roll."
+      },
+      {
+        "name": "Stealth",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Move unseen and unheard. Untrained: cannot roll."
+      },
+      {
+        "name": "Survival",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Wilderness travel, foraging, weather. Untrained: cannot roll."
+      },
+      {
+        "name": "Academics",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material."
+      },
+      {
+        "name": "Computer",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Software, hardware, networks. Untrained: cannot roll."
+      },
+      {
+        "name": "Finance",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge (ExvWoD). Commerce, markets, accounting, financial systems. Untrained: cannot roll."
+      },
+      {
+        "name": "Investigation",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll."
+      },
+      {
+        "name": "Law",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Statute, precedent, courtroom procedure. Untrained: cannot roll."
+      },
+      {
+        "name": "Medicine",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Diagnosis, surgery, pharmacology. Untrained: cannot roll."
+      },
+      {
+        "name": "Occult",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Lore of the supernatural — spirits, the Exalted, the Underworld, the Wyld, the other denizens of the World of Darkness. Required for Ancient Sorcery. Untrained: cannot roll."
+      },
+      {
+        "name": "Politics",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Government, faction, who-owes-whom in mortal AND supernatural society. Untrained: cannot roll."
+      },
+      {
+        "name": "Science",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll."
+      },
+      {
+        "name": "Technology",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll."
+      }
+    ],
+    "skillProficiency": {
+      "tiers": [
+        {
+          "code": "U",
+          "label": "Unskilled",
+          "rollBonusFormula": "0"
+        },
+        {
+          "code": "C",
+          "label": "Caste/Aspect",
+          "rollBonusFormula": "0"
+        },
+        {
+          "code": "F",
+          "label": "Favoured",
+          "rollBonusFormula": "0"
+        }
+      ],
+      "default": "U"
+    },
+    "skillSpecialties": {
+      "enabled": true,
+      "valueLabel": "specialty (+1 die in scope)",
+      "valueKind": "dice",
+      "defaultValue": 0
+    },
+    "backgrounds": {
+      "enabled": true,
+      "label": "Backgrounds",
+      "min": 0,
+      "max": 5,
+      "default": 0
+    },
+    "header": {
+      "raceLabel": "Exalt Type",
+      "classLabel": "Caste / Aspect"
+    },
+    "scenarioDefaultDerive": true,
+    "derivedStats": [
+      {
+        "name": "Motes",
+        "formula": "The single fungible Essence pool (called the Essence Pool in the rules; named Motes here so it is not confused with the Essence rating). Charms and committed artifacts spend from this one pool. Its maximum is set by the 'Mote Pool' stat.",
+        "renderAs": "bar",
+        "aliases": [
+          "motes",
+          "mote",
+          "essencePool",
+          "essence pool",
+          "personal motes",
+          "peripheral motes",
+          "m"
+        ]
+      },
+      {
+        "name": "Permanent Willpower",
+        "formula": "The character's permanent Willpower rating, 1-10 (all Exalted begin at 5). This is the CAP on the Willpower pool shown in the Resources cluster. Adjust this stepper directly — raise it as the character spends XP. Temporary Willpower refreshes to this rating on a full rest; regain 1 (once per session) for strongly affirming an Intimacy.",
+        "default": 5,
+        "renderAs": "value",
+        "max": 10,
+        "aliases": [
+          "permanentWillpower",
+          "willpowerMax",
+          "willpowerRating",
+          "wp",
+          "willpower"
+        ]
+      },
+      {
+        "name": "Mote Pool",
+        "formula": "The maximum size of the Motes (Essence) pool. It depends on BOTH Exalt type and Essence rating, so there is no single formula — set this stepper from the table in the 'Rule: Essence Pools (per Exalt type)' lorebook entry. Solars/Abyssals/Infernals: E1=10, E2=12, E3=15, E4=17, E5=20. Lunars/Sidereals/Alchemicals: E1=8, E2=10, E3=12, E4=14, E5=15. Dragon-Blooded: E1=5, E2=6, E3=7, E4=8, E5=10. Liminals: E1=6, E2=8, E3=10, E4=11, E5=12. Raise it when your Essence rating goes up. The Motes bar in the Resources cluster uses this as its cap.",
+        "default": 10,
+        "renderAs": "value",
+        "max": 20,
+        "aliases": [
+          "motePool",
+          "moteMax",
+          "maxMotes",
+          "essencePoolMax"
+        ]
+      },
+      {
+        "name": "Health Track",
+        "formula": "7 levels (V20 baseline): Bruised(-0) / Hurt(-1) / Injured(-1) / Wounded(-2) / Maimed(-2) / Crippled(-5) / Incapacitated. Penalty in effect = the highest filled box. Bashing/Lethal/Aggravated tracked separately. Charms (Ox-Body Technique, Flesh-aspect levels, Mutations) ADD levels at runtime via the track's 'Add level' buttons.",
+        "renderAs": "track",
+        "track": [
+          {
+            "label": "-0",
+            "penalty": 0
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-5",
+            "penalty": -5
+          },
+          {
+            "label": "Incapacitated",
+            "penalty": -99
+          }
+        ],
+        "damageTypes": [
+          {
+            "id": "bashing",
+            "label": "B",
+            "severity": 0,
+            "description": "Blunt or non-lethal. Exalts soak with Stamina + armour at difficulty 6. Heals in ~30 minutes per level."
+          },
+          {
+            "id": "lethal",
+            "label": "L",
+            "severity": 1,
+            "description": "Edged, piercing, gunfire. Exalts soak with Stamina + armour at difficulty 6 (mortals need armour). Heals in ~30 minutes per level (1 hour for Maimed/Crippled)."
+          },
+          {
+            "id": "aggravated",
+            "label": "A",
+            "severity": 2,
+            "description": "Fire, sunlight (to vulnerable types), supernatural claws, divine effects. Exalts may still soak it (Stamina + armour, difficulty 6). Heals slowest; Incapacitated aggravated takes ~12 hours."
+          }
+        ],
+        "aliases": [
+          "hp",
+          "HP",
+          "health",
+          "health track",
+          "healthTrack"
+        ]
+      },
+      {
+        "name": "Join Battle",
+        "formula": "Dexterity + Wits + 1d10 each combat. Act highest to lowest; ties to highest Dexterity + Wits. Wound penalty subtracts from the rating, not the d10.",
+        "renderAs": "value",
+        "valueFormula": "{Dexterity} + {Wits}",
+        "aliases": [
+          "joinBattle",
+          "initiative",
+          "init"
+        ]
+      },
+      {
+        "name": "Melee Attack",
+        "formula": "Dexterity + Melee. Armed close-combat attack pool (blades, clubs, daiklaves). Charms and weapons modify it.",
+        "renderAs": "value",
+        "valueFormula": "{Dexterity} + {Melee}",
+        "aliases": [
+          "meleeAttack",
+          "melee attack"
+        ]
+      },
+      {
+        "name": "Ranged Attack",
+        "formula": "Dexterity + Firearms. Ranged attack pool (range modifiers add difficulty: +1 medium, +2 long). Charms and weapons modify it.",
+        "renderAs": "value",
+        "valueFormula": "{Dexterity} + {Firearms}",
+        "aliases": [
+          "rangedAttack",
+          "ranged attack",
+          "firearmsAttack"
+        ]
+      },
+      {
+        "name": "Unarmed Attack",
+        "formula": "Dexterity + Brawl. Unarmed attack pool (punches, grapples, claw strikes). Charms modify it.",
+        "renderAs": "value",
+        "valueFormula": "{Dexterity} + {Brawl}",
+        "aliases": [
+          "unarmedAttack",
+          "unarmed attack",
+          "brawlAttack"
+        ]
+      },
+      {
+        "name": "Soak",
+        "formula": "Stamina + armour soak dice, rolled at difficulty 6. Exalts soak ALL THREE damage types (bashing, lethal, AND aggravated) with the same Stamina + armour pool — unlike most WoD creatures, who cannot soak lethal/aggravated without armour. Optional rule: if the Storyteller uses Dangerous Aggravated, aggravated soak is difficulty 8 instead of 6. Soak rolls cannot botch.",
+        "renderAs": "value",
+        "valueFormula": "{Stamina} + {bonuses:Soak}",
+        "tooltipFormula": "{Stamina} + {bonuses:Soak}",
+        "aliases": [
+          "soak",
+          "soakBashing",
+          "soakLethal",
+          "soakAggravated"
+        ]
+      },
+      {
+        "name": "Parry",
+        "formula": "Dexterity + Melee (or Dexterity + Brawl unarmed). Defence pool versus close attacks. Charms and weapons modify it.",
+        "renderAs": "value",
+        "valueFormula": "{Dexterity} + {Melee}",
+        "aliases": [
+          "parry",
+          "parryDefense"
+        ]
+      },
+      {
+        "name": "Evade",
+        "formula": "Dexterity + Athletics. Defence pool to avoid an attack entirely. ExvWoD has no Dodge Ability — Athletics covers evasion.",
+        "renderAs": "value",
+        "valueFormula": "{Dexterity} + {Athletics}",
+        "aliases": [
+          "evade",
+          "evasion",
+          "dodge"
+        ]
+      },
+      {
+        "name": "Limit / Alienation",
+        "formula": "0-10. Liminals track Alienation here (gained from botches, betraying Nature/Intimacy, horror reactions, harming the lifeline; at 10 = Alienation state). Other Exalt types with a Great-Curse-style Flaw (Solar Intemperate, Lunar Bestial Fury, Dragon-Blooded Driven by the Elements, Infernal Thrall of the Wyrm, Sidereal Brittle Reality) track their Limit here. Most characters leave this at 0.",
+        "renderAs": "value",
+        "default": 0,
+        "max": 10,
+        "aliases": [
+          "limit",
+          "alienation"
+        ]
+      }
+    ],
+    "states": [
+      {
+        "name": "Anima Banner",
+        "values": [
+          {
+            "label": "Dormant",
+            "description": "No outward flare. The spiritual aura is invisible; the Caste mark is dormant. Use when the Exalt has spent fewer than 3 Essence this scene, or is a non-Exalt."
+          },
+          {
+            "label": "Glimmering",
+            "description": "1-2 Essence spent this scene. Faint shimmer; the Caste mark glints when Essence is spent but the banner is not yet alight."
+          },
+          {
+            "label": "Bonfire",
+            "trigger": "3+ points of Essence spent in a single scene.",
+            "description": "Anima banner becomes visible — in the depleted World of Darkness it rises only a few feet, bright as a burning bonfire, in the colour/texture of the Exalt's brand. The Caste mark involuntarily blazes on the forehead (Dragon-Blooded show Aspect markings / elemental flux instead; Fire Aspects deal 2 lethal/turn to adjacent beings, others 1 lethal/turn). Fades (Essence rating x 3) minutes after the Exalt stops spending Essence."
+          },
+          {
+            "label": "Iconic",
+            "description": "Sustained bonfire or specific Charm triggers. The banner takes on the Exalt's full totemic / divine spirit-shape. Unmistakable; everyone present knows a great power walks among them."
+          }
+        ]
+      },
+      {
+        "name": "Sorcery",
+        "values": [
+          {
+            "label": "None",
+            "description": "Has not learned Ancient Sorcery."
+          },
+          {
+            "label": "Ancient Sorcerer",
+            "description": "Has the Hedge Magic / Ancient Sorcery training (Occult 3+, plus a mentor, grimoire, or Brigid's Heir). Spells are cast as extended Wits + Occult rolls (difficulty 7-9) with an Essence cost and ritual time."
+          }
+        ]
+      }
+    ],
+    "diceTagFormat": {
+      "template": "[dice: {pool}d10 vs {difficulty} -> {successes} successes{botch}]",
+      "example": "[dice: 8d10 vs 6 -> 4 successes]"
+    },
+    "sheetSections": [
+      "attributes",
+      "skills",
+      "derived",
+      "states",
+      "abilities",
+      "charms",
+      "intimacies",
+      "backgrounds",
+      "meritsFlaws",
+      "inventory",
+      "notes"
+    ],
+    "sections": {
+      "order": [
+        "identity",
+        "xp",
+        "resources",
+        "attributes",
+        "skills",
+        "derived",
+        "abilities",
+        "states",
+        "intimacies",
+        "backgrounds",
+        "meritsFlaws",
+        "inventory",
+        "notes"
+      ],
+      "hidden": [
+        "derived:Motes",
+        "derived:Health Track",
+        "state:Anima Banner"
+      ]
+    },
+    "resources": [
+      {
+        "id": "anima-banner",
+        "label": "Anima Banner",
+        "type": "state-banner",
+        "stateRef": "Anima Banner",
+        "color": "accent"
+      },
+      {
+        "id": "essence",
+        "label": "Essence (rating)",
+        "type": "counter",
+        "max": 5,
+        "current": 1,
+        "color": "accent",
+        "stateName": "Essence",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          }
+        ]
+      },
+      {
+        "id": "motes",
+        "label": "Motes (Essence pool; cap = Mote Pool stat)",
+        "type": "bar",
+        "max": "{Mote Pool}",
+        "current": "{Mote Pool}",
+        "color": "accent",
+        "stateName": "Motes",
+        "commitmentPool": "Personal",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "-5",
+            "delta": -5
+          },
+          {
+            "label": "Full",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "willpower",
+        "label": "Willpower (max = Permanent Willpower)",
+        "type": "pool",
+        "max": "{Permanent Willpower}",
+        "current": "{Permanent Willpower}",
+        "color": "accent",
+        "stateName": "Willpower",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Refresh",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "health-track",
+        "label": "Health Track",
+        "type": "custom",
+        "color": "bad",
+        "rendererConfig": {
+          "component": "exalted-health-track",
+          "levels": [
+            {
+              "label": "-0",
+              "penalty": 0
+            },
+            {
+              "label": "-1",
+              "penalty": -1
+            },
+            {
+              "label": "-1",
+              "penalty": -1
+            },
+            {
+              "label": "-2",
+              "penalty": -2
+            },
+            {
+              "label": "-2",
+              "penalty": -2
+            },
+            {
+              "label": "-5",
+              "penalty": -5
+            },
+            {
+              "label": "Inc",
+              "penalty": -99
+            }
+          ],
+          "damageTypes": [
+            {
+              "id": "bashing",
+              "label": "B",
+              "severity": 0
+            },
+            {
+              "id": "lethal",
+              "label": "L",
+              "severity": 1
+            },
+            {
+              "id": "aggravated",
+              "label": "A",
+              "severity": 2
+            }
+          ]
+        }
+      }
+    ],
+    "lorebookKeys": [
+      "charm",
+      "charms",
+      "anima",
+      "anima banner",
+      "essence",
+      "mote",
+      "motes",
+      "willpower",
+      "stunt",
+      "intimacy",
+      "intimacies",
+      "caste",
+      "aspect",
+      "exalt",
+      "exalted",
+      "sorcery",
+      "ancient sorcery",
+      "limit",
+      "alienation",
+      "dragon nest",
+      "solar",
+      "lunar",
+      "dragon-blooded",
+      "sidereal",
+      "abyssal",
+      "infernal",
+      "alchemical",
+      "liminal",
+      "dragon king"
+    ],
+    "abilities": {
+      "label": "Charms",
+      "groups": [
+        {
+          "id": "talents",
+          "label": "Talents",
+          "members": [
+            "Alertness",
+            "Athletics",
+            "Awareness",
+            "Brawl",
+            "Empathy",
+            "Expression",
+            "Intimidation",
+            "Leadership",
+            "Streetwise",
+            "Subterfuge"
+          ]
+        },
+        {
+          "id": "skills",
+          "label": "Skills",
+          "members": [
+            "Animal Ken",
+            "Crafts",
+            "Drive",
+            "Etiquette",
+            "Firearms",
+            "Larceny",
+            "Melee",
+            "Performance",
+            "Stealth",
+            "Survival"
+          ]
+        },
+        {
+          "id": "knowledges",
+          "label": "Knowledges",
+          "members": [
+            "Academics",
+            "Computer",
+            "Finance",
+            "Investigation",
+            "Law",
+            "Medicine",
+            "Occult",
+            "Politics",
+            "Science",
+            "Technology"
+          ]
+        }
+      ],
+      "categories": [
+        {
+          "id": "caste-aspect-charms",
+          "label": "Caste / Aspect Charms"
+        },
+        {
+          "id": "favoured-key-charms",
+          "label": "Favoured / Key Charms"
+        },
+        {
+          "id": "other-charms",
+          "label": "Other Charms"
+        },
+        {
+          "id": "shapeshifting",
+          "label": "Shapeshifting (Lunar)"
+        },
+        {
+          "id": "anima",
+          "label": "Anima / Caste Power"
+        },
+        {
+          "id": "sorcery",
+          "label": "Ancient Sorcery"
+        }
+      ]
+    }
+  },
+  "gmAgent": {
+    "name": "Exalted Versus World of Darkness Ruleset Helper",
+    "description": "Auto-installed by GM-mode bundle. Provides Exalted Versus World of Darkness skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
+    "phase": "pre_generation",
+    "promptTemplate": "You are the Exalted Versus World of Darkness (ExvWoD) Ruleset Helper for a chronicle running inside Marinara Engine's Game Mode. You provide rules guidance and Storyteller adjudication — you do not own the story. Your output is a context injection the main GM model reads BEFORE it narrates the next turn. Do not narrate, do not write prose, do not speak in-character.\n\n# Tone before mechanics\n\nExvWoD is the World of Darkness with demigods walking through it. The Chosen are mythic — capable of impossible feats — but the World of Darkness is a depleted, dangerous, morally grey place that does not bend easily to them. Honour both registers: cinematic, stunt-driven action AND the weight, intrigue, and horror of the WoD. Power has cost and visibility (the anima banner); conviction matters more than firepower (Intimacies).\n\n# Mechanics you enforce (ExvWoD-canonical)\n\nRESOLUTION: roll a pool of d10s equal to (Attribute + Ability), plus specialty (+1 die in scope) and Charm dice. Each die at or above the chosen DIFFICULTY (default 6; range 6-9; difficulty NEVER exceeds 9 regardless of modifiers) is one success. At least one net success = the action succeeded.\n\nTHE RULE OF ONE — and the Caste exception: each 1 rolled subtracts one success. EXCEPT when the roll uses a Caste Ability (Solars/Abyssals/Sidereals), Aspect Ability (Dragon-Blooded), or Key Ability (Infernals): on those rolls, 1s do NOT subtract successes (they can still cause a botch if the roll has no successes at all). Lunars/Alchemicals/Liminals key off Caste/Aspect ATTRIBUTES instead of Abilities — same protection.\n\nBOTCH: zero successes AND at least one die showing a 1 = botch (a dramatic failure). A roll that merely had all its successes cancelled by 1s is a plain failure, not a botch.\n\nTENS: a 10 counts as ONE success unless a specific Charm or anima power says it counts double.\n\n10-DOT NOTE: difficulty 10 never happens; cap at 9.\n\nWILLPOWER: rating 1-10, Exalts start at 5. Spend to resist compulsion, fuel some Charms, or — key ExvWoD rule — to REFUSE to act against an Intimacy (see below). Refreshes to permanent rating on a full rest; regain 1 (once per session) when the character strongly affirms an Intimacy. Substitutes for any missing WoD trait (Rage, Self-Control, etc.) when a crossover power calls for one.\n\nHEALTH TRACK: 7 levels — Bruised(-0) / Hurt(-1) / Injured(-1) / Wounded(-2) / Maimed(-2) / Crippled(-5) / Incapacitated. Penalty in effect = the highest filled box; subtract from dice pools. Damage is Bashing, Lethal, or Aggravated. Exalts soak ALL THREE with Stamina + armour at difficulty 6 (mortals cannot soak lethal/aggravated without armour). Exalts heal fast (≈30 min/level; 1 hr for Maimed/Crippled; 12 hr for Incapacitated aggravated) and never scar. Ox-Body Technique and similar Charms ADD health levels — that is a player action on the track widget's '-0/-1/-2' Add-level buttons, not a field delta. For the rare Crippled (-5) grant the player adds a -2 cell and notes the true -5 penalty.\n\nINITIATIVE: Dexterity + Wits + 1d10. Act highest to lowest; ties to highest Dex+Wits. Wound penalty hits the rating, not the d10. No advance declaration, no abort rules, no multiple-opponent penalty. Multiple actions: declare the total; first action -1 die / +1 difficulty, each further action -1/+1 more; no more than one attack in a multiple-action set. Extra actions (Celerity-equivalent Charms, etc.) use the full pool and may include extra attacks.\n\nESSENCE & MOTES: power runs on ONE fungible mote pool (ExvWoD collapses Personal/Peripheral). Pool max depends on Exalt TYPE and Essence RATING — do not assume Solar numbers; check the sheet's Motes max. Per-turn spend is capped by Essence rating (see the 'Essence Pools' lorebook entry). Charms cost motes (and sometimes Willpower); some commit motes for a duration (committed motes are locked, not spent). Regain: (3 + Essence) at sunrise (Solars/Infernals/Alchemicals/Dragon-Blooded) or sunset (Abyssals/Lunars/Sidereals/Liminals); Caste/Aspect scene methods; Dragon Nests; spirit realms.\n\nANIMA BANNER: when an Exalt spends 3+ motes in a single scene the banner flares (Bonfire) — visible a few feet up, bright as a bonfire, Caste mark blazing; it fades (Essence x 3) minutes after she stops spending. This is a TELL: it marks her as a great power to everyone present. Dragon-Blooded flare elemental flux instead (1 lethal/turn to adjacent beings, 2 for Fire Aspects).\n\nCHARMS: an Exalt may only use her own type's Charms; no Essence-rating prerequisite and no ascending-dot order. Charms are added to the sheet's Charms section by the player (see the 'Adding Charms to your sheet' lorebook entry). When a player invokes a Charm, surface its cost and effect; do not invent Charm text — if it is not on the sheet or in the lorebook, label it a Storyteller ruling.\n\nINTIMACIES (the moral spine — replaces Humanity/Virtues; there is no Frenzy, no blood): each Exalt has ~3 Intimacies (a tie \"X (emotion)\" or a principle). When anything tries to force the character to act against, abandon, or betray an Intimacy, the player may roll Willpower vs difficulty 8 to refuse — this works even as a SECOND line of defence after already failing to resist a compulsion power (e.g. Dominate). Affirming an Intimacy strongly = +1 Willpower once/session.\n\nSTUNTS: ExvWoD's stunt rule is ONLY this — for an Exalt, a flashy/dramatic/extravagant way of acting NEVER raises the difficulty or imposes a penalty (it does for mortals and other splats). It grants NO bonus dice; the reward is the story. Do not award stunt dice or stunt Willpower (that is Exalted 3e, not ExvWoD). Encourage spectacle freely — it is always mechanically safe for the Chosen.\n\nCROSS-GAME: Exalts are never treated as \"merely mortal\" for powers that are weaker vs the supernatural. Cold iron / silver do not bypass their defences. Fire/sunlight only harm types with a specific vulnerability (e.g. Sun-Seared Flaw).\n\n# Output format the main GM model must use\n\nDice tag (placed in narration so the Marinara client renders the result):\n\n[dice: Xd10 vs <difficulty> -> N successes{, BOTCH}] - call: <Attribute> + <Ability> vs difficulty <D>\n\nExample: \"Sael's blade is already moving before the ghoul's hand reaches its gun. [dice: 9d10 vs 6 -> 5 successes] - call: Dexterity + Melee vs difficulty 6 - the strike opens him shoulder to hip.\"\nExample botch: \"She reaches for the wards with borrowed Occult she only half-understands. [dice: 5d10 vs 8 -> 0 successes, BOTCH] - call: Intelligence + Occult vs difficulty 8 - the sigil flares the wrong way.\"\n\nSheet mutations (silent to the player; the extension parses them out):\n[mrr-state: field=\"Motes\" delta=\"-5\"]\n[mrr-state: field=\"Willpower\" delta=\"-1\"]\n[mrr-state: field=\"Health Track\" type=\"lethal\" delta=\"+2\"]\n[mrr-state: field=\"Essence\" delta=\"+1\"]\n[mrr-state: field=\"Anima Banner\" value=\"Bonfire\"]\n[mrr-state: field=\"Limit / Alienation\" delta=\"+1\"]\n\nFor a Charm the player activates:\n[charm: <Charm name> (<Ability/Caste>), <cost e.g. 5m 1wp>, <type>] - then describe the effect.\n\n# What you (this agent) emit each turn\n\nA short rules brief (<= 250 tokens) that:\n1. Names the most likely Attribute + Ability pool the stated action calls for, with a suggested difficulty (6 default; raise for hard, lower for trivial), and FLAGS if it is a Caste/Aspect/Key Ability (1s don't subtract).\n2. Reminds the GM model of the dice-tag format above.\n3. Surfaces economy state: Motes current/max, Willpower current/permanent, Essence rating, current health-track penalty, Anima Banner tier (and whether this turn's spend will push to Bonfire), any committed motes.\n4. Flags Charm opportunities the PC has that fit the action, with mote/Willpower cost.\n5. If the action would force the character against an Intimacy, surfaces the Willpower-vs-8 refusal option BEFORE the player commits.\n\nIf no roll is needed (clear automatic success or pure roleplay), say \"No roll required\" with a one-sentence reason.\n\n# Storyteller stance — first turn opening\n\nWhen this is the FIRST turn of a chronicle, ground the player in your brief: which Exalt TYPE and Caste/Aspect they are, their Essence rating and mote pool, the city/era, the supernatural political climate, and one or two of their Intimacies. Hand the GM model a sense of mythic potential pressing against a hostile, depleted world. Later turns can stay tight on rules.\n\nEquipment: the sheet tracks weapons/armour/artifacts and folds equipped bonuses into the printed [dice: ...] tag and soak values. Narrate gear vividly but treat the tag as authoritative; do not re-add bonuses by hand. If the player invokes an item or Charm not on their sheet, ask them to add it first.\n\nNever invent rules. Where ExvWoD or the corebooks are silent, label the call a Storyteller ruling. Reproduce no verbatim corebook or ExvWoD-document text — paraphrase mechanics only.",
+    "settings": {}
+  },
+  "lorebook": {
+    "name": "Exalted vs World of Darkness Reference",
+    "description": "Keyword-triggered reference for Exalted Versus World of Darkness (Revised): modified V20 dice mechanics, Essence/mote economy, Charms, anima, Intimacies, and per-Exalt-type overviews. Original mechanics references only; Exalted and World of Darkness names belong to Onyx Path Publishing and Paradox Interactive AB. Unofficial fan material.",
+    "category": "world",
+    "scanDepth": 4,
+    "tokenBudget": 2500,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "name": "Rule: Dice-pool resolution",
+        "keys": [
+          "roll",
+          "rolls",
+          "check",
+          "test",
+          "dice",
+          "pool",
+          "successes",
+          "difficulty"
+        ],
+        "content": "ExvWoD uses a modified V20 Storyteller system. Roll a pool of d10s equal to (Attribute + Ability), plus specialty (+1 die in scope) and any Charm dice. Each die at or above the chosen difficulty is one success; default difficulty is 6 (range 6-9). At least one net success means the action works. A 10 counts as ONE success unless a Charm or anima power explicitly doubles it. Difficulty never exceeds 9 — if modifiers would push it to 10 it stays at 9. Flashy/dramatic descriptions never raise the difficulty for Exalts (see the Stunts entry) but grant no bonus dice.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: The Rule of One & Caste Abilities",
+        "keys": [
+          "rule of one",
+          "ones",
+          "1s",
+          "caste ability",
+          "aspect ability",
+          "key ability",
+          "favoured"
+        ],
+        "content": "Each 1 rolled normally subtracts one success from the total. EXCEPTION: when the roll uses a Caste Ability (Solars, Abyssals, Sidereals), an Aspect Ability (Dragon-Blooded), or a Key Ability (Infernals) — or, for Lunars/Alchemicals/Liminals, the relevant Caste/Aspect Attribute — 1s do NOT subtract successes. They can still contribute to a botch only if the roll has zero successes overall. This is the signature ExvWoD reliability of an Exalt acting within her sphere of mastery.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Botch",
+        "keys": [
+          "botch",
+          "botched",
+          "spectacular failure",
+          "fumble"
+        ],
+        "content": "A botch occurs ONLY when a roll produces zero successes AND shows at least one 1. A roll that fails merely because 1s cancelled all its successes is a plain failure, not a botch, no matter how many 1s appeared. On a botch the Storyteller introduces a real complication, not just a miss.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Difficulty ladder",
+        "keys": [
+          "difficulty",
+          "target number",
+          "how hard"
+        ],
+        "content": "Difficulty 4 = trivial (often waived). 5 = routine. 6 = standard (the default). 7 = challenging. 8 = difficult (few mortals without aid). 9 = nigh-impossible. Difficulty is capped at 9 in ExvWoD regardless of penalties; excess modifiers instead become extra successes required or are narrated as raised stakes.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Specialties",
+        "keys": [
+          "specialty",
+          "specialties",
+          "specialisation"
+        ],
+        "content": "A specialty is a narrow focus within an Attribute or Ability (e.g. Melee: Daiklave, Occult: Spirits). When the action falls within the specialty, add +1 die to the pool. ExvWoD does not use the oWoD 10-again specialty reroll; the bonus is a flat extra die.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Willpower",
+        "keys": [
+          "willpower",
+          "wp",
+          "resolve",
+          "compulsion"
+        ],
+        "content": "Willpower is rated 1-10; all Exalted begin play at 5. Spend 1 to resist mental/emotional compulsion, to power some Charms, or — crucially — to REFUSE to act against an Intimacy (Willpower vs difficulty 8; see Intimacies). Willpower also substitutes for any WoD trait an Exalt lacks (Rage, Self-Control, Gnosis, etc.) when a crossover power demands it. Temporary Willpower refreshes to the permanent rating after a full rest; regain 1 once per session for strongly affirming an Intimacy.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Health track & Exalted healing",
+        "keys": [
+          "health",
+          "health track",
+          "wound",
+          "damage",
+          "hurt",
+          "wounded",
+          "incapacitated",
+          "ox-body",
+          "ox body"
+        ],
+        "content": "Seven levels (V20 baseline): Bruised(-0), Hurt(-1), Injured(-1), Wounded(-2), Maimed(-2), Crippled(-5), Incapacitated. The penalty of the highest filled box applies to all dice pools. Damage is Bashing, Lethal, or Aggravated, tracked separately. Exalts heal fast — roughly 30 minutes per level (1 hour for Maimed/Crippled, 12 hours for Incapacitated aggravated) — and never scar or cripple permanently short of full amputation. Charms such as Ox-Body Technique, Lunar/Liminal Flesh-aspect levels, and Mutations permanently ADD health levels; the player adds these on the Health Track widget via its 'Add level' buttons (-0/-1/-2 and 'remove last'), not as a damage delta.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Soak & Damage Types",
+        "keys": [
+          "soak",
+          "armour",
+          "armor",
+          "aggravated",
+          "lethal",
+          "bashing"
+        ],
+        "content": "Unlike most WoD creatures, Exalted soak BASHING, LETHAL, and AGGRAVATED with Stamina + armour dice at difficulty 6 (each soak success cancels one damage die; soak rolls cannot botch). Mortals cannot soak lethal or aggravated without armour, and never soak with Stamina against those. Optional 'Dangerous Aggravated' rule: aggravated soak is difficulty 8. Exalts may parry ranged attacks (even bullets) if capable. Cold iron and silver do not bypass Exalt defences; fire/sunlight only deal aggravated to types with a specific vulnerability (e.g. the Sun-Seared Flaw).",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Combat round",
+        "keys": [
+          "initiative",
+          "combat",
+          "attack",
+          "multiple actions",
+          "extra actions",
+          "join battle"
+        ],
+        "content": "Initiative = Dexterity + Wits + 1d10; act highest to lowest, ties to highest Dex+Wits. Wound penalty subtracts from the rating, not the d10. No advance declaration, no abort rules, no multiple-opponent penalty. Multiple actions: declare the total; first action -1 die/+1 difficulty, each further action -1/+1 more; at most ONE attack per multiple-action set; stop if difficulty would exceed 9. Extra actions (Celerity-equivalent Charms, etc.) use the full pool, may include several attacks, and resolve at end of turn in initiative order. Attack pools: Brawl=Dex+Brawl, Melee=Dex+Melee, ranged=Dex+Firearms, thrown=Dex+Athletics.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Essence Pools (per Exalt type)",
+        "keys": [
+          "essence pool",
+          "motes",
+          "mote pool",
+          "essence rating",
+          "set max",
+          "pool size"
+        ],
+        "content": "ExvWoD uses ONE fungible mote pool (the Essence Pool; called Motes on the sheet so it is not confused with the Essence rating). Personal and Peripheral are not separated. Set the 'Mote Pool' stat in DERIVED POOLS to the value for your Exalt type and Essence rating (the Motes bar uses it as its cap). Solars/Abyssals/Infernals: E1=10, E2=12, E3=15, E4=17, E5=20 (spend/turn 1/2/3/4/5). Lunars/Sidereals/Alchemicals: E1=8, E2=10, E3=12, E4=14, E5=15 (spend/turn 1/2/3/3/4). Dragon-Blooded: E1=5, E2=6, E3=7, E4=8, E5=10 (spend/turn 1/1/2/2/3). Liminals: E1=6, E2=8, E3=10, E4=11, E5=12 (spend/turn 1/2/2/3/3). Essence rating is capped at 5; per-turn spend is limited by the table — Charms costing more than that take several turns to channel.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Regaining Essence",
+        "keys": [
+          "regain essence",
+          "recover essence",
+          "sunrise",
+          "sunset",
+          "dragon nest",
+          "respire"
+        ],
+        "content": "Sunrise/Sunset grant: Solars, Infernals, Alchemicals, Dragon-Blooded gain (3 + Essence rating) motes at sunrise; Abyssals, Lunars, Sidereals, Liminals gain the same at sunset (no need to see it). Starting a scene at 0 motes grants 1. Dragon Nests restore 1 mote per 15 minutes. Each Caste/Aspect (and Infernal Urge) has a once-per-scene condition granting 2 motes. Spirit World: 1/3 hours (not Liminals). The Dreaming: 1/6 hours (all). The Underworld: 1/3 hours (Abyssals & Liminals). Dragon-Blooded may meditate 1 hour/day in an Aspect-appropriate place for 2 motes.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Anima Banner & Caste Marks",
+        "keys": [
+          "anima",
+          "anima banner",
+          "flare",
+          "caste mark",
+          "anima flux"
+        ],
+        "content": "Spending 3 or more motes in a single scene makes the anima banner visible. In the depleted World of Darkness it rises only a few feet, bright as a bonfire, in the Exalt's characteristic colour, and the Caste mark involuntarily blazes on the forehead. It fades (Essence rating x 3) minutes after she stops actively spending. The banner is an unmistakable tell that a great supernatural power is present (though only the wisest spirits recognise WHAT). Dragon-Blooded have no Caste mark — they manifest Aspect markings and destructive elemental anima flux: when flaring, everything within ~1 yard takes 1 lethal/turn (2 for Fire Aspects). The Anima Control Merit grants control over flaring.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Intimacies",
+        "keys": [
+          "intimacy",
+          "intimacies",
+          "tie",
+          "principle",
+          "conviction",
+          "betray"
+        ],
+        "content": "Every Exalt has about three Intimacies: either a personal tie stated with its emotion ('My sister (love)', 'Prince Vitel (hatred)') or a statement of philosophy ('Power demands restraint'). When something tries to force the character to act against, abandon, or betray an Intimacy, the player may roll Willpower vs difficulty 8 to refuse — even as a SECOND line of defence after already failing to resist a compulsion power such as Dominate. Strongly affirming an Intimacy through action restores 1 Willpower, once per session. Intimacies replace WoD Humanity/Virtues; ExvWoD has no Frenzy and no blood/Hunger.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Stunts (flashy action)",
+        "keys": [
+          "stunt",
+          "stunted",
+          "vividly",
+          "creative action",
+          "flashy",
+          "dramatic"
+        ],
+        "content": "ExvWoD's stunt rule is simple and is NOT a dice-bonus tier system (that is Exalted 3e, not ExvWoD). For an Exalt, doing something in a dramatic, stylish, or extravagant way carries NO mechanical penalty and does NOT raise the difficulty: 'kick a guy' and 'swing around a lamppost and kick a guy in the face with both feet' have the exact same difficulty. It grants no bonus dice — the reward is in the story, not the pool. The rule applies only to Exalted; mortals, vampires, werewolves, etc. remain subject to the standard Storyteller difficulty modifiers for ambitious actions. It applies to the action's difficulty, not its outcome — spectacle never makes success harder, but it does not guarantee success either.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Ancient Sorcery",
+        "keys": [
+          "sorcery",
+          "ancient sorcery",
+          "spell",
+          "spells",
+          "ritual",
+          "hedge magic"
+        ],
+        "content": "Ancient Sorcery is the lost spellcraft of the Age of Legends. It requires Occult 3+ and a source (a mentor who knows the spell, a grimoire, or the Brigid's Heir Merit once per story). Learning a spell costs 10 XP (5 freebie points at creation). Casting is usually an extended Wits + Occult roll at difficulty 7-9 with an Essence cost and ritual time, sometimes components, a location, or sacrifice. Alchemicals and Liminals generally cannot learn it; Dragon Kings only at Essence 5.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Backgrounds",
+        "keys": [
+          "background",
+          "backgrounds",
+          "allies",
+          "resources",
+          "dragon nest background",
+          "past lives",
+          "supernatural status"
+        ],
+        "content": "Characters start with 5 dots of Backgrounds (1 freebie/dot at creation; current rating x2 XP to raise in play). Standard WoD Backgrounds apply (Allies, Contacts, Resources, Influence, Fame, Mentor, Retainers, etc.). ExvWoD-specific: Dragon Nest (a secure Essence-rich haven; dots = infiltration difficulty), Past Lives (once/session add the rating to an appropriate ancient Ability roll — Solars/Lunars/Abyssals/Infernals/Dragon Kings), Supernatural Status (standing in a WoD faction, Acknowledged through Revered). Type-specific Backgrounds include Heart's Blood (Lunar forms), Arcane (Sidereal), Whispers/Spectre Notoriety (Abyssal), Demonic Guide (Infernal), Primium Countermeasures (Alchemical), Dragon-Touched/Jade Talisman (Dragon-Blooded).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Merits & Flaws",
+        "keys": [
+          "merit",
+          "merits",
+          "flaw",
+          "flaws",
+          "anima control",
+          "sun-seared"
+        ],
+        "content": "Up to 7 points each of Merits and Flaws, bought with freebie points at creation, and you cannot take ones aimed at other supernatural types. Notable Exalted Merits: Anima Control (1/2/5pt, control banner flaring), Priest, Brigid's Heir, Hedge Magic, Exalted Kinfolk/Kinain, Perfection of the Grave (Abyssal), Drifting Moon Aptitude (Lunar). Notable Flaws: Beacon of Power (flare at 2 motes/scene), Sun-Seared (sunlight burns — Abyssal/Infernal/Liminal), Permanent Caste Mark, Casteless (Lunar), Aspect of the Corpse (Abyssal), plus per-type Great-Curse Flaws (Solar Intemperate, Lunar Bestial Fury, Dragon-Blooded Driven by the Elements, Infernal Thrall of the Wyrm, Sidereal Brittle Reality) tracked on the Limit/Alienation stat.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Cross-Game Reconciliation",
+        "keys": [
+          "crossover",
+          "vampire",
+          "werewolf",
+          "mage",
+          "wraith",
+          "quintessence",
+          "essence conversion",
+          "power equivalence"
+        ],
+        "content": "The WoD games were not built for crossover. Substitute Willpower for any trait an Exalt lacks (Rage, Self-Control, Gnosis, Spite). For powers calibrated by power level, Exalts always fall in the 'supernatural target' (not 'mortal') category. Absolute effect vs absolute defence: the defence wins; two absolutes with no clear defence = contested Willpower. Power equivalence (Celestial Exalted): Essence 1/2/3/4/5 ~ Vampire Generation 8/7/6/5/4, Werewolf Rank 2/3/4/5/6, Mage Arete 2/4/6/8/10 (Terrestrial/Liminal: Generation 11/10/9/8/7). An Exalt sharing Essence with others converts: 1 Essence = 2 Quintessence/Glamour/Conviction, 3 Faith/Chi/Sekhem, 1 Pathos; it cannot become vampire Blood, werewolf Rage, or Gnosis.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Adding Charms to your sheet",
+        "keys": [
+          "add charm",
+          "adding charms",
+          "charm",
+          "charms",
+          "how to add",
+          "buy a charm"
+        ],
+        "content": "ExvWoD ships no Charm catalogue (there are hundreds across nine Exalt types); you add the Charms you intend to use yourself. Open the CHARMS flyout. It has generic buckets — Caste / Aspect Charms, Favoured / Key Charms, Other Charms, Shapeshifting (Lunar), Anima / Caste Power, Ancient Sorcery — plus a '+ Add Charms' button to create your own bucket (e.g. one per Ability like 'Melee', or per Caste, if you prefer the book's organisation). Each bucket header has a small 0-10 number box: that is a generic per-line rating the framework attaches in dice-pool systems (it is the Discipline rating in Vampire); ExvWoD Charms are individual powers and are NOT rated as a line, so you can leave it at 0 or use it as a personal Charm-count/favoured marker — it does not affect dice. Inside a bucket click '+ Add': give the Charm a Name, optional rating dots, and put its activation cost in the cost field using the syntax the Cast button parses — motes as \"5m\" or \"5 mote\", Willpower as \"1wp\" or \"1 willpower\" (combine: \"5m, 1wp\"). Reflexive / Scene-long / Once-per-story / keyword notes go in the notes field. Clicking Cast deducts the cost from the single Motes pool (and Willpower) and injects a cast tag. For a Charm or artifact that COMMITS motes for a duration, add it instead as an Inventory item with mote_commitment=N and mote_pool=\"Personal\"; equipping it locks those motes out of the Motes bar automatically and unequipping returns them. Copy real Charm text (cost, mins, type, keywords, duration, effect) from the relevant Exalted vs WoD Charm list into the notes so the narrator adjudicates it correctly. Health-level Charms (Ox-Body Technique, Flesh-aspect levels, Mutations): add the granted levels with the Health Track widget's 'Add level' buttons (-0/-1/-2). The buttons only emit -0/-1/-2; for a rarer Crippled (-5) grant, add a -2 cell and note the true -5 penalty in the character notes (or have the Storyteller apply it).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Optional Sub-Agents — what they do and how to enable",
+        "keys": [
+          "sub-agent",
+          "sub agent",
+          "agents",
+          "state-mutator",
+          "state-reminder",
+          "combat-adjudicator",
+          "lore-query",
+          "npc-bookkeeper"
+        ],
+        "content": "Besides the main Ruleset Helper, the bundle ships five focused pre-generation sub-agents, all DISABLED by default. Enable any of them in Marinara -> Settings -> Agents (each enabled agent costs one extra model call per turn). state-reminder: a terse current-state HUD each turn (motes, Willpower, health, anima, Intimacies). state-mutator: tells the narrator when to emit [mrr-state: ...] sheet-change tags. combat-adjudicator: wakes only in combat; enforces initiative, pools, soak, Charm costs. lore-query: answers explicit out-of-character rules questions from the lorebook. npc-bookkeeper: tracks active/recent NPCs (pools, health, anima, attitude) for continuity. Enable state-reminder + state-mutator first if you want the floating sheet to stay in sync; add the others for crunchier play.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Exalt Type: Solar",
+        "keys": [
+          "solar",
+          "solars",
+          "dawn",
+          "zenith",
+          "twilight",
+          "night caste",
+          "eclipse"
+        ],
+        "content": "Solars — the returned legends of sun, law, and heroic perfection. Castes: Dawn (war), Zenith (priest/leader), Twilight (savant/sorcerer), Night (spy/assassin), Eclipse (diplomat/oath-binder). Celestial Essence pool (E1=10 ... E5=20). Caste Abilities (8 per Caste) get the 1s-don't-subtract benefit. Each Caste has its own anima power and a once/scene Essence-renewal trigger. May select Supernal Charms at Essence 2+ (first from Caste, second from any). Caste mark blazes when the anima flares. Charms organised by Ability. Power equivalence ~ Vampire Generation 8 down to 4 across Essence 1-5.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Exalt Type: Lunar",
+        "keys": [
+          "lunar",
+          "lunars",
+          "full moon",
+          "changing moon",
+          "no moon",
+          "shapeshift",
+          "heart's blood"
+        ],
+        "content": "Lunars — wild shapeshifters of survival and freedom. Castes: Full Moon (warrior), Changing Moon (trickster/social), No Moon (shaman/sorcerer). They key off Caste ATTRIBUTES (Full=Physical, Changing=Social, No=Mental) for the 1s-don't-subtract benefit, not Caste Abilities. Lunar/Sidereal/Alchemical Essence pool (E1=8 ... E5=15). Shapeshifting: gain forms by hunting/killing an animal or from a spirit; totem form free, rage form for combat (Heart's Blood Background = extra forms). Silver Marks of Luna protect against unwilling transformation. Mandatory fourth Intimacy: 'I will never wear chains.' Regain Essence at sunset.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Exalt Type: Dragon-Blooded",
+        "keys": [
+          "dragon-blooded",
+          "dragon blooded",
+          "terrestrial",
+          "air aspect",
+          "earth aspect",
+          "fire aspect",
+          "water aspect",
+          "wood aspect",
+          "anima flux"
+        ],
+        "content": "Dragon-Blooded — the Terrestrial Exalted, the most numerous and the only ones native to the World of Darkness. Aspects: Air, Earth, Fire, Water, Wood (elemental, not Castes). Aspect Abilities (8 per Aspect) get the 1s-don't-subtract benefit. Smallest pools of all: E1=5, E2=6, E3=7, E4=8, E5=10. No Caste mark; instead Aspect markings and destructive anima FLUX — when flaring, all within ~1 yard take 1 lethal/turn (Fire: 2). Aspect affinity reduces the cost of native-Aspect Charms by 1 once/scene. Regain Essence at sunrise or via a 1-hour daily Aspect-appropriate meditation (2 motes).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Exalt Type: Sidereal",
+        "keys": [
+          "sidereal",
+          "sidereals",
+          "journeys",
+          "serenity",
+          "battles",
+          "secrets",
+          "endings",
+          "dynamic larping",
+          "arcane"
+        ],
+        "content": "Sidereals — hidden fate-weavers. Castes: Chosen of Journeys, Serenity, Battles, Secrets, Endings. Caste Abilities (8 per Caste) get the 1s benefit. Lunar/Sidereal/Alchemical pool (E1=8 ... E5=15); regain Essence at sunset. Lesser Sign anima powers (scene-long benefit). Dynamic LARPing: spend 1 Willpower to wear a false destiny and pass as a mortal archetype (only other Sidereals see through). Greater Signs at Essence 4+ cost permanent Willpower for catastrophic effects. Arcane Background (2 free dots; +2 Stealth, harder to track; caps Fame). Cannot take Destiny Background or Dark Fate.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Exalt Type: Abyssal",
+        "keys": [
+          "abyssal",
+          "abyssals",
+          "dusk",
+          "midnight",
+          "daybreak",
+          "day caste",
+          "moonshadow",
+          "neverborn",
+          "shadows of death"
+        ],
+        "content": "Abyssals — Chosen of death and the Neverborn, dark mirrors of Solars. Castes: Dusk, Midnight, Daybreak, Day, Moonshadow. Caste Abilities (8 per Caste) get the 1s benefit. Solar-tier pool (E1=10 ... E5=20) but regain Essence at SUNSET and gain less from many triggers. Power in the Blood: manifest fangs, drink blood for Essence. Shadows of Death: pick 2 cosmetic death-omens; the local Shroud drops by Essence rating. Trappings of the Grave: without death symbolism, +1 difficulty to all actions among the living. The Nameless Curse forbids speaking the true name, increasing the living population, or saving living lives. Apocalyptic Charms at Essence 2+/4+.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Exalt Type: Infernal",
+        "keys": [
+          "infernal",
+          "infernals",
+          "crown",
+          "shintai",
+          "urge",
+          "demon",
+          "key ability",
+          "key charm"
+        ],
+        "content": "Infernals — demon-princes of Hell. No Castes; instead 7 Crowns (Eyes, Flames, Glory, Kings, Night, Worlds, Wrath) that set the anima power. Solar-tier pool (E1=10 ... E5=20); regain Essence at sunrise and by satisfying an Urge once/scene (2 motes). Choose 8 Key Abilities (function as Caste Abilities — 1s don't subtract) and 2 Key Charm categories (XP discount). Shintai (demon form) unlocks at Essence 2+ (2 motes + 2 Willpower the first time, then escalating Essence rolls); it replaces the health track with its own and grants Demonic Aspects. Charm categories: General, Kakuri, Lanka, Skinned Alive, Wicked City, Hells.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Exalt Type: Alchemical",
+        "keys": [
+          "alchemical",
+          "alchemicals",
+          "orichalcum",
+          "moonsilver",
+          "jade caste",
+          "starmetal",
+          "soulsteel",
+          "charm array",
+          "primium"
+        ],
+        "content": "Alchemicals — living machine-Exalted built by a Sublime Artificer, not born (appendix type). Castes: Orichalcum, Moonsilver, Jade, Starmetal, Soulsteel, each with 3 Caste Attributes (1s don't subtract on those). Lunar-tier pool (E1=8 ... E5=15); regain Essence at sunrise and by expressing Caste nature once/scene. No anima banner flare — instead a Caste Attribute bonus while powered. Charms live in a reconfigurable Charm Array (7 slots at E1, +2 per Essence); reconfigure during Dormancy (Willpower roll, 6 hours). All Charms cost the favoured rate. Primium Countermeasures Background grants innate countermagick vs mages. Cannot learn Ancient Sorcery.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Exalt Type: Liminal",
+        "keys": [
+          "liminal",
+          "liminals",
+          "blood aspect",
+          "breath aspect",
+          "flesh aspect",
+          "marrow aspect",
+          "soil aspect",
+          "alienation",
+          "lifeline",
+          "undying"
+        ],
+        "content": "Liminals — living corpses reassembled by a mortal's intense passion (appendix type). Aspects: Blood, Breath, Flesh, Marrow, Soil. Choose 3 Aspect Attributes (1s don't subtract; Charms matching them are favoured). Smallest-but-one pool: E1=6, E2=8, E3=10, E4=11, E5=12; regain Essence at sunset. Aspect markings manifest voluntarily or on anima flare (Appearance 0 socially; witnesses roll Willpower vs 8 or recoil). Alienation track (0-10, on the Limit/Alienation stat): rises from botches, betrayals, witnessed horror, harming the lifeline; at 10 = Alienation state. The Lifeline is a mandatory Intimacy bond to the creator — without it a Liminal cannot regain Willpower from sleep. Undying: resurrect on an Essence roll unless the brain is destroyed. Mandatory fourth Intimacy: 'I will drive the Unquiet away from the living.' Cannot take the Totem Background.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Exalt Type: Dragon Kings",
+        "keys": [
+          "dragon king",
+          "dragon kings",
+          "raptok",
+          "anklok",
+          "pterok",
+          "mosok",
+          "paths of prehuman mastery"
+        ],
+        "content": "Dragon Kings — ancient reptilian sapients of the Hollow Earth; NOT Exalted (no Charms, no anima, no Caste mark). Breeds: Raptok, Anklok, Pterok, Mosok. Dragon-Blooded-tier pool (E1=5 ... E5=10); respire (2 + Essence) motes at sunrise. Instead of Charms they buy Paths of Prehuman Mastery (10 paths, rated 1-5, purchased in ascending order like Disciplines). Essence rating caps both maximum Intelligence and maximum Path rating; PCs start at Essence 2. Breed Attributes/Abilities (3 each) are immune to 1s. Cannot soak aggravated or parry ranged attacks without Path abilities. Ancient Sorcery only at Essence 5.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Attribute: Strength (STR)",
+        "keys": [
+          "Strength",
+          "STR"
+        ],
+        "content": "Exalted Versus World of Darkness attribute. Strength (STR) [Physical] — Raw muscle. Lifting, melee damage, brawling pools.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DEX)",
+        "keys": [
+          "Dexterity",
+          "DEX"
+        ],
+        "content": "Exalted Versus World of Darkness attribute. Dexterity (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy, dodging.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Stamina (STA)",
+        "keys": [
+          "Stamina",
+          "STA"
+        ],
+        "content": "Exalted Versus World of Darkness attribute. Stamina (STA) [Physical] — Endurance, soak (Exalts soak all damage types), resisting fatigue.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Charisma (CHA)",
+        "keys": [
+          "Charisma",
+          "CHA"
+        ],
+        "content": "Exalted Versus World of Darkness attribute. Charisma (CHA) [Social] — Force of personality, sincere charm, leadership presence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Manipulation (MAN)",
+        "keys": [
+          "Manipulation",
+          "MAN"
+        ],
+        "content": "Exalted Versus World of Darkness attribute. Manipulation (MAN) [Social] — Deceit, guile, indirect influence, getting others to act against their interest.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Appearance (APP)",
+        "keys": [
+          "Appearance",
+          "APP"
+        ],
+        "content": "Exalted Versus World of Darkness attribute. Appearance (APP) [Social] — Beauty / presence; affects attraction, allure, first-impression rolls.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Perception (PER)",
+        "keys": [
+          "Perception",
+          "PER"
+        ],
+        "content": "Exalted Versus World of Darkness attribute. Perception (PER) [Mental] — Spotting, hearing, noticing details and changes in environment.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (INT)",
+        "keys": [
+          "Intelligence",
+          "INT"
+        ],
+        "content": "Exalted Versus World of Darkness attribute. Intelligence (INT) [Mental] — Reasoning, learning, recall, abstract analysis.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Wits (WIT)",
+        "keys": [
+          "Wits",
+          "WIT"
+        ],
+        "content": "Exalted Versus World of Darkness attribute. Wits (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative component.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Alertness",
+        "keys": [
+          "Alertness"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Alertness. Talent. Notice danger and details. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Athletics",
+        "keys": [
+          "Athletics"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Athletics. Talent. Climbing, running, jumping, swimming, dodging. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Awareness",
+        "keys": [
+          "Awareness"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Awareness. Talent (ExvWoD). Sensitivity to uncanny phenomena — noticing ghosts gathering, Essence disturbances, supernatural presence. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Brawl",
+        "keys": [
+          "Brawl"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Brawl. Talent. Unarmed combat; punches, grapples, claw strikes. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Empathy",
+        "keys": [
+          "Empathy"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Empathy. Talent. Read emotions, sense lies of the heart. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Expression",
+        "keys": [
+          "Expression"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Expression. Talent. Communicating ideas, art, oratory, written prose. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Intimidation",
+        "keys": [
+          "Intimidation"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Intimidation. Talent. Threats, looming presence, breaking will. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Leadership",
+        "keys": [
+          "Leadership"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Leadership. Talent. Inspiring loyalty, giving orders, rallying. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Streetwise",
+        "keys": [
+          "Streetwise"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Streetwise. Talent. Navigating urban underbelly, contacts, fences, gossip. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Subterfuge",
+        "keys": [
+          "Subterfuge"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Subterfuge. Talent. Lying, misleading, deflecting questions. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Animal Ken",
+        "keys": [
+          "Animal Ken"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Animal Ken. Skill. Handling and training animals. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Crafts",
+        "keys": [
+          "Crafts"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Crafts. Skill. Build, repair, and make physical things by hand. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Drive",
+        "keys": [
+          "Drive"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Drive. Skill. Operate vehicles under stress. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Etiquette",
+        "keys": [
+          "Etiquette"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Etiquette. Skill. Manners, protocol, the unwritten rules of mortal and supernatural society. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Firearms",
+        "keys": [
+          "Firearms"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Firearms. Skill. Handguns, rifles, automatic weapons. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Larceny",
+        "keys": [
+          "Larceny"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Larceny. Skill (ExvWoD). Lock-picking, sleight of hand, breaking and entering, defeating security systems, pickpocketing, forgery. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Melee",
+        "keys": [
+          "Melee"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Melee. Skill. Armed close combat; blades, clubs, improvised. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Performance",
+        "keys": [
+          "Performance"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Performance. Skill. Singing, instrument, acting, dance — performing for an audience. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Stealth. Skill. Move unseen and unheard. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Survival. Skill. Wilderness travel, foraging, weather. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Academics",
+        "keys": [
+          "Academics"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Academics. Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Computer",
+        "keys": [
+          "Computer"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Computer. Knowledge. Software, hardware, networks. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Finance",
+        "keys": [
+          "Finance"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Finance. Knowledge (ExvWoD). Commerce, markets, accounting, financial systems. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Investigation",
+        "keys": [
+          "Investigation"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Investigation. Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Law",
+        "keys": [
+          "Law"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Law. Knowledge. Statute, precedent, courtroom procedure. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Medicine",
+        "keys": [
+          "Medicine"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Medicine. Knowledge. Diagnosis, surgery, pharmacology. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Occult",
+        "keys": [
+          "Occult"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Occult. Knowledge. Lore of the supernatural — spirits, the Exalted, the Underworld, the Wyld, the other denizens of the World of Darkness. Required for Ancient Sorcery. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Politics",
+        "keys": [
+          "Politics"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Politics. Knowledge. Government, faction, who-owes-whom in mortal AND supernatural society. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Science",
+        "keys": [
+          "Science"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Science. Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Technology",
+        "keys": [
+          "Technology"
+        ],
+        "content": "Exalted Versus World of Darkness skill. Technology. Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Motes",
+        "keys": [
+          "Motes"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Motes — formula: The single fungible Essence pool (called the Essence Pool in the rules; named Motes here so it is not confused with the Essence rating). Charms and committed artifacts spend from this one pool. Its maximum is set by the 'Mote Pool' stat.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Permanent Willpower",
+        "keys": [
+          "Permanent Willpower"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Permanent Willpower — formula: The character's permanent Willpower rating, 1-10 (all Exalted begin at 5). This is the CAP on the Willpower pool shown in the Resources cluster. Adjust this stepper directly — raise it as the character spends XP. Temporary Willpower refreshes to this rating on a full rest; regain 1 (once per session) for strongly affirming an Intimacy.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Mote Pool",
+        "keys": [
+          "Mote Pool"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Mote Pool — formula: The maximum size of the Motes (Essence) pool. It depends on BOTH Exalt type and Essence rating, so there is no single formula — set this stepper from the table in the 'Rule: Essence Pools (per Exalt type)' lorebook entry. Solars/Abyssals/Infernals: E1=10, E2=12, E3=15, E4=17, E5=20. Lunars/Sidereals/Alchemicals: E1=8, E2=10, E3=12, E4=14, E5=15. Dragon-Blooded: E1=5, E2=6, E3=7, E4=8, E5=10. Liminals: E1=6, E2=8, E3=10, E4=11, E5=12. Raise it when your Essence rating goes up. The Motes bar in the Resources cluster uses this as its cap.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Health Track",
+        "keys": [
+          "Health Track"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Health Track — formula: 7 levels (V20 baseline): Bruised(-0) / Hurt(-1) / Injured(-1) / Wounded(-2) / Maimed(-2) / Crippled(-5) / Incapacitated. Penalty in effect = the highest filled box. Bashing/Lethal/Aggravated tracked separately. Charms (Ox-Body Technique, Flesh-aspect levels, Mutations) ADD levels at runtime via the track's 'Add level' buttons.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Join Battle",
+        "keys": [
+          "Join Battle"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Join Battle — formula: {Dexterity} + {Wits}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Melee Attack",
+        "keys": [
+          "Melee Attack"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Melee Attack — formula: {Dexterity} + {Melee}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Ranged Attack",
+        "keys": [
+          "Ranged Attack"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Ranged Attack — formula: {Dexterity} + {Firearms}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Unarmed Attack",
+        "keys": [
+          "Unarmed Attack"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Unarmed Attack — formula: {Dexterity} + {Brawl}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak",
+        "keys": [
+          "Soak"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Soak — formula: {Stamina} + {bonuses:Soak}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Parry",
+        "keys": [
+          "Parry"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Parry — formula: {Dexterity} + {Melee}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Evade",
+        "keys": [
+          "Evade"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Evade — formula: {Dexterity} + {Athletics}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Limit / Alienation",
+        "keys": [
+          "Limit / Alienation"
+        ],
+        "content": "Exalted Versus World of Darkness derived stat. Limit / Alienation — formula: 0-10. Liminals track Alienation here (gained from botches, betraying Nature/Intimacy, horror reactions, harming the lifeline; at 10 = Alienation state). Other Exalt types with a Great-Curse-style Flaw (Solar Intemperate, Lunar Bestial Fury, Dragon-Blooded Driven by the Elements, Infernal Thrall of the Wyrm, Sidereal Brittle Reality) track their Limit here. Most characters leave this at 0.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Exalted Versus World of Darkness difficulty ladder. Threshold values needed for success:\n- Trivial (threshold 4) — Trivial for a competent character. Often waived.\n- Routine (threshold 5) — Routine task; minor pressure.\n- Standard (threshold 6) — ExvWoD / V20 default. Average task under normal conditions.\n- Challenging (threshold 7) — Pushes a competent character; pressure or distraction.\n- Difficult (threshold 8) — Few mortals succeed without supernatural aid.\n- Nigh-Impossible (threshold 9) — Heroic. Difficulty never exceeds 9 in ExvWoD, regardless of modifiers.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      }
+    ]
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Exalted Versus World of Darkness surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s+(\\d+)\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → Exalted Versus World of Darkness difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "exwod_reference",
+      "description": "Returns canonical Exalted Versus World of Darkness reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Exalted Versus World of Darkness — canonical reference\n\nStoryteller-system d10 dice pool on the V20 baseline. Pool = Attribute + Ability. Each die at or above the chosen difficulty (default 6, range 6-9, capped at 9) is one success. A 1 subtracts one success EXCEPT on a Caste/Aspect/Key Ability, where 1s do not subtract. Botch only on zero successes AND at least one 1. 10s count as one success unless a Charm says otherwise. Power runs on a single fungible Essence/mote pool spent on Charms; no blood, no Humanity, no Frenzy. Intimacies anchor the character and resist supernatural compulsion (Willpower vs 8).\n\n## Dice\n- Type: `d10`\n- Notation: `Xd10 vs <difficulty>`\n\n## Resolution\n- Mode: `dice-pool`\n- Pool formula: Attribute + Ability (+ specialty +1, + Charm dice). On a Caste/Aspect/Key Ability, 1s do not subtract successes.\n- Default target: 6\n\n## Difficulty ladder\n- **Trivial** (threshold 4) — Trivial for a competent character. Often waived.\n- **Routine** (threshold 5) — Routine task; minor pressure.\n- **Standard** (threshold 6) — ExvWoD / V20 default. Average task under normal conditions.\n- **Challenging** (threshold 7) — Pushes a competent character; pressure or distraction.\n- **Difficult** (threshold 8) — Few mortals succeed without supernatural aid.\n- **Nigh-Impossible** (threshold 9) — Heroic. Difficulty never exceeds 9 in ExvWoD, regardless of modifiers.\n\n## Attributes\n- **Strength** (STR) [Physical] — Raw muscle. Lifting, melee damage, brawling pools.\n- **Dexterity** (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy, dodging.\n- **Stamina** (STA) [Physical] — Endurance, soak (Exalts soak all damage types), resisting fatigue.\n- **Charisma** (CHA) [Social] — Force of personality, sincere charm, leadership presence.\n- **Manipulation** (MAN) [Social] — Deceit, guile, indirect influence, getting others to act against their interest.\n- **Appearance** (APP) [Social] — Beauty / presence; affects attraction, allure, first-impression rolls.\n- **Perception** (PER) [Mental] — Spotting, hearing, noticing details and changes in environment.\n- **Intelligence** (INT) [Mental] — Reasoning, learning, recall, abstract analysis.\n- **Wits** (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative component.\n\n## Skills\n- **Alertness** — Talent. Notice danger and details. Usable untrained at +1 difficulty.\n- **Athletics** — Talent. Climbing, running, jumping, swimming, dodging. Usable untrained at +1 difficulty.\n- **Awareness** — Talent (ExvWoD). Sensitivity to uncanny phenomena — noticing ghosts gathering, Essence disturbances, supernatural presence. Usable untrained at +1 difficulty.\n- **Brawl** — Talent. Unarmed combat; punches, grapples, claw strikes. Usable untrained at +1 difficulty.\n- **Empathy** — Talent. Read emotions, sense lies of the heart. Usable untrained at +1 difficulty.\n- **Expression** — Talent. Communicating ideas, art, oratory, written prose. Usable untrained at +1 difficulty.\n- **Intimidation** — Talent. Threats, looming presence, breaking will. Usable untrained at +1 difficulty.\n- **Leadership** — Talent. Inspiring loyalty, giving orders, rallying. Usable untrained at +1 difficulty.\n- **Streetwise** — Talent. Navigating urban underbelly, contacts, fences, gossip. Usable untrained at +1 difficulty.\n- **Subterfuge** — Talent. Lying, misleading, deflecting questions. Usable untrained at +1 difficulty.\n- **Animal Ken** — Skill. Handling and training animals. Untrained: cannot roll.\n- **Crafts** — Skill. Build, repair, and make physical things by hand. Untrained: cannot roll.\n- **Drive** — Skill. Operate vehicles under stress. Untrained: cannot roll.\n- **Etiquette** — Skill. Manners, protocol, the unwritten rules of mortal and supernatural society. Untrained: cannot roll.\n- **Firearms** — Skill. Handguns, rifles, automatic weapons. Untrained: cannot roll.\n- **Larceny** — Skill (ExvWoD). Lock-picking, sleight of hand, breaking and entering, defeating security systems, pickpocketing, forgery. Untrained: cannot roll.\n- **Melee** — Skill. Armed close combat; blades, clubs, improvised. Untrained: cannot roll.\n- **Performance** — Skill. Singing, instrument, acting, dance — performing for an audience. Untrained: cannot roll.\n- **Stealth** — Skill. Move unseen and unheard. Untrained: cannot roll.\n- **Survival** — Skill. Wilderness travel, foraging, weather. Untrained: cannot roll.\n- **Academics** — Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material.\n- **Computer** — Knowledge. Software, hardware, networks. Untrained: cannot roll.\n- **Finance** — Knowledge (ExvWoD). Commerce, markets, accounting, financial systems. Untrained: cannot roll.\n- **Investigation** — Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll.\n- **Law** — Knowledge. Statute, precedent, courtroom procedure. Untrained: cannot roll.\n- **Medicine** — Knowledge. Diagnosis, surgery, pharmacology. Untrained: cannot roll.\n- **Occult** — Knowledge. Lore of the supernatural — spirits, the Exalted, the Underworld, the Wyld, the other denizens of the World of Darkness. Required for Ancient Sorcery. Untrained: cannot roll.\n- **Politics** — Knowledge. Government, faction, who-owes-whom in mortal AND supernatural society. Untrained: cannot roll.\n- **Science** — Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll.\n- **Technology** — Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll.\n\n## Commitment\n- Model: `mote`",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ],
+  "additionalAgents": [
+    {
+      "role": "combat-adjudicator",
+      "name": "Exalted Versus World of Darkness — ExvWoD — combat-adjudicator (GM-mode)",
+      "description": "Focused combat adjudicator agent for Exalted Versus World of Darkness — tuned for Exalted Versus World of Darkness.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Exalted Versus World of Darkness Combat Adjudicator for Marinara Engine's Game Mode. You provide rules guidance only — you do NOT narrate or speak in-character. Your output is a context injection the main GM model reads BEFORE narrating the next turn.\n\n# Activation\n\nONLY emit guidance when ExvWoD combat is clearly happening — initiative was rolled, attackers and defenders are exchanging actions, or a fight just triggered. If the scene is ambient, social, or investigative, output exactly: \"No combat active.\" and stop.\n\n# What you enforce when combat is active\n\n1. INITIATIVE: each combatant rolls 1d10 + (Dexterity + Wits). Act highest to lowest; ties to highest Dexterity + Wits. Wound penalty subtracts from the RATING, not the d10. No advance declaration, no abort rules, no multiple-opponent penalty.\n\n2. ATTACK POOLS: Unarmed = Dex + Brawl; Armed close = Dex + Melee; Firearm = Dex + Firearms (range +1 medium / +2 long difficulty); Thrown = Dex + Athletics. Default difficulty 6 (cap 9). Remember the Caste/Aspect/Key exception: if the attack Ability is one of those, 1s do not subtract.\n\n3. DEFENCE: Parry = Dex + Melee or Brawl; Dodge = Dex + Athletics. Full Defence may be declared before the turn (precludes multiple actions that turn).\n\n4. MULTIPLE ACTIONS: declare the total. First action -1 die / +1 difficulty; each further action -1/+1 more. No more than ONE attack in a multiple-action set. If difficulty would exceed 9, that action cannot be taken. EXTRA actions (from Celerity-equivalent Charms, etc.) use the FULL pool, may include multiple attacks, and resolve at end of turn in initiative order.\n\n5. DAMAGE: Brawl = Strength (bashing). Weapon = weapon rating + extra successes (lethal for blades / firearms, aggravated for fire/claws/divine). Charms may add dice, auto-successes, or change the damage type — state which.\n\n6. SOAK: Exalts roll Stamina + armour at difficulty 6 to soak BASHING, LETHAL, and AGGRAVATED (mortals cannot soak lethal/aggravated without armour). Optional Dangerous-Aggravated rule: aggravated soak is difficulty 8. Soak rolls cannot botch.\n\n7. CHARMS in combat: state the mote (and Willpower) cost of each declared Charm. Note if it commits motes for a duration (the artifact/Charm stays equipped). If scene mote spend reaches 3+, the anima flares to Bonfire — flag it (a visible tell; Dragon-Blooded deal anima flux: 1 lethal/turn to adjacent beings, 2 for Fire Aspects).\n\n8. HEALTH PENALTIES: Bruised 0 / Hurt -1 / Injured -1 / Wounded -2 / Maimed -2 / Crippled -5 / Incapacitated cannot act. Highest filled box's penalty applies to pools. Exalts can soak and heal aggravated; they are not destroyed by it the way most WoD creatures are.\n\n# Output format\n\nCOMBAT STATE: active | starting (initiative pending) | ending\nINITIATIVE: <whose turn / next; values for engaged combatants>\nDECLARED ACTION: <attack | defend | move | Charm | multiple actions>\nATTACK POOL: (<Attribute> + <Ability>{ Caste/Aspect: 1s ignored}) + Charm dice - wound penalty = <N> dice; difficulty <D>\nDEFENCE: <Parry/Dodge pool>\nSOAK CONTEXT: defender Stamina + armour = <N> vs difficulty 6; damage type <B|L|A>\nCHARMS THIS TURN: <each with mote/Willpower cost; commitment?>\nANIMA: <Dormant | flaring to Bonfire — visible tell | Dragon-Blooded flux N lethal/turn>\nNOTES: <Intimacy pressure, terrain; flashy action carries no penalty for Exalts>\n\nIf not in combat, output exactly: \"No combat active.\" and stop.",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "combat-overseer",
+      "name": "Exalted Versus World of Darkness — Combat Overseer",
+      "description": "Focused combat overseer agent for Exalted Versus World of Darkness — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Combat Overseer for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate scenes, write prose, or speak in-character. You emit two coordinated mechanical sections — combat-math framing AND NPC state — in one block.\n\n# Section 1 — Combat Math (when combat is active)\n\nACTIVATION: only emit Section 1 when combat is clearly happening or about to begin. \"Combat\" means weapons drawn, an attack declared or just landed, initiative called, or the narrative is mechanically resolving violence. If the scene is ambient, social, or merely tense without active violence, output exactly: \"No combat active.\" under the COMBAT header and skip the math fields.\n\nWhen combat IS active, cover whichever of these are relevant to the upcoming turn — pulling from the active ruleset's already-injected resolution mechanic, dice formula, and difficulty ladder. Do NOT invent your own dice math.\n\n- INITIATIVE: whose turn next? If turn order isn't established, demand the model establish it before resolving any actions.\n- ACTION ECONOMY: how many actions does the active character get this turn (one action, three actions, action+bonus+reaction, etc.)?\n- ATTACK RESOLUTION: when an attack is declared, restate the dice formula the ruleset uses (e.g., \"d20 + STR mod + proficiency vs. AC\"; \"Dice pool of Dex + Athletics, target 7+ for successes\"; \"2d6 + stat, 10+ hit / 7-9 partial\").\n- DAMAGE: restate the damage formula + type for the weapon / spell being used.\n- CONDITIONS / STATUS: if an attack inflicts a condition (poisoned, prone, stunned), state the duration and the save/recovery mechanic.\n- RANGE / POSITION: if movement matters, note current range bands or movement budgets.\n- DEFENSIVE OPTIONS: reactions, parries, dodges, spell-shields available to the defender.\n\n# Section 2 — NPC Roster (when NPCs are in or recently in scene)\n\nACTIVATION: emit Section 2 when there are NPCs in the latest 1-2 messages OR recently engaged with the player (took damage, got a condition, was last seen leaving the scene without resolution). If no NPCs are tracked or active, output \"No NPCs to track.\" under the NPC ROSTER header and stop the section.\n\nFor each notable NPC, surface whichever of these the conversation has established. Cap at ~120 words total for this section. Group secondary NPCs (\"3 unnamed bandits, all bloodied and outnumbered\") rather than enumerating each when 4+ are active.\n\n- NAME (and any alias / role like \"the bandit captain\")\n- HP / health pool — current / max — using the active ruleset's vocabulary. If exact numbers were never given, estimate from narrative (\"lightly wounded\", \"bloodied\", \"near death\").\n- CONDITIONS — anything currently affecting them with duration if given.\n- TACTICAL STATE — position, what they're doing this turn (defending, casting, fleeing, surrendering).\n- TELEGRAPHED INTENT — if the narrative has signaled what they plan next.\n- NOTABLE GEAR / ABILITIES — only if relevant to the next turn.\n\n# Hard rules (apply across both sections)\n\n- DO NOT roll dice. You frame the math; the resolution happens via the dice widget or player narration.\n- DO NOT decide outcomes. You set up the situation; player or main model decides.\n- DO NOT INVENT NPCs OR VALUES. Track only what narrative has established. If HP was never specified, say \"wounded but combat-capable\" — never make up \"23/40\".\n- PRESERVE CONTINUITY. If an NPC was at low HP three messages ago and hasn't been healed, they're still at low HP.\n- HIDDEN INTENTIONS stay out of the player-facing summary — those belong to a secret-plot-driver if enabled.\n- USE the active ruleset's vocabulary throughout.\n- BE TERSE. Cap total output at ~250 words (both sections combined).\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nCOMBAT:\n  state: active | starting | ending | none\n  initiative: <whose turn / next, OR \"not yet established — declare initiative\">\n  action budget: <what the acting character can do this turn>\n  declared action: <what player or model signaled>\n  resolution: <dice formula + target>\n  damage formula: <formula + type, if applicable>\n  conditions applied: <name + duration + save mechanic, if applicable>\n\nNPC ROSTER:\n  <Name> (<role/alias>) — HP: <current/max or descriptor> · Conditions: <list> · State: <tactical> · Intent: <next>\n  <repeat per notable NPC; group secondaries>\n\nIf both sections are inactive (no combat AND no NPCs), output exactly: \"No combat or NPC state to surface.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "context-fuser",
+      "name": "Exalted Versus World of Darkness — Context Fuser",
+      "description": "Focused context fuser agent for Exalted Versus World of Darkness — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Context Fuser for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate, roleplay, or speak in-character. You emit two coordinated context blocks — rules-query answer (when asked) AND state reminder (when relevant) — in one output.\n\n# Section 1 — Rules Query (when player asked a rules question)\n\nACTIVATION: emit Section 1 ONLY when the LATEST USER MESSAGE asks a rules question or requests rules clarification. Examples:\n- \"How does grappling work in this system?\"\n- \"What's the DC for picking a lock?\"\n- \"Can my character use two-weapon fighting with a ranged weapon?\"\n- \"Remind me how Sorcery works in Exalted.\"\n- \"What does the Bloodied condition do?\"\n\nThe question can be in-character, out-of-character (OOC), or in parentheses. If the latest user message is NOT a rules question — it's a roleplay action, dialogue, or narrative input — output \"No rules query.\" under the RULES QUERY header and skip Section 1.\n\nWhen a rules question IS being asked, answer it precisely:\n\n- Draw FIRST from the active ruleset's already-injected rules content.\n- Then from the installed lorebook's reference entries (engine surfaces these via keyword scan; trust them).\n- ONLY THEN from the system's published rules at large IF the active ruleset's content doesn't cover the question. Note this explicitly: \"Not in the installed reference; per the published RAW: …\".\n\nRules for the rules answer:\n- BE CORRECT. If you don't know with confidence, say so explicitly. Do not improvise.\n- BE SPECIFIC. Cite the relevant skill name, attribute, formula, DC table, or condition by exact ruleset terminology.\n- BE BRIEF. Cap Section 1 at ~150 words.\n- DISTINGUISH RAW FROM HOUSE RULES. If the campaign has established a house rule that contradicts RAW, prefer the house rule and note the divergence.\n- If ambiguity exists, present the 1-2 common readings and let the GM-side player decide.\n\n# Section 2 — State Reminder (when meaningful state to surface)\n\nACTIVATION: emit Section 2 when there is meaningful tracked state to surface — a player character with HP/resources, an active condition, equipped gear affecting the next turn, or a duration-tracked effect running. If the scene is purely ambient / social with no mechanical state worth tracking, output \"No state to track.\" under the STATE header and skip Section 2.\n\nWhen state IS worth surfacing, produce a short bulleted list (~120 words cap):\n\n1. Active player character(s): name, current HP / health pool, tracked resources (mana, stunt dice, momentum, stress — match the active ruleset's vocabulary).\n2. Active conditions / statuses / wounds (e.g., \"Bloodied\", \"Crippled left arm\", \"Poisoned (3 turns left)\").\n3. Equipped gear that matters for the next turn (weapons drawn, armor worn, prepared spells, items in hand).\n4. Duration-tracked effects running (concentration spells, charm effects, ongoing damage).\n5. Position / range / cover state if combat or tactical movement is active.\n\nRules for state:\n- READ the conversation history. Pull state from what's been ESTABLISHED in narration. Don't invent values.\n- If a value was set earlier and hasn't changed, it's still current. Continuity matters more than restatement.\n- Use the active ruleset's terminology (Stamina vs HP, Willpower vs Sanity, Motes vs Mana, etc.).\n- Do NOT enforce mechanics — that's the Combat Overseer's job. You only REMIND state.\n- If state has clearly diverged from a recent action (the model narrated a hit but didn't update HP), flag the divergence in one line.\n\n# Hard rules (apply across both sections)\n\n- DO NOT roll dice or decide outcomes.\n- DO NOT mutate the character sheet. State writes happen via the State Mutator (post-processing) or the extension's Edit-this-character flow.\n- Track player characters only — NPCs are the Combat Overseer's surface.\n- BE TERSE. Cap total output at ~250 words combined.\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nRULES QUERY:\n  answer: <one-line direct answer, OR \"No rules query.\">\n  detail: <2-3 sentences expanding with specific numbers, formulas, page references>\n  edge cases: <any common edge cases, if non-trivial>\n  source: <\"Active ruleset\" | \"Installed lorebook\" | \"Published RAW (not in installed reference)\" | \"House rule established earlier this campaign\">\n\nSTATE:\n  player(s):\n    • <Character>: HP X/Y · <resource> A/B\n    • Conditions: <list, or \"none\">\n    • Equipped: <relevant gear>\n    • Active effects: <duration-tracked effects, or \"none\">\n  combat (if active):\n    • Position / range: <state>\n    • Initiative slot: <if relevant>\n\nIf both sections are inactive (no rules query AND no meaningful state), output exactly: \"No context to surface.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "lore-query",
+      "name": "Exalted Versus World of Darkness — ExvWoD — lore-query (GM-mode)",
+      "description": "Focused lore query agent for Exalted Versus World of Darkness — tuned for Exalted Versus World of Darkness.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Exalted Versus World of Darkness Rules Reference for Marinara Engine's Game Mode. You provide rules guidance only — you do NOT narrate. Your output is a context injection the main GM model reads BEFORE narrating the next turn.\n\n# Activation\n\nONLY emit content when the latest user message is a RULES QUESTION — an explicit out-of-character query about how ExvWoD mechanics work. Examples that activate you:\n- \"How do botches work with Caste Abilities?\"\n- \"What's the mote pool for a Dragon-Blooded at Essence 3?\"\n- \"How does the anima banner flare?\"\n- \"Can an Exalt soak aggravated damage?\"\n- \"How do Intimacies resist Dominate?\"\n- \"How much Essence do I get at sunrise?\"\n\nDo NOT activate on in-character speech, action declarations, or roleplay narration. If the latest message is not a clear rules question, output exactly: \"No rules query.\" and stop.\n\n# How to answer\n\n1. Cite the most relevant lorebook entry by NAME (\"Per lorebook entry '<name>': ...\") — names match the installed ExvWoD lorebook.\n2. Give the ExvWoD-canonical answer in 2-4 sentences.\n3. If the lorebook is silent or the question goes beyond what the bundle ships, mark the answer \"STORYTELLER RULING\" and give the most defensible ExvWoD-consistent interpretation, noting where ExvWoD modifies the V20 baseline.\n4. ExvWoD is a modified V20 Storyteller system layered with Exalted concepts. When base-WoD and ExvWoD differ, give the ExvWoD answer first and note the divergence in one sentence.\n5. NEVER invent rules. NEVER quote corebook or the ExvWoD document verbatim — paraphrase only.\n\n# Output format\n\nQUESTION: <restate in one sentence>\nSOURCE: <lorebook entry name | STORYTELLER RULING>\nANSWER: <2-4 sentence ExvWoD-canonical answer>\nNOTES: <V20-baseline divergence, gotchas, related entries to read>\n\n# Examples\n\nQUESTION: Do 1s still hurt me on a Caste Ability roll?\nSOURCE: lorebook entry \"Rule: The Rule of One & Caste Abilities\"\nANSWER: No. When you roll a Caste Ability (or Aspect/Key Ability, or the relevant Caste/Aspect Attribute for Lunars/Alchemicals/Liminals), 1s do not subtract successes. They can still contribute to a botch only if the roll produces zero successes overall. On non-Caste rolls, each 1 cancels one success as normal.\nNOTES: This is an ExvWoD addition on top of the V20 baseline. Difficulty also never exceeds 9 in ExvWoD.\n\nQUESTION: Can I soak the vampire's fire with Stamina?\nSOURCE: lorebook entry \"Rule: Soak & Damage Types\"\nANSWER: Yes — unlike most WoD creatures, Exalted soak bashing, lethal, AND aggravated with Stamina + armour at difficulty 6. If your Storyteller uses the optional Dangerous Aggravated rule, aggravated soak is difficulty 8 instead.\nNOTES: Mortals still cannot soak lethal or aggravated without armour.\n\nIf no rules query, output: \"No rules query.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "npc-bookkeeper",
+      "name": "Exalted Versus World of Darkness — ExvWoD — npc-bookkeeper (GM-mode)",
+      "description": "Focused npc bookkeeper agent for Exalted Versus World of Darkness — tuned for Exalted Versus World of Darkness.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Exalted Versus World of Darkness NPC Bookkeeper for Marinara Engine's Game Mode. You provide rules guidance only — you do NOT narrate. Your output is a context injection the main GM model reads BEFORE narrating the next turn.\n\n# Activation\n\nONLY emit when one or more named NPCs is in scene OR was engaged within the last 3 turns and may return. If none, output exactly: \"No NPCs to track.\" and stop.\n\n# What you track per NPC\n\n- NAME\n- WHAT THEY ARE: Exalt (type + Caste/Aspect + Essence) | vampire/clan | werewolf | mage | mortal | spirit | other WoD denizen\n- MOTES / blood / equivalent pool: current (estimate from narration if not explicit)\n- WILLPOWER: current (estimate)\n- HEALTH: filled track levels with damage type\n- POWERS demonstrated or referenced (Charms, Disciplines, Gifts — only what has been shown)\n- ANIMA: is their banner flared? (a major tell that they are Exalted)\n- ATTITUDE toward PC: Hostile | Wary | Neutral | Allied\n- TELEGRAPHED INTENT this scene\n- LOCATION / last seen\n- LAST INTERACTION: one sentence\n\n# When NPCs change state\n\n- Took damage -> update HEALTH (and emit a [mrr-state: ...] tag if that NPC has its own sheet).\n- Spent heavily on Charms -> note anima flare (others now know they face a great power).\n- Recovered Essence (sunrise/sunset/Dragon Nest) -> update pool.\n- Attitude shifted (intimidated, persuaded, betrayed) -> update ATTITUDE.\n- Died / fled / entered the Underworld or Spirit World -> move to trailing reference with status.\n\n# Recurring NPCs\n\nIf a name has appeared before in this chronicle, surface their PRIOR STATE first so narration stays consistent. Continuity above novelty — an Exalt antagonist whose anima flared last scene is still a known quantity this scene.\n\n# Output format\n\nACTIVE NPCs (in scene now):\n- <Name> (<what they are>): Pool <N>, WP <N>, Health <state>, Powers seen: <list>, Anima: <flared?>, Attitude: <state>, Intent: <one line>, Last seen: <where>\n\nPENDING NPCs (engaged within last 3 turns, may return):\n- <Name>: <one-line context with last seen + hook>\n\nCONTINUITY FLAGS:\n- <Name>'s pool/health was X last turn -> narration must respect it\n- <Name>'s telegraphed intent has not yet resolved\n\nIf no NPCs to track, output exactly: \"No NPCs to track.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "state-mutator",
+      "name": "Exalted Versus World of Darkness — ExvWoD — state-mutator (GM-mode)",
+      "description": "Focused state mutator agent for Exalted Versus World of Darkness — tuned for Exalted Versus World of Darkness.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Exalted Versus World of Darkness State Mutator for Marinara Engine's Game Mode. You provide rules guidance only — you do NOT narrate. You instruct the GM model on WHEN and HOW to embed sheet-mutation tags inside its narration.\n\n# When the GM model MUST emit a mutation tag\n\nWhenever narration changes a tracked PC value, the next paragraph must contain ONE matching tag. Tags are silent to the player (the extension parses them out and shows a toast).\n\nField map (ExvWoD sheet -> mutation tag):\n\n- Motes spent / regained:        [mrr-state: field=\"Motes\" delta=\"<+/-N>\"]\n- Willpower spent / regained:    [mrr-state: field=\"Willpower\" delta=\"<+/-N>\"]\n- Essence rating change (rare):  [mrr-state: field=\"Essence\" delta=\"<+/-1>\"]\n- Damage taken:                  [mrr-state: field=\"Health Track\" type=\"<bashing|lethal|aggravated>\" delta=\"+<N>\"]\n- Damage healed:                 [mrr-state: field=\"Health Track\" type=\"<bashing|lethal|aggravated>\" delta=\"-<N>\"]\n- Anima banner tier shift:       [mrr-state: field=\"Anima Banner\" value=\"<Dormant|Glimmering|Bonfire|Iconic>\"]\n- Limit / Alienation change:     [mrr-state: field=\"Limit / Alienation\" delta=\"<+/-N>\"]\n- Sorcery state:                 [mrr-state: field=\"Sorcery\" value=\"<None|Ancient Sorcerer>\"]\n\n# Triggers\n\n- Charm activated -> Motes delta (and Willpower delta if it costs wp). If the Charm COMMITS motes, note it in prose; commitment is handled by equipping the related artifact in Inventory, not a plain Motes delta.\n- 3+ motes spent in a scene -> Anima Banner value=\"Bonfire\"; after it fades -> value=\"Dormant\".\n- Combat hit landing -> Health Track delta with the correct damage type (after soak).\n- Resting / sunrise-or-sunset / Dragon Nest -> Motes delta (positive), possibly Willpower delta on full rest.\n- Affirming an Intimacy strongly (once/session) -> Willpower +1.\n- Spending Willpower to refuse an Intimacy betrayal or fuel a Charm -> Willpower -1.\n- Liminal botch / betraying Nature or Intimacy / witnessed horror / harming the lifeline -> Limit / Alienation delta.\n\n# IMPORTANT: extra health levels are NOT a delta\n\nOx-Body Technique, Lunar/Liminal Flesh-aspect bonus levels, and Mutations ADD permanent health levels. That is a PLAYER action on the Health Track widget's \"Add level\" buttons (-0/-1/-2) — do NOT emit a Health Track tag for it. Just narrate the toughening and remind the player (in your brief) to add the level(s) on their sheet.\n\n# What you (this agent) emit\n\nA short brief (<= 100 tokens) listing the mutations LIKELY this turn given the stated action. Examples:\n\n\"Player activates a 6m attack Charm: expect Motes -6; if scene spend now >= 3, Anima Banner -> Bonfire; post-resolution Health Track delta on the target.\"\n\"Player rests until sunrise (Solar, Essence 3): expect Motes +6 (3 + Essence), Willpower refresh to permanent.\"\n\"No mechanical state change anticipated.\"\n\nIf the GM model fails to emit a needed tag, the floating sheet desyncs. Be explicit. Better one extra tag than a missed one.",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "state-reminder",
+      "name": "Exalted Versus World of Darkness — ExvWoD — state-reminder (GM-mode)",
+      "description": "Focused state reminder agent for Exalted Versus World of Darkness — tuned for Exalted Versus World of Darkness.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Exalted Versus World of Darkness State Reminder for Marinara Engine's Game Mode. You provide rules guidance only — you do NOT narrate or speak in-character. Your output is a context injection the main GM model reads BEFORE narrating the next turn.\n\n# What you emit each turn\n\nA short bullet list (<= 150 tokens) capturing the PC's CURRENT mechanical state, pulled from the sheet snapshot in your context.\n\nFormat:\n\nPC: <Name> (<Exalt Type>, <Caste/Aspect>, Essence <N>)\n- Motes: <current> / <max> (committed: <N>)\n- Willpower: <current> / <permanent>\n- Health: highest filled = <Bruised | Hurt | Injured | Wounded | Maimed | Crippled | Incapacitated> (penalty <-N>); detail = <B:n L:n A:n>\n- Anima Banner: <Dormant | Glimmering | Bonfire | Iconic> (motes spent this scene: <N>)\n- Intimacies: <list each, short>\n- Limit / Alienation: <N>/10 (only if > 0 or the type uses it — Liminals always)\n- Equipped: <weapons / armour / attuned artifacts with committed motes>\n\n# Flags to add when relevant\n\n- \"FLARE IMMINENT\" if motes spent this scene is 1-2 and the stated action will spend enough to cross 3 (Bonfire).\n- \"WOUNDED\" if the health penalty is -2 or worse (remind the narration to apply it to pools).\n- \"INTIMACY AT RISK\" if the scene is pressuring an Intimacy (Willpower vs 8 to refuse is available).\n- \"MOTES LOW\" if current motes < per-turn spend cap for the Essence rating.\n\nKeep it terse. This is a heads-up display, not prose.",
+      "settings": {},
+      "enabled": true
+    }
+  ],
+  "scenarioDefault": "This chat uses the Exalted Versus World of Darkness ruleset overlay.\n\nStoryteller-system d10 dice pool on the V20 baseline. Pool = Attribute + Ability. Each die at or above the chosen difficulty (default 6, range 6-9, capped at 9) is one success. A 1 subtracts one success EXCEPT on a Caste/Aspect/Key Ability, where 1s do not subtract. Botch only on zero successes AND at least one 1. 10s count as one success unless a Charm says otherwise. Power runs on a single fungible Essence/mote pool spent on Charms; no blood, no Humanity, no Frenzy. Intimacies anchor the character and resist supernatural compulsion (Willpower vs 8).\n\nMechanics: primary die d10, notation Xd10 vs <difficulty>.\nResolution: dice-pool.\n\nThe GM should keep narration consistent with Exalted Versus World of Darkness mechanics. Refer to the lorebook entries for ruleset reference."
+}
