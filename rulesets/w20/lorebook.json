@@ -1,0 +1,333 @@
+{
+  "name": "Werewolf 20 Reference",
+  "description": "Keyword-triggered reference for Werewolf: The Apocalypse 20th Anniversary Edition (W20, 2013 Onyx Path). Mechanics references only; tribe / auspice / Gift / Rite / totem names belong to Paradox Interactive AB. No verbatim corebook text reproduced. Distributed under the Dark Pack Agreement.",
+  "scanDepth": 4,
+  "tokenBudget": 2500,
+  "recursiveScanning": false,
+  "entries": [
+    {
+      "id": "w20-rule-resolution",
+      "name": "Rule: Dice-pool resolution",
+      "keys": ["roll", "rolls", "check", "test", "dice", "pool", "successes", "difficulty"],
+      "content": "W20 is the V20 Storyteller chassis applied to werewolves. Roll a pool of d10s = Attribute + Ability. Each die at or above the chosen difficulty (default 6, range 6-9) is one success. A 1 cancels one success (Rule of 1). At least one net success means the action works. Specialty (trait rated 4+ in scope) rerolls every natural 10. Spend 1 Willpower for one guaranteed automatic success per turn (not on damage rolls or Gift activations). Pools are reduced by the current health-track penalty.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-botch",
+      "name": "Rule: Botch",
+      "keys": ["botch", "botched", "spectacular failure", "fumble"],
+      "content": "A botch occurs when a roll produces ZERO net successes AND shows at least one 1. The Storyteller introduces a real complication, not just a miss. 1s only matter when net successes are zero; otherwise they just cancel successes one-for-one.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-willpower",
+      "name": "Rule: Willpower",
+      "keys": ["willpower", "wp", "compulsion", "auto-success"],
+      "content": "Willpower has a permanent rating (1-10) and a temporary pool (cannot exceed permanent). Spend 1 for: an automatic success (cap once/turn, not on damage / Gift activations), ignore wound penalty on a single roll, abort a triggered frenzy, or resist instinctive urges (fleeing fire, attacking a Wyrm-creature). Regain 1 each morning on waking; more at story end, on personal victory, or for exceptional auspice duty.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-rage",
+      "name": "Rule: Rage",
+      "keys": ["rage", "frenzy", "extra action", "form shift", "berserk"],
+      "content": "Rage is Gaia's fury — the Beast. Permanent rating set by Auspice (Ragabash 1, Theurge 2, Philodox 3, Galliard 4, Ahroun 5). Temporary pool spent during declaration. Uses: 1 Rage = 1 extra action (cap = half permanent Rage), 1 = instant form-shift no roll, 1 = ignore stun for a turn, Rage roll diff 8 when Incapacitated = 1 level healed per success (once/scene, leaves a Battle Scar). Regain: first moon sighting nightly (new 1 / waning 2 / half-or-waxing 3 / full 4); auspice moon = full Rage; humiliation, botches, moments before combat; new-story d10. FRENZY when a Rage roll scores 4+ successes; spend 1 Willpower to abort. THRALL OF THE WYRM at 6+ successes — unbreakable; breed-specific compulsion (Homid eats kills, Metis defiles, Lupus savages corpse). For each Rage above Willpower, -1 die on Social rolls (Beast Within). Both pools at 0 = stuck in breed form (Losing the Wolf).",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-gnosis",
+      "name": "Rule: Gnosis",
+      "keys": ["gnosis", "spirit", "umbra", "step sideways", "gauntlet", "harano"],
+      "content": "Gnosis is the spirit-world connection. Permanent rating set by Breed (Homid 1, Metis 3, Lupus 5). Temporary pool (cap = permanent) spent on Gifts, Mystic Rites, attuning fetishes, Stepping Sideways. STEP SIDEWAYS: see a reflective surface; roll Gnosis vs local Gauntlet (science lab 9, urban downtown 8, city street 7, rural 6, deep wild 5, urban caern 5, active caern 4, powerful caern 3, greatest caerns 2). Successes = speed (0 = fail; 1 = 5 min; 2 = 30 sec; 3+ instant); BOTCH = trapped in the Gauntlet until rescued. Each piece of silver carried subtracts 1 from effective Gnosis (1-day cooldown after discard). Cannot use Rage AND Gnosis in the same turn (a few Gifts excepted). Regain: meditation (Wits + Enigmas vs 8, 1 success/hour, once/day); Sacred Hunt with an Engling (full restore); spirit bargain; between-stories Cha + Enigmas roll. HARANO is high-Gnosis despair (especially Silver Fangs) — blurred reality, lethargy, possible inaction.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-renown",
+      "name": "Rule: Renown — Glory, Honour, Wisdom",
+      "keys": ["renown", "glory", "honour", "honor", "wisdom", "rite of accomplishment", "punishment rite"],
+      "content": "Renown is standing in the Garou Nation. Three categories: GLORY (deeds of strength, bravery, victory — favoured by Galliards and Ahroun), HONOUR (duty, ethics, Litany — favoured by Ragabash and Philodox), WISDOM (thoughtful action, spirit insight, restraint — favoured by Theurges). Each is tracked as permanent dots (slow to change) and a temporary pool (no cap; accumulates between rites). Permanent gains require a Rite of Accomplishment (Cha + Rituals diff 6); permanent loss via a Punishment Rite. Starting Renown is 3 dots by Auspice: Ragabash 3-any; Theurge 3 Wisdom; Philodox 3 Honour; Galliard 2 Glory + 1 Wisdom; Ahroun 2 Glory + 1 Honour. All new characters begin at Rank 1.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-rank",
+      "name": "Rule: Rank",
+      "keys": ["rank", "cliath", "fostern", "adren", "athro", "elder", "legend", "rite of passage"],
+      "content": "Rank: 0 Cub (pre-Rite of Passage), 1 Cliath (3 total Renown — earned at Rite of Passage), 2 Fostern (~6 total), 3 Adren (~12 total), 4 Athro (~18 total), 5 Elder (~25+ total), 6 Legend (rare). A Garou cannot learn or use a Gift above their current Rank. Ranks 3+: +1 to frenzy difficulty. Rank 4: +2. Rank 5: +2 AND requires 5+ Rage successes to enter frenzy. Rank 6: +2 AND 6+ to frenzy. Rank advancement is by formal challenge against a Garou one Rank higher.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-forms",
+      "name": "Rule: The Five Forms",
+      "keys": ["form", "forms", "homid", "glabro", "crinos", "hispo", "lupus", "shift", "shifting", "shapeshift"],
+      "content": "Five forms. Modifiers stack on the Homid baseline (Metis/Lupus apply them to their own breed-form base). HOMID — no mods, full speech, full human capability. GLABRO — STR +2, STA +2, MAN -2, APP -1 (humans); guttural speech, lethal teeth (Str-1). CRINOS — STR +4, DEX +1, STA +3, MAN -3, APP 0 to humans (Delirium); fangs and claws AGGRAVATED; cannot speak human languages; default for Metis-breed. HISPO — STR +3, DEX +2, STA +3, MAN -3, PER difficulty -1; extra bite die; claws aggravated; cannot use human tools. LUPUS — STR +1, DEX +2, STA +2, MAN -3, PER difficulty -2; 2x speed; claws lethal only (aggravated only for Lupus-breed); default for Lupus-breed; cannot speak or use tools. SHIFT ROLL: Stamina + Primal-Urge, 1 success per form crossed. Spend 1 Rage to shift instantly with no roll.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-health",
+      "name": "Rule: Health, soak, and regeneration",
+      "keys": ["health", "wound", "damage", "soak", "bashing", "lethal", "aggravated", "silver", "regenerate", "regeneration", "incapacitated"],
+      "content": "Seven health levels: Bruised(-0) / Hurt(-1) / Injured(-1) / Wounded(-2) / Mauled(-2) / Crippled(-5) / Incapacitated. The highest-filled level's penalty applies to all dice pools. Bashing soaked by Stamina (Garou regen 1 level/turn automatically). Lethal soaked by Stamina (Garou regen 1/hour). Aggravated soaked by Stamina ONLY in non-breed forms (Homid in Glabro/Crinos/Hispo/Lupus; Lupus in Homid/Glabro/Crinos/Hispo; Metis in Homid/Glabro/Hispo/Lupus). In breed form, no soak for aggravated. SILVER damage is always aggravated to Garou, bypasses regeneration, AND is unsoakable in breed form (Metis cannot soak silver in ANY form). Garou heal 1 aggravated/day with rest. Spend Rage past Incapacitated to keep acting (each Rage point = 1 self-inflicted aggravated). Soak rolls cannot botch and ignore wound penalties.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-combat",
+      "name": "Rule: Combat round",
+      "keys": ["initiative", "combat", "attack", "join battle", "split actions", "pack tactics", "claw", "bite"],
+      "content": "Initiative = Dexterity + Wits + 1d10. Highest acts first; ties go to highest Dex+Wits. Declare in reverse initiative. Wound penalty hits the rating, not the d10. Spend Rage in the declaration step for extra actions (cap half permanent Rage; if you exceed min(Dex, Wits), +3 difficulty to all pools that turn). Split actions without Rage: -1 die / +1 difficulty cumulative per extra action. Attack pools: Brawl/claws/fangs = Dex + Brawl; Melee = Dex + Melee; Firearms = Dex + Firearms (range modifiers add difficulty); Thrown = Dex + Athletics. Defence: dodge (Dex + Athletics), block (Dex + Brawl, hand-to-hand only), parry (Dex + Melee, weapon required). Damage = damage pool d10s at difficulty 6; each attack success above the first adds a bonus damage die. Pack tactics (shared totem): Fur Gnarl (strip armour, 2+), Harrying (4+), Savage (dogpile, 3+). FRENZY in combat = no Gifts, no pack tactics, no Step Sideways, no splitting — just bite, claw, run; ignore pain and wound penalties.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-frenzy-delirium",
+      "name": "Rule: Frenzy / Thrall of the Wyrm / Delirium / The Curse",
+      "keys": ["frenzy", "berserk", "fox frenzy", "thrall of the wyrm", "delirium", "the curse", "veil"],
+      "content": "FRENZY trigger: a Rage roll scores 4+ successes. Berserk Frenzy = shift Crinos/Hispo and attack; if Rage > Gnosis, may target packmates. Fox Frenzy = shift Lupus and flee; only attack if cornered. Spend 1 Willpower to abort (lose remaining turn). End: each subsequent turn roll Willpower vs difficulty = permanent Rage. THRALL OF THE WYRM at 6+ successes — unbreakable. On Wits diff 7 botch the character commits a breed compulsion (Homid Eater-of-Souls eats kills; Metis Defiler abuses fallen; Lupus Beast-of-War destroys the corpse). DELIRIUM: humans who see Crinos suffer fear / disbelief / panic / bloodlust depending on their Willpower. The Veil makes most humans rationalise the memory (\"It was a bear\"); Willpower 8+ remember clearly. Kinfolk are immune. THE CURSE: humans whose Willpower is lower than the Garou's permanent Rage instinctively avoid the Garou — cross streets, end conversations, refuse to hire. Garou cannot live ordinary human lives because of this.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-gifts",
+      "name": "Rule: Gifts",
+      "keys": ["gift", "gifts", "level 1", "level 2", "level 3", "spirit teacher", "chiminage"],
+      "content": "Gifts are spirit-taught powers, levels 1-6. Each Gift lists its Activation cost (Gnosis / Rage / Willpower, sometimes none), Teaching spirit, and System (which dice roll if any). Garou learn Gifts by petitioning a spirit at a caern of equal-or-higher level than the Gift; chiminage (offering or service) is usually required. A Garou cannot LEARN or USE a Gift above their current Rank. Starting Garou know ONE Level-1 Gift from each of three lists: Breed, Auspice, Tribe. Cross-list Gifts cost extra XP. Level-6 Gifts are legendary, taught only by Incarna after a quest — only one or two living Garou know each.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-rites",
+      "name": "Rule: Rites",
+      "keys": ["rite", "rites", "rite of passage", "rite of accomplishment", "punishment", "moot", "sacred hunt"],
+      "content": "Rites are ceremonies, not personal powers. Categories: ACCORD (restore harmony / purification, Cha + Rituals diff 7), CAERN (protect / open Moon Bridges, varies), DEATH (honour fallen, Cha + Rituals diff 8 - rank of deceased), MYSTIC (Umbral contact / summoning, Wits + Rituals diff 7), PUNISHMENT (justice, Cha + Rituals diff 7 — failure = Gaia rejects), RENOWN (celebrate accomplishments, Cha + Rituals diff 6), SEASONAL (renew Gaia's connection, Sta + Rituals diff 8 - caern level). Performing a Rite requires Rituals Knowledge >= rite level. Most rites require multiple Garou, materials, and 10+ min per level. Minor rites are daily practices (no roll). Theurges and Philodox most often perform rites; any Garou with the right Rituals can.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-umbra",
+      "name": "Rule: Gauntlet, Umbra, caerns",
+      "keys": ["umbra", "penumbra", "gauntlet", "caern", "moon bridge", "spirit world", "sept"],
+      "content": "The GAUNTLET is the barrier between the physical world and the Umbra (spirit world). Difficulty to Step Sideways varies by location: science lab 9, urban downtown 8, city street 7, rural 6, deep wild 5, urban caern 5, active caern 4, powerful caern 3, greatest 2. The PENUMBRA is the Umbral reflection of the physical world — vibrant living things, ghost-outlined new buildings, solid old ones, shadowy/mocking versions of corrupt places. Time and distance roughly match the physical world. CAERNS are Garou sacred places — pooled Wyld energy with thin Gauntlet; rated 1-5. Caern types grant matching benefits (Healing, Gnosis, Rage, Strength, Stamina, Visions, Wisdom, Wyld, etc.). All caerns can open MOON BRIDGES — Umbral pathways to other distant caerns. SEPTS are pack communities centered on a caern. After roughly a year and a day spent only in one realm, the Garou risks severing their connection to the other.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-litany",
+      "name": "Rule: The Litany",
+      "keys": ["litany", "law", "garou law", "veil", "leadership", "breeding"],
+      "content": "The LITANY is the law that binds all Garou. The major tenets: Garou shall not mate with Garou (the metis are the proof of the punishment). Combat the Wyrm wherever it breeds and wherever it dwells. Respect the territory of another. Accept an honourable surrender. Submission to those of higher station. The first sip of blood goes to the leader. Ye shall not eat the flesh of humans. Respect those beneath ye — all are of Gaia. The Veil shall not be lifted (Crinos before mortals; reveal nothing of Garou existence). Do not suffer thy people to tend thy sickness. The leader may be challenged at any time during peace. The leader may not be challenged during wartime. Cleansing of corruption is the right of all. Breaking the Litany costs Honour Renown.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-rule-backgrounds",
+      "name": "Rule: Backgrounds",
+      "keys": ["background", "backgrounds", "totem", "fetish", "kinfolk", "pure breed", "ancestors", "rites background"],
+      "content": "5 dots of Backgrounds at creation (1 freebie/dot; current rating x2 XP to raise in play). W20 Backgrounds: ALLIES (committed mortal friends), ANCESTORS (memory access; once/session, roll vs 8), CONTACTS (info brokers), FATE (prophecy; once/session add successes to a failed roll), FETISH (rating = total fetish levels), KINFOLK (non-Garou relatives, immune to Delirium), MENTOR (higher-rank Garou sponsor), PURE BREED (lineage prestige; Silver Fangs MUST have 3+), RESOURCES (wealth), RITES (rating = total rite levels known; Rituals must be high enough), SPIRIT HERITAGE (kinship with a spirit category), TOTEM (pack only; points buy abilities). Tribal restrictions apply — see per-tribe entries.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-triat",
+      "name": "Lore: The Triat — Wyld, Weaver, Wyrm",
+      "keys": ["wyld", "weaver", "wyrm", "triat", "balance", "gaia"],
+      "content": "The TRIAT is the three primal cosmic forces. WYLD is raw creation, chaos, change — gave the world fertility and possibility. WEAVER is pattern, order, structure — gave the world coherence and survival. WYRM was the destroyer that closed the cycle, ensuring death cleared the way for new life. The Weaver's growing madness trapped the Wyrm in webs of order; the Wyrm went mad with pain and now serves entropy and corruption rather than natural endings. The Garou fight the corrupt Wyrm and increasingly the rigid Weaver too. Black Spiral Dancers (corrupted Garou) serve the Wyrm fully. Most Garou see Gaia, Mother Earth herself, as the wounded balance the Triat once preserved.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-breed-homid",
+      "name": "Breed: Homid",
+      "keys": ["homid", "human-born", "homid-breed", "homid breed"],
+      "content": "Homid Garou were raised human and underwent their First Change in adolescence (often catastrophically). Starting Gnosis 1. Default form Homid; cannot soak aggravated in Homid form. Comfortable with technology, urban life, and human society — the bridge between Garou and Kinfolk. Homid-only Breed Gifts include: City Running, Smell of Man, Persuasion, Master of Fire, Apecraft's Blessings.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-breed-metis",
+      "name": "Breed: Metis",
+      "keys": ["metis", "deformity", "breed - metis"],
+      "content": "Metis are born to two Garou parents — a forbidden union under the Litany. They are sterile, bear one permanent DEFORMITY across all forms (albino, fits, hairless, horns, hunchback, no sense of smell, no tail, seizures, tough hide, wasting disease, weak immune, withered limb, etc.), and are raised in the sept from birth. Starting Gnosis 3. Default form Crinos; cannot soak aggravated in Crinos. They know Garou culture intimately and never had a normal human or wolf life. Often resentful, often loyal. Metis Breed Gifts include: Create Element, Primal Anger, Rat Head, Sense Wyrm, Shed.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-breed-lupus",
+      "name": "Breed: Lupus",
+      "keys": ["lupus", "wolf-born", "lupus-breed", "lupus breed"],
+      "content": "Lupus Garou were raised by wolf parents and Changed when their wolf life encountered humans. Starting Gnosis 5 — strongest spirit connection of the three breeds. Default form Lupus; cannot soak aggravated in Lupus form. They struggle with human concepts: cannot begin play with dots in Academics, Computer, Enigmas, Finance (n/a in W20), Law, Politics (n/a in W20), or Technology without justification. Lupus Breed Gifts include: Hare's Leap, Heightened Senses, Predator's Arsenal, Prey Mind, Sense Prey. Most wolf-bred Garou view human structures with deep suspicion.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-auspice-ragabash",
+      "name": "Auspice: Ragabash (New Moon)",
+      "keys": ["ragabash", "new moon", "trickster", "scout"],
+      "content": "Ragabash, the New Moon Auspice — tricksters, scouts, questioners, gadflies. Starting Rage 1 (lowest). Starting Renown: 3 in any category. They challenge complacency, scout for the pack, ask the unspoken question. Sample Lv 1 Auspice Gifts: Blur of the Milky Eye, Infectious Laughter, Liar's Face, Open Seal, Scent of Running Water. Primary Renown: Honour.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-auspice-theurge",
+      "name": "Auspice: Theurge (Crescent Moon)",
+      "keys": ["theurge", "crescent moon", "mystic", "spirit speaker"],
+      "content": "Theurge, the Crescent Moon Auspice — seers, mystics, ritemasters, spirit-walkers. Starting Rage 2. Starting Renown: 3 Wisdom. They speak with spirits, interpret omens, lead Mystic Rites. Sample Lv 1 Auspice Gifts: Mother's Touch, Sense Wyrm, Spirit Snare, Spirit Speech, Umbral Tether. Primary Renown: Wisdom.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-auspice-philodox",
+      "name": "Auspice: Philodox (Half Moon)",
+      "keys": ["philodox", "half moon", "judge", "mediator", "litanist"],
+      "content": "Philodox, the Half Moon Auspice — judges, mediators, keepers of the Litany. Starting Rage 3. Starting Renown: 3 Honour. They settle disputes, interpret the Litany, lead Punishment Rites. Sample Lv 1 Auspice Gifts: Fangs of Judgment, Persuasion, Resist Pain, Scent of the True Form, Truth of Gaia. Primary Renown: Honour.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-auspice-galliard",
+      "name": "Auspice: Galliard (Gibbous Moon)",
+      "keys": ["galliard", "gibbous moon", "bard", "storyteller", "moon dancer"],
+      "content": "Galliard, the Gibbous Moon Auspice — bards, storytellers, morale officers, lore-keepers. Starting Rage 4. Starting Renown: 2 Glory + 1 Wisdom. They tell the deeds of the pack, raise pack spirits, lead Rites of Death and Rites of Renown. Sample Lv 1 Auspice Gifts: Beast Speech, Call of the Wyld, Heightened Senses, Mindspeak, Perfect Recall. Primary Renown: Glory.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-auspice-ahroun",
+      "name": "Auspice: Ahroun (Full Moon)",
+      "keys": ["ahroun", "full moon", "warrior", "war leader"],
+      "content": "Ahroun, the Full Moon Auspice — warriors, champions, war leaders. Starting Rage 5 (highest). Starting Renown: 2 Glory + 1 Honour. The pack's spear-tip; the most prone to frenzy. Sample Lv 1 Auspice Gifts: Falling Touch, Inspiration, Pack Tactics, Razor Claws, Spur Claws. Primary Renown: Glory.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-tribes-overview",
+      "name": "Tribes overview (13 + Black Spiral Dancers)",
+      "keys": ["tribe", "tribes", "totem", "tribal"],
+      "content": "Thirteen tribes of the Garou Nation, each with a totem spirit, starting Willpower (most 3; Bone Gnawers, Children of Gaia, Stargazers, Wendigo at 4), Tribal Gifts, and Background restrictions: BLACK FURIES (Pegasus, Wyld-guardians, women's mysteries), BONE GNAWERS (Rat, urban survivors), CHILDREN OF GAIA (Unicorn, peacemakers and healers), FIANNA (Stag, Celtic bards), GET OF FENRIS (Fenris, berserkers), GLASS WALKERS (Cockroach, urban tech-shamans), RED TALONS (Griffin, lupus-only feral guardians), SHADOW LORDS (Grandfather Thunder, political manipulators), SILENT STRIDERS (Owl, cursed wanderers), SILVER FANGS (Falcon, aristocratic leaders — require Pure Breed 3+), STARGAZERS (Chimera, contemplatives), UKTENA (Uktena, occultists and Bane Tenders), WENDIGO (Wendigo, pure hunters). LOST TRIBES: White Howlers (became Black Spiral Dancers), Croatan (sacrificed binding a great Wyrm), Bunyip (slaughtered in the War of Tears). BLACK SPIRAL DANCERS are corrupted Garou serving the Wyrm directly — the Garou Nation's worst enemy.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-tribe-silverfangs",
+      "name": "Tribe: Silver Fangs",
+      "keys": ["silver fangs", "falcon", "king albrecht", "pure breed"],
+      "content": "Silver Fangs (totem: Falcon) — hereditary aristocrats of the Garou Nation, descended from European royal lineages. Starting Willpower 3. Background requirement: MUST have Pure Breed 3+ at creation. Sample tribal Gifts: Falcon's Grasp, Lambent Flame, Sense Wyrm, Sense the Unnatural. Many suffer from inbreeding-related madness (Harano-prone, Royal Affliction merit/flaw); the line is dwindling. Their kings (Jonas Albrecht in modern era) struggle to hold the tribes together against the rising Apocalypse.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-tribe-getoffenris",
+      "name": "Tribe: Get of Fenris",
+      "keys": ["get of fenris", "fenris", "ragnarok", "berserker"],
+      "content": "Get of Fenris (totem: Fenris) — Norse-rooted berserkers, the Garou's strongest warriors. Starting Willpower 3. Believe Ragnarok is at hand and they will fight it. Sample tribal Gifts: Resist Pain, Smell of the True Form, Visceral Agony, Halt the Coward's Flight, Troll Skin. Cultural lean toward strength, directness, and warband solidarity. Were complicit in the slaughter of the Bunyip.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-tribe-childrenofgaia",
+      "name": "Tribe: Children of Gaia",
+      "keys": ["children of gaia", "unicorn", "peacemaker", "mediator"],
+      "content": "Children of Gaia (totem: Unicorn) — peacemakers, healers, inter-tribal mediators. Starting Willpower 4. Among the most balanced and inclusive tribes. Sample tribal Gifts: Mercy, Mother's Touch (also Theurge), Resist Pain, Calm, Strength of Purpose. Often dismissed as soft until needed — then their refusal to compromise becomes iron. Active in Kinfolk relations and in opposing the Get of Fenris's Bunyip-era atrocities being repeated.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-tribe-glasswalkers",
+      "name": "Tribe: Glass Walkers",
+      "keys": ["glass walkers", "cockroach", "urban garou", "tech shaman"],
+      "content": "Glass Walkers (totem: Cockroach) — the urban tribe, tech-shamans, Weaver-navigators (without being corrupted by it). Starting Willpower 3. They run cities and corporate networks; sometimes mistrusted by wilderness tribes. Sample tribal Gifts: Control Simple Machine, Diagnostics, Plug & Play, Trick Shot, Cybersenses. Discouraged Backgrounds: Mentor. Some sub-camps embrace the Weaver too closely (the Glass Walkers walk a fine line).",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-tribe-redtalons",
+      "name": "Tribe: Red Talons",
+      "keys": ["red talons", "griffin", "lupus only", "wolf-pure"],
+      "content": "Red Talons (totem: Griffin) — LUPUS-ONLY tribe; no homid characters allowed (and metis are rare and unwelcome). Starting Willpower 3. The most anti-human tribe, advocating the cull of humanity to save Gaia. Sample tribal Gifts: Beast Speech, Wolf at the Door, Scent of Running Water, Body Shift, Hidden Killer. Restricted Background: Resources; Discouraged: Allies, Contacts. Even other Garou often disagree with their solutions while respecting their conviction.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-tribe-bonegnawers",
+      "name": "Tribe: Bone Gnawers",
+      "keys": ["bone gnawers", "rat", "urban survivor", "homeless"],
+      "content": "Bone Gnawers (totem: Rat) — keepers of the forgotten, urban-dwelling, the homeless and the dispossessed. Starting Willpower 4. The tribe with the strongest grasp on what \"normal\" humans suffer. Sample tribal Gifts: Cooking, Tagalong, Trash is Treasure, Scent of Sweet Honey, Resist Toxin. Restricted Backgrounds: Ancestors, Pure Breed. Discouraged: Resources. Lower-rank within the Garou Nation but with deep urban knowledge other tribes need.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-tribe-shadowlords",
+      "name": "Tribe: Shadow Lords",
+      "keys": ["shadow lords", "grandfather thunder", "politics", "manipulator"],
+      "content": "Shadow Lords (totem: Grandfather Thunder) — eastern European political manipulators. Starting Willpower 3. Ambitious, intelligent, suspicious of the Silver Fangs whose leadership they desire. Sample tribal Gifts: Aura of Confidence, Fatal Flaw, Seizing the Edge, Clap of Thunder, Strength of Purpose. Discouraged Backgrounds: Allies, Mentor. Many other tribes distrust them; they accept this as part of leadership.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-tribe-uktenawendigo",
+      "name": "Tribes: Uktena & Wendigo (the Pure Ones)",
+      "keys": ["uktena", "wendigo", "pure ones", "native", "indigenous"],
+      "content": "UKTENA (totem: Uktena) — Americas-born occultists and Bane Tenders, keepers of dangerous lore. Starting Willpower 3. Bind the worst Banes rather than destroy them. Sample Gifts: Sense Magic, Spirit of the Bird, Sense the Unnatural. WENDIGO (totem: Wendigo) — North American hunters, grim and traditionalist. Starting Willpower 4. The two surviving Pure Ones tribes after the Croatan sacrificed themselves. Both tribes are deeply suspicious of European tribes for historical reasons. Discouraged: Wendigo - Contacts, Resources.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-guide-add-gifts",
+      "name": "Adding Gifts and Rites to your sheet",
+      "keys": ["add gift", "adding gift", "add rite", "adding rite", "gift", "rite", "how to add"],
+      "content": "W20 ships no Gift catalogue (there are HUNDREDS across breeds, auspices, tribes, and totems); add the Gifts you actually intend to use. Open the GIFTS & RITES flyout. It has buckets: Breed Gifts, Auspice Gifts, Tribal Gifts, General Gifts, Spirit Gifts (Lv 6+), Rites. The small 0-10 box on each bucket header is a generic per-line rating the framework attaches to all dice-pool systems (Discipline rating in Vampire) — W20 Gifts are individual powers and are NOT rated as a line, so leave the box at 0 (or use it as a personal Gift-count marker). Click '+ Add' inside a bucket: Name, Level dots (1-6), and put the activation cost in the cost field — the framework's Cast button parses Vampire-style 'X blood' but does NOT auto-parse Gnosis or Rage. Use the notes field for cost ('1 Gnosis', '1 Rage + 1 Willpower'), Teaching spirit, and the System (which roll, difficulty, effect). Rites go in the Rites bucket; record Rituals requirement and ritual time/components. When you activate a Gift in narration, the state-mutator agent will emit [mrr-state: field=\"Gnosis\" delta=\"-1\"] (or Rage / Willpower) so the pool deducts correctly.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "w20-guide-subagents",
+      "name": "Optional Sub-Agents — what they do and how to enable",
+      "keys": ["sub-agent", "sub agent", "agents", "state-mutator", "state-reminder", "combat-adjudicator", "lore-query", "npc-bookkeeper"],
+      "content": "Besides the main Ruleset Helper, the bundle ships five focused pre-generation sub-agents, all DISABLED by default. Enable any in Marinara -> Settings -> Agents (each enabled agent costs one extra model call per turn). state-reminder: terse current-state HUD each turn (form, Rage, Gnosis, Willpower, health, Renown, Frenzy). state-mutator: tells the narrator when to emit [mrr-state: ...] sheet-change tags. combat-adjudicator: wakes only in combat; enforces initiative, attack/soak pools, Rage extra actions, frenzy. lore-query: answers explicit out-of-character rules questions from this lorebook. npc-bookkeeper: tracks active and recent NPCs (Rage/Gnosis/Willpower, health, form, attitude) for continuity. Enable state-reminder + state-mutator first if you want the floating sheet to stay in sync; add the others for crunchier play.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    }
+  ]
+}

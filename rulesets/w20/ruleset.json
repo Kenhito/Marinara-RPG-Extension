@@ -1,0 +1,468 @@
+{
+  "id": "w20",
+  "name": "Werewolf: The Apocalypse 20th Anniversary",
+  "version": "0.1.0",
+  "edition": "Werewolf: The Apocalypse 20th Anniversary Edition (W20, 2013, Onyx Path)",
+  "license": "Original mechanics references; tribe / auspice / Gift / Rite / Tribe-totem names belong to Paradox Interactive AB. No verbatim W20 corebook text is reproduced. Distributed under the Dark Pack Agreement (worldofdarkness.com/dark-pack). Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved. This material is NOT official World of Darkness material.",
+  "summary": "Storyteller-system d10 dice pool on the V20 chassis. Pool = Attribute + Ability. Each die meeting or beating the difficulty (default 6, range 6-9) is one success. A 1 subtracts one success. Botch on a roll showing zero successes AND at least one 1. Specialty 10s reroll. Three pools: Rage (frenzy + extra actions + form-shift), Gnosis (Gifts + Rites + Stepping Sideways), Willpower (auto-success + resisting urges). Renown (Glory/Honour/Wisdom) determines Rank. Five forms (Homid/Glabro/Crinos/Hispo/Lupus) modify Physical and Social Attributes.",
+  "dice": {
+    "type": "d10",
+    "notation": "Xd10 vs <difficulty>"
+  },
+  "resolution": {
+    "mode": "dice-pool",
+    "poolFormula": "Attribute + Ability (+ specialty 10-rerolls when applicable, + Willpower auto-success once/turn, + Gift dice, + Rage extra-action dice). Wound penalty subtracts from pools.",
+    "target": 6,
+    "doubles": {
+      "face": 10,
+      "successes": 1
+    },
+    "botches": {
+      "onFace": 1,
+      "trigger": "any-on-zero-successes"
+    }
+  },
+  "difficulties": {
+    "Trivial": {
+      "threshold": 4,
+      "description": "Trivial for a competent character. Often waived."
+    },
+    "Routine": {
+      "threshold": 5,
+      "description": "Routine task; minor pressure."
+    },
+    "Standard": {
+      "threshold": 6,
+      "description": "W20 default. Average task under normal conditions."
+    },
+    "Challenging": {
+      "threshold": 7,
+      "description": "Pushes a competent Garou; pressure or distraction."
+    },
+    "Difficult": {
+      "threshold": 8,
+      "description": "Few succeed without bonuses or supernatural help."
+    },
+    "Nigh-Impossible": {
+      "threshold": 9,
+      "description": "Heroic; requires Willpower, Gifts, or aid."
+    }
+  },
+  "attributes": [
+    { "name": "Strength",     "abbreviation": "STR", "group": "Physical", "min": 1, "max": 10, "default": 1, "description": "Raw muscle. Lifting, melee damage, brawling pools. Modified by form (Glabro +2, Crinos +4, Hispo +3, Lupus +1)." },
+    { "name": "Dexterity",    "abbreviation": "DEX", "group": "Physical", "min": 1, "max": 10, "default": 1, "description": "Agility, hand-eye coordination, attack accuracy, dodging. Modified by form (Crinos +1, Hispo +2, Lupus +2)." },
+    { "name": "Stamina",      "abbreviation": "STA", "group": "Physical", "min": 1, "max": 10, "default": 1, "description": "Endurance, soak, resisting fatigue. Modified by form (Glabro +2, Crinos +3, Hispo +3, Lupus +2)." },
+    { "name": "Charisma",     "abbreviation": "CHA", "group": "Social",   "min": 1, "max": 10, "default": 1, "description": "Force of personality, sincere charm, leadership presence." },
+    { "name": "Manipulation", "abbreviation": "MAN", "group": "Social",   "min": 1, "max": 10, "default": 1, "description": "Deceit, guile, indirect influence. Form penalties to humans (Glabro -2, Crinos -3, Hispo -3, Lupus -3); not vs. Garou or spirits." },
+    { "name": "Appearance",   "abbreviation": "APP", "group": "Social",   "min": 1, "max": 10, "default": 1, "description": "Beauty / presence. Form penalties to humans (Glabro -1); Crinos APP becomes 0 to humans (Delirium); Hispo/Lupus do not use APP socially with humans." },
+    { "name": "Perception",   "abbreviation": "PER", "group": "Mental",   "min": 1, "max": 10, "default": 1, "description": "Spotting, hearing, noticing details. Hispo/Lupus get -1 to -2 reduction on Perception difficulties (sharper senses)." },
+    { "name": "Intelligence", "abbreviation": "INT", "group": "Mental",   "min": 1, "max": 10, "default": 1, "description": "Reasoning, learning, recall, abstract analysis." },
+    { "name": "Wits",         "abbreviation": "WIT", "group": "Mental",   "min": 1, "max": 10, "default": 1, "description": "Reaction speed, on-the-fly thinking, initiative component." }
+  ],
+  "skills": [
+    { "name": "Alertness",    "min": 0, "max": 5, "default": 0, "description": "Talent. Notice danger and details. Usable untrained." },
+    { "name": "Athletics",    "min": 0, "max": 5, "default": 0, "description": "Talent (W20). Climbing, running, jumping, swimming, dodging. Usable untrained." },
+    { "name": "Brawl",        "min": 0, "max": 5, "default": 0, "description": "Talent. Unarmed combat; punches, grapples, claw and bite strikes. Usable untrained." },
+    { "name": "Empathy",      "min": 0, "max": 5, "default": 0, "description": "Talent (W20). Read emotions, sense lies of the heart. Usable untrained." },
+    { "name": "Expression",   "min": 0, "max": 5, "default": 0, "description": "Talent (W20). Communicating ideas, oratory, written prose, Garou tale-telling. Usable untrained." },
+    { "name": "Intimidation", "min": 0, "max": 5, "default": 0, "description": "Talent (W20). Threats, looming presence, breaking will. Usable untrained." },
+    { "name": "Leadership",   "min": 0, "max": 5, "default": 0, "description": "Talent (W20). Inspiring loyalty, giving orders, rallying a pack. Usable untrained." },
+    { "name": "Primal-Urge",  "min": 0, "max": 5, "default": 0, "description": "Talent (W20-exclusive). The Garou's bestial instinct: form-shifting ease, predator's intuition, sensing the supernatural. Cannot be learned by non-Garou. Usable untrained." },
+    { "name": "Streetwise",   "min": 0, "max": 5, "default": 0, "description": "Talent (W20). Navigating urban underbelly, contacts, fences, gossip. Usable untrained." },
+    { "name": "Subterfuge",   "min": 0, "max": 5, "default": 0, "description": "Talent (W20). Lying, misleading, deflecting questions. Usable untrained." },
+
+    { "name": "Animal Ken",   "min": 0, "max": 5, "default": 0, "description": "Skill. Handling and reading animals (other than wolves — Garou interpret pack-mates instinctively). Untrained: +1 difficulty." },
+    { "name": "Crafts",       "min": 0, "max": 5, "default": 0, "description": "Skill. Build, repair, and make physical things by hand. Untrained: +1 difficulty." },
+    { "name": "Drive",        "min": 0, "max": 5, "default": 0, "description": "Skill. Operate vehicles under stress. Untrained: +1 difficulty." },
+    { "name": "Etiquette",    "min": 0, "max": 5, "default": 0, "description": "Skill. Manners, protocol — both mortal society and Garou sept hierarchy. Untrained: +1 difficulty." },
+    { "name": "Firearms",     "min": 0, "max": 5, "default": 0, "description": "Skill. Handguns, rifles, automatic weapons. Untrained: +1 difficulty." },
+    { "name": "Larceny",      "min": 0, "max": 5, "default": 0, "description": "Skill. Lock-picking, sleight of hand, B&E, forgery. Untrained: +1 difficulty." },
+    { "name": "Melee",        "min": 0, "max": 5, "default": 0, "description": "Skill. Armed close combat; blades, clubs, klaives, fetish weapons. Untrained: +1 difficulty." },
+    { "name": "Performance",  "min": 0, "max": 5, "default": 0, "description": "Skill. Singing, instrument, acting, dance, story-telling for an audience. Untrained: +1 difficulty." },
+    { "name": "Stealth",      "min": 0, "max": 5, "default": 0, "description": "Skill. Move unseen and unheard. Untrained: +1 difficulty." },
+    { "name": "Survival",     "min": 0, "max": 5, "default": 0, "description": "Skill. Wilderness travel, foraging, weather, tracking. Untrained: +1 difficulty." },
+
+    { "name": "Academics",    "min": 0, "max": 5, "default": 0, "description": "Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material." },
+    { "name": "Computer",     "min": 0, "max": 5, "default": 0, "description": "Knowledge. Software, hardware, networks. Untrained: cannot roll." },
+    { "name": "Enigmas",      "min": 0, "max": 5, "default": 0, "description": "Knowledge (W20-exclusive). Riddles, hidden patterns, spirit-logic. Theurges and Uktena excel. Untrained: cannot roll." },
+    { "name": "Investigation","min": 0, "max": 5, "default": 0, "description": "Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll." },
+    { "name": "Law",          "min": 0, "max": 5, "default": 0, "description": "Knowledge. Statute, precedent, courtroom procedure — mortal law (the Litany lives in Rituals + Honour, not here). Untrained: cannot roll." },
+    { "name": "Medicine",     "min": 0, "max": 5, "default": 0, "description": "Knowledge. Diagnosis, surgery, pharmacology. Untrained: cannot roll." },
+    { "name": "Occult",       "min": 0, "max": 5, "default": 0, "description": "Knowledge. Lore of the supernatural — vampires, mages, ghosts, the Wyrm. Untrained: cannot roll." },
+    { "name": "Rituals",      "min": 0, "max": 5, "default": 0, "description": "Knowledge (W20-exclusive). Knowledge of Garou rites. Sets the ceiling on what level of Rite a Garou may learn or perform: Rituals must equal or exceed the Rite's level. Untrained: cannot roll." },
+    { "name": "Science",      "min": 0, "max": 5, "default": 0, "description": "Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll." },
+    { "name": "Technology",   "min": 0, "max": 5, "default": 0, "description": "Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll." }
+  ],
+  "skillSpecialties": {
+    "enabled": true,
+    "valueLabel": "specialty (10s reroll on Attr/Abil 4+)",
+    "valueKind": "dice",
+    "defaultValue": 0
+  },
+  "backgrounds": {
+    "enabled": true,
+    "label": "Backgrounds",
+    "min": 0,
+    "max": 5,
+    "default": 0
+  },
+  "header": {
+    "raceLabel": "Tribe",
+    "classLabel": "Auspice"
+  },
+  "scenarioDefaultDerive": true,
+  "derivedStats": [
+    {
+      "name": "Breed",
+      "formula": "Garou breed — Homid (raised human), Metis (born to two Garou; sterile; bears one Deformity Flaw), or Lupus (raised wolf). Set this manually on character creation; record the chosen breed in the character notes. Breed sets the Garou's starting Gnosis (Homid 1, Metis 3, Lupus 5) and unlocks the corresponding Breed Gift list. Default 1 = placeholder; treat as a text label rather than a numeric stat.",
+      "default": 1,
+      "renderAs": "value",
+      "max": 3,
+      "aliases": ["breed"]
+    },
+    {
+      "name": "Permanent Rage",
+      "formula": "The character's permanent Rage rating, 1-10. Starting value comes from Auspice: Ragabash 1, Theurge 2, Philodox 3, Galliard 4, Ahroun 5. This is the CAP on the Rage pool shown in the Resources cluster. Adjust this stepper directly when the character spends XP to raise Rage. Temporary Rage refreshes per moon-phase and other triggers (see lorebook).",
+      "default": 1,
+      "renderAs": "value",
+      "max": 10,
+      "aliases": ["permanentRage", "rageMax", "rageRating"]
+    },
+    {
+      "name": "Permanent Gnosis",
+      "formula": "The character's permanent Gnosis rating, 1-10. Starting value comes from Breed: Homid 1, Metis 3, Lupus 5. CAP on the Gnosis pool. Spent on Gifts, Rites, Stepping Sideways into the Umbra. Each piece of silver carried subtracts 1 from effective Gnosis (one-day cooldown after dropping it).",
+      "default": 1,
+      "renderAs": "value",
+      "max": 10,
+      "aliases": ["permanentGnosis", "gnosisMax", "gnosisRating"]
+    },
+    {
+      "name": "Permanent Willpower",
+      "formula": "The character's permanent Willpower rating, 1-10. Tribe sets the starting value (3 for most tribes; 4 for Bone Gnawers, Children of Gaia, Stargazers, and Wendigo). CAP on the Willpower pool. Refresh: +1 on waking each day; full at end of a story (Storyteller discretion); +1 for fulfilling Nature; +1-3 for exceptional auspice duty.",
+      "default": 3,
+      "renderAs": "value",
+      "max": 10,
+      "aliases": ["permanentWillpower", "willpowerMax", "willpowerRating", "wp", "willpower"]
+    },
+    {
+      "name": "Permanent Glory",
+      "formula": "Permanent Glory Renown, 0-10. Reflects feats of strength, bravery, victory. Changes only through a Rite of Accomplishment (gain) or Punishment Rite (loss). Galliards and Ahroun favour Glory. See the temporary-Glory counter in Resources for accumulated deeds awaiting the next rite.",
+      "default": 0,
+      "renderAs": "value",
+      "max": 10,
+      "aliases": ["permanentGlory", "glory"]
+    },
+    {
+      "name": "Permanent Honour",
+      "formula": "Permanent Honour Renown, 0-10. Reflects duty, ethics, adherence to the Litany. Ragabash and Philodox favour Honour. Frenzying Garou who wake covered in blood usually lose Honour.",
+      "default": 0,
+      "renderAs": "value",
+      "max": 10,
+      "aliases": ["permanentHonour", "honour", "permanentHonor", "honor"]
+    },
+    {
+      "name": "Permanent Wisdom",
+      "formula": "Permanent Wisdom Renown, 0-10. Reflects thoughtful action, spirit-world insight, restraint. Theurges favour Wisdom.",
+      "default": 0,
+      "renderAs": "value",
+      "max": 10,
+      "aliases": ["permanentWisdom", "wisdom"]
+    },
+    {
+      "name": "Rank",
+      "formula": "Garou social standing, 0-6. 0 Cub (pre-Rite of Passage), 1 Cliath (3 total Renown — earned at Rite of Passage), 2 Fostern (~6 total), 3 Adren (~12 total), 4 Athro (~18 total), 5 Elder (~25+ total), 6 Legend (rare; legendary heroes). A Garou cannot learn or use a Gift above their Rank. Ranks 3+ get +1 to +2 frenzy-resistance difficulty; Rank 5+ requires extra successes to enter frenzy.",
+      "default": 1,
+      "renderAs": "value",
+      "max": 6,
+      "aliases": ["rank"]
+    },
+    {
+      "name": "Health Track",
+      "formula": "Seven levels (V20 baseline): Bruised(-0), Hurt(-1), Injured(-1), Wounded(-2), Mauled(-2), Crippled(-5), Incapacitated. Penalty in effect = the highest filled box. Bashing heals 1 level/turn automatically; Lethal 1 level/hour; Aggravated 1 level/day with rest. Silver damage is ALWAYS aggravated to Garou and bypasses regeneration. Garou cannot soak aggravated in their BREED form (Homid for Homids, Lupus for Lupus, Crinos for Metis); other forms soak aggravated with Stamina at difficulty 6.",
+      "renderAs": "track",
+      "track": [
+        { "label": "Bruised",       "penalty": 0 },
+        { "label": "Hurt",          "penalty": -1 },
+        { "label": "Injured",       "penalty": -1 },
+        { "label": "Wounded",       "penalty": -2 },
+        { "label": "Mauled",        "penalty": -2 },
+        { "label": "Crippled",      "penalty": -5 },
+        { "label": "Incapacitated", "penalty": -99 }
+      ],
+      "damageTypes": [
+        { "id": "bashing",    "label": "B", "severity": 0, "description": "Blunt or non-lethal. Heals automatically 1 level/turn." },
+        { "id": "lethal",     "label": "L", "severity": 1, "description": "Edged, piercing, gunfire. Heals automatically 1 level/hour." },
+        { "id": "aggravated", "label": "A", "severity": 2, "description": "Garou claws/fangs, fire, silver, divine effects. Heals 1 level/day with rest. Silver bypasses Garou regeneration and is unsoakable in breed form." }
+      ],
+      "aliases": ["hp", "HP", "health", "health track", "healthTrack"]
+    },
+    {
+      "name": "Initiative",
+      "formula": "Dexterity + Wits + 1d10 each combat round. Wound penalty subtracts from rating, NOT from the d10. Spend Rage in declaration step to gain extra actions (max half permanent Rage rating).",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity} + {Wits}",
+      "aliases": ["initiative", "init"]
+    },
+    {
+      "name": "Brawl Attack",
+      "formula": "Dexterity + Brawl. Unarmed / claw / fang attack pool. Bite and claw damage type varies by form: Glabro/Lupus claws are lethal, Crinos/Hispo claws are aggravated to mortals and to other supernaturals.",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity} + {Brawl}",
+      "aliases": ["brawlAttack", "brawl attack"]
+    },
+    {
+      "name": "Melee Attack",
+      "formula": "Dexterity + Melee. Armed close-combat pool (blades, clubs, klaives, fetish weapons). Charms and weapon enhancements modify it.",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity} + {Melee}",
+      "aliases": ["meleeAttack", "melee attack"]
+    },
+    {
+      "name": "Firearms Attack",
+      "formula": "Dexterity + Firearms. Ranged attack pool. Range modifiers add +1/+2 difficulty for medium/long range. Silver bullets do aggravated damage to Garou.",
+      "renderAs": "value",
+      "valueFormula": "{Dexterity} + {Firearms}",
+      "aliases": ["rangedAttack", "firearmsAttack"]
+    },
+    {
+      "name": "Soak (Bashing)",
+      "formula": "Stamina + armour B-soak, rolled at difficulty 6. Soak rolls cannot botch. Garou regenerate 1 bashing level per turn automatically.",
+      "renderAs": "value",
+      "valueFormula": "{Stamina} + {bonuses:Soak (Bashing)}",
+      "tooltipFormula": "{Stamina} + {bonuses:Soak (Bashing)}",
+      "aliases": ["soakBashing", "bashingSoak", "bSoak"]
+    },
+    {
+      "name": "Soak (Lethal)",
+      "formula": "Stamina + armour L-soak, rolled at difficulty 6. Garou soak lethal with full Stamina (mortals cannot). Regenerate 1 lethal level per hour automatically.",
+      "renderAs": "value",
+      "valueFormula": "{Stamina} + {bonuses:Soak (Lethal)}",
+      "tooltipFormula": "{Stamina} + {bonuses:Soak (Lethal)}",
+      "aliases": ["soakLethal", "lethalSoak", "lSoak"]
+    },
+    {
+      "name": "Soak (Aggravated)",
+      "formula": "Stamina (in non-breed forms only) + supernatural armour, rolled at difficulty 6. Garou CANNOT soak aggravated in their BREED form (Homids in Homid, Lupus in Lupus, Metis in Crinos). Silver damage is unsoakable in breed form and bypasses regeneration entirely. Heals 1 level/day with rest.",
+      "renderAs": "value",
+      "valueFormula": "{Stamina} + {bonuses:Soak (Aggravated)}",
+      "tooltipFormula": "{Stamina} + {bonuses:Soak (Aggravated)}",
+      "aliases": ["soakAggravated", "aggravatedSoak", "aSoak"]
+    }
+  ],
+  "states": [
+    {
+      "name": "Form",
+      "values": [
+        { "label": "Homid",  "description": "Human form. No Attribute modifiers. Full speech, social capability. Default for Homid-breed Garou. Cannot soak aggravated for Homid-breed in this form." },
+        { "label": "Glabro",  "description": "Near-human form. STR +2, STA +2, MAN -2, APP -1 (humans). Guttural speech possible; teeth lethal damage (Str -1). Often the form for intimidation among humans." },
+        { "label": "Crinos",  "description": "Wolf-man / war form. STR +4, DEX +1, STA +3, MAN -3, APP 0 (humans witness as Delirium). Fangs and claws inflict AGGRAVATED damage. Cannot speak human languages. Default for Metis-breed. Triggers Delirium in humans who see it." },
+        { "label": "Hispo",   "description": "Dire-wolf form. STR +3, DEX +2, STA +3, MAN -3, PER -1 difficulty. Extra bite die. Claws aggravated. Cannot manipulate human tools." },
+        { "label": "Lupus",   "description": "Wolf form. STR +1, DEX +2, STA +2, MAN -3, PER -2 difficulty. 2x movement speed. Claws inflict LETHAL only (aggravated only for Lupus-breed). Default for Lupus-breed. Cannot speak; cannot manipulate human tools." }
+      ]
+    },
+    {
+      "name": "Frenzy State",
+      "values": [
+        { "label": "Calm",                "description": "Beast contained. Normal action and roleplay." },
+        { "label": "Rising",              "description": "A Rage roll is imminent — surge in fury, eyes flickering. Player or Storyteller can spend Willpower to head off the trigger." },
+        { "label": "Berserk Frenzy",      "description": "Rage roll scored 4+ successes. Garou shifts to Crinos or Hispo and attacks. If Rage > Gnosis, may attack indiscriminately (including packmates). Cannot use Gifts, pack tactics, or Step Sideways. Spend 1 Willpower to abort." },
+        { "label": "Fox Frenzy",          "description": "Rage roll scored 4+ in panic. Garou shifts to Lupus and flees at max speed. Attacks only if escape is blocked." },
+        { "label": "Thrall of the Wyrm",  "description": "Rage roll scored 6+ successes — unbreakable frenzy. Cannot be halted by Willpower. Triggers a breed-specific compulsion: Homid (Eater-of-Souls — consume kills), Metis (Defiler — sexual acts on fallen), Lupus (Beast-of-War — savage the corpse)." }
+      ]
+    },
+    {
+      "name": "Harano",
+      "values": [
+        { "label": "None",          "description": "Spiritual balance maintained." },
+        { "label": "Touched",       "description": "Lingering despair, blurred sense of reality between Umbra and physical world. -1 die to social and Willpower rolls until rebalanced." },
+        { "label": "Deep Harano",   "description": "Severe despair. Lethargy, existential crisis, may refuse to act. Resolution typically requires elder counsel and time in a balanced setting." }
+      ]
+    },
+    {
+      "name": "Spirit World",
+      "values": [
+        { "label": "Material",  "description": "In the physical world (the default)." },
+        { "label": "Penumbra",  "description": "In the Umbral reflection adjacent to the physical world. Garou see spirits, walk Moon Bridges, can interact with Banes." },
+        { "label": "Deep Umbra","description": "Far Umbra / Aetherial Realm / Wyld zones. Hostile to the unprepared." }
+      ]
+    }
+  ],
+  "diceTagFormat": {
+    "template": "[dice: {pool}d10 vs {difficulty} -> {successes} successes{willpower}{specialty}{botch}]",
+    "example": "[dice: 8d10 vs 6 -> 4 successes, +1 Willpower auto, 2 specialty rerolls]"
+  },
+  "sheetSections": [
+    "attributes",
+    "skills",
+    "derived",
+    "states",
+    "abilities",
+    "backgrounds",
+    "meritsFlaws",
+    "inventory",
+    "notes"
+  ],
+  "sections": {
+    "order": [
+      "identity",
+      "xp",
+      "resources",
+      "attributes",
+      "skills",
+      "derived",
+      "abilities",
+      "states",
+      "backgrounds",
+      "meritsFlaws",
+      "inventory",
+      "notes"
+    ],
+    "hidden": [
+      "derived:Health Track",
+      "state:Form"
+    ]
+  },
+  "resources": [
+    {
+      "id": "form",
+      "label": "Form",
+      "type": "state-banner",
+      "stateRef": "Form",
+      "color": "accent"
+    },
+    {
+      "id": "rage",
+      "label": "Rage (max = Permanent Rage)",
+      "type": "pool",
+      "max": "{Permanent Rage}",
+      "current": "{Permanent Rage}",
+      "color": "bad",
+      "stateName": "Rage",
+      "quickButtons": [
+        { "label": "-1",      "delta": -1 },
+        { "label": "+1",      "delta": 1 },
+        { "label": "Refresh", "delta": "max" }
+      ]
+    },
+    {
+      "id": "gnosis",
+      "label": "Gnosis (max = Permanent Gnosis)",
+      "type": "pool",
+      "max": "{Permanent Gnosis}",
+      "current": "{Permanent Gnosis}",
+      "color": "accent",
+      "stateName": "Gnosis",
+      "quickButtons": [
+        { "label": "-1",      "delta": -1 },
+        { "label": "+1",      "delta": 1 },
+        { "label": "Refresh", "delta": "max" }
+      ]
+    },
+    {
+      "id": "willpower",
+      "label": "Willpower (max = Permanent Willpower)",
+      "type": "pool",
+      "max": "{Permanent Willpower}",
+      "current": "{Permanent Willpower}",
+      "color": "accent",
+      "stateName": "Willpower",
+      "quickButtons": [
+        { "label": "-1",      "delta": -1 },
+        { "label": "+1",      "delta": 1 },
+        { "label": "Refresh", "delta": "max" }
+      ]
+    },
+    {
+      "id": "glory-temp",
+      "label": "Glory (temporary)",
+      "type": "counter",
+      "max": 20,
+      "current": 0,
+      "color": "warn",
+      "stateName": "Temporary Glory",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "+1", "delta": 1 }
+      ]
+    },
+    {
+      "id": "honour-temp",
+      "label": "Honour (temporary)",
+      "type": "counter",
+      "max": 20,
+      "current": 0,
+      "color": "warn",
+      "stateName": "Temporary Honour",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "+1", "delta": 1 }
+      ]
+    },
+    {
+      "id": "wisdom-temp",
+      "label": "Wisdom (temporary)",
+      "type": "counter",
+      "max": 20,
+      "current": 0,
+      "color": "warn",
+      "stateName": "Temporary Wisdom",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "+1", "delta": 1 }
+      ]
+    },
+    {
+      "id": "health",
+      "label": "Health",
+      "type": "custom",
+      "color": "bad",
+      "rendererConfig": {
+        "component": "v20-health-track",
+        "levels": [
+          { "label": "Bruised",       "penalty": 0 },
+          { "label": "Hurt",          "penalty": -1 },
+          { "label": "Injured",       "penalty": -1 },
+          { "label": "Wounded",       "penalty": -2 },
+          { "label": "Mauled",        "penalty": -2 },
+          { "label": "Crippled",      "penalty": -5 },
+          { "label": "Incapacitated", "penalty": -99 }
+        ],
+        "damageTypes": [
+          { "id": "bashing",    "label": "B", "severity": 0 },
+          { "id": "lethal",     "label": "L", "severity": 1 },
+          { "id": "aggravated", "label": "A", "severity": 2 }
+        ]
+      }
+    }
+  ],
+  "lorebookKeys": [
+    "rage", "gnosis", "willpower", "renown", "glory", "honour", "honor", "wisdom",
+    "rank", "auspice", "tribe", "breed", "homid", "metis", "lupus",
+    "form", "homid form", "glabro", "crinos", "hispo", "lupus form",
+    "gift", "gifts", "rite", "rites", "fetish", "talen",
+    "ragabash", "theurge", "philodox", "galliard", "ahroun",
+    "black furies", "bone gnawers", "children of gaia", "fianna", "get of fenris",
+    "glass walkers", "red talons", "shadow lords", "silent striders", "silver fangs",
+    "stargazers", "uktena", "wendigo", "black spiral dancers",
+    "umbra", "penumbra", "gauntlet", "caern", "moon bridge", "sept",
+    "frenzy", "thrall of the wyrm", "harano", "delirium", "the curse",
+    "wyrm", "weaver", "wyld", "triat", "litany", "pact", "kinfolk",
+    "step sideways", "stepping sideways", "totem", "spirit"
+  ],
+  "abilities": {
+    "label": "Gifts & Rites",
+    "groups": [
+      { "id": "talents",    "label": "Talents",    "members": ["Alertness", "Athletics", "Brawl", "Empathy", "Expression", "Intimidation", "Leadership", "Primal-Urge", "Streetwise", "Subterfuge"] },
+      { "id": "skills",     "label": "Skills",     "members": ["Animal Ken", "Crafts", "Drive", "Etiquette", "Firearms", "Larceny", "Melee", "Performance", "Stealth", "Survival"] },
+      { "id": "knowledges", "label": "Knowledges", "members": ["Academics", "Computer", "Enigmas", "Investigation", "Law", "Medicine", "Occult", "Rituals", "Science", "Technology"] }
+    ],
+    "categories": [
+      { "id": "breed-gifts",   "label": "Breed Gifts" },
+      { "id": "auspice-gifts", "label": "Auspice Gifts" },
+      { "id": "tribal-gifts",  "label": "Tribal Gifts" },
+      { "id": "general-gifts", "label": "General Gifts" },
+      { "id": "spirit-gifts",  "label": "Spirit Gifts (Lv 6+)" },
+      { "id": "rites",         "label": "Rites" }
+    ]
+  }
+}
