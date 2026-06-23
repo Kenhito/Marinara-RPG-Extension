@@ -48,7 +48,7 @@ For Hero Point spends use:
 [hero-point: spent, reroll]
 [hero-point: spent, avoid death]
 
-For condition changes use the standard mrrp-state tags ([mrrp-state: field="conditions" add="Frightened 2"], etc.).
+For condition changes use the standard mrr-state tags ([mrr-state: field="conditions" add="Frightened 2"], etc.).
 
 # What you (this agent) emit each turn
 

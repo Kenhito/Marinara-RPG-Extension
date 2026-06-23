@@ -90,6 +90,6 @@ rulesets/vtmv20/
   INSTALL.md             # This file
 ```
 
-## Companion install — RP-Mode
+## Roleplay Mode
 
-If you also want to run V:TM V20 in Marinara's roleplay-mode chats (with the engine's default world-state / prose-guardian / continuity / expression agents), install the companion bundle from **Marinara-RPG-RP-Mode-Extension** repo at `rulesets/vtmv20/bundle.json`. Namespace is `mrrp-vtmv20`. The two bundles can coexist — they install into different Marinara namespaces and produce different agent display names (`MRR:` vs `MRRP:`).
+As of Marinara-RPG-Extension v1.0.0 this single extension works in **both** Game Mode and Roleplay Mode chats — Marinara 2.0 made custom agents mode-agnostic, so the same `vtmv20` bundle serves both. There is no longer a separate RP-mode companion to install (the RP-mode extension is retired). Just install this bundle and use it in whichever chat type you prefer.

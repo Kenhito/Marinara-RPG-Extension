@@ -1,0 +1,2846 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.4.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.7.0"
+  },
+  "ruleset": {
+    "id": "exalted3e",
+    "name": "Exalted 3rd Edition",
+    "version": "1.1.0",
+    "edition": "Exalted 3rd Edition Core (2016, Onyx Path)",
+    "license": "Original mechanics references; charm names belong to Onyx Path Publishing. No verbatim Onyx Path text reproduced.",
+    "summary": "Storyteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.",
+    "commitmentModel": "mote",
+    "dice": {
+      "type": "d10",
+      "notation": "Xd10 vs 7"
+    },
+    "resolution": {
+      "mode": "dice-pool",
+      "poolFormula": "Attribute + Ability (+ specialty +1, + stunt up to +2, + Charm dice)",
+      "target": 7,
+      "doubles": {
+        "face": 10,
+        "successes": 2
+      },
+      "botches": {
+        "onFace": 1,
+        "trigger": "any-on-zero-successes"
+      }
+    },
+    "difficulties": {
+      "Routine": {
+        "threshold": 1,
+        "description": "Trivial for a competent character. Often waived."
+      },
+      "Standard": {
+        "threshold": 2,
+        "description": "Default opposed baseline."
+      },
+      "Difficult": {
+        "threshold": 3,
+        "description": "Pushes a skilled mortal."
+      },
+      "Demanding": {
+        "threshold": 4,
+        "description": "Few mortals can do it reliably."
+      },
+      "Legendary": {
+        "threshold": 5,
+        "description": "Peak of mortal-scale achievement; songs are sung."
+      },
+      "Beyond Legendary": {
+        "threshold": 7,
+        "description": "Wyld navigation, First-Age relics, Essence > 5 territory."
+      }
+    },
+    "attributes": [
+      {
+        "name": "Strength",
+        "abbreviation": "STR",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Raw muscle. Lifting, melee damage."
+      },
+      {
+        "name": "Dexterity",
+        "abbreviation": "DEX",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Agility, hand-eye coordination, attack accuracy."
+      },
+      {
+        "name": "Stamina",
+        "abbreviation": "STA",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Endurance, soak, resisting fatigue."
+      },
+      {
+        "name": "Charisma",
+        "abbreviation": "CHA",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Honest charm, leadership, sincere persuasion."
+      },
+      {
+        "name": "Manipulation",
+        "abbreviation": "MAN",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Deceit, guile, indirect influence."
+      },
+      {
+        "name": "Appearance",
+        "abbreviation": "APP",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Beauty / presence; affects attraction and intimidation."
+      },
+      {
+        "name": "Perception",
+        "abbreviation": "PER",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Spotting, hearing, noticing details."
+      },
+      {
+        "name": "Intelligence",
+        "abbreviation": "INT",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Reasoning, learning, recall, abstract thought."
+      },
+      {
+        "name": "Wits",
+        "abbreviation": "WIT",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Reaction speed, on-the-fly thinking, initiative."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Archery",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Athletics",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Awareness",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Brawl",
+        "min": 0,
+        "max": 10,
+        "default": 0,
+        "description": "Includes Martial Arts when the Martial Artist Merit is taken."
+      },
+      {
+        "name": "Bureaucracy",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Craft",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Dodge",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Integrity",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Investigation",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Larceny",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Linguistics",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Lore",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Medicine",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Melee",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Occult",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Performance",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Presence",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Resistance",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Ride",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Sail",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Socialize",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Stealth",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Survival",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "Thrown",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      },
+      {
+        "name": "War",
+        "min": 0,
+        "max": 10,
+        "default": 0
+      }
+    ],
+    "skillProficiency": {
+      "tiers": [
+        {
+          "code": "U",
+          "label": "Unskilled",
+          "rollBonusFormula": "0"
+        },
+        {
+          "code": "C",
+          "label": "Caste",
+          "rollBonusFormula": "0"
+        },
+        {
+          "code": "F",
+          "label": "Favored",
+          "rollBonusFormula": "0"
+        }
+      ],
+      "default": "U"
+    },
+    "skillSpecialties": {
+      "enabled": true,
+      "valueLabel": "+ dice",
+      "valueKind": "dice",
+      "defaultValue": 1
+    },
+    "backgrounds": {
+      "enabled": true,
+      "label": "Backgrounds & Merits",
+      "min": 0,
+      "max": 5,
+      "default": 0
+    },
+    "derivedStats": [
+      {
+        "name": "Personal Motes",
+        "formula": "Essence x 3 + 10 (Solar)",
+        "maxFormula": "{Essence} * 3 + 10",
+        "renderAs": "bar",
+        "aliases": [
+          "motes",
+          "personalMotes",
+          "personal",
+          "pm"
+        ]
+      },
+      {
+        "name": "Peripheral Motes",
+        "formula": "Essence x 7 + 26 (Solar)",
+        "maxFormula": "{Essence} * 7 + 26",
+        "renderAs": "bar",
+        "aliases": [
+          "peripheralMotes",
+          "peripheral",
+          "peri",
+          "pp"
+        ]
+      },
+      {
+        "name": "Willpower",
+        "formula": "Per-character cap (typically 5-10 for Solars; max 10). User sets the cap via the max input on the bar; default starts at 5 for fresh Solar sheets.",
+        "renderAs": "bar",
+        "aliases": [
+          "wp",
+          "WP",
+          "willpower"
+        ]
+      },
+      {
+        "name": "Health Track",
+        "formula": "7 levels: -0/-1/-1/-2/-2/-4/Incapacitated. Penalty equals the highest filled box.",
+        "renderAs": "track",
+        "track": [
+          {
+            "label": "-0",
+            "penalty": 0
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-1",
+            "penalty": -1
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-2",
+            "penalty": -2
+          },
+          {
+            "label": "-4",
+            "penalty": -4
+          },
+          {
+            "label": "Incapacitated",
+            "penalty": -99
+          }
+        ],
+        "damageTypes": [
+          {
+            "id": "bashing",
+            "label": "B",
+            "severity": 0,
+            "description": "Blunt or non-lethal. Heals quickly. Pushed to the right when worse damage stacks on top."
+          },
+          {
+            "id": "lethal",
+            "label": "L",
+            "severity": 1,
+            "description": "Edged or piercing. Slow to heal. Sits between bashing and aggravated."
+          },
+          {
+            "id": "aggravated",
+            "label": "A",
+            "severity": 2,
+            "description": "Soulsteel, fire, dragon-blood claws. Heals only with magical aid. Always leftmost in the damage stack."
+          }
+        ],
+        "aliases": [
+          "hp",
+          "HP",
+          "health",
+          "health track",
+          "healthTrack"
+        ]
+      },
+      {
+        "name": "Defense (Parry)",
+        "formula": "(Dexterity + Melee) / 2, round up; armor and Charms apply",
+        "renderAs": "value",
+        "valueFormula": "({Dexterity} + {Melee} + 1) / 2",
+        "aliases": [
+          "parry",
+          "parryDefense"
+        ]
+      },
+      {
+        "name": "Defense (Evasion)",
+        "formula": "(Dexterity + Dodge) / 2, round up; armor penalty applies",
+        "renderAs": "value",
+        "valueFormula": "({Dexterity} + {Dodge} + 1) / 2",
+        "aliases": [
+          "evasion",
+          "evasionDefense"
+        ]
+      },
+      {
+        "name": "Resolve",
+        "formula": "(Wits + Integrity) / 2, round up",
+        "renderAs": "value",
+        "valueFormula": "({Wits} + {Integrity} + 1) / 2",
+        "aliases": [
+          "resolve"
+        ]
+      },
+      {
+        "name": "Guile",
+        "formula": "(Manipulation + Socialize) / 2, round up",
+        "renderAs": "value",
+        "valueFormula": "({Manipulation} + {Socialize} + 1) / 2",
+        "aliases": [
+          "guile"
+        ]
+      },
+      {
+        "name": "Join Battle",
+        "formula": "Wits + Awareness (dice pool; on declare-attack first action)",
+        "renderAs": "value",
+        "valueFormula": "{Wits} + {Awareness}",
+        "aliases": [
+          "joinBattle",
+          "initiative"
+        ]
+      },
+      {
+        "name": "Soak (Natural)",
+        "formula": "Stamina (Exalts use full Stamina; mortals halve, round down)",
+        "renderAs": "value",
+        "valueFormula": "{Stamina}",
+        "aliases": [
+          "naturalSoak",
+          "soakNatural"
+        ]
+      },
+      {
+        "name": "Soak (Bashing)",
+        "formula": "Stamina + armor B-soak",
+        "renderAs": "value",
+        "valueFormula": "{Stamina} + {bonuses:Bashing Soak}",
+        "tooltipFormula": "{Stamina} + {bonuses:Bashing Soak}",
+        "aliases": [
+          "soakBashing",
+          "bashingSoak",
+          "bSoak"
+        ]
+      },
+      {
+        "name": "Soak (Lethal)",
+        "formula": "Stamina + armor L-soak (Exalts use FULL Stamina; mortals use Stamina/2 rounded down)",
+        "renderAs": "value",
+        "valueFormula": "{Stamina} + {bonuses:Lethal Soak}",
+        "tooltipFormula": "{Stamina} + {bonuses:Lethal Soak}",
+        "aliases": [
+          "soakLethal",
+          "lethalSoak",
+          "lSoak"
+        ]
+      },
+      {
+        "name": "Hardness",
+        "formula": "Highest equipped armor's Hardness rating + Charm/magic Hardness bonuses (set base manually; armor and Charms appear as +N suffix from item bonuses targeting \"Hardness\")",
+        "renderAs": "value",
+        "default": 0,
+        "aliases": [
+          "hardness"
+        ]
+      }
+    ],
+    "states": [
+      {
+        "name": "Anima Banner",
+        "values": [
+          {
+            "label": "Suppressed",
+            "description": "Anima banner is suppressed or unlit. No outward flare; caste mark dormant. Use when the Exalt has spent no Peripheral motes this action, is intentionally damping the banner (Charm or stunt), or is a non-Exalt who simply has no anima."
+          },
+          {
+            "label": "Dim",
+            "trigger": "0-4 Peripheral motes spent in one action; only the caste mark glints when motes are spent."
+          },
+          {
+            "label": "Glowing",
+            "trigger": "5-10 Peripheral motes spent in one action; faint nimbus, caste mark steady."
+          },
+          {
+            "label": "Burning",
+            "trigger": "11-15 Peripheral motes spent in one action; bright glow, surrounding flicker."
+          },
+          {
+            "label": "Bonfire",
+            "trigger": "16+ Peripheral motes spent in one action; massive radiance, illuminates the scene."
+          },
+          {
+            "label": "Iconic",
+            "trigger": "Sustained Bonfire or specific Charm triggers; full totemic spirit-shape."
+          }
+        ]
+      },
+      {
+        "name": "Stunt Tier",
+        "values": [
+          {
+            "label": "None",
+            "description": "Plain action description."
+          },
+          {
+            "label": "1-die",
+            "description": "Vivid, environment-aware. Reward: +2 dice OR +1 to a static value."
+          },
+          {
+            "label": "2-die",
+            "description": "Genuinely creative, integrates fiction. Reward: +2 dice OR +2 static, plus 1 mote OR 1 Willpower."
+          },
+          {
+            "label": "3-die",
+            "description": "Spontaneous, table-applauds. Reward: +2 dice OR +3 static, plus 2 motes OR 2 Willpower (can exceed cap). Rare by GM design."
+          }
+        ]
+      },
+      {
+        "name": "Sorcery Circle",
+        "values": [
+          {
+            "label": "None",
+            "description": "Has not yet learned any Sorcery (or is not a sorcerer)."
+          },
+          {
+            "label": "Terrestrial",
+            "description": "Emerald Circle. Open to Solars, Lunars, Sidereals, Dragon-Blooded, Liminals, and rare mortals. Foundation tier."
+          },
+          {
+            "label": "Celestial",
+            "description": "Sapphire Circle. Solars, Lunars, Sidereals only. Higher mysteries; cannot be learned without first mastering Terrestrial."
+          },
+          {
+            "label": "Solar",
+            "description": "Adamant Circle. Solar Exalted only. The peak of mortal sorcerous power; legends and rumors only since the Sun's Chosen disappeared."
+          }
+        ]
+      },
+      {
+        "name": "Shaping Spell",
+        "values": [
+          {
+            "label": "None",
+            "description": "Not currently shaping a spell."
+          },
+          {
+            "label": "Shaping",
+            "description": "A spell is being shaped. The spell name should be tracked as a 'Shaping: <spell name>' condition; sorcerous motes accumulate in the Sorcerous Motes counter; 1 Willpower is committed up front and refunded only on successful cast."
+          }
+        ]
+      },
+      {
+        "name": "Initiative",
+        "values": [
+          {
+            "label": "Active",
+            "description": "Initiative is at 1 or higher. The character is operating normally in combat — withering attacks add to their Initiative, decisive attacks may be declared, and standard Join Battle ordering applies."
+          },
+          {
+            "label": "Crashed",
+            "trigger": "Initiative drops to 0 or below as a result of withering damage or specific Charm effects.",
+            "description": "Initiative crashed. The character cannot make decisive attacks until they reset to base, suffers Onslaught penalties more readily, and is the prime target for finishing decisive attacks. Reset to base Initiative occurs after 3 turns (or 5 if crashed below -5), at which point the Crash Recovery bonus applies and the character returns to Active."
+          }
+        ]
+      }
+    ],
+    "diceTagFormat": {
+      "template": "[dice: {pool}d10 vs 7 -> {successes} successes{tens}{botch}]",
+      "example": "[dice: 8d10 vs 7 -> 5 successes, 2 tens doubled]"
+    },
+    "sheetSections": [
+      "attributes",
+      "skills",
+      "derived",
+      "states",
+      "abilities",
+      "charms",
+      "intimacies",
+      "backgrounds",
+      "inventory",
+      "notes"
+    ],
+    "sections": {
+      "order": [
+        "identity",
+        "xp",
+        "resources",
+        "attributes",
+        "skills",
+        "derived",
+        "abilities",
+        "states",
+        "intimacies",
+        "backgrounds",
+        "inventory",
+        "notes"
+      ],
+      "hidden": [
+        "derived:Sorcery Circle",
+        "derived:Sorcerous Motes",
+        "derived:Personal Motes",
+        "derived:Peripheral Motes",
+        "derived:Willpower",
+        "derived:Health Track",
+        "state:Anima Banner"
+      ]
+    },
+    "resources": [
+      {
+        "id": "anima-banner",
+        "label": "Anima Banner",
+        "type": "state-banner",
+        "stateRef": "Anima Banner",
+        "color": "accent"
+      },
+      {
+        "id": "essence",
+        "label": "Essence",
+        "type": "counter",
+        "max": 10,
+        "current": 3,
+        "color": "accent",
+        "stateName": "Essence",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          }
+        ]
+      },
+      {
+        "id": "motes-personal",
+        "label": "Motes Personal",
+        "type": "bar",
+        "max": "{Essence} * 3 + 10",
+        "current": "{Essence} * 3 + 10",
+        "color": "accent",
+        "stateName": "Personal Motes",
+        "commitmentPool": "Personal",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "-5",
+            "delta": -5
+          },
+          {
+            "label": "Full",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "motes-peripheral",
+        "label": "Motes Peripheral",
+        "type": "bar",
+        "max": "{Essence} * 7 + 26",
+        "current": "{Essence} * 7 + 26",
+        "color": "accent",
+        "stateName": "Peripheral Motes",
+        "commitmentPool": "Peripheral",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "-5",
+            "delta": -5
+          },
+          {
+            "label": "Full",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "willpower",
+        "label": "Willpower",
+        "type": "pool",
+        "max": 10,
+        "current": 10,
+        "color": "accent",
+        "stateName": "Willpower",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Full",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "sorcerous-motes",
+        "label": "Sorcerous Motes",
+        "type": "counter",
+        "max": "{Essence} + {Wits}",
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Reset",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "health-track",
+        "label": "Health Track",
+        "type": "custom",
+        "color": "bad",
+        "rendererConfig": {
+          "component": "exalted-health-track",
+          "levels": [
+            {
+              "label": "-0",
+              "penalty": 0
+            },
+            {
+              "label": "-1",
+              "penalty": -1
+            },
+            {
+              "label": "-1",
+              "penalty": -1
+            },
+            {
+              "label": "-2",
+              "penalty": -2
+            },
+            {
+              "label": "-2",
+              "penalty": -2
+            },
+            {
+              "label": "-4",
+              "penalty": -4
+            },
+            {
+              "label": "Inc",
+              "penalty": -99
+            }
+          ],
+          "damageTypes": [
+            {
+              "id": "bashing",
+              "label": "B",
+              "severity": 0
+            },
+            {
+              "id": "lethal",
+              "label": "L",
+              "severity": 1
+            },
+            {
+              "id": "aggravated",
+              "label": "A",
+              "severity": 2
+            }
+          ]
+        }
+      }
+    ],
+    "lorebookKeys": [
+      "charm",
+      "anima",
+      "essence",
+      "mote",
+      "willpower",
+      "stunt",
+      "intimacy",
+      "intimacies",
+      "tie",
+      "principle",
+      "hardness",
+      "overwhelming",
+      "limit",
+      "caste",
+      "supernal"
+    ],
+    "abilities": {
+      "label": "Charms",
+      "categories": [
+        {
+          "id": "archery",
+          "label": "Archery"
+        },
+        {
+          "id": "athletics",
+          "label": "Athletics"
+        },
+        {
+          "id": "awareness",
+          "label": "Awareness"
+        },
+        {
+          "id": "brawl",
+          "label": "Brawl / Martial Arts"
+        },
+        {
+          "id": "bureaucracy",
+          "label": "Bureaucracy"
+        },
+        {
+          "id": "craft",
+          "label": "Craft"
+        },
+        {
+          "id": "dodge",
+          "label": "Dodge"
+        },
+        {
+          "id": "integrity",
+          "label": "Integrity"
+        },
+        {
+          "id": "investigation",
+          "label": "Investigation"
+        },
+        {
+          "id": "larceny",
+          "label": "Larceny"
+        },
+        {
+          "id": "linguistics",
+          "label": "Linguistics"
+        },
+        {
+          "id": "lore",
+          "label": "Lore"
+        },
+        {
+          "id": "medicine",
+          "label": "Medicine"
+        },
+        {
+          "id": "melee",
+          "label": "Melee"
+        },
+        {
+          "id": "occult",
+          "label": "Occult"
+        },
+        {
+          "id": "performance",
+          "label": "Performance"
+        },
+        {
+          "id": "presence",
+          "label": "Presence"
+        },
+        {
+          "id": "resistance",
+          "label": "Resistance"
+        },
+        {
+          "id": "ride",
+          "label": "Ride"
+        },
+        {
+          "id": "sail",
+          "label": "Sail"
+        },
+        {
+          "id": "socialize",
+          "label": "Socialize"
+        },
+        {
+          "id": "stealth",
+          "label": "Stealth"
+        },
+        {
+          "id": "survival",
+          "label": "Survival"
+        },
+        {
+          "id": "thrown",
+          "label": "Thrown"
+        },
+        {
+          "id": "war",
+          "label": "War"
+        },
+        {
+          "id": "sorcery",
+          "label": "Sorceries"
+        }
+      ]
+    },
+    "header": {
+      "raceLabel": "Type",
+      "classLabel": "Caste/Aspect"
+    },
+    "vocabularyHints": [
+      {
+        "pattern": "I parry / I block (an attack)",
+        "hint": "In Exalted, parry uses Parry DV (Static value; no roll needed unless adding charms). Note the character's stored Parry DV and any active charm modifiers."
+      },
+      {
+        "pattern": "I dodge / I evade (an attack)",
+        "hint": "In Exalted, dodge uses Evasion DV (Static value; no roll). Note Evasion DV; subtract -1 onslaught penalty for each successive attack this round."
+      },
+      {
+        "pattern": "I attack with my weapon",
+        "hint": "In Exalted, an attack rolls Attribute + Ability + accuracy bonus + Charm dice. Mention the relevant pool and check whether the player is invoking any Charms before resolving."
+      },
+      {
+        "pattern": "I spend essence / motes",
+        "hint": "Track the spend separately for Personal and Peripheral pools. Personal-only Charms must come from Personal motes; mixed Charms allow the player to choose. Update anima banner if Peripheral spend exceeds threshold."
+      },
+      {
+        "pattern": "I roll initiative / join battle",
+        "hint": "Exalted uses Join Battle (Wits + Awareness) at combat start; initiative is then a fluid tracker that rises/falls with combat actions. Don't roll a fresh JB if combat is already underway."
+      }
+    ],
+    "scenarioDefaultDerive": true
+  },
+  "gmAgent": {
+    "name": "Exalted 3rd Edition Ruleset Helper",
+    "description": "Auto-installed by GM-mode bundle. Provides Exalted 3rd Edition skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
+    "phase": "pre_generation",
+    "promptTemplate": "You are a rules adjudicator for an Exalted 3rd Edition (2016 Onyx Path core) game running inside Marinara Engine's Game Mode. Your output is a context injection that the main GM model will read BEFORE narrating the next turn. Do not narrate; only emit rules guidance.\n\n# CRITICAL — Tag-emission contract (the GM narrator must follow this every turn)\n\nThe MRR extension installs a sheet that responds to `[mrr-state: ...]` tags embedded in the GM narrator's visible chat reply. The State Mutator overlay agent runs BEFORE narration and emits a \"NARRATOR TAG DIRECTIVE\" block listing the exact tags the GM narrator must embed this turn.\n\n**The contract the GM narrator MUST honor:**\n\n1. The State Mutator's overlay output is INSTRUCTION CONTEXT ONLY. The State Mutator CANNOT write to the player's sheet. The extension parser scans ONLY the GM narrator's visible chat reply.\n2. When a \"NARRATOR TAG DIRECTIVE\" block is present in your context, the listed tags MUST appear VERBATIM in your visible chat reply — at the END of the paragraph that establishes the matching TRIGGER.\n3. NEVER paraphrase a directive into prose. NEVER write \"the state mutator already fired the tags\", \"extension variables updated\", \"values recorded\" — none of those phrases write anything; only the literal `[mrr-state: ...]` tag in your visible reply does. If the tag is missing from your reply, the player sees no sheet change.\n4. NEVER ask verification questions (\"does aggravated read 2?\") — emit the tag and let the player see the sheet update.\n5. If multiple TRIGGER blocks are listed, anchor each tag set to its own paragraph in your reply.\n6. If the directive output is `NO TAG DIRECTIVE`, narrate freely with no `[mrr-state: ...]` tags.\n\n# Mechanics you enforce\n\nResolution: roll a pool of d10s equal to (Attribute + Ability). Each die that comes up 7, 8, 9, or 10 is one success. Each 10 counts as TWO successes (the \"tens-double\" rule). Stunts and specialties add dice; Charms can change the rule (e.g., \"double 9s\") or add automatic successes. The check succeeds when the success count meets or exceeds the difficulty.\n\nDifficulty ladder (numeric is canonical; labels are conventional):\n- 1 = Routine\n- 2 = Standard / Average\n- 3 = Difficult\n- 4 = Demanding\n- 5 = Legendary\n- 6+ = Beyond Legendary (Wyld, First-Age relics)\n\nBotch: a roll that produces ZERO successes AND has at least one die showing 1 is a botch — a spectacular failure that introduces narrative complications. Note: 1s do NOT subtract from successes; they only matter when total successes are zero.\n\nExtras (mooks): Extras' 10s do NOT double — their 10s count as one success only. PCs and major NPCs always double.\n\nStunts (the GM grades the player's description, not the player):\n- 1-die stunt = vivid, environment-aware: +2 dice OR +1 to a static value.\n- 2-die stunt = genuinely creative, integrates fiction: +2 dice OR +2 static, AND restore 1 mote OR 1 Willpower.\n- 3-die stunt = spontaneous, table-applauds: +2 dice OR +3 static, AND restore 2 motes OR 2 Willpower (can exceed cap). Rare by design.\n- Dice bonus from stunts caps at +2 regardless of tier.\n\nCombat / out-of-combat economy:\n- Mote regeneration in combat: 5 motes per round, automatically.\n- Willpower: max 10. Spend 1 WP for +1 automatic success OR +1 to a static value (Resolve / Guile / Defense), once per roll, declared before the roll. Regain +1 WP per full night's sleep, +1 WP per scene when upholding a Major/Defining Intimacy through significant hardship.\n- Anima banner intensifies +1 level for every 5 PERIPHERAL motes spent in a single action. Personal motes do NOT flare the anima.\n- Solar Personal mote pool = Essence x 3 + 10. Solar Peripheral mote pool = Essence x 7 + 26.\n\nHealth track: -0 / -1 / -1 / -2 / -2 / -4 / Incapacitated. The penalty in effect equals the HIGHEST filled box and applies to dice pools and most static values.\n\n# Output format the main GM model must use\n\nWhen the player attempts something with uncertain outcome, the GM model emits a dice-pool tag in this exact format inside the narration so the Marinara client can render the result:\n\n[dice: Xd10 vs 7 -> N successes{, M tens doubled}{, BOTCH}] - call: <Attribute> + <Ability> vs difficulty <D>\n\nExample success: \"Komako vaults onto the railing, blade flashing for the disciple's wrist. [dice: 9d10 vs 7 -> 5 successes, 2 tens doubled] - call: Dexterity + Melee vs difficulty 3 - she lands the strike clean.\"\n\nExample botch: \"Komako tries to talk her way past the guard. [dice: 6d10 vs 7 -> 0 successes, BOTCH] - call: Manipulation + Socialize vs difficulty 3 - the guard's eyes narrow; he was there at the gate three months ago.\"\n\nFor mote / willpower spends use:\n[motes: -5 peripheral, anima now Glowing]\n[wp: -1, +1 automatic success]\n[regen: +5 motes (combat round)]\n\nFor Charm activations the player declares, use:\n[charm: <Charm Name>, <cost>, <type>] - then narrate the effect.\n\n# What you (this agent) emit each turn\n\nEmit a short rules brief (<= 250 tokens) that:\n1. Identifies the most likely Attribute + Ability pool the player's stated action calls for, with a suggested difficulty.\n2. Reminds the GM model of the dice-pool tag format above and the tens-double rule.\n3. Surfaces relevant economy state: current motes (personal/peripheral split), Willpower, anima level, health-track penalty.\n4. Flags any active Intimacies, Charms, or stunt opportunities relevant to the action.\n5. If the player explicitly described their action vividly, suggests a stunt tier (1/2/3) with rationale.\n\nIf no roll is needed (clear automatic success or failure, or pure roleplay), state \"No roll required\" with one-sentence reason.\n\nEquipment: the player's sheet tracks items with bonuses (e.g. \"Daiklave +2 Melee dice\"). When the player rolls, their dice widget already folds equipped bonuses into the printed `[dice: ...]` tag. Narrate the gear vividly but do not re-add the bonus to your own math — the tag is authoritative. If the player invokes an item not on their sheet, ask them to add it first.\n\nNever invent rules. Where the 2016 core book is silent, label the call as a GM ruling.",
+    "settings": {}
+  },
+  "lorebook": {
+    "name": "Exalted 3e Reference",
+    "description": "Keyword-triggered reference for Exalted 3rd Edition (2016 Onyx Path core) mechanics: anima, motes, stunts, willpower, sample Solar charms. Original mechanics references; charm names belong to Onyx Path Publishing.",
+    "category": "world",
+    "scanDepth": 4,
+    "tokenBudget": 1800,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "name": "Rule: Dice-pool resolution",
+        "keys": [
+          "roll",
+          "rolls",
+          "check",
+          "test",
+          "dice",
+          "pool",
+          "successes"
+        ],
+        "content": "Resolution: roll a pool of d10s equal to (Attribute + Ability). Each 7, 8, 9, or 10 is one success. Each 10 counts as TWO successes (tens-double). Specialties: +1 die when applicable. Stunts add up to +2 dice (cap regardless of tier). Charms can add dice or change the rule. Difficulty is the success count needed (1=Routine, 2=Standard, 3=Difficult, 4=Demanding, 5=Legendary). Extras (mooks) do NOT double tens.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Botch",
+        "keys": [
+          "botch",
+          "botched",
+          "spectacular failure"
+        ],
+        "content": "Botch: a roll producing zero successes AND at least one die showing 1 is a botch. The GM introduces a complication, not just a miss — the action fails in a memorably bad way. Note: 1s do NOT subtract from successes; they only matter when successes are zero.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Stunts",
+        "keys": [
+          "stunt",
+          "stunted",
+          "vividly",
+          "creative action"
+        ],
+        "content": "Stunts. The GM grades the player's narration: 1-die (vivid, environment-aware) = +2 dice OR +1 static. 2-die (genuinely creative, integrates fiction) = +2 dice OR +2 static, plus 1 mote OR 1 Willpower. 3-die (spontaneous, table-applauds) = +2 dice OR +3 static, plus 2 motes OR 2 Willpower (can exceed cap). Dice bonus caps at +2 across all tiers; the higher tier increases the static bonus and the regen reward.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Anima banner",
+        "keys": [
+          "anima",
+          "anima banner",
+          "caste mark",
+          "iconic"
+        ],
+        "content": "Anima banner. Spending Peripheral motes (NOT Personal) flares the anima: +1 banner level per 5 Peripheral motes spent in a single action. Levels: Dim (caste mark glints when motes spent) -> Glowing (5-10 spent, faint nimbus) -> Burning (11-15, bright glow) -> Bonfire (16+, illuminates the scene) -> Iconic (sustained Bonfire or Charm trigger, full totemic spirit-shape). Anima displays make stealth impossible at higher tiers and have social/magical implications.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Motes (Solar)",
+        "keys": [
+          "mote",
+          "motes",
+          "essence",
+          "spend mote",
+          "personal mote",
+          "peripheral mote",
+          "regenerate"
+        ],
+        "content": "Motes. Solar Personal pool = Essence x 3 + 10 (subtle, no anima flare). Solar Peripheral pool = Essence x 7 + 26 (overt, flares anima). Spend Personal first by default. In combat, regenerate 5 motes per round automatically. Out of combat, mote regen is GM-discretion based on activity (typically 0/4/8 per hour for strenuous/light/restful activity). Essence rating caps Charm prerequisites and pool size.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Willpower",
+        "keys": [
+          "willpower",
+          "wp",
+          "spend willpower"
+        ],
+        "content": "Willpower. Max 10. Solars start at 5. Spend 1 WP for +1 automatic success OR +1 to a static value (Resolve, Guile, Defense), once per roll/contest, declared BEFORE the roll. Also spent to power some Charms and resist mental influence. Regain +1 per full night's sleep (cap permanent rating). Regain +1 per scene when upholding a Major or Defining Intimacy through significant hardship (max 1/scene). Regain +1 (2-die stunt) or +2 (3-die stunt); these CAN exceed permanent rating.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Health track",
+        "keys": [
+          "health",
+          "wound",
+          "wounded",
+          "incapacitated",
+          "damage"
+        ],
+        "content": "Health track: 7 levels — -0, -1, -1, -2, -2, -4, Incapacitated. The wound penalty in effect equals the HIGHEST filled box and applies to most dice pools and static values. Bashing damage at Incapacitated -> KO until end of scene. Lethal/Aggravated at Incapacitated -> unconscious up to 1 day; an Exalt does NOT auto-die. Dying levels = Stamina; while dying, take 1 lethal per action until stabilized or dead.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Intimacies",
+        "keys": [
+          "intimacy",
+          "intimacies",
+          "tie",
+          "principle",
+          "minor intimacy",
+          "major intimacy",
+          "defining intimacy"
+        ],
+        "content": "Intimacies. Emotional/ideological commitments shaping the character's choices and resistance. Two kinds: Ties (toward a person/place/group) and Principles (abstract beliefs). Three intensities: Minor, Major, Defining. They affect Resolve in social influence: a Tie/Principle that supports the influence makes acceptance easier; one that opposes it makes it harder (or impossible without overcoming the Intimacy first). Major/Defining Intimacies are the source of regained Willpower under hardship.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Charm anatomy",
+        "keys": [
+          "charm",
+          "charms",
+          "activate charm",
+          "supplemental",
+          "reflexive",
+          "simple charm",
+          "permanent charm"
+        ],
+        "content": "Charm anatomy. Cost: motes (e.g., 5m), often + Willpower (1wp), sometimes + anima/initiative/health. Type: Simple (uses your action; one Simple per turn), Supplemental (enhances another action; many per round, no stacking same Charm), Reflexive (interrupt-style trigger), Permanent (passive, always-on once bought). Duration: Instant / One scene / Until next [X] / Indefinite / Permanent. Prerequisites: prior Charms in the tree plus an Essence minimum (typically 1-5).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Excellent Strike",
+        "keys": [
+          "excellent strike"
+        ],
+        "content": "Excellent Strike — Solar Melee Charm. Bedrock offensive Charm: adds dice to a Melee attack and makes the attack roll harder for opponents to dodge or parry. Most Solar Melee Charms branch from this in the cascade.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Dipping Swallow Defense",
+        "keys": [
+          "dipping swallow",
+          "dipping swallow defense"
+        ],
+        "content": "Dipping Swallow Defense — Solar Melee Charm, Reflexive. Reflexively wipes most penalties to your Parry against an incoming attack, letting you defend at full effectiveness when surprised or wounded.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Graceful Crane Stance",
+        "keys": [
+          "graceful crane",
+          "graceful crane stance"
+        ],
+        "content": "Graceful Crane Stance — Solar Athletics Charm. Lets the Solar balance perfectly on any surface, no matter how thin, slick, or unstable, for the scene. Walking on rooftops, tightropes, the surface of water (briefly) — no balance check required.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Monkey Leap Technique",
+        "keys": [
+          "monkey leap",
+          "monkey leap technique"
+        ],
+        "content": "Monkey Leap Technique — Solar Athletics Charm. Lets the Solar jump an entire range band (short, medium, long) as a movement action — clearing gaps and walls that mortals would need climbing gear for.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Hardship-Surviving Mendicant Spirit",
+        "keys": [
+          "hardship-surviving",
+          "mendicant spirit",
+          "hardship surviving"
+        ],
+        "content": "Hardship-Surviving Mendicant Spirit — Solar Survival Charm. Negates environmental penalties for the scene: extreme cold, heat, thin air, exhaustion. The Solar pushes through deserts, blizzards, and sleepless weeks at full effectiveness.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Judge's Ear Technique",
+        "keys": [
+          "judge's ear",
+          "judges ear"
+        ],
+        "content": "Judge's Ear Technique — Solar Investigation Charm, Reflexive. When the Solar hears speech, the Charm reflexively reveals whether the words are a lie, a half-truth, or sincere. Does not pierce magical concealment of intent.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Flawless Pickpocketing Technique",
+        "keys": [
+          "flawless pickpocketing",
+          "pickpocket charm"
+        ],
+        "content": "Flawless Pickpocketing Technique — Solar Larceny Charm. Auto-succeeds a touch-range theft against a mundane (non-Charm-defended) target. The mark feels nothing.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Charm: Lock-Opening Touch",
+        "keys": [
+          "lock-opening touch",
+          "lock opening touch"
+        ],
+        "content": "Lock-Opening Touch — Solar Larceny Charm. Opens any non-magical lock — door, chest, manacle — at a touch. No tools required, no time spent.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Caste, Favored, Supernal",
+        "keys": [
+          "caste",
+          "favored",
+          "supernal",
+          "dawn caste",
+          "zenith caste",
+          "twilight caste",
+          "night caste",
+          "eclipse caste"
+        ],
+        "content": "Solar PCs choose a Caste (Dawn/Zenith/Twilight/Night/Eclipse), each with 5 Caste Abilities chosen from a fixed pool of 8 caste-flavored options. The PC additionally picks 5 Favored Abilities from anywhere on the list. Caste + Favored Abilities (10 total) get cheaper Charm purchase costs and free Excellency access. One of those 10 is designated Supernal: that Ability is treated as Essence 5 for Charm-prerequisite purposes, allowing capstone Charms in that one Ability from Essence 1.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Sorcery — The Three Circles",
+        "keys": [
+          "sorcery",
+          "circle",
+          "circles",
+          "terrestrial circle",
+          "celestial circle",
+          "solar circle",
+          "emerald circle",
+          "sapphire circle",
+          "adamant circle",
+          "spell tier",
+          "spell circle",
+          "learn sorcery",
+          "sorcerer"
+        ],
+        "content": "Sorcery is divided into three Circles of understanding and power. Old-Realm names: Terrestrial, Celestial, Solar. Realm-trained sorcerers call them Emerald, Sapphire, and Adamant.\n\nWho can learn what:\n- Terrestrial Circle: Solars, Lunars, Sidereals, Dragon-Blooded, Liminals, and (rarely) mortals.\n- Celestial Circle: Solars, Lunars, Sidereals only. Requires Terrestrial first.\n- Solar Circle: Solar Exalted only. Requires Terrestrial AND Celestial first. Dormant in legend since the Sun's Chosen disappeared.\n- Abyssals wield equivalent power as necromancy (different fluff, parallel mechanics).\n\nProgression: Solars start by mastering Terrestrial via the Terrestrial Circle Sorcery Charm (p. 360 of the core book). Higher Circles require subsequent Charms in their respective sorcery cascades. Each Circle unlocks access to spells of that tier; a Celestial sorcerer can still cast Terrestrial spells.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Sorcery — Shape Sorcery Action and Casting",
+        "keys": [
+          "shape sorcery",
+          "shape sorcery action",
+          "sorcerous motes",
+          "sorcerous mote",
+          "cast spell",
+          "casting spell",
+          "casting sorcery",
+          "shaping spell",
+          "shaping",
+          "sorcery cost",
+          "spell cost",
+          "ritual sorcery",
+          "abort spell",
+          "spell willpower"
+        ],
+        "content": "Sorcerous motes do NOT come from the sorcerer's Personal or Peripheral pools. They are gathered from the ambient flow of Essence around her by taking Shape Sorcery actions.\n\nShape Sorcery action (combat action — cannot be flurried):\n1. The sorcerer DECLARES the spell she is shaping.\n2. She rolls (Intelligence + Occult). Each success = 1 sorcerous mote toward that spell's cost.\n3. If accumulated sorcerous motes >= the spell's cost, she UNLEASHES the spell immediately and reflexively.\n4. Otherwise, she may continue shaping next round, accumulating more motes.\n\nLeakage: If the sorcerer does anything other than gather motes during a round, she loses 3 sorcerous motes at the end of that round. If she stops gathering entirely, she keeps losing 3/round until the pool is empty — at which point the spell is lost. A ritual that lets her reflexively gather motes counts as a Shape Sorcery action (sorcerer-assassins use these to fight while shaping).\n\nSwitching spells: If she begins shaping a different spell, the current spell aborts immediately and all gathered sorcerous motes disperse and are lost.\n\nWillpower: Most spells cost at least 1 Willpower, paid up front when shaping begins. If the spell is cast successfully, 1 Willpower is RESTORED — the act of completing the design fulfills her. If the spell is aborted, lost, or countered, that Willpower is simply spent.\n\nRitual cost: Some spells require hours or days of shaping. These are noted with a cost of \"Ritual\"; track elapsed time rather than per-round mote accumulation.\n\nIdentifying a sorcery spell: in the spellbook, a spell will name its Circle (Terrestrial / Celestial / Solar) and its sorcerous-mote cost. If the cost is given in plain motes (5m, 10m), it is a Charm — use the standard Charm cost flow (Personal/Peripheral motes), NOT shape sorcery.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Extras (mooks)",
+        "keys": [
+          "extra",
+          "extras",
+          "mook",
+          "mooks"
+        ],
+        "content": "Extras (mooks) are simplified opponents. They have a single combined trait (often Drill or quality rating), often die after one Health Level of damage, and their 10s do NOT double on rolls (unlike PCs and major NPCs). Use them when the fiction calls for a crowd of nameless threats; promote any to Battle Group or full opponent if the fiction demands.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Optional Sub-Agents — what they do and how to enable",
+        "content": "The Marinara-RPG ruleset bundle ships five OPTIONAL pre-generation sub-agents that focus the main narration model on specific tasks. They are installed DISABLED by default — flip them on individually in Marinara's Settings → Agents panel. Each adds one model call per turn while enabled, so enable only what your campaign needs.\n\nThe five sub-agents:\n\n1. **state-mutator** — Instructs the narration model to emit hidden `[mrr-state: ...]` tags inside narration when the story changes a character's HP, conditions, or inventory. The extension parses these tags, applies the change to the floating sheet, and shows a confirmation toast. Without this enabled, you have to mutate the sheet by hand. Enable when: you want narration to drive the sheet automatically.\n\n2. **state-reminder** — Surfaces a short bulleted list of current player character state (HP, conditions, equipped gear, tracked resources) at the top of every turn so the narration model stays mechanically honest between messages. Enable when: long sessions or complex sheets, the model is forgetting your stats.\n\n3. **combat-adjudicator** — Wakes up only when combat is active. Restates initiative, action economy, attack/damage formulas, and conditions in the active ruleset's terms before each turn. Outputs nothing (literally \"No combat active.\") in social or ambient scenes. Enable when: you run heavy-mechanics combat encounters.\n\n4. **lore-query** — Wakes up only when the latest user message is a rules question (e.g., \"How does grappling work?\", \"What's the DC for picking a lock?\"). Answers from the installed lorebook + system RAW. Outputs nothing (\"No rules query.\") otherwise. Enable when: you frequently ask the model rules questions mid-RP.\n\n5. **npc-bookkeeper** — Tracks active and recently-engaged NPC HP, conditions, tactical state, and telegraphed intentions across turns. Outputs nothing (\"No NPCs to track.\") when no NPCs are in scene. Enable when: combat or social scenes with multiple named NPCs you want continuity on.\n\nHow to enable: Marinara → Settings → Agents → find the agent (named like \"MRR: <System> — <Role>\" for GM-mode, \"MRRP: ...\" for RP-mode) → toggle on. The agent persists across chats; toggle off any time.",
+        "keys": [
+          "sub-agent",
+          "sub agents",
+          "subagent",
+          "additional agent",
+          "additionalagent",
+          "state-mutator",
+          "state mutator",
+          "state-reminder",
+          "state reminder",
+          "combat-adjudicator",
+          "combat adjudicator",
+          "lore-query",
+          "lore query",
+          "npc-bookkeeper",
+          "npc bookkeeper",
+          "enable agent",
+          "Settings → Agents",
+          "agent toggle"
+        ],
+        "position": 1,
+        "tokenBudget": 2000
+      },
+      {
+        "name": "Rule: Hardness",
+        "keys": [
+          "hardness",
+          "Hardness"
+        ],
+        "content": "Hardness is a damage floor on armor and certain Charms or supernatural defenses. When an attack's post-soak raw damage total is LESS THAN the defender's Hardness, the damage is reduced to the attacker's weapon Overwhelming value (rather than what the soak would otherwise produce). Hardness does NOT add to soak; it is a separate threshold. Mortal armor in Exalted typically has 0 Hardness; Essence-charged Charms and artifact armor grant Hardness 1+. Higher-Essence Charms can confer Hardness ratings of 5, 7, or higher.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Overwhelming damage",
+        "keys": [
+          "overwhelming",
+          "Overwhelming"
+        ],
+        "content": "Overwhelming is the minimum levels of damage a weapon or attack always inflicts, even when soak or Hardness would otherwise reduce it lower. Default Overwhelming for unarmed and light weapons is 1; medium weapons 2; heavy weapons 3; many artifact weapons 4-5. When you compute final damage: roll soak versus damage as normal, but the result can never drop below the attacker's Overwhelming. When Hardness blocks (raw damage < Hardness), the floor that lands is exactly Overwhelming. Charms and artifact qualities can raise an attack's Overwhelming value.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Intimacies (Ties and Principles)",
+        "keys": [
+          "intimacy",
+          "intimacies",
+          "tie",
+          "principle",
+          "defining intimacy"
+        ],
+        "content": "Intimacies are an Exalt's emotional and ideological anchors. Two kinds: TIES (a strong feeling toward an external subject — person, place, organization, idea) and PRINCIPLES (an internal credo or belief). Three intensity degrees: MINOR (a soft preference), MAJOR (a real commitment that shapes behavior), DEFINING (an identity-level conviction). Defining Intimacies provide outright immunity to Decision-Influence social attacks that contradict them; Major Intimacies can be invoked to resist such attacks at higher Willpower cost; Minor Intimacies bend in play. Story actions that align with an Intimacy regain Willpower; betraying a Defining Intimacy can trigger Limit gain or breakdown for the Solar Exalted. Intimacies evolve through play and certain Charms can shift their degree or replace them.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Mechanic: Mote Commitment",
+        "keys": [
+          "commit motes",
+          "mote commitment",
+          "personal motes",
+          "peripheral motes",
+          "mote pool",
+          "atemi",
+          "attune artifact",
+          "attuned artifact",
+          "committed motes"
+        ],
+        "content": "Mote commitment locks a portion of the Exalt Essence pool to sustain a persistent effect — an attuned artifact, an active Charm with a Reflexively Maintained duration, an atemi committed to a defensive stance. Motes spent this way are unavailable for any other use until commitment is released. Two pools: Personal (small, always-available, 5/Essence rating motes for self-sustaining effects) and Peripheral (larger, refilled by drawing on the anima banner — outward expressions of power). Commitment subtracts from the named pool; release restores. Pool floor is 0 — the Exalt cannot commit motes they do not have. Switching commitment between pools (Personal → Peripheral) restores the old commit to the old pool first, then debits the new commit from the new pool atomically.\n\nState-mutator tag: [mrr-state: field=\"commitment\" item=\"<artifact name>\" motes=\"<int>\" pool=\"Personal|Peripheral\"]. motes=\"0\" releases. Pool floor and exclusivity (mote-committed items cannot be attuned/invested) are enforced at parse time; rejection surfaces as a toast and leaves the sheet unchanged.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Rule: Character creation flow (Solar)",
+        "keys": [
+          "character creation",
+          "create character",
+          "make a solar",
+          "starting character",
+          "character build"
+        ],
+        "content": "Solar PCs are built in eight steps. 1) Concept & Caste (Dawn/Zenith/Twilight/Night/Eclipse). 2) Attributes — split 9 dots across the Primary category, 7 across the Secondary, 5 across the Tertiary (Physical/Social/Mental), every Attribute starts at 1. 3) Abilities — 28 dots over 25 Abilities, max 3 in any one, at least one Caste/Favored Ability at 3. 4) Merits — 10 dots from the Merit lists. 5) Charms — 15 Charms (≥10 must be Solar Charms; up to 5 Martial Arts or other-non-Caste). 6) Intimacies — one Defining plus four Minor/Major. 7) Bonus Points — 15 BP to round out. 8) Finishing Touches — Essence 1, Willpower 5, Limit 0, pick a Limit Trigger, designate the Supernal Ability, derive Health/Initiative/Defense/Resolve/Guile.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Bonus Point costs at creation",
+        "keys": [
+          "bonus point",
+          "bonus points",
+          "BP cost",
+          "creation cost"
+        ],
+        "content": "Bonus Point costs (Solar, 15 BP total). Attribute = 4 BP (3 if Caste/Favored). Caste or Favored Ability = 1 BP. Non-Caste/Favored Ability = 2 BP. Specialty = 1 BP. Merit dot = 1 BP. Willpower dot = 2 BP. Caste/Favored Charm = 4 BP, non-Caste Charm = 5 BP. Spell in the sorcerer's highest Circle = 4 BP if Occult is Caste/Favored, 5 if not. Mortals build with 21 BP, cap 7 Merit dots, and get no Charms.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Specialties",
+        "keys": [
+          "specialty",
+          "specialties",
+          "specialized"
+        ],
+        "content": "A Specialty is a narrow application of an Ability (Melee: Daiklaves; Socialize: Court Intrigue; Survival: The Wyld). When it applies to the current roll, +1 die. Up to three Specialties per Ability, each bought separately. Specialty also feeds derived static values — Resolve and Guile include +1 if a Specialty applies in context.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Experienced Solar build",
+        "keys": [
+          "experienced solar",
+          "veteran solar",
+          "essence 2 build"
+        ],
+        "content": "An Experienced Solar starts closer to mid-arc: 13 Merits, 20 Charms (one may be Solar Circle Sorcery if Essence 3+), Essence 2, and 18 Bonus Points. Use when the troupe wants to skip the freshly-Exalted opening or when the campaign concept demands veterans. All other creation rules apply normally.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Caste Abilities — full reference",
+        "keys": [
+          "dawn abilities",
+          "zenith abilities",
+          "twilight abilities",
+          "night abilities",
+          "eclipse abilities",
+          "caste ability list"
+        ],
+        "content": "Each Caste has 8 Caste Abilities; the player picks 5 of those as Caste, then 5 anywhere on the list as Favored. Dawn: Archery, Awareness, Brawl/Martial Arts, Dodge, Melee, Resistance, Thrown, War. Zenith: Athletics, Integrity, Performance, Lore, Presence, Resistance, Survival, War. Twilight: Bureaucracy, Craft, Integrity, Investigation, Linguistics, Lore, Medicine, Occult. Night: Athletics, Awareness, Dodge, Investigation, Larceny, Ride, Stealth, Socialize. Eclipse: Bureaucracy, Larceny, Linguistics, Occult, Presence, Ride, Sail, Socialize. Caste + Favored (10 total) cost less in Charm purchase. One Caste Ability is the Supernal — treated as Essence 5 for Charm prerequisites.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Caste Anima Effects (all five)",
+        "keys": [
+          "anima effect",
+          "caste anima",
+          "dawn anima",
+          "zenith anima",
+          "twilight anima",
+          "night anima",
+          "eclipse anima"
+        ],
+        "content": "Each Caste has signature anima-banner effects, paid in motes once anima reaches Burning (11+ Peripheral spent). DAWN — pay 10m to make presence a weapon; enemies who see her suffer Resolve/Initiative-shifting morale penalties, scaling to terror at Iconic. ZENITH — pay 10m once per scene for aggravated damage against the undead/Creatures of Darkness, or to consecrate corpses against rising; her anima beacons inspire mortals and purge minor undead at Iconic. TWILIGHT — pay 10m for soak equal to Essence rating until next turn (defensive radiant cocoon), often extending to allies at Iconic. NIGHT — only Caste whose anima can be SUPPRESSED at Glowing (1m extra per stealth-mote spent) to stay hidden; at higher tiers Night uses anima tricks to confuse witnesses about who struck. ECLIPSE — pay 10m + 1wp to sanctify a binding oath (oath-breakers suffer divine retribution); also grants Heaven-recognized diplomatic safe-passage against spirits and gods.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: The nine Attributes",
+        "keys": [
+          "attribute",
+          "attributes",
+          "strength",
+          "dexterity",
+          "stamina",
+          "charisma",
+          "manipulation",
+          "appearance",
+          "perception",
+          "intelligence",
+          "wits"
+        ],
+        "content": "Nine Attributes in three categories. PHYSICAL — Strength (raw power, Feats of Strength), Dexterity (agility, attacks, dodge), Stamina (endurance, soak, resist poison/disease). SOCIAL — Charisma (honest leadership, inspiration), Manipulation (deceit, persuasion against the speaker's interest), Appearance (visual presence, often gates social reach). MENTAL — Perception (noticing, ambush detection), Intelligence (analysis, problem-solving, sorcery shaping), Wits (reflexes, Join Battle, quick thinking). Attributes cap at 5 in play (Charms can effectively exceed). Each starts at 1.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: The 25 Abilities (reference)",
+        "keys": [
+          "ability list",
+          "abilities reference",
+          "all abilities"
+        ],
+        "content": "The 25 Abilities: Archery, Athletics, Awareness, Brawl, Bureaucracy, Craft, Dodge, Integrity, Investigation, Larceny, Linguistics, Lore, Martial Arts, Medicine, Melee, Occult, Performance, Presence, Resistance, Ride, Sail, Socialize, Stealth, Survival, Thrown, War. Brawl and Martial Arts can both be rated, but Solar Charm cascades branch into Brawl OR Martial Arts trees. Linguistics 1 = one Native + (Linguistics) additional languages. Lore covers academic knowledge, history, and spirit identification. Resistance powers soak, willpower regen, and endurance Charms.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Merit categories",
+        "keys": [
+          "merit",
+          "merits",
+          "innate merit",
+          "purchased merit",
+          "story merit"
+        ],
+        "content": "Merits are extra traits beyond Attributes and Abilities. Three categories. INNATE — biological/natural (Strong Lungs, Pain Tolerance, Iron Stomach, Eidetic Memory); cannot be purchased mid-arc, cannot be lost in play. PURCHASED — acquired training or possessions (Resources, Fast Reflexes, Quick Draw, Ambidextrous); bought with BP or XP, may be lost narratively. STORY — defined by ongoing fiction (Allies, Contacts, Mentor, Followers, Manse, Cult); can grow or be lost via play. Merit dots typically run 1-5. Some Merits gate other character options (Manse provides a Hearthstone; Artifact provides equipment that requires attunement).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Common Merits sampler",
+        "keys": [
+          "resources merit",
+          "allies merit",
+          "backing merit",
+          "mentor merit",
+          "followers merit",
+          "manse merit",
+          "demesne merit",
+          "hearthstone merit",
+          "artifact merit",
+          "influence merit",
+          "contacts merit",
+          "cult merit"
+        ],
+        "content": "Commonly-taken Merits. Resources (1-5) — cash and material wealth, gates lifestyle and Equipment access. Allies (1-5) — characters who provide aid, ranked by capability. Backing — formal rank within an organization. Mentor — a more powerful figure who teaches or advises. Followers — a group of devoted retainers. Contacts — a network providing information. Cult — worshipers who provide motes through devotion (1 = small shrine, 3 = local cult). Manse (1-5) — a place of geomantic power, generates a Hearthstone of equal rating. Demesne — wild geomantic site without a manse; may aid sorcery. Hearthstone — focused crystal granting specific magical benefits, dot-rated. Artifact (1-5) — a magical item; must be attuned (commit motes) to use. Influence — political pull within a polity or institution.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Supernatural Merits",
+        "keys": [
+          "supernatural merit",
+          "wings merit",
+          "claws merit",
+          "wall walking",
+          "tail merit",
+          "gills merit",
+          "venomous merit",
+          "thaumaturgist"
+        ],
+        "content": "Supernatural Merits represent non-mortal biology or limited innate magic. Examples: Wings (small = glide; full = flight). Claws/Fangs/Hooves/Horns (natural weapons, stat as light or medium). Wall Walking (cling to vertical surfaces without rolls). Tail (extra grasping limb). Gills (breathe water). Venomous (natural toxin, stat as a Damage/Interval poison). Enhanced Sense (one specific sense at superhuman acuity). Quills, Unusual Hide, Poisoned Body, Subtlety, Chameleon, Extra Limbs, Exalted Healing (mortals only). Thaumaturgist — limited mundane magic outside the Sorcery system. Usually restricted to non-human Exalts, beastfolk, or ST-approved exceptions.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Flaws & Derangements",
+        "keys": [
+          "flaw",
+          "flaws",
+          "derangement",
+          "addiction",
+          "blind flaw",
+          "amputee",
+          "deaf",
+          "mute",
+          "wyld mutant",
+          "hysteria",
+          "paranoia"
+        ],
+        "content": "Flaws are persistent negative traits that grant a small BP refund at character creation (typically 2-4 BP each). Examples: Addiction (must satisfy regularly or suffer penalties); Amputee (missing limb); Blind; Deaf; Mute; Sterile; Wyld Mutant (visibly chaos-touched, social and sometimes mechanical penalties); Derangement (one of five named mental conditions). The five named Derangements: Hysteria (overwhelming emotional response under stress); Madness (full break from reality in extreme moments); Megrims (paralyzing depression cycles); Obsession (fixation on a person/object/idea); Paranoia (persistent unfounded suspicion). Each Derangement has ST-narrated triggers and a recurring mechanical bite.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Great Curse, Limit, Limit Trigger",
+        "keys": [
+          "great curse",
+          "limit",
+          "limit trigger",
+          "limit break",
+          "torment"
+        ],
+        "content": "The Great Curse is the punishment placed on the Solar Exalted by the Neverborn — a defect in their souls that manifests as a Virtue Flaw chosen at creation. Limit is a 0-10 track. When the Solar's Limit Trigger occurs (an event the player defines at creation, e.g. 'I act against my own Defining Intimacy' or 'someone betrays my trust') the Solar gains 1 Limit. Botched rolls involving a Defining Intimacy, or prolonged abuse of one's nature, can also push Limit up at ST discretion. At Limit 10 the Solar enters Limit Break — a Virtue-Flaw-driven outburst lasting one scene, where behavior is dictated by the chosen flaw. After Limit Break, Limit resets to 0.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Virtue Flaws (the nine)",
+        "keys": [
+          "virtue flaw",
+          "all-consuming grief",
+          "berserk anger",
+          "chains of honor",
+          "compassionate martyrdom",
+          "contempt of the virtuous",
+          "crushing doubt",
+          "deliberate cruelty",
+          "heart of flint",
+          "rampaging avarice"
+        ],
+        "content": "The nine Virtue Flaws — pick one at creation; it expresses during Limit Break. (1) All-Consuming Grief — collapses into grief, withdraws, refuses to act. (2) Berserk Anger — uncontrolled rage, lashes at the nearest source of frustration. (3) Chains of Honor — bound to a code so rigid that flexibility becomes impossible. (4) Compassionate Martyrdom — sacrifices everything (even tactical sense) for others. (5) Contempt of the Virtuous — sneers at allies and ideals, undermines collaboration. (6) Crushing Doubt — paralyzed by second-guessing. (7) Deliberate Cruelty — calculatedly hurtful in word and deed. (8) Heart of Flint — coldness, refuses connection, pushes away those who matter. (9) Rampaging Avarice — overwhelming hunger for wealth, power, or possession.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Withering vs Decisive (combat core)",
+        "keys": [
+          "withering",
+          "decisive",
+          "withering attack",
+          "decisive attack",
+          "wear down",
+          "killing blow"
+        ],
+        "content": "Two attack modes. WITHERING — pool (Dexterity + Combat Ability + weapon Accuracy) vs Defense; threshold successes + weapon raw damage = raw damage; minus target's soak = Initiative transferred from defender to attacker. Withering NEVER touches the Health track. Goal: build Initiative. DECISIVE — pool (Dexterity + Combat Ability) vs Defense; threshold successes do NOT add to damage; on a hit, roll damage dice equal to current Initiative, apply to Health (bashing/lethal/aggravated by weapon), then reset Initiative to base 3. Decisive does NOT add weapon damage or Initiative to the damage dice — Initiative IS the damage. Initiative Crash (≤0) bars decisive attacks until rebuilt.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Join Battle & Initiative tempo",
+        "keys": [
+          "initiative",
+          "join battle",
+          "jb",
+          "combat order"
+        ],
+        "content": "When combat begins every participant rolls Join Battle: (Wits + Awareness) + a flat +3 bonus. Successes set starting Initiative. Highest Initiative acts first; ties broken by Wits, then Awareness, then player choice. Initiative shifts during play — withering attacks transfer Initiative between attacker and defender, decisive resets to 3 after launch, Aim adds Initiative, certain Charms add or cost Initiative. At the start of each new round, participants re-sort by current Initiative value before acting. Crashed characters (Initiative ≤0) still act but cannot make decisive attacks.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Initiative Crash & Initiative Break",
+        "keys": [
+          "initiative crash",
+          "crashed",
+          "initiative break"
+        ],
+        "content": "Initiative Crash — when a character's Initiative drops to 0 or below from a withering attack. While Crashed: Hardness counts as 0 against decisive attacks targeting the Crashed character, she cannot make decisive attacks, and Perilous Charms are unavailable. She still acts and can rebuild Initiative via withering, Aim, or Charms. Initiative Break — the act of driving a foe from positive Initiative into Crash. The breaker GAINS +5 Initiative immediately as a reward. Hitting Initiative Break is a major tactical win in the Exalted combat economy even before you exploit the Crash itself.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Defense — Parry & Evasion",
+        "keys": [
+          "defense",
+          "parry",
+          "evasion",
+          "static defense"
+        ],
+        "content": "Defense is a static value an attacker must beat. Two values; the character picks the higher per attack. Parry = (Dexterity + Brawl, Martial Arts, OR Melee) ÷ 2 rounded up + the equipped weapon's Defense rating + applicable Specialty. Evasion = (Dexterity + Dodge) ÷ 2 rounded up - armor Mobility Penalty + applicable Specialty. Stance Charms and Reflexive defense Charms can raise either. Onslaught penalty (cumulative -1 per attack since the character's last action) reduces the chosen Defense; Onslaught resets when she next acts.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Onslaught penalty",
+        "keys": [
+          "onslaught",
+          "multiple attackers"
+        ],
+        "content": "Onslaught — a cumulative -1 penalty to Defense for each attack made against a character since her last turn. Resets when she next acts. Onslaught punishes a defender being focus-fired in the same round; by the third or fourth incoming swing, Defense has dropped meaningfully. Mortals get dismantled this way; Exalts use Initiative tempo or Charms to mitigate. Onslaught applies to both Parry and Evasion regardless of which the defender chooses.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Soak & Armor",
+        "keys": [
+          "soak",
+          "armor",
+          "natural soak",
+          "mobility penalty",
+          "buff jacket",
+          "articulated plate"
+        ],
+        "content": "Soak = Natural soak (= Stamina) + Armor soak. Reduces withering raw damage one-for-one. Soak does NOT subtract from decisive damage dice — decisive ignores soak; only Hardness or Charm-granted reduction shields against decisive. Sample armor: Buff Jacket (Light) +2 soak, Mobility 0; Reinforced Buff Jacket (Medium) +4 soak, Mobility -1; Articulated Plate (Heavy) +7 soak, Mobility -3. Mobility Penalty subtracts from Evasion and Athletics-driven movement actions. Artifact armor often provides aggravated soak and Hardness ratings impossible for mundane gear.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Damage types & healing",
+        "keys": [
+          "bashing",
+          "lethal",
+          "aggravated",
+          "damage type",
+          "healing rate"
+        ],
+        "content": "Four damage types. INITIATIVE damage — from withering attacks; transfers Initiative; never touches Health. BASHING — blunt force; mortals heal 1 box/hour, Solars 1 box/15 min. LETHAL — cutting/piercing/devastating force; mortals heal 1 box/day, Solars 1 box/3 hours. AGGRAVATED — supernatural / fire / acid / undeath-corruption damage; mortals heal 1 box/week, Solars 1 box/day. Aggravated cannot be soaked by mundane armor (some artifact armor and Charms grant aggravated soak). An Exalt Incapacitated by aggravated damage is in maximum mortal danger.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Combat actions (per turn)",
+        "keys": [
+          "combat action",
+          "aim action",
+          "defend other",
+          "draw weapon",
+          "full defense",
+          "flurry",
+          "miscellaneous action"
+        ],
+        "content": "Standard combat actions. ATTACK (withering or decisive). AIM — next turn's attack ignores cover penalties and gains +3 dice. DEFEND OTHER — a designated ally uses the defender's Parry until the defender's next action. DRAW/READY — draw or sheath a weapon; takes the action unless a Charm or Merit makes it reflexive. FULL DEFENSE — forfeit the attack to gain +2 Defense until next turn. FLURRY — split one action into two separate attacks/effects at -3 dice each and -1 Defense for the round. MISCELLANEOUS — any narrative action that takes the turn. Reflexive actions (Charms, dodges, anima activations) do not use the action slot. Move (one range band) is reflexive in addition to the action.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Range bands & movement",
+        "keys": [
+          "range band",
+          "close range",
+          "short range",
+          "medium range",
+          "long range",
+          "extreme range",
+          "rush",
+          "disengage",
+          "withdraw",
+          "rise from prone"
+        ],
+        "content": "Five range bands. Close (within arm's reach, melee) → Short (a few paces) → Medium (across a room or alley) → Long (across a hall or street) → Extreme (long bowshot, edge of visibility). One reflexive Move per turn shifts one band. RUSH — close the gap by one band against a target trying to keep distance (contested Dex+Athletics). DISENGAGE — leave melee (Dex+Dodge vs opponent's Dex+Athletics); on success, move one band away. WITHDRAW — fully exit combat range, only when no engaged foe is within Close. RISE FROM PRONE — uses Miscellaneous action. Difficult terrain doubles Move costs or imposes -1 to combat rolls; Charms can ignore.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Take Cover",
+        "keys": [
+          "take cover",
+          "cover bonus",
+          "light cover",
+          "heavy cover",
+          "full cover"
+        ],
+        "content": "Cover gives Defense bonuses against ranged and some thrown/area attacks. Light cover (low wall, small obstacle) = +1 Defense vs ranged. Heavy cover (large barrel, doorway) = +2 vs ranged. Full cover (behind a wall, around a corner) = ranged attacks cannot target without line of sight or attack-through-cover Charms. Aim action negates cover for the aimed attack. Cover does not protect against thrown grenades or area-effect attacks.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Gambits (decisive trick attacks)",
+        "keys": [
+          "gambit",
+          "gambits",
+          "disarm gambit",
+          "unhorse gambit",
+          "distract gambit",
+          "grapple gambit"
+        ],
+        "content": "A Gambit is a decisive attack that achieves a tactical effect instead of damage. The attacker rolls the decisive pool; on a hit, instead of damage dice she beats a difficulty using her CURRENT Initiative (paid as gambit cost), minimum 1 success. Her Initiative drops to base 3 afterward. Examples: Disarm (diff 3, knock weapon away). Unhorse (diff 4, dismount rider). Distract (diff 3-5, inflict -1 Defense for next attack or similar one-round effect). Grapple (diff 2, establish a grapple — see grappling rules). Gambits are how to introduce non-damage outcomes without house-ruling.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Grappling",
+        "keys": [
+          "grapple",
+          "grappled",
+          "grappling",
+          "control roll",
+          "throw",
+          "savage"
+        ],
+        "content": "Grappling begins as a Grapple Gambit (diff 2). On success, the attacker gains Control rounds equal to her threshold successes + 1. Each Control round, the grappler picks one effect. HOLD — target loses her turn, -2 Defense. THROW — deal decisive damage as a thrown attack and end the grapple, or hurl the target into a hazard. RESTRAIN — force a contested Strength+Athletics for the target to escape. SAVAGE — automatic withering damage equal to grappler's Strength. At the start of each round in an ongoing grapple, both roll Strength+Athletics; higher result dictates the next round's effect. Crashed characters cannot maintain Control.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Stealth, Ambush, Surprise",
+        "keys": [
+          "ambush",
+          "surprise attack",
+          "stealth attack",
+          "hold at bay",
+          "go to ground"
+        ],
+        "content": "AMBUSH — target had no idea an attack was coming; Defense against the ambush attack is 0 (auto-hit unless she rolls Awareness to detect). SURPRISE ATTACK — target knows there's a threat but didn't see THIS attack coming; -2 Defense against the surprise attack. Both Ambush and Surprise gate on succeeding a contested Dex+Stealth vs target's Perception+Awareness BEFORE the strike. HOLD AT BAY — using a long weapon to keep a closing enemy at Short range; opponent must succeed Dex+Athletics to close. GO TO GROUND — break line of sight in a busy environment, ending immediate combat by hiding (Stealth vs all observers' Awareness).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Experience point costs",
+        "keys": [
+          "xp",
+          "experience",
+          "xp cost",
+          "buying charm",
+          "raise ability",
+          "raise attribute"
+        ],
+        "content": "XP costs (Solar). Attribute = current rating × 4. Caste/Favored Ability = (current × 2) - 1. Non-Caste/Favored Ability = current × 2. New Ability dot 1 = 3. Specialty = 3. Merit = new rating × 3. Willpower = 8 per dot. Caste/Favored Charm = 8 XP (10 if non-Caste). Spell = 8 if Occult Caste/Favored, else 10. Evocation = 10 XP. XP awards are typically 4-8 per session at the ST's discretion. Solar Experience (sxp) — additional Caste-aligned currency awarded for Expression Bonus and Role Bonus play; cannot raise Essence.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Solar Experience (sxp)",
+        "keys": [
+          "solar experience",
+          "sxp",
+          "expression bonus",
+          "role bonus",
+          "caste experience"
+        ],
+        "content": "Solar Experience (sxp) is a second currency, spendable only on Caste/Favored Charms, Caste/Favored Abilities, Willpower, or improvements aligned with the Caste's nature. Two sources per session. EXPRESSION BONUS (2 sxp) — emphasize the Solar's nature: share the spotlight, express a Defining Intimacy memorably, take risks aligned with the Solar role. ROLE BONUS (2 sxp) — deliver on the Caste's niche: Dawn wins the field, Twilight unlocks a key secret, Night executes a perfect heist, Zenith inspires the broken, Eclipse brokers an impossible deal. sxp does NOT count toward raising Essence.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Raising Essence",
+        "keys": [
+          "raise essence",
+          "essence rating",
+          "essence advancement",
+          "essence 2",
+          "essence 3",
+          "essence 4",
+          "essence 5"
+        ],
+        "content": "Raising the Solar's Essence rating: spend XP (not sxp) at the listed cost, plus a training time (typically a full Story arc per rating). Costs: Essence 2 = 50 xp; Essence 3 = 125 xp; Essence 4 = 200 xp; Essence 5 = 300 xp. The character must also have earned the rating in play — Essence dots represent breakthroughs, not bookkeeping. Each new dot expands Personal and Peripheral pools, unlocks Charms with that Essence prerequisite, and broadens narrative scope (E3 = heroic, E5 = legendary).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Battle Groups — Size, Drill, Might, Magnitude",
+        "keys": [
+          "battle group",
+          "battle groups",
+          "size",
+          "drill",
+          "might",
+          "magnitude",
+          "mass combat",
+          "squad",
+          "unit"
+        ],
+        "content": "A Battle Group is an abstracted military unit. Four traits. SIZE 0-5+ (1 = squad, 3 = company, 5 = legion; grants scaling accuracy, raw damage, soak bonuses, plus Magnitude track equal to Size+3). DRILL — Poor (-2 commander rolls, +1 rout-check difficulty against them); Average (baseline +1 Defense); Elite (+2 commander rolls, +2 Defense, harder to rout). MIGHT 0-3 (0 = mortal; 1 = minor supernatural; 2 = lesser exalted/heroic; 3 = Celestial-tier; applies bonuses to accuracy/damage/Defense). MAGNITUDE — the unit's HP track; withering damage fills boxes; full depletion collapses the unit into slaughter or dispersal.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Fighting Battle Groups",
+        "keys": [
+          "attacking battle group",
+          "fight a unit",
+          "area attack",
+          "battle group combat",
+          "inert initiative"
+        ],
+        "content": "Battle Groups attack only with withering against single targets, or limited area attacks against multiple targets at -1 die per additional target. Their Initiative is INERT — they do not Crash and do not benefit from Initiative Break bonuses. Decisive attacks against a Battle Group add +1 damage die per 4 dice in the decisive damage roll, modeling the unit's diffuse vulnerability. A single Exalted hero can wound a unit meaningfully but rarely rout it alone; typical fights need multiple PCs or a counter-unit. Charms with area effects, fire, or terror are extraordinarily potent against units.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Rout, Slaughter, Perfect Morale",
+        "keys": [
+          "rout",
+          "rout check",
+          "slaughter",
+          "perfect morale",
+          "broken unit"
+        ],
+        "content": "When a Battle Group falls below half Magnitude, loses its commander, suffers a major morale shock, or when the ST calls for it, the unit makes a Rout Check. Roll Willpower (treat commander's Willpower or a default 3 for leaderless mortal units). Difficulty depends on source: 1 mild fear, 3 commander killed in plain sight, 5 supernatural terror. On failure the unit is ROUTED — Defense drops to half, attacks lose 3 dice, the unit attempts to flee. SLAUGHTER — once routed, each successful attack deals double Magnitude damage. PERFECT MORALE — Charms or anima banner effects can prevent or interrupt rout entirely.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Command Actions",
+        "keys": [
+          "command action",
+          "order action",
+          "rally",
+          "rally for numbers",
+          "commander"
+        ],
+        "content": "A Battle Group commander uses one Command Action per round. Three options. ORDER — direct the unit to a specific action (withering, area attack, take cover, fall back); commander's combat pool substitutes for the unit's where appropriate. RALLY — Charisma+War roll; success restores one box of Magnitude or recovers from Rout. RALLY FOR NUMBERS — extended roll over rounds to gather scattered remnants and reform a routed unit into a working group. Charms attached to War or to the Eclipse anima can extend or amplify Command Actions.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Strategic Warfare stratagems",
+        "keys": [
+          "strategic warfare",
+          "stratagem",
+          "back to the sea",
+          "demoralized",
+          "fortifications stratagem",
+          "ambush stratagem",
+          "pincer",
+          "strategic placement"
+        ],
+        "content": "Pre-combat strategic positioning, resolved as paired Wits+War rolls or scene-prep planning. Each stratagem needs a number of Threshold successes during prep. BACK TO THE SEA (thr 1) — your unit cannot rout, but if Crashed it suffers slaughter conditions. STRATEGIC PLACEMENT (thr 1) — opponent suffers a difficulty penalty on Join Battle. DEMORALIZED (thr 2) — opponent -1 die to attacks for the scene. FORTIFICATIONS (thr 2) — your unit's Defense +2, opponent must spend an action to breach. AMBUSH (thr 3) — your first round is a free attack at Ambush conditions. PINCER (thr 3) — opponent's unit is Crashed at start of combat. Stack with Charm support for shattering force-multiplier effects.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Resolve & Guile (social defense)",
+        "keys": [
+          "resolve",
+          "guile",
+          "social defense",
+          "static social"
+        ],
+        "content": "Resolve and Guile are static social defenses. RESOLVE = (Wits + Integrity + relevant Specialty) ÷ 2, rounded up. Resists Instill, Persuade, Threaten, Bargain, Inspire. GUILE = (Manipulation + Socialize + relevant Specialty) ÷ 2, rounded up. Resists Read Intentions. Charms can raise either. Written / formal communication channels grant the target +2 Resolve representing the time to consider. Appearance bonus or penalty modifies social attack rolls based on the relative Appearance dot gap between speaker and target.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Intimacy intensity in social conflict",
+        "keys": [
+          "intimacy bonus",
+          "minor intimacy bonus",
+          "major intimacy bonus",
+          "defining intimacy bonus",
+          "supportive intimacy",
+          "opposing intimacy"
+        ],
+        "content": "Intimacies bend Resolve in social influence. SUPPORTIVE — when the influence aligns with a target's Intimacy: Minor = +1 die or -1 Resolve, Major = +2 / -2, Defining = +3 / -3 (ST may waive the roll for Defining alignment). OPPOSING — when the influence opposes a Tie/Principle: Minor = -1 die / +1 Resolve, Major = -2 / +2, Defining = -3 / +3, and a Defining-opposing influence CANNOT succeed without first overcoming or weakening that Defining (typically via Instill in earlier scenes). Supportive/opposing assessment is the ST's call based on which Intimacy reads as triggered.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Instill action",
+        "keys": [
+          "instill",
+          "build intimacy",
+          "erode intimacy",
+          "weaken intimacy"
+        ],
+        "content": "Instill — a social action that creates a new Intimacy in the target or shifts an existing one. Pool: typically (Charisma + Presence/Performance/Socialize) vs target's Resolve. Goal: have the target gain a Minor Intimacy aligned with the pitch (a new Tie toward someone, a new Principle); or weaken an existing opposing Intimacy by one intensity (Defining → Major → Minor → none). Each successful Instill shifts intensity by ONE step. Instilling typically requires the target to be receptive in the moment; a Defining belief cannot be Instilled away in one scene — that takes a story arc of accumulating successful Instills.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Persuade tiers",
+        "keys": [
+          "persuade",
+          "inconvenient persuade",
+          "serious persuade",
+          "life-changing persuade"
+        ],
+        "content": "Persuade — convince the target to take a specific course of action. Three tiers by ask. INCONVENIENT — a Minor-Intimacy-level concession (deliver a message, share a small secret, vouch for the speaker); (Charisma+Presence) vs Resolve. SERIOUS — a Major-Intimacy-level commitment (betray a friend, change sides, marry a chosen partner); (Manipulation/Charisma + Presence/Performance) vs Resolve, often modified by Intimacies; a Major-or-stronger contrary Intimacy lets the target invoke a Decision Point and spend Willpower to refuse outright. LIFE-CHANGING — a Defining-Intimacy-level commitment (abandon one's god, kill one's king, swear permanent oath); typically an extended influence campaign across scenes, or single-roll only with Charm support.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Bargain / Threaten / Inspire / Read Intentions",
+        "keys": [
+          "bargain",
+          "threaten",
+          "inspire",
+          "read intentions"
+        ],
+        "content": "Four further social actions. BARGAIN — (Manipulation + Bureaucracy/Socialize) vs Resolve. Offer a concrete exchange; success makes the trade compelling, target must accept or invoke a Decision Point. THREATEN — (Charisma + Presence) vs Resolve. Impose a credible negative consequence to force compliance; substantial failure may inflict fear-related Conditions on the speaker. INSPIRE — (Charisma + Performance/Presence) vs Resolve. Move a group emotionally toward an ideal or action; rally crowds, troops, congregations. READ INTENTIONS — (Perception + Socialize/Investigation) vs target's Guile. Success reveals the target's current emotional state, surface goals, or hints of deception; threshold successes deepen the read.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Decision Points & Unacceptable Influence",
+        "keys": [
+          "decision point",
+          "spend willpower to resist",
+          "unacceptable influence",
+          "reject social"
+        ],
+        "content": "When a social influence SUCCEEDS but the demanded action would betray a Major or Defining Intimacy, the target invokes a DECISION POINT: she may spend 1 Willpower to refuse entirely. The expenditure represents summoning conviction from her Intimacy. UNACCEPTABLE INFLUENCE — an influence asking the target to violate a Defining Intimacy or that the ST deems impossible to accept in character; fails automatically, the target need not even invoke a Decision Point. One-vs-many influence (single speaker addressing a hostile crowd) takes -3 dice unless Charms apply. Written / gestural / non-real-time channels grant target +2 Resolve.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Feats of Strength",
+        "keys": [
+          "feat of strength",
+          "feats of strength",
+          "strength feat",
+          "lift",
+          "force"
+        ],
+        "content": "Feats of Strength — beyond-mortal physical accomplishments. Pool: Strength + Athletics. Difficulty rises with the feat. Strength 1 can attempt 1-success feats (snap thick rope, smash shoddy door). Strength 3 enables 3-success feats (carry a heavy man across a chasm). Strength 5 enables 5-success feats (lift a horse). Strength 8+ (Charm-augmented Solar tier) enables outrageous feats (pull down a city gate). Charms can reduce difficulty or auto-succeed. Specialties (Lifting, Pushing) add +1 die.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Survival, Tracking, Wilderness",
+        "keys": [
+          "survival",
+          "tracking",
+          "wilderness",
+          "forage",
+          "navigate"
+        ],
+        "content": "Wilderness rules. FORAGE / FIND SHELTER / NAVIGATE without map: (Perception or Wits + Survival), difficulty 1-3 in familiar terrain, 4-5 in harsh terrain (Wyld, deep desert, ice fields). TRACKING: (Perception + Survival) vs the quarry's evasion modifiers; tracks fade by 1 die of difficulty per hour of weather or 1 day in good conditions. CROSSING DIFFICULT TERRAIN AT SPEED: (Stamina + Athletics) periodic rolls; failure costs time or imposes fatigue. Charms can negate environmental penalties for an entire scene (Hardship-Surviving Mendicant Spirit).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Environmental hazards & traps",
+        "keys": [
+          "hazard",
+          "environmental hazard",
+          "lava",
+          "acid bath",
+          "sandstorm",
+          "trap",
+          "trap damage"
+        ],
+        "content": "Hazards have Damage/Interval (e.g. 4L/round = 4 lethal per round) and Difficulty (the Stamina+Resistance or similar roll to mitigate). Sample table: Acid bath 3L/round (diff 5); Severe heat/cold 1B/hour (diff 1); Bonfire 4L/round (diff 5); Lava 6L/round (diff 5); Severe sandstorm 1L/minute (diff 3); Supernatural ice storm 2L/minute (diff 3); Silent Wind of Hell 4A/round (diff 4). Successes on the resistance roll halve incoming damage or extend the interval. TRAPS work the same way but offer a Perception+Awareness check to spot before triggering, and usually have no ongoing interval — instant-effect bite. Disarming a spotted trap is typically (Dexterity + Larceny) at the same difficulty as spotting.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Falling damage",
+        "keys": [
+          "fall",
+          "falling",
+          "falling damage",
+          "drop"
+        ],
+        "content": "Falling damage by range band of descent. CLOSE — none. SHORT — 3 levels automatic bashing + 5 dice bashing. MEDIUM — 4 levels automatic lethal + 7 dice bashing. LONG — 5-7 levels automatic lethal + 8-12 dice bashing. EXTREME — 7-10 levels automatic lethal + 10-14 dice bashing. All falling damage ignores soak and Hardness — applied directly to Health like a decisive attack. A good stunt (catching a banner, landing in water, stabbing a dagger into a wall) lets the player adjust the band down by one. Charms and Wings prevent or reduce falling damage entirely.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Poisons",
+        "keys": [
+          "poison",
+          "poisoned",
+          "venom",
+          "envenom",
+          "toxin",
+          "antivenin"
+        ],
+        "content": "Poison has four stats. DAMAGE/INTERVAL — damage per timed interval (1L/round, 2L/day). DURATION — how long the effect runs (rounds, hours, days). PENALTY — flat dice penalty to all actions while poisoned. VECTOR — how it's contracted (damage, ingestion, inhalation, touch). On exposure, victim rolls (Stamina + Resistance); each success removes one unit of Duration. Exalts can reduce Duration to zero with enough successes; mortals can only halve. Most short-Interval combat poisons deal INITIATIVE damage, not Health damage — a poisoned weapon bleeds the foe's Initiative pool round by round; once the victim is Crashed, the damage often converts to lethal Health damage. Multiple doses of the same poison stack their Durations.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Reference: Sample poisons table",
+        "keys": [
+          "arrow frog venom",
+          "arsenic",
+          "curare",
+          "hemlock",
+          "snake venom",
+          "yozi venom"
+        ],
+        "content": "Sample poison stats. Arrow Frog Venom — 3i/round (L in Crash), Duration 5 rounds, Penalty -2, Vector Damage or Ingestion. Arsenic — 2L/day, Duration 7 days, Penalty 0, Vector Ingestion. Curare — 1i/round (B in Crash), Duration 10 rounds, Penalty -2, Vector Damage. Hemlock — 2L/hour, Duration 5 hours, Penalty -4, Vector Ingestion. Snake Venom — 2i/round (L in Crash), Duration 3 rounds, Penalty -3, Vector Damage. Yozi Venom — 1L/minute, Duration 10 minutes, Penalty -5, Vector Damage. 'L in Crash' means once Crashed, Initiative damage converts to lethal Health damage.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Disease",
+        "keys": [
+          "disease",
+          "diseased",
+          "sickness",
+          "infect",
+          "plague",
+          "virulence",
+          "morbidity"
+        ],
+        "content": "Disease has three stats. VIRULENCE — difficulty to avoid contracting on exposure. MORBIDITY — difficulty to keep symptoms from worsening. INTERVAL — time between progression rolls. On exposure: roll (Stamina + Resistance) vs Virulence; failure contracts the disease at Minor Symptom. Each Interval: roll vs Morbidity; failure shifts symptoms one step up (Minor → Major → Defining → Death for mortals), success holds, threshold successes can step the disease back down. Three symptom tiers: MINOR (cosmetic discomfort, no mechanical penalty). MAJOR (one auto-botched action per session at ST discretion, or -1 WP). DEFINING (auto-botch once per scene, narrative impairment). Exalts cannot die from natural disease; mortals can. Supernatural diseases may have additional effects at each tier.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Deprivation",
+        "keys": [
+          "deprivation",
+          "starvation",
+          "thirst",
+          "suffocate",
+          "drown",
+          "no food",
+          "no water"
+        ],
+        "content": "A character endures deprivation for (Stamina) units of time before consequences. AIR — suffocate after (Stamina) MINUTES without; (Stamina × 2) TURNS without air during combat or diving. WATER — die of dehydration after (Stamina) DAYS without. FOOD — perish from starvation after (Stamina) WEEKS without; -3 to all actions kicks in after (Stamina) DAYS without food, and again in the final hours of dehydration. Charms can ignore deprivation for the duration of the scene or longer.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Larceny actions",
+        "keys": [
+          "larceny",
+          "lockpicking",
+          "pickpocket",
+          "conceal evidence",
+          "disguise",
+          "thievery"
+        ],
+        "content": "Larceny covers thievery, disguise, and concealment. CONCEAL EVIDENCE — (Wits + Larceny) vs searchers' (Perception + Investigation). DISGUISE — (Wits or Manipulation + Larceny) sets a static Disguise Rating; observers beat that with (Perception + Investigation) to see through. LOCKPICKING — (Dexterity + Larceny) vs the lock's difficulty (1 simple latch, 5 master locksmith, 7+ magical seal); usually one roll per few minutes. PICKPOCKET — (Dexterity + Larceny) vs target's (Perception + Awareness), executed as a touch-range action; failure may include the target noticing. Charms like Flawless Pickpocketing Technique can auto-succeed.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Investigation actions",
+        "keys": [
+          "investigation",
+          "case scene",
+          "profile character",
+          "examine clue",
+          "investigate"
+        ],
+        "content": "Investigation covers crime scenes and reading people. CASE SCENE — (Perception + Investigation) sweeping a location for clues. Difficulty depends on cover-up quality; threshold successes reveal additional information (who, when, motive, escape route). PROFILE CHARACTER — (Perception + Investigation) studying a person's behavior to deduce profession, recent activities, or hidden agendas (vs target's Guile, or a flat difficulty if the target is unaware of the scrutiny). Some Charms (Judge's Ear Technique) auto-detect deception when triggered.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Crafting — four project tiers",
+        "keys": [
+          "crafting",
+          "craft project",
+          "basic project",
+          "major project",
+          "superior project",
+          "legendary project"
+        ],
+        "content": "Four crafting tiers. BASIC — small useful items (chair, horseshoe, fletched arrows); no slot used; (Attribute + Craft) vs ST difficulty; reward 2 silver XP per basic objective triggered. MAJOR — significant works (a sword, banquet, statue); uses a Major project slot; 10 silver XP to attempt; (Attribute + Craft) vs difficulty; reward 2 gold + 1 silver per objective. SUPERIOR — artifacts and large constructions; uses a Superior slot (fused from Major slots); 10 gold XP per roll attempt; extended roll difficulty 5, terminus 6, goal 30/50/75/100 by artifact rating; reward 3-9 white XP based on rating. LEGENDARY — N/A-rated First-Age artifice; requires Lore 5, Occult 5, Craft 5; 5 wp to slot; 10 white per attempt; 10 years' labor; goal 200. Botches on Superior/Legendary ruin the project.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Crafting experience (sxp / gxp / wxp)",
+        "keys": [
+          "crafting xp",
+          "silver xp",
+          "gold xp",
+          "white xp",
+          "project slot"
+        ],
+        "content": "Crafters earn three colors of crafting XP, each tier rewarding the level below. SILVER (sxp) — from Basic projects, spent on Major. GOLD (gxp) — from Major, spent on Superior. WHITE (wxp) — from Superior, spent on Legendary. Three basic objectives that grant crafting XP when triggered by a finished project: (a) the project causes another character to gain/strengthen an Intimacy toward you; (b) the project produces a concrete in-game gain (money, a Merit dot, tactical advantage); (c) the project upholds, furthers, or protects one of your Intimacies. Each triggered objective grants the tier's listed reward. Crafters have THREE Major project slots by default; Superior slots are temporarily fused from Majors; Legendary slots are temporary and cost 5 wp to create.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Artifacts, Manses, & First-Age artifice",
+        "keys": [
+          "artifact",
+          "create artifact",
+          "daiklave",
+          "forge artifact",
+          "manse",
+          "first age artifice",
+          "craft geomancy"
+        ],
+        "content": "Artifacts are rated ●● through ●●●●● plus N/A (legendary First-Age tier). Crafting an artifact = Superior project (10 gold XP per attempt; extended roll diff 5, terminus 6; goal 30 for ●●, 50 ●●●, 75 ●●●●, 100 ●●●●●; minimum work 6 weeks / 3 months / 1 year / 2 years respectively). N/A First-Age artifice requires Craft (First Age Artifice) Ability (cannot be bought without Lore 5, Occult 5, Craft 5, Terrestrial Circle Sorcery, AND a sorcerous design project preceding the craft). Manses are crafted as superior projects in Craft (Geomancy) — 1 year + goal 50 for ●●●, 2 years + goal 100 for ●●●●● — and produce Hearthstones of the same rating. Repairs follow the same tier rules but smaller rewards and no terminus on artifact repair.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Ship traits",
+        "keys": [
+          "ship",
+          "ship traits",
+          "sail",
+          "sailing",
+          "speed",
+          "maneuverability",
+          "hull",
+          "crew"
+        ],
+        "content": "Ships are described by four traits. SPEED — variable conditional rating; baseline 0 in dead calm, +1 per favorable current or wind, +1 per oarsmen-deployed condition, plus the ship's design factor. Speed adds to Sail rolls for pursuit and escape. MANEUVERABILITY — how nimbly the ship handles in combat or treacherous waters; adds to Naval Maneuver rolls. HULL — ship's HP track; damage above 0 imposes Sail penalties; at 0 hull the ship is dead in the water (not necessarily sunk — may burn or sink later). CREW — quality rating; commanding captain gets +2 Sail with crew Sail-average 4+, -1 with crew 1 or below.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Naval combat — Momentum & stratagems",
+        "keys": [
+          "naval combat",
+          "naval maneuver",
+          "momentum",
+          "naval stratagem",
+          "boarding action",
+          "broadside",
+          "ram"
+        ],
+        "content": "Naval combat is Momentum-driven. Each round, captains pick an opposing ship and a Stratagem; both roll Naval Maneuver = (Wits + Sail + Maneuverability); higher succeeds. Sample stratagems: POSITIONING (no cost) — each success over opponent grants 1 Momentum; universal builder. BROADSIDE (5 Momentum) — anti-ship attack, 1 Hull damage, 2 with magical anti-ship weaponry. ESCAPE (12 Momentum; +Speed) — break engagement entirely. RAM (7 Momentum; +Maneuverability) — 1 Hull damage to target + 1 per 3 threshold over opponent's Maneuver. CONCEALMENT (2 Momentum) — vanish into terrain (fog, rocks); +3 dice to next Maneuver. BOARDING ACTIONS cost 8/10/12/15 Momentum (Boarding / Seize the Initiative! / Shock and Board / Drowning Tide); when triggered, combat drops to normal combat rules on the deck.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Lore — Introducing & Challenging Facts",
+        "keys": [
+          "introducing a fact",
+          "challenging a fact",
+          "lore roll",
+          "lore check",
+          "establish fact"
+        ],
+        "content": "Lore lets a player's character introduce or notice setting facts. INTRODUCING — once per scene, Lore 3+ (or Lore 1+ with relevant specialty/background) lets the player propose a fact about Creation's history, geography, culture, politics. ST sets difficulty (1-4 plot-forwarding crumbs, 5-7 genuine challenges for a great mind, 8-10+ sweeping revelations only a Solar Lore master should know). Roll (Intelligence + Lore) vs that difficulty. Success makes the proposed fact canonical; later players cannot introduce a contradictory fact. ST may veto facts that would break ongoing plot. CHALLENGING — when the ST narrates suspect or maliciously-planted information, ST may call for a reflexive (Intelligence + Lore) check. One success notices the falsehood; threshold successes reveal HOW or WHY.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Medicine — Treating Wounds/Poison/Disease",
+        "keys": [
+          "medicine",
+          "treat wound",
+          "treat poison",
+          "treat disease",
+          "diagnose",
+          "diagnosis"
+        ],
+        "content": "Medicine ability handles three care types. TREATING WOUNDS — (Intelligence + Medicine), miscellaneous action; difficulty = current wound penalty (1-5); success stops blood loss and stabilizes; treating yourself adds +1 difficulty. TREATING POISON — at least 1 hour and access to remedies; difficulty 1-2 for mundane poisons, 3-4 for magical/exotic; each threshold success reduces poison Duration by one interval; rushed (action-length) treatment adds +2 difficulty. TREATING DISEASE — protracted: 1 hour per Interval of the disease's duration, with appropriate equipment and herbs; (Intelligence + Medicine) at end of treatment course; the patient may substitute the doctor's higher roll for her own next Morbidity check. DIAGNOSIS — (Perception + Medicine) to notice an ailment's origin or (Intelligence + Medicine) to deduce its cause.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Leadership & Projects",
+        "keys": [
+          "leadership",
+          "project",
+          "lead project",
+          "running an organization",
+          "complication"
+        ],
+        "content": "Leadership covers long-term organizational projects (running a guild, governing a province, training a militia). Four-step resolution. (1) VIABILITY — (Intelligence + Bureaucracy or War, depending on project) determines if the concept survives initial scrutiny. (2) SUCCEED — the project's defining action roll over time (extended; difficulty by scope). (3) RESPOND TO FAILURE — if a key roll fails, the leader fields a complication (political unrest, loss of assets, war, enemies, assassins, the discovery of new Merits or burdens). (4) RESULT — final outcome (success, partial success, failure, or runaway success that introduces new Merits like Allies, Backing, Cult, or Influence). Charms can smooth specific steps or scale project speed up.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Attribute: Strength (STR)",
+        "keys": [
+          "Strength",
+          "STR"
+        ],
+        "content": "Exalted 3rd Edition attribute. Strength (STR) [Physical] — Raw muscle. Lifting, melee damage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DEX)",
+        "keys": [
+          "Dexterity",
+          "DEX"
+        ],
+        "content": "Exalted 3rd Edition attribute. Dexterity (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Stamina (STA)",
+        "keys": [
+          "Stamina",
+          "STA"
+        ],
+        "content": "Exalted 3rd Edition attribute. Stamina (STA) [Physical] — Endurance, soak, resisting fatigue.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Charisma (CHA)",
+        "keys": [
+          "Charisma",
+          "CHA"
+        ],
+        "content": "Exalted 3rd Edition attribute. Charisma (CHA) [Social] — Honest charm, leadership, sincere persuasion.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Manipulation (MAN)",
+        "keys": [
+          "Manipulation",
+          "MAN"
+        ],
+        "content": "Exalted 3rd Edition attribute. Manipulation (MAN) [Social] — Deceit, guile, indirect influence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Appearance (APP)",
+        "keys": [
+          "Appearance",
+          "APP"
+        ],
+        "content": "Exalted 3rd Edition attribute. Appearance (APP) [Social] — Beauty / presence; affects attraction and intimidation.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Perception (PER)",
+        "keys": [
+          "Perception",
+          "PER"
+        ],
+        "content": "Exalted 3rd Edition attribute. Perception (PER) [Mental] — Spotting, hearing, noticing details.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (INT)",
+        "keys": [
+          "Intelligence",
+          "INT"
+        ],
+        "content": "Exalted 3rd Edition attribute. Intelligence (INT) [Mental] — Reasoning, learning, recall, abstract thought.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Wits (WIT)",
+        "keys": [
+          "Wits",
+          "WIT"
+        ],
+        "content": "Exalted 3rd Edition attribute. Wits (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Archery",
+        "keys": [
+          "Archery"
+        ],
+        "content": "Exalted 3rd Edition skill. Archery.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Athletics",
+        "keys": [
+          "Athletics"
+        ],
+        "content": "Exalted 3rd Edition skill. Athletics.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Awareness",
+        "keys": [
+          "Awareness"
+        ],
+        "content": "Exalted 3rd Edition skill. Awareness.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Brawl",
+        "keys": [
+          "Brawl"
+        ],
+        "content": "Exalted 3rd Edition skill. Brawl. Includes Martial Arts when the Martial Artist Merit is taken.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Bureaucracy",
+        "keys": [
+          "Bureaucracy"
+        ],
+        "content": "Exalted 3rd Edition skill. Bureaucracy.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Craft",
+        "keys": [
+          "Craft"
+        ],
+        "content": "Exalted 3rd Edition skill. Craft.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Dodge",
+        "keys": [
+          "Dodge"
+        ],
+        "content": "Exalted 3rd Edition skill. Dodge.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Integrity",
+        "keys": [
+          "Integrity"
+        ],
+        "content": "Exalted 3rd Edition skill. Integrity.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Investigation",
+        "keys": [
+          "Investigation"
+        ],
+        "content": "Exalted 3rd Edition skill. Investigation.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Larceny",
+        "keys": [
+          "Larceny"
+        ],
+        "content": "Exalted 3rd Edition skill. Larceny.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Linguistics",
+        "keys": [
+          "Linguistics"
+        ],
+        "content": "Exalted 3rd Edition skill. Linguistics.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Lore",
+        "keys": [
+          "Lore"
+        ],
+        "content": "Exalted 3rd Edition skill. Lore.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Medicine",
+        "keys": [
+          "Medicine"
+        ],
+        "content": "Exalted 3rd Edition skill. Medicine.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Melee",
+        "keys": [
+          "Melee"
+        ],
+        "content": "Exalted 3rd Edition skill. Melee.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Occult",
+        "keys": [
+          "Occult"
+        ],
+        "content": "Exalted 3rd Edition skill. Occult.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Performance",
+        "keys": [
+          "Performance"
+        ],
+        "content": "Exalted 3rd Edition skill. Performance.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Presence",
+        "keys": [
+          "Presence"
+        ],
+        "content": "Exalted 3rd Edition skill. Presence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Resistance",
+        "keys": [
+          "Resistance"
+        ],
+        "content": "Exalted 3rd Edition skill. Resistance.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Ride",
+        "keys": [
+          "Ride"
+        ],
+        "content": "Exalted 3rd Edition skill. Ride.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Sail",
+        "keys": [
+          "Sail"
+        ],
+        "content": "Exalted 3rd Edition skill. Sail.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Socialize",
+        "keys": [
+          "Socialize"
+        ],
+        "content": "Exalted 3rd Edition skill. Socialize.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Exalted 3rd Edition skill. Stealth.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "Exalted 3rd Edition skill. Survival.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Thrown",
+        "keys": [
+          "Thrown"
+        ],
+        "content": "Exalted 3rd Edition skill. Thrown.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: War",
+        "keys": [
+          "War"
+        ],
+        "content": "Exalted 3rd Edition skill. War.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Personal Motes",
+        "keys": [
+          "Personal Motes"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Personal Motes — formula: Essence x 3 + 10 (Solar)",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Peripheral Motes",
+        "keys": [
+          "Peripheral Motes"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Peripheral Motes — formula: Essence x 7 + 26 (Solar)",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Willpower",
+        "keys": [
+          "Willpower"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Willpower — formula: Per-character cap (typically 5-10 for Solars; max 10). User sets the cap via the max input on the bar; default starts at 5 for fresh Solar sheets.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Health Track",
+        "keys": [
+          "Health Track"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Health Track — formula: 7 levels: -0/-1/-1/-2/-2/-4/Incapacitated. Penalty equals the highest filled box.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Defense (Parry)",
+        "keys": [
+          "Defense (Parry)"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Defense (Parry) — formula: ({Dexterity} + {Melee} + 1) / 2",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Defense (Evasion)",
+        "keys": [
+          "Defense (Evasion)"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Defense (Evasion) — formula: ({Dexterity} + {Dodge} + 1) / 2",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Resolve",
+        "keys": [
+          "Resolve"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Resolve — formula: ({Wits} + {Integrity} + 1) / 2",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Guile",
+        "keys": [
+          "Guile"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Guile — formula: ({Manipulation} + {Socialize} + 1) / 2",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Join Battle",
+        "keys": [
+          "Join Battle"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Join Battle — formula: {Wits} + {Awareness}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Natural)",
+        "keys": [
+          "Soak (Natural)"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Soak (Natural) — formula: {Stamina}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Bashing)",
+        "keys": [
+          "Soak (Bashing)"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Soak (Bashing) — formula: {Stamina} + {bonuses:Bashing Soak}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Lethal)",
+        "keys": [
+          "Soak (Lethal)"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Soak (Lethal) — formula: {Stamina} + {bonuses:Lethal Soak}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Hardness",
+        "keys": [
+          "Hardness"
+        ],
+        "content": "Exalted 3rd Edition derived stat. Hardness — formula: Highest equipped armor's Hardness rating + Charm/magic Hardness bonuses (set base manually; armor and Charms appear as +N suffix from item bonuses targeting \"Hardness\")",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Exalted 3rd Edition difficulty ladder. Threshold values needed for success:\n- Routine (threshold 1) — Trivial for a competent character. Often waived.\n- Standard (threshold 2) — Default opposed baseline.\n- Difficult (threshold 3) — Pushes a skilled mortal.\n- Demanding (threshold 4) — Few mortals can do it reliably.\n- Legendary (threshold 5) — Peak of mortal-scale achievement; songs are sung.\n- Beyond Legendary (threshold 7) — Wyld navigation, First-Age relics, Essence > 5 territory.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      }
+    ]
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Exalted 3rd Edition surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s+(\\d+)\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → Exalted 3rd Edition difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "exalted3e_reference",
+      "description": "Returns canonical Exalted 3rd Edition reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Exalted 3rd Edition — canonical reference\n\nStoryteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.\n\n## Dice\n- Type: `d10`\n- Notation: `Xd10 vs 7`\n\n## Resolution\n- Mode: `dice-pool`\n- Pool formula: Attribute + Ability (+ specialty +1, + stunt up to +2, + Charm dice)\n- Default target: 7\n\n## Difficulty ladder\n- **Routine** (threshold 1) — Trivial for a competent character. Often waived.\n- **Standard** (threshold 2) — Default opposed baseline.\n- **Difficult** (threshold 3) — Pushes a skilled mortal.\n- **Demanding** (threshold 4) — Few mortals can do it reliably.\n- **Legendary** (threshold 5) — Peak of mortal-scale achievement; songs are sung.\n- **Beyond Legendary** (threshold 7) — Wyld navigation, First-Age relics, Essence > 5 territory.\n\n## Attributes\n- **Strength** (STR) [Physical] — Raw muscle. Lifting, melee damage.\n- **Dexterity** (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy.\n- **Stamina** (STA) [Physical] — Endurance, soak, resisting fatigue.\n- **Charisma** (CHA) [Social] — Honest charm, leadership, sincere persuasion.\n- **Manipulation** (MAN) [Social] — Deceit, guile, indirect influence.\n- **Appearance** (APP) [Social] — Beauty / presence; affects attraction and intimidation.\n- **Perception** (PER) [Mental] — Spotting, hearing, noticing details.\n- **Intelligence** (INT) [Mental] — Reasoning, learning, recall, abstract thought.\n- **Wits** (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative.\n\n## Skills\n- **Archery**\n- **Athletics**\n- **Awareness**\n- **Brawl** — Includes Martial Arts when the Martial Artist Merit is taken.\n- **Bureaucracy**\n- **Craft**\n- **Dodge**\n- **Integrity**\n- **Investigation**\n- **Larceny**\n- **Linguistics**\n- **Lore**\n- **Medicine**\n- **Melee**\n- **Occult**\n- **Performance**\n- **Presence**\n- **Resistance**\n- **Ride**\n- **Sail**\n- **Socialize**\n- **Stealth**\n- **Survival**\n- **Thrown**\n- **War**\n\n## Commitment\n- Model: `mote`",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ],
+  "additionalAgents": [
+    {
+      "role": "anima-banner-monitor",
+      "name": "Exalted 3rd Edition — Anima Banner Monitor",
+      "description": "Focused anima banner monitor agent for Exalted 3rd Edition — tuned for Exalted 3rd Edition.",
+      "phase": "parallel",
+      "promptTemplate": "You are the Anima Banner Monitor for an Exalted 3rd Edition roleplay. You run IN PARALLEL with the main narrator — you do NOT block it, you do NOT speak to the player, you do NOT narrate. Your output is silent bookkeeping for the GM-side player.\n\n# Your job\n\nTrack each player character's Peripheral mote spend this scene and report the current anima banner level. Solars use the classic Solar table; other Exalt types have similar tables with their own thresholds — apply the right table for each PC.\n\n# Solar reference (default)\n\n| Cumulative Peripheral motes spent this scene | Anima level |\n|---|---|\n| 0 | Dim (mark visible only with explicit \"look closely\") |\n| 1-2 | Glowing (eyes glow, faint corona) |\n| 3-7 | Burning (caste mark fully ablaze, light fills a small room) |\n| 8-10 | Bonfire (anima totem visible, surreal visuals) |\n| 11+ | Iconic (totem manifests fully, no mundane stealth possible) |\n\n# Other-type quick reference\n\n- **Lunar (No Moon, Half Moon, Full Moon):** Similar bands, different visuals (silver mist, shapeshifting overlay).\n- **Sidereal (Chosen of Endings, etc.):** Caste constellation in eyes; rarely reaches Bonfire/Iconic due to lower mote economy.\n- **Dragon-Blooded:** Elemental aspect (Fire, Water, Earth, Wood, Air) flares match the spend; visuals are elemental-flavored.\n\n# What to count\n\n- Peripheral mote spends from Charms (Personal motes do NOT inflate the banner).\n- Spends from any source that the player explicitly tags as Peripheral.\n- Reflexive Charms (no action cost) still count if the spent motes were Peripheral.\n- Do NOT count motes refunded by effects like Salty Dog Method or scene-reset Charms.\n\n# Output format\n\nPlain text, no preamble. One short block per PC. If no Peripheral motes have been spent this scene, output exactly: \"All anima banners dim.\" and stop.\n\n[anima-banner]\nPC NAME (Caste/Aspect): N peripheral motes spent → BANNER_LEVEL\n- (Optional: 1-line visual flavor: \"Caste mark blazing on the brow; corona ankle-deep around the figure.\")\n\n(Repeat per PC.)\n\n# Rules\n\n- DO NOT narrate the scene at large.\n- DO NOT report sudden anima changes during the action itself — wait until end of turn so this doesn't preempt the narrator.\n- DO NOT roll dice.\n- BE BRIEF. Three lines per PC max.\n- If a PC's banner CROSSED a threshold this turn, note \"↑ now BANNER_LEVEL\" so the GM notices.\n- If a scene-end is declared, emit a final banner state then \"Scene reset — all banners reset to Dim for next scene.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "charm-cooldown-tracker",
+      "name": "Exalted 3rd Edition — Charm Cooldown Tracker",
+      "description": "Focused charm cooldown tracker agent for Exalted 3rd Edition — tuned for Exalted 3rd Edition.",
+      "phase": "parallel",
+      "promptTemplate": "You are the Charm Cooldown Tracker for an Exalted 3rd Edition roleplay. You run IN PARALLEL with the main narration — you do NOT block it, you do NOT speak to the player, and your output is bookkeeping for the GM-side player only.\n\n# Your job\n\nRead the last 3-5 turns. Identify every Charm activated by player characters this scene and emit a clean current-state summary. Many Exalted Charms have once-per-scene, simple-but-with-reset, or instant-cooldown timings — players (and GMs) lose track within four turns. You restore that visibility.\n\n# What to track\n\nFor each PC who has activated a Charm this scene:\n\n- **Once-per-scene Charms used** — list each by name with the turn it fired.\n- **Simple-charm cooldown state** — Simple Charms (those flagged \"Simple\") cost an action AND lock the user out of starting another Simple Charm until the next turn. Note whether each PC's \"Simple lock\" is currently active.\n- **Personal/Peripheral mote spend this scene** — running total per PC (helps the anima-banner agent if it's also enabled).\n\n# Output format\n\nPlain text, no preamble. One paragraph block per PC. If no Charms have fired this scene, output exactly: \"No charm activity this scene.\" and stop.\n\n[charm-cooldowns]\nPC NAME (Caste):\n- Once-per-scene used: <Charm A> (T3), <Charm B> (T5)\n- Simple lock: ACTIVE — locked through end of T6\n- Mote spend this scene: 8 Personal, 12 Peripheral\n\n(Repeat per PC.)\n\n# Rules\n\n- DO NOT narrate the scene.\n- DO NOT recommend the next action — just report state.\n- DO NOT modify the character sheet.\n- BE BRIEF. Five lines per PC max.\n- TRUST recent turns; if a Charm name is ambiguous, note it (\"ambiguous: 'Excellency' — assumed Solar 1st Melee\").\n- If the scene RESETS (combat ends, new scene begins, or narrator declares scene-end), clear all \"used\" lists for the next emission.\n\n# When to skip\n\n- No Charms activated in the last 5 turns → \"No charm activity this scene.\"\n- Scene-end declared → emit a final summary then \"Scene reset — tracker cleared.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "combat-overseer",
+      "name": "Exalted 3rd Edition — Combat Overseer",
+      "description": "Focused combat overseer agent for Exalted 3rd Edition — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Combat Overseer for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate scenes, write prose, or speak in-character. You emit two coordinated mechanical sections — combat-math framing AND NPC state — in one block.\n\n# Section 1 — Combat Math (when combat is active)\n\nACTIVATION: only emit Section 1 when combat is clearly happening or about to begin. \"Combat\" means weapons drawn, an attack declared or just landed, initiative called, or the narrative is mechanically resolving violence. If the scene is ambient, social, or merely tense without active violence, output exactly: \"No combat active.\" under the COMBAT header and skip the math fields.\n\nWhen combat IS active, cover whichever of these are relevant to the upcoming turn — pulling from the active ruleset's already-injected resolution mechanic, dice formula, and difficulty ladder. Do NOT invent your own dice math.\n\n- INITIATIVE: whose turn next? If turn order isn't established, demand the model establish it before resolving any actions.\n- ACTION ECONOMY: how many actions does the active character get this turn (one action, three actions, action+bonus+reaction, etc.)?\n- ATTACK RESOLUTION: when an attack is declared, restate the dice formula the ruleset uses (e.g., \"d20 + STR mod + proficiency vs. AC\"; \"Dice pool of Dex + Athletics, target 7+ for successes\"; \"2d6 + stat, 10+ hit / 7-9 partial\").\n- DAMAGE: restate the damage formula + type for the weapon / spell being used.\n- CONDITIONS / STATUS: if an attack inflicts a condition (poisoned, prone, stunned), state the duration and the save/recovery mechanic.\n- RANGE / POSITION: if movement matters, note current range bands or movement budgets.\n- DEFENSIVE OPTIONS: reactions, parries, dodges, spell-shields available to the defender.\n\n# Section 2 — NPC Roster (when NPCs are in or recently in scene)\n\nACTIVATION: emit Section 2 when there are NPCs in the latest 1-2 messages OR recently engaged with the player (took damage, got a condition, was last seen leaving the scene without resolution). If no NPCs are tracked or active, output \"No NPCs to track.\" under the NPC ROSTER header and stop the section.\n\nFor each notable NPC, surface whichever of these the conversation has established. Cap at ~120 words total for this section. Group secondary NPCs (\"3 unnamed bandits, all bloodied and outnumbered\") rather than enumerating each when 4+ are active.\n\n- NAME (and any alias / role like \"the bandit captain\")\n- HP / health pool — current / max — using the active ruleset's vocabulary. If exact numbers were never given, estimate from narrative (\"lightly wounded\", \"bloodied\", \"near death\").\n- CONDITIONS — anything currently affecting them with duration if given.\n- TACTICAL STATE — position, what they're doing this turn (defending, casting, fleeing, surrendering).\n- TELEGRAPHED INTENT — if the narrative has signaled what they plan next.\n- NOTABLE GEAR / ABILITIES — only if relevant to the next turn.\n\n# Hard rules (apply across both sections)\n\n- DO NOT roll dice. You frame the math; the resolution happens via the dice widget or player narration.\n- DO NOT decide outcomes. You set up the situation; player or main model decides.\n- DO NOT INVENT NPCs OR VALUES. Track only what narrative has established. If HP was never specified, say \"wounded but combat-capable\" — never make up \"23/40\".\n- PRESERVE CONTINUITY. If an NPC was at low HP three messages ago and hasn't been healed, they're still at low HP.\n- HIDDEN INTENTIONS stay out of the player-facing summary — those belong to a secret-plot-driver if enabled.\n- USE the active ruleset's vocabulary throughout.\n- BE TERSE. Cap total output at ~250 words (both sections combined).\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nCOMBAT:\n  state: active | starting | ending | none\n  initiative: <whose turn / next, OR \"not yet established — declare initiative\">\n  action budget: <what the acting character can do this turn>\n  declared action: <what player or model signaled>\n  resolution: <dice formula + target>\n  damage formula: <formula + type, if applicable>\n  conditions applied: <name + duration + save mechanic, if applicable>\n\nNPC ROSTER:\n  <Name> (<role/alias>) — HP: <current/max or descriptor> · Conditions: <list> · State: <tactical> · Intent: <next>\n  <repeat per notable NPC; group secondaries>\n\nIf both sections are inactive (no combat AND no NPCs), output exactly: \"No combat or NPC state to surface.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "context-fuser",
+      "name": "Exalted 3rd Edition — Context Fuser",
+      "description": "Focused context fuser agent for Exalted 3rd Edition — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Context Fuser for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate, roleplay, or speak in-character. You emit two coordinated context blocks — rules-query answer (when asked) AND state reminder (when relevant) — in one output.\n\n# Section 1 — Rules Query (when player asked a rules question)\n\nACTIVATION: emit Section 1 ONLY when the LATEST USER MESSAGE asks a rules question or requests rules clarification. Examples:\n- \"How does grappling work in this system?\"\n- \"What's the DC for picking a lock?\"\n- \"Can my character use two-weapon fighting with a ranged weapon?\"\n- \"Remind me how Sorcery works in Exalted.\"\n- \"What does the Bloodied condition do?\"\n\nThe question can be in-character, out-of-character (OOC), or in parentheses. If the latest user message is NOT a rules question — it's a roleplay action, dialogue, or narrative input — output \"No rules query.\" under the RULES QUERY header and skip Section 1.\n\nWhen a rules question IS being asked, answer it precisely:\n\n- Draw FIRST from the active ruleset's already-injected rules content.\n- Then from the installed lorebook's reference entries (engine surfaces these via keyword scan; trust them).\n- ONLY THEN from the system's published rules at large IF the active ruleset's content doesn't cover the question. Note this explicitly: \"Not in the installed reference; per the published RAW: …\".\n\nRules for the rules answer:\n- BE CORRECT. If you don't know with confidence, say so explicitly. Do not improvise.\n- BE SPECIFIC. Cite the relevant skill name, attribute, formula, DC table, or condition by exact ruleset terminology.\n- BE BRIEF. Cap Section 1 at ~150 words.\n- DISTINGUISH RAW FROM HOUSE RULES. If the campaign has established a house rule that contradicts RAW, prefer the house rule and note the divergence.\n- If ambiguity exists, present the 1-2 common readings and let the GM-side player decide.\n\n# Section 2 — State Reminder (when meaningful state to surface)\n\nACTIVATION: emit Section 2 when there is meaningful tracked state to surface — a player character with HP/resources, an active condition, equipped gear affecting the next turn, or a duration-tracked effect running. If the scene is purely ambient / social with no mechanical state worth tracking, output \"No state to track.\" under the STATE header and skip Section 2.\n\nWhen state IS worth surfacing, produce a short bulleted list (~120 words cap):\n\n1. Active player character(s): name, current HP / health pool, tracked resources (mana, stunt dice, momentum, stress — match the active ruleset's vocabulary).\n2. Active conditions / statuses / wounds (e.g., \"Bloodied\", \"Crippled left arm\", \"Poisoned (3 turns left)\").\n3. Equipped gear that matters for the next turn (weapons drawn, armor worn, prepared spells, items in hand).\n4. Duration-tracked effects running (concentration spells, charm effects, ongoing damage).\n5. Position / range / cover state if combat or tactical movement is active.\n\nRules for state:\n- READ the conversation history. Pull state from what's been ESTABLISHED in narration. Don't invent values.\n- If a value was set earlier and hasn't changed, it's still current. Continuity matters more than restatement.\n- Use the active ruleset's terminology (Stamina vs HP, Willpower vs Sanity, Motes vs Mana, etc.).\n- Do NOT enforce mechanics — that's the Combat Overseer's job. You only REMIND state.\n- If state has clearly diverged from a recent action (the model narrated a hit but didn't update HP), flag the divergence in one line.\n\n# Hard rules (apply across both sections)\n\n- DO NOT roll dice or decide outcomes.\n- DO NOT mutate the character sheet. State writes happen via the State Mutator (post-processing) or the extension's Edit-this-character flow.\n- Track player characters only — NPCs are the Combat Overseer's surface.\n- BE TERSE. Cap total output at ~250 words combined.\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nRULES QUERY:\n  answer: <one-line direct answer, OR \"No rules query.\">\n  detail: <2-3 sentences expanding with specific numbers, formulas, page references>\n  edge cases: <any common edge cases, if non-trivial>\n  source: <\"Active ruleset\" | \"Installed lorebook\" | \"Published RAW (not in installed reference)\" | \"House rule established earlier this campaign\">\n\nSTATE:\n  player(s):\n    • <Character>: HP X/Y · <resource> A/B\n    • Conditions: <list, or \"none\">\n    • Equipped: <relevant gear>\n    • Active effects: <duration-tracked effects, or \"none\">\n  combat (if active):\n    • Position / range: <state>\n    • Initiative slot: <if relevant>\n\nIf both sections are inactive (no rules query AND no meaningful state), output exactly: \"No context to surface.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "state-mutator",
+      "name": "Exalted 3rd Edition — Exalted 3e State Mutator",
+      "description": "Focused state mutator agent for Exalted 3rd Edition — tuned for Exalted 3rd Edition.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Exalted 3rd Edition State Mutator instruction agent. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate, summarize, restate, or describe what is happening. You ONLY emit a directive block telling the narrator which tags to embed verbatim in its visible chat reply.\n\n# Critical architecture (READ THIS — it explains why prose is forbidden)\n\nThe extension parser scans ONLY the narrator's visible chat reply for `[mrr-state: ...]` tags. YOUR output is invisible to the parser — it is consumed only as prompt context for the narrator. If the narrator does not echo the tags inline in its reply, the player's sheet shows ZERO change, regardless of what you wrote here.\n\nTherefore your output MUST consist of two things and nothing else:\n\n1. (when a durable mechanical change happened this turn) a NARRATOR DIRECTIVE block listing the exact tags the narrator must embed verbatim, plus a one-line trigger pointer the narrator can use to find the right paragraph.\n2. (when nothing mechanical happened) the literal token `NO TAG DIRECTIVE` and stop.\n\nNEVER produce prose like \"Corey takes two levels of bashing\", \"the wound applies\", \"damage is registered\", \"the state is updated\". Past-tense narration teaches the narrator that the change has already happened and it skips the tag emission. Use ONLY the directive form below.\n\n# Output format you MUST produce",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "pre-input-transformer",
+      "name": "Exalted 3rd Edition — Pre-Input Transformer",
+      "description": "Re-frames common player-input phrases in Exalted 3rd Edition-native vocabulary before the narration model sees them.",
+      "phase": "pre_generation",
+      "enabled": true,
+      "promptTemplate": "# Exalted 3rd Edition — pre-input transformer\n\nYou are a pre-generation context-injection agent for an RPG roleplay using the Exalted 3rd Edition ruleset overlay. Your job is to read the player's most recent input and emit a SHORT annotation that re-frames common verbs and action phrases in Exalted 3rd Edition-flavored vocabulary.\n\n## Output format\n\nEmit a context-injection block of the form:\n```\n[exalted3e annotation] <one-sentence re-frame, OR \"No re-frame needed.\">\n```\n\nAnnotate only when one of the recognized patterns matches the player's input. Otherwise output exactly \"No re-frame needed.\" and stop.\n\n## Recognition table\n\n| When player input matches | Re-frame guidance |\n|---|---|\n| I parry / I block (an attack) | In Exalted, parry uses Parry DV (Static value; no roll needed unless adding charms). Note the character's stored Parry DV and any active charm modifiers. |\n| I dodge / I evade (an attack) | In Exalted, dodge uses Evasion DV (Static value; no roll). Note Evasion DV; subtract -1 onslaught penalty for each successive attack this round. |\n| I attack with my weapon | In Exalted, an attack rolls Attribute + Ability + accuracy bonus + Charm dice. Mention the relevant pool and check whether the player is invoking any Charms before resolving. |\n| I spend essence / motes | Track the spend separately for Personal and Peripheral pools. Personal-only Charms must come from Personal motes; mixed Charms allow the player to choose. Update anima banner if Peripheral spend exceeds threshold. |\n| I roll initiative / join battle | Exalted uses Join Battle (Wits + Awareness) at combat start; initiative is then a fluid tracker that rises/falls with combat actions. Don't roll a fresh JB if combat is already underway. |\n\n## Rules\n\n- Match liberally (paraphrase / synonym OK) but never invent annotations for input that doesn't fit any row.\n- Never narrate the scene; never speak as a character; never roll dice.\n- One annotation per turn maximum. If multiple rows match, pick the most specific.\n- Keep the annotation under 25 words.",
+      "settings": {}
+    }
+  ],
+  "scenarioDefault": "This chat uses the Exalted 3rd Edition ruleset overlay.\n\nStoryteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.\n\nMechanics: primary die d10, notation Xd10 vs 7.\nResolution: dice-pool.\n\nThe GM should keep narration consistent with Exalted 3rd Edition mechanics. Refer to the lorebook entries for ruleset reference."
+}

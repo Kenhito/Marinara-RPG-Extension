@@ -64,7 +64,7 @@ In a fresh Game Mode chat:
 
 1. Click the dice widget icon. The widget renders the L&F form: Stance toggle (LASERS / FEELINGS) and Pool input.
 2. Set Number = 4, Stance = LASERS, Pool = 2. Click **Roll**.
-3. You should see a chat tag of the form `[<repo-roll-prefix>: ruleset=lasers-and-feelings, stance=lasers, stat=Number, statValue=4, pool=2, dice=[2,5], successes=1, exactMatches=0, tier=barely]` (your dice will vary; the roll-tag prefix differs by repo — GM-mode uses `mrr-roll`, RP-mode uses `mrrp-roll`).
+3. You should see a chat tag of the form `[mrr-roll: ruleset=lasers-and-feelings, stance=lasers, stat=Number, statValue=4, pool=2, dice=[2,5], successes=1, exactMatches=0, tier=barely]` (your dice will vary).
 4. Send to chat. The agent reads the `tier` and narrates a barely-managed outcome with a complication.
 
 ## Updating / removing

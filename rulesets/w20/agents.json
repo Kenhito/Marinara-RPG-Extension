@@ -1,5 +1,5 @@
 {
-  "schema": "mrrp-agents",
+  "schema": "mrr-agents",
   "version": 1,
   "rulesetId": "w20",
   "rulesetName": "Werewolf: The Apocalypse 20th Anniversary",

@@ -1,0 +1,3417 @@
+/*
+ * Marinara-RPG-Extension — RPG-Extension-GM-Mode.css
+ * Companion stylesheet for RPG-Extension-GM-Mode.js. Paste this CSS into Marinara
+ * Engine -> Settings -> Extensions -> Add Extension -> CSS field.
+ *
+ * License: MIT
+ * Source:  https://github.com/Kenhito/Marinara-RPG-Extension
+ */
+
+:root {
+  /* Phase 4 — design-token migration: oklch palette + Geist font stack
+   * Ported from ~/projects/claude-design-updates/styles.css. Token NAMES preserved
+   * so existing rules resolve unchanged. New tokens (h/c/l, *-soft, *-line, *-app,
+   * *-input, hairline, hairline-strong, *-text-faint, *-sans) added per prototype.
+   * Tracked in tools/token-migration-map.json. */
+
+  /* tweakable accent (purple, port of prototype --accent-h/c/l) */
+  --mrr-accent-h: 280;
+  --mrr-accent-c: 0.12;
+  --mrr-accent-l: 0.78;
+
+  /* derived accent — original token names preserved */
+  --mrr-accent:       oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h));
+  --mrr-accent-soft:  oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.18);
+  --mrr-accent-line:  oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.32);
+  --mrr-accent-dim:   oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.30);
+  --mrr-on-accent:    oklch(0.18 0.04 var(--mrr-accent-h));
+
+  /* surfaces — purple/dark mood per prototype --bg-app/--bg/--bg-elev/--bg-input */
+  --mrr-bg:           oklch(0.21 0.025 285 / 0.96);
+  --mrr-bg-elev:      oklch(0.26 0.03 285 / 0.92);
+  --mrr-bg-app:       oklch(0.16 0.02 285);
+  --mrr-bg-input:     oklch(0.18 0.02 285);
+
+  /* hairlines (NEW) and borders (NAMES retained) */
+  --mrr-hairline:        oklch(1 0 0 / 0.07);
+  --mrr-hairline-strong: oklch(1 0 0 / 0.14);
+  --mrr-border:          oklch(1 0 0 / 0.10);
+  --mrr-border-strong:   oklch(1 0 0 / 0.20);
+
+  /* tints — port of prototype --tint/--tint-2 (--tint-strong retained) */
+  --mrr-tint-1:       oklch(1 0 0 / 0.04);
+  --mrr-tint-2:       oklch(1 0 0 / 0.07);
+  --mrr-tint-strong:  oklch(1 0 0 / 0.20);
+
+  /* text — three tiers per prototype --text/--text-dim/--text-faint */
+  --mrr-text:        oklch(0.97 0.005 285);
+  --mrr-text-dim:    oklch(0.72 0.01 285);
+  --mrr-text-faint:  oklch(0.55 0.012 285);
+
+  /* status — port of prototype --ok/--warn/--bad */
+  --mrr-success:    oklch(0.82 0.13 155);
+  --mrr-warning:    oklch(0.84 0.14 85);
+  --mrr-fail:       oklch(0.72 0.16 25);
+  --mrr-on-fail:    oklch(0.18 0.02 25);
+
+  /* radii / spacing — preserved (density toggle deferred to step 4.4) */
+  --mrr-radius:     8px;
+  --mrr-radius-sm:  4px;
+  --mrr-pad:        10px;
+  --mrr-gap:        6px;
+
+  /* shadow — ported from prototype --shadow (richer drop) */
+  --mrr-shadow:     0 24px 60px -20px rgba(0, 0, 0, 0.6), 0 6px 16px -8px rgba(0, 0, 0, 0.5);
+
+  /* typography — ported from prototype --sans/--mono (Geist-first stack) */
+  --mrr-sans:       "Geist", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mrr-mono:       "Geist Mono", ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+
+  /* layering — preserved */
+  --mrr-z-sheet:    9997;
+  --mrr-z-dice:     9998;
+  --mrr-z-dialog:   9999;
+
+  /* Phase 5 step 5.5 — density toggle (cozy preset defaults; branched per
+   * .mrr-sheet[data-density="…"] at end of file). Drives padding, gap,
+   * row height, and body font-size across density-aware components. */
+  --mrr-density-pad-x: 12px;
+  --mrr-density-pad-y: 12px;
+  --mrr-density-gap:    6px;
+  --mrr-density-row-h: 28px;
+  --mrr-density-fs:    13px;
+}
+
+.mrr-hidden { display: none !important; }
+.mrr-msg--hidden,
+.mrr-dice__result--hidden { display: none; }
+
+/*  ─────  Sheet panel (replaces the hidden built-in attribute panel) ───── */
+
+.mrr-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mrr-gap);
+  background: var(--mrr-bg);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius);
+  padding: var(--mrr-pad);
+  margin: var(--mrr-gap) 0;
+  color: var(--mrr-text);
+  font-family: var(--mrr-sans);
+  font-size: var(--mrr-density-fs);
+}
+
+.mrr-sheet--floating {
+  position: fixed;
+  left: 16px;
+  top: 80px;
+  width: 320px;
+  min-width: 280px;
+  max-width: calc(100vw - 32px);
+  min-height: 200px;
+  max-height: 70vh;
+  overflow: auto;
+  resize: both;
+  z-index: var(--mrr-z-sheet);
+}
+
+.mrr-sheet__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mrr-density-gap);
+  border-bottom: 1px solid var(--mrr-border);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+}
+
+.mrr-sheet__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.mrr-sheet__title {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--mrr-accent);
+}
+
+.mrr-sheet__meta {
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+  font-family: var(--mrr-mono);
+}
+
+.mrr-sheet__char-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Phase 5 step 5.1 — Identity card (port of prototype's `.identity`).
+   Sits at the bottom of the sheet header, immediately above the body.
+   Wraps the existing renderIdentityField inputs so save/load behavior
+   is preserved verbatim. Ruleset-driven sub-row honors identityFields[]
+   when declared; otherwise falls back to header.raceLabel/classLabel.
+   Token names mirror the prototype: __avatar, __main, __name, __sub,
+   __sub-item, __sub-label, __sub-input. Type scale matches UI-build.md
+   §3.4 exactly: name 16px/600, sub-label 9px uppercase letter-spacing
+   0.1em, sub-input 12px borderless text-dim. */
+.mrr-identity {
+  background: linear-gradient(145deg, var(--mrr-accent-soft), transparent 70%), var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-hairline);
+  border-radius: var(--mrr-radius);
+  padding: var(--mrr-pad);
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-top: var(--mrr-gap);
+}
+.mrr-identity__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: repeating-linear-gradient(
+    45deg,
+    oklch(0.3 0.04 285) 0 6px,
+    oklch(0.26 0.04 285) 6px 12px
+  );
+  color: var(--mrr-text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  border: 1px dashed var(--mrr-hairline-strong);
+}
+.mrr-identity__main {
+  min-width: 0;
+}
+.mrr-identity__name {
+  background: transparent;
+  border: 0;
+  color: var(--mrr-text);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 0;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+}
+.mrr-identity__name:focus {
+  color: var(--mrr-accent);
+}
+.mrr-identity__sub {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+.mrr-identity__sub-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+.mrr-identity__sub-label {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mrr-text-faint);
+}
+.mrr-identity__sub-input {
+  background: transparent;
+  border: 0;
+  color: var(--mrr-text-dim);
+  font-size: 12px;
+  padding: 0;
+  width: 100px;
+  outline: none;
+  font-family: inherit;
+}
+.mrr-identity__sub-input:focus {
+  color: var(--mrr-accent);
+}
+
+.mrr-sheet__char-label {
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-char-select {
+  flex: 1;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.mrr-char-btn {
+  background: var(--mrr-tint-2);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 6px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mrr-char-btn:hover { background: var(--mrr-accent-dim); }
+
+.mrr-char-btn--danger:hover {
+  background: rgba(251, 113, 133, 0.30);
+  border-color: var(--mrr-fail);
+}
+
+.mrr-char-btn--accent {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+}
+
+.mrr-char-btn--dashed {
+  border-style: dashed;
+  border-color: var(--mrr-accent-dim);
+}
+
+.mrr-draggable-handle { cursor: grab; user-select: none; touch-action: none; }
+.mrr-draggable-handle:active { cursor: grabbing; }
+
+.mrr-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mrr-density-gap);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);
+  background: var(--mrr-bg-elev);
+}
+
+.mrr-section__title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mrr-text-dim);
+  margin-bottom: 2px;
+}
+
+.mrr-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.mrr-group__label {
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--mrr-accent);
+  margin-top: 4px;
+}
+
+.mrr-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: var(--mrr-density-gap);
+  padding: 2px 4px;
+  border-radius: var(--mrr-radius-sm);
+}
+
+.mrr-row:hover {
+  background: var(--mrr-tint-1);
+}
+
+.mrr-row--compact {
+  grid-template-columns: 1fr auto auto;
+}
+
+.mrr-row__name {
+  font-weight: 500;
+}
+
+.mrr-row__abbr {
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-row__value {
+  min-width: 32px;
+  text-align: right;
+  font-family: var(--mrr-mono);
+}
+
+/* Editable numeric input — replaces the historical value <span> on every
+   numeric sheet row (attributes, skills, derived, backgrounds, custom
+   skills, bar current values). Visually flush with the surrounding row;
+   the user types directly. The browser's native number-input spinners
+   are suppressed because the +/- stepper next to the field already
+   provides the same affordance and double controls are visual noise. */
+.mrr-row__value--editable {
+  width: 48px;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 1px 4px;
+  font-family: var(--mrr-mono);
+  font-size: 12px;
+  text-align: right;
+  -moz-appearance: textfield;
+}
+.mrr-row__value--editable:focus {
+  outline: none;
+  border-color: var(--mrr-accent);
+  background: var(--mrr-bg);
+}
+.mrr-row__value--editable::-webkit-outer-spin-button,
+.mrr-row__value--editable::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Condition row inline effect summary — small, dim, italic so it
+   reads as metadata next to the condition name without competing for
+   the row's primary attention. */
+.mrr-condition-effect {
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+  font-style: italic;
+  flex: 1;
+  margin-left: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Advantage / disadvantage toggle row in the d20 dice widget. */
+.mrr-dice__adv-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+.mrr-dice__adv-row label {
+  flex: 0 0 80px;
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+}
+.mrr-adv-btn {
+  flex: 1;
+  padding: 4px 8px;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.mrr-adv-btn:hover { background: var(--mrr-accent-dim); }
+.mrr-adv-btn--active {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+  border-color: var(--mrr-accent);
+}
+
+/* "/" separator that sits between the editable current and editable
+   max inputs on bars without an engine-declared cap (D&D HP, etc.).
+   Dimmed because it's a visual cue, not a control. */
+.mrr-bar__sep {
+  font-family: var(--mrr-mono);
+  font-size: 12px;
+  color: var(--mrr-text-dim);
+  padding: 0 2px;
+}
+
+/* Auto-calculated derived stat — value computed from `valueFormula` every
+   time the stat context changes. Read-only by design; the formula IS the
+   override path. Subtle accent stripe on the left distinguishes it from
+   manually-entered values without screaming for attention. */
+.mrr-row__value--autocalc {
+  min-width: 32px;
+  text-align: right;
+  font-family: var(--mrr-mono);
+  color: var(--mrr-accent);
+  border-left: 2px solid var(--mrr-accent-dim);
+  padding-left: 6px;
+}
+
+.mrr-row__roll {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-accent-dim);
+  border: 1px solid var(--mrr-accent-dim);
+  color: var(--mrr-text);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mrr-row__roll:hover { background: var(--mrr-accent); color: var(--mrr-on-accent); }
+
+/*  ─────  Skill proficiency tier button + specialty sub-row  ───── */
+
+/* Shared base for the small letter buttons that sit inside the stepper
+   group on each skill row. Kept separate from `.mrr-stepper button` so
+   the stepper can be 18×18 (numeric +/-) while these are 22×18 (single
+   uppercase letter or "+S") without re-spec'ing every property. */
+.mrr-skill-tier-btn,
+.mrr-skill-spec-btn {
+  width: 22px;
+  height: 18px;
+  padding: 0;
+  background: var(--mrr-tint-2);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.mrr-skill-tier-btn { letter-spacing: 0.04em; }
+.mrr-skill-spec-btn { border-style: dashed; border-color: var(--mrr-accent-dim); }
+
+.mrr-skill-tier-btn:hover,
+.mrr-skill-spec-btn:hover { background: var(--mrr-accent-dim); }
+
+/* Tier modifier classes — visual cue for the active tier. The renderer
+   adds `--<code>` for the active tier; codes are ruleset-defined so
+   these mappings cover the common cases (PF2e U/T/E/M/L, Exalted U/C/F,
+   D&D U/T/E). Untrained-equivalent stays at the default tint. */
+.mrr-skill-tier-btn--T,
+.mrr-skill-tier-btn--C { background: var(--mrr-tint-strong); }
+.mrr-skill-tier-btn--E,
+.mrr-skill-tier-btn--F { background: var(--mrr-accent-dim); border-color: var(--mrr-accent-dim); }
+.mrr-skill-tier-btn--M { background: var(--mrr-accent); color: var(--mrr-on-accent); border-color: var(--mrr-accent); }
+.mrr-skill-tier-btn--L {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+  border-color: var(--mrr-accent);
+  box-shadow: 0 0 0 1px var(--mrr-accent-dim);
+}
+
+.mrr-skill-spec-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 2px 18px;
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-tint-1);
+  margin-top: 2px;
+}
+
+.mrr-skill-spec-name {
+  width: 100%;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+/* Custom skill / lore row — inherits the specialty layout but adds an
+   attribute selector between the name and the value so user-added skills
+   can declare which attribute they roll under. The select stays compact
+   so the row's grid columns line up with the existing specialty rows. */
+.mrr-custom-skill-row { grid-template-columns: 1fr auto auto auto auto auto; }
+.mrr-custom-skill-attr {
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 1px 4px;
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+}
+
+.mrr-skill-spec-label {
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+  font-family: var(--mrr-mono);
+}
+
+/*  ─────  Dice widget specialty pane  ───── */
+
+.mrr-dice__specs {
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px dashed var(--mrr-accent-dim);
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-tint-1);
+}
+
+.mrr-dice__specs-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--mrr-accent);
+  margin-bottom: 4px;
+}
+
+.mrr-dice__spec-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  cursor: pointer;
+}
+
+.mrr-dice__spec-checkbox {
+  margin: 0;
+  cursor: pointer;
+}
+
+.mrr-stepper {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.mrr-stepper button {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mrr-tint-2);
+  border: 1px solid var(--mrr-border);
+  color: var(--mrr-text);
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  padding: 0;
+  line-height: 1;
+}
+
+.mrr-stepper button:hover { background: var(--mrr-accent-dim); }
+.mrr-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/*  ─────  Derived stats  ───── */
+
+.mrr-derived {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mrr-derived__formula {
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-bar {
+  position: relative;
+  height: 14px;
+  background: var(--mrr-tint-2);
+  border-radius: var(--mrr-radius-sm);
+  overflow: hidden;
+}
+
+.mrr-bar__fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--mrr-accent-dim), var(--mrr-accent));
+  width: 0;
+  transition: width 0.18s ease-out;
+}
+
+.mrr-bar__label {
+  position: relative;
+  z-index: 1;
+  font-size: 10px;
+  font-family: var(--mrr-mono);
+  text-align: center;
+  line-height: 14px;
+  color: var(--mrr-text);
+  text-shadow: 0 0 2px rgba(0,0,0,0.6);
+}
+
+.mrr-track {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.mrr-track__cell {
+  min-width: 38px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-family: var(--mrr-mono);
+  text-align: center;
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-tint-1);
+  cursor: pointer;
+  user-select: none;
+}
+
+.mrr-track__cell--filled {
+  background: var(--mrr-fail);
+  color: var(--mrr-on-fail);
+  border-color: var(--mrr-fail);
+}
+
+.mrr-track__cell--active {
+  outline: 2px solid var(--mrr-warning);
+}
+
+.mrr-track__cell--extra {
+  border-style: dashed;
+  border-color: var(--mrr-accent-dim);
+}
+
+/*  ─────  Damage-type tones  ─────
+    Used by rulesets that declare damageTypes on a track-renderAs derived
+    stat (Exalted, WoD, anything Storyteller-flavored). Bashing is mild
+    (warning yellow), Lethal is severe (fail red, same hue as legacy
+    single-fill), Aggravated is dire (deep maroon — meant to read as
+    'something supernatural just hit you'). The renderer overlays the
+    damage-type label (B/L/A) on the cell when filled. */
+.mrr-track__cell--bashing {
+  background: var(--mrr-warning);
+  color: #1a0f0f;
+  border-color: var(--mrr-warning);
+}
+.mrr-track__cell--lethal {
+  background: var(--mrr-fail);
+  color: var(--mrr-on-fail);
+  border-color: var(--mrr-fail);
+}
+.mrr-track__cell--aggravated {
+  background: #5a1a1a;
+  color: #f5f0ff;
+  border-color: #7a2a2a;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.mrr-track-ctrl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.mrr-track-ctrl__label {
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+  margin-right: 2px;
+}
+
+.mrr-track-add-btn {
+  background: var(--mrr-tint-2);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 1px 6px;
+  font-size: 10px;
+  font-family: var(--mrr-mono);
+  cursor: pointer;
+}
+
+.mrr-track-add-btn:hover { background: var(--mrr-accent-dim); }
+
+.mrr-track-add-btn--danger:hover {
+  background: rgba(251, 113, 133, 0.30);
+  border-color: var(--mrr-fail);
+}
+
+.mrr-saved-indicator {
+  font-size: 10px;
+  color: var(--mrr-success);
+  font-family: var(--mrr-mono);
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+/*  ─────  States (anima banner / stunt tier / D&D conditions)  ───── */
+
+.mrr-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.mrr-state__name { font-weight: 500; }
+
+.mrr-state__select {
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+/*  ─────  Floating dice widget  ───── */
+
+.mrr-dice {
+  position: fixed;
+  top: 80px;
+  right: 16px;
+  width: 280px;
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border-strong);
+  border-radius: var(--mrr-radius);
+  padding: var(--mrr-pad);
+  box-shadow: var(--mrr-shadow);
+  z-index: var(--mrr-z-dice);
+  font-size: var(--mrr-density-fs);
+  display: none;
+}
+
+.mrr-dice--open { display: block; }
+
+.mrr-dice__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--mrr-border);
+}
+
+.mrr-dice__title {
+  font-weight: 600;
+  color: var(--mrr-accent);
+}
+
+.mrr-dice__close {
+  background: transparent;
+  border: 0;
+  color: var(--mrr-text-dim);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.mrr-dice__row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 4px 0;
+}
+
+.mrr-dice__row label {
+  flex: 0 0 80px;
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-dice__input {
+  flex: 1;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 4px 6px;
+  font-family: var(--mrr-mono);
+  font-size: var(--mrr-density-fs);
+  width: 100%;
+}
+
+.mrr-dice__btn {
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+  border: 0;
+  border-radius: var(--mrr-radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mrr-dice__btn:hover { filter: brightness(1.1); }
+
+.mrr-dice__btn--secondary {
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+}
+
+.mrr-dice__btn--row-spaced { margin-top: 4px; }
+
+.mrr-dice__result {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  font-family: var(--mrr-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.mrr-dice__result--success { border-color: var(--mrr-success); }
+.mrr-dice__result--fail    { border-color: var(--mrr-fail); }
+.mrr-dice__result--botch   { border-color: var(--mrr-warning); background: rgba(251, 191, 36, 0.10); }
+.mrr-dice__result--tie     { border-color: var(--mrr-warning); }
+
+.mrr-dice__faces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.mrr-dice__face {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-tint-1);
+}
+
+.mrr-dice__face--success { background: var(--mrr-accent-dim); border-color: var(--mrr-accent); }
+.mrr-dice__face--double  { background: var(--mrr-accent); color: var(--mrr-on-accent); }
+.mrr-dice__face--one     { background: rgba(251, 113, 133, 0.20); border-color: var(--mrr-fail); }
+
+/*  ─────  Header gear button + dialog  ───── */
+
+.mrr-gear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 4px 8px;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.mrr-gear-btn:hover { background: var(--mrr-accent-dim); }
+
+/*  ─────  Header sheet-toggle button (scroll icon)  ───── */
+
+.mrr-sheet-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: 8px;
+  padding: 0;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: 50%;
+  cursor: pointer;
+  font-family: inherit;
+  vertical-align: middle;
+}
+
+.mrr-sheet-toggle-btn:hover { background: var(--mrr-accent-dim); }
+
+.mrr-sheet-toggle-btn--active {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+  border-color: var(--mrr-accent);
+}
+
+.mrr-sheet-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.mrr-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: var(--mrr-z-dialog);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.mrr-dialog-backdrop--open { display: flex; }
+
+.mrr-dialog {
+  width: min(560px, 92vw);
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border-strong);
+  border-radius: var(--mrr-radius);
+  padding: 16px;
+  box-shadow: var(--mrr-shadow);
+}
+
+.mrr-dialog h3 {
+  margin: 0 0 8px;
+  color: var(--mrr-accent);
+  font-size: 16px;
+}
+
+.mrr-dialog p {
+  color: var(--mrr-text-dim);
+  font-size: 12px;
+  margin: 4px 0 8px;
+}
+
+.mrr-dialog textarea {
+  width: 100%;
+  min-height: 220px;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 8px;
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  resize: vertical;
+}
+
+.mrr-dialog__row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.mrr-dialog__label {
+  flex: 0 0 50px;
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-dialog__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.mrr-dialog__lib-title {
+  margin-top: 18px;
+  border-top: 1px solid var(--mrr-border);
+  padding-top: 14px;
+}
+.mrr-dialog__lib-help {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+.mrr-dialog__lib {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.mrr-dialog__lib-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  background: rgba(0, 0, 0, 0.15);
+}
+.mrr-dialog__lib-name {
+  flex: 1;
+  font-family: var(--mrr-mono);
+  font-size: var(--mrr-density-fs);
+}
+
+.mrr-msg {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: var(--mrr-radius-sm);
+  font-size: 12px;
+  font-family: var(--mrr-mono);
+}
+
+.mrr-msg--ok    { background: rgba(110, 231, 183, 0.12); border: 1px solid var(--mrr-success); }
+.mrr-msg--err   { background: rgba(251, 113, 133, 0.12); border: 1px solid var(--mrr-fail); }
+.mrr-msg--info  { background: rgba(212, 168, 255, 0.10); border: 1px solid var(--mrr-accent-dim); }
+
+/*  ─────  Inventory section + item editor  ───── */
+
+.mrr-inv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mrr-inv-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-tint-1);
+}
+
+.mrr-inv-item--equipped {
+  border-color: var(--mrr-accent);
+  background: var(--mrr-tint-2);
+}
+
+.mrr-inv-item__name {
+  font-weight: 500;
+}
+
+.mrr-inv-item__slot {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+}
+
+/* Damage cell on a weapon row — visually distinct from the slot tag so a
+   skim of the inventory tells the player at a glance which items hit
+   and how much. Color picks up the warning hue (the cue for "this is
+   the violent thing"). */
+.mrr-inv-item__damage {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  color: var(--mrr-warning);
+  white-space: nowrap;
+}
+
+.mrr-inv-item__bonus-summary {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  color: var(--mrr-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mrr-inv-empty {
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+  font-style: italic;
+}
+
+.mrr-item-form__row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0;
+}
+
+.mrr-item-form__row label {
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+  text-align: right;
+}
+
+.mrr-item-form__input,
+.mrr-item-form__select {
+  width: 100%;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.mrr-item-form__textarea {
+  width: 100%;
+  min-height: 50px;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.mrr-bonus-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 6px;
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  background: rgba(0, 0, 0, 0.10);
+}
+
+.mrr-bonus-list__title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-bonus-row {
+  display: grid;
+  grid-template-columns: 2fr 50px 70px 1.2fr auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.mrr-bonus-row__input {
+  width: 100%;
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border-strong);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 4px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+/* <option> elements ignore most parent styling on Linux/Chromium and fall back
+   to OS-default (often white bg + inherited near-white text => invisible until
+   highlighted). Explicit colors here force a readable dark dropdown panel. */
+.mrr-bonus-row__input option,
+.mrr-item-form__select option,
+.mrr-item-form__input option {
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+}
+
+/*  ─────  Derived / skill row equipment-bonus suffix  ───── */
+
+.mrr-row__bonus {
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  color: var(--mrr-success);
+  margin-left: 2px;
+}
+
+.mrr-row__bonus--neg { color: var(--mrr-fail); }
+
+/*  ─────  Derived value cap suffix ("/ max")  ───── */
+
+.mrr-row__cap {
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+  margin-left: 2px;
+  white-space: nowrap;
+}
+
+
+/*  ─────  state-mutator tag visual hiding  ───── */
+/* The state-mutator agent instructs the main model to emit
+   [mrr-state: ...] tags inline at paragraph ends. The extension's
+   chat observer parses + applies them, then wraps each tag in a
+   span.mrr-state-tag for this CSS rule to hide visually. The state
+   change itself has already been applied to localStorage; the tag
+   is purely a wire-format artifact and should not appear in chat. */
+.mrr-state-tag { display: none; }
+
+/*  ─────  state mutation confirmation toast  ───── */
+/* Top-right floating stack of brief notifications shown when the
+   state-mutator agent's tags fire. Each toast confirms one mutation:
+   prefix (HP / Condition / Inventory), change (signed delta or +/- name),
+   and the agent-reported reason. Stacks vertically; auto-dismisses. */
+.mrr-toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.mrr-toast {
+  background: var(--mrr-bg-elev);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-left: 3px solid var(--mrr-accent);
+  border-radius: var(--mrr-radius-sm);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  box-shadow: var(--mrr-shadow);
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+  pointer-events: auto;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  max-width: 320px;
+}
+
+.mrr-toast--visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.mrr-toast__prefix {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mrr-text-dim);
+  flex-shrink: 0;
+}
+
+.mrr-toast__change {
+  font-family: var(--mrr-mono);
+  font-weight: 700;
+  color: var(--mrr-accent);
+  flex-shrink: 0;
+}
+
+.mrr-toast__reason {
+  color: var(--mrr-text-dim);
+  font-size: 11px;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*  ─────  Spellbook flyout (third floating panel, system-labeled)  ───── */
+/* Per-ruleset abilities/charms/stunts panel. Toggled from the main sheet's
+   spellbook row; renders one collapsible category section per
+   ruleset.abilities.categories[]. Position persists to mrr-spellbook-pos
+   (per-extension, not per-chat). Z-index sits between sheet and dice so
+   the dice widget can overlap it on roll. */
+
+.mrr-spellbook {
+  position: fixed;
+  top: 80px;
+  left: 360px;
+  width: 320px;
+  max-height: 70vh;
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border-strong);
+  border-radius: var(--mrr-radius);
+  padding: var(--mrr-pad);
+  box-shadow: var(--mrr-shadow);
+  z-index: 9996;
+  font-size: var(--mrr-density-fs);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.mrr-spellbook--open { display: flex; }
+
+.mrr-spellbook__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--mrr-border);
+  cursor: grab;
+  user-select: none;
+}
+
+.mrr-spellbook__header:active { cursor: grabbing; }
+
+.mrr-spellbook__title {
+  font-weight: 600;
+  color: var(--mrr-accent);
+}
+
+.mrr-spellbook__body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mrr-spellbook-row {
+  cursor: default;
+}
+
+.mrr-spellbook-row__btn {
+  width: 100%;
+  text-align: left;
+}
+
+.mrr-spellbook-cat {
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  background: var(--mrr-tint-1);
+  padding: 4px 6px;
+}
+
+.mrr-spellbook-cat__head {
+  width: 100%;
+  background: transparent;
+  color: var(--mrr-text);
+  border: 0;
+  padding: 4px 2px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+
+.mrr-spellbook-cat__head:hover { color: var(--mrr-accent); }
+
+.mrr-spellbook-cat__list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.mrr-spellbook-cat--collapsed .mrr-spellbook-cat__list,
+.mrr-spellbook-cat--collapsed .mrr-spellbook-cat__add {
+  display: none;
+}
+
+.mrr-spellbook-cat__add {
+  margin-top: 4px;
+}
+
+.mrr-spellbook-ab {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  background: var(--mrr-bg-elev);
+  border-radius: var(--mrr-radius-sm);
+  border: 1px solid var(--mrr-border);
+}
+
+.mrr-spellbook-ab__name {
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.mrr-spellbook-ab__cost {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+  white-space: nowrap;
+}
+
+/*  ─────  Chip primitive  ─────────────────────────────────────────────────
+    Small inline pill used for status-flavored item details: Hardness,
+    Overwhelming, intimacy kind. Tints lean on existing CSS variables so
+    the palette stays consistent. */
+.mrr-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--mrr-border);
+  background: var(--mrr-tint-1);
+  color: var(--mrr-text-dim);
+  white-space: nowrap;
+}
+
+.mrr-chip--hardness {
+  color: #b9d8ff;
+  border-color: rgba(133, 173, 220, 0.45);
+  background: rgba(80, 120, 180, 0.18);
+}
+
+.mrr-chip--overwhelming {
+  color: #ffd0a8;
+  border-color: rgba(220, 140, 80, 0.45);
+  background: rgba(180, 90, 40, 0.20);
+}
+
+/* Commitment chips — surface per-item magic-binding state on the inventory
+   row. Attuned and Invested share the accent palette (the system's "magic
+   is active" cue). Mote uses the warning hue since Exalted essence reads
+   as "energy held in reserve" rather than a passive enchantment. */
+.mrr-chip--attuned {
+  color: var(--mrr-on-accent);
+  background: var(--mrr-accent);
+  border-color: var(--mrr-accent);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.mrr-chip--invested {
+  color: var(--mrr-on-accent);
+  background: var(--mrr-accent);
+  border-color: var(--mrr-accent);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.mrr-chip--mote {
+  color: #1a0f0f;
+  background: var(--mrr-warning);
+  border-color: var(--mrr-warning);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.mrr-chip--intimacy-kind {
+  cursor: pointer;
+  background: var(--mrr-tint-2);
+  border-color: var(--mrr-border-strong);
+  color: var(--mrr-text);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.mrr-chip--intimacy-kind-tie {
+  color: var(--mrr-accent);
+  border-color: var(--mrr-accent-dim);
+}
+
+.mrr-chip--intimacy-kind-principle {
+  color: var(--mrr-success);
+  border-color: rgba(110, 231, 183, 0.45);
+  background: rgba(110, 231, 183, 0.10);
+}
+
+/*  ─────  Intimacies flyout panel  ────────────────────────────────────────
+    Shares the .mrr-spellbook structural classes so position, header,
+    body scroll, and category collapse all "just work." Only the layout
+    of an individual intimacy row is custom: a two-line grid with the
+    kind chip + degree dropdown + delete on the first line and the text
+    input on the second so the field is wide enough to read. */
+.mrr-intimacies { /* inherits .mrr-spellbook positioning + open class */ }
+
+.mrr-intimacy-group {
+  /* inherits .mrr-spellbook-cat */
+}
+
+.mrr-intimacy-group--defining .mrr-spellbook-cat__head {
+  color: var(--mrr-accent);
+}
+
+.mrr-intimacy-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--mrr-bg-elev);
+  border-radius: var(--mrr-radius-sm);
+  border: 1px solid var(--mrr-border);
+}
+
+.mrr-intimacy-row__text {
+  grid-column: 1 / -1;
+  width: 100%;
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  order: 2;
+}
+
+.mrr-intimacy-row > .mrr-chip--intimacy-kind { order: 1; }
+
+.mrr-intimacy-row__degree {
+  order: 3;
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 4px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.mrr-intimacy-row__target {
+  order: 4;
+  grid-column: 1 / -1;
+  width: 100%;
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 3px 6px;
+  font-family: inherit;
+  font-size: 11px;
+  font-style: italic;
+}
+
+.mrr-intimacy-row > .mrr-char-btn--danger { order: 5; }
+
+.mrr-intimacies__top-add {
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+/*  ─────  XP card  ─────────────────────────────────────────────────────────
+    Sits between identity row and the section list in the main sheet. Two
+    layouts driven by ruleset.resolution.mode:
+      "single-roll" (D&D, PF2e) — level + current/next + 4px progress bar
+                                  fed by ruleset.xpTable
+      "dice-pool"   (Exalted)   — current + total earned + +1 XP button
+                                  (a pure int accumulator)
+    Hidden entirely for rulesets whose mode isn't one of the two above
+    (Fate Core uses Fate Points, not XP). */
+
+.mrr-xp-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  margin-top: 4px;
+}
+
+.mrr-xp-card__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mrr-accent);
+}
+
+.mrr-xp-card__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mrr-xp-card__group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 60px;
+}
+
+.mrr-xp-card__sub {
+  font-size: 9px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-xp-card__input {
+  background: var(--mrr-bg);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 6px;
+  font-family: var(--mrr-mono);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+  width: 80px;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+
+.mrr-xp-card__input:focus {
+  outline: none;
+  border-color: var(--mrr-accent);
+  background: var(--mrr-bg-elev);
+}
+
+.mrr-xp-card__input::-webkit-outer-spin-button,
+.mrr-xp-card__input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.mrr-xp-card__input--lvl {
+  width: 50px;
+  font-size: 16px;
+  text-align: center;
+}
+
+.mrr-xp-card__sep {
+  font-family: var(--mrr-mono);
+  font-size: 16px;
+  color: var(--mrr-text-dim);
+  align-self: flex-end;
+  padding-bottom: 2px;
+}
+
+.mrr-xp-card__next {
+  font-family: var(--mrr-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mrr-text);
+  padding: 2px 6px;
+  font-variant-numeric: tabular-nums;
+  align-self: flex-end;
+}
+
+.mrr-xp-card__bar {
+  height: 4px;
+  background: var(--mrr-tint-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mrr-xp-card__bar-fill {
+  height: 100%;
+  background: var(--mrr-accent);
+  width: 0;
+  transition: width 0.18s ease-out;
+}
+
+.mrr-xp-card__add {
+  align-self: flex-start;
+  background: var(--mrr-accent-dim);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-accent);
+  border-radius: var(--mrr-radius-sm);
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.mrr-xp-card__add:hover {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * Phase 3.1 — row-primitive CSS (mrr-p3-* namespace)
+ * ═══════════════════════════════════════════════════════════════
+ * Sibling to the existing .mrr-section / .mrr-row / .mrr-stepper /
+ * .mrr-bar rules used by the running renderer. Phase-3 namespace
+ * prevents collision; cutover in a future session renames or
+ * removes the -p3 infix when the new renderer is the only path.
+ *
+ * Density values inlined as cozy defaults (12/8/30/13). Token
+ * migration will swap these for --density-* later.
+ * ═══════════════════════════════════════════════════════════════ */
+
+.mrr-p3-section {
+  /* display:flex + column makes the card a flex container AND fixes
+     the flex-item height collapse: when this card is itself a flex
+     item of .mrr-sheet (which is column flex), Chrome computes its
+     intrinsic min-height as 0 if the card isn't a flex container,
+     which causes head + body to render outside the card's painted
+     bounds. Matching the existing .mrr-section pattern (also column
+     flex) keeps the card sized to its children. overflow:hidden
+     dropped — children have padding so they don't bleed past the
+     rounded corners. */
+  display: flex;
+  flex-direction: column;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius);
+  margin-bottom: 8px;
+}
+.mrr-p3-section__head {
+  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+}
+.mrr-p3-section--open .mrr-p3-section__head { border-bottom-color: var(--mrr-border); }
+.mrr-p3-section__head:hover { background: var(--mrr-tint-1); }
+.mrr-p3-section__title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mrr-text);
+}
+.mrr-p3-section__count {
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+  font-family: var(--mrr-mono);
+}
+.mrr-p3-section__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.mrr-p3-section__right { margin-left: auto; }
+.mrr-p3-section__chev {
+  margin-left: auto;
+  color: var(--mrr-text-dim);
+  transition: transform 150ms ease;
+  display: inline-block;
+}
+.mrr-p3-section--open .mrr-p3-section__chev { transform: rotate(90deg); }
+.mrr-p3-section__body {
+  display: none;
+  padding: 8px var(--mrr-density-pad-x) var(--mrr-density-pad-y);
+  flex-direction: column;
+  gap: 8px;
+}
+.mrr-p3-section--open .mrr-p3-section__body { display: flex; }
+
+/* Stepper */
+.mrr-p3-stepper {
+  display: inline-flex;
+  gap: 2px;
+}
+.mrr-p3-stepper button {
+  width: 22px;
+  height: 22px;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  color: var(--mrr-text-dim);
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: var(--mrr-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.mrr-p3-stepper button:hover {
+  background: var(--mrr-accent-dim);
+  color: var(--mrr-text);
+  border-color: var(--mrr-border-strong);
+}
+
+/* Row base + variants */
+.mrr-p3-row {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  height: var(--mrr-density-row-h);
+  border-radius: var(--mrr-radius-sm);
+}
+.mrr-p3-row:hover { background: var(--mrr-tint-1); }
+.mrr-p3-row--attr { grid-template-columns: 1fr auto auto auto auto; }
+.mrr-p3-row--skill {
+  grid-template-columns: 1fr auto auto auto;
+  align-items: start;
+  height: auto;
+  min-height: var(--mrr-density-row-h);
+}
+.mrr-p3-row--save { grid-template-columns: 1fr auto auto auto; }
+.mrr-p3-row__name {
+  font-size: var(--mrr-density-fs);
+  color: var(--mrr-text);
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.mrr-p3-row__abbr {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+  margin-left: 4px;
+}
+.mrr-p3-row__kind {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-left: 6px;
+}
+.mrr-p3-row__gear {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  color: var(--mrr-accent);
+  margin-left: 6px;
+  padding: 1px 5px;
+  border: 1px solid var(--mrr-accent-dim);
+  border-radius: 6px;
+  background: var(--mrr-tint-1);
+}
+.mrr-p3-row__mod {
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  color: var(--mrr-text-dim);
+  min-width: 22px;
+  text-align: right;
+}
+.mrr-p3-row__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mrr-p3-row__del {
+  background: transparent;
+  border: 0;
+  color: var(--mrr-text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: auto;
+  line-height: 1;
+}
+.mrr-p3-row__del:hover { color: var(--mrr-warning); }
+.mrr-p3-row__val {
+  width: 64px;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  color: var(--mrr-text);
+  font-family: var(--mrr-mono);
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: var(--mrr-radius-sm);
+  text-align: center;
+}
+.mrr-p3-row__val::-webkit-outer-spin-button,
+.mrr-p3-row__val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.mrr-p3-row__val:focus { outline: 0; border-color: var(--mrr-accent); }
+.mrr-p3-row__val--auto {
+  background: transparent;
+  border: 0;
+  font-size: var(--mrr-density-fs);
+  font-weight: 600;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  color: var(--mrr-text);
+}
+.mrr-p3-row__roll {
+  background: transparent;
+  border: 1px solid var(--mrr-border);
+  color: var(--mrr-text-dim);
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+  min-width: 48px;
+}
+.mrr-p3-row__roll:hover {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+  border-color: var(--mrr-accent);
+}
+.mrr-p3-row__roll--sm {
+  padding: 2px 6px;
+  font-size: 10px;
+  min-width: 0;
+}
+
+/* Tier pill */
+.mrr-p3-tier {
+  width: 36px;
+  height: 22px;
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  color: var(--mrr-text-dim);
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.mrr-p3-tier:hover { background: var(--mrr-accent-dim); }
+.mrr-p3-tier--T {
+  background: var(--mrr-tint-2);
+  color: var(--mrr-text);
+  border-color: var(--mrr-border-strong);
+}
+.mrr-p3-tier--E {
+  background: var(--mrr-accent-dim);
+  border-color: var(--mrr-border-strong);
+  color: var(--mrr-text);
+}
+.mrr-p3-tier--M {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+  border-color: var(--mrr-accent);
+}
+
+/* Specialty chips + editor */
+.mrr-p3-row__spec-toggle {
+  background: transparent;
+  border: 1px dashed var(--mrr-border);
+  color: var(--mrr-text-dim);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 6px;
+}
+.mrr-p3-row__spec-toggle:hover {
+  border-style: solid;
+  border-color: var(--mrr-border-strong);
+  color: var(--mrr-accent);
+}
+.mrr-p3-row__specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.mrr-p3-spec-chip {
+  background: var(--mrr-tint-1);
+  border: 1px solid var(--mrr-border);
+  border-radius: 6px;
+  padding: 2px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--mrr-text);
+}
+.mrr-p3-spec-chip:hover {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+}
+.mrr-p3-spec-chip__name { font-weight: 500; }
+.mrr-p3-spec-chip__dice {
+  font-family: var(--mrr-mono);
+  font-size: 9.5px;
+  opacity: 0.85;
+}
+.mrr-p3-spec-chip__x {
+  margin-left: 2px;
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.mrr-p3-spec-chip__x:hover { opacity: 1; color: var(--mrr-warning); }
+.mrr-p3-row__spec-editor {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-top: 4px;
+}
+.mrr-p3-row__spec-input {
+  flex: 1;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  color: var(--mrr-text);
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: var(--mrr-radius-sm);
+}
+.mrr-p3-row__spec-input:focus { outline: 0; border-color: var(--mrr-accent); }
+.mrr-p3-row__spec-add,
+.mrr-p3-row__spec-done {
+  background: transparent;
+  border: 1px solid var(--mrr-border);
+  color: var(--mrr-text-dim);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+}
+.mrr-p3-row__spec-add:hover { border-color: var(--mrr-accent); color: var(--mrr-accent); }
+.mrr-p3-row__spec-done:hover { border-color: var(--mrr-border-strong); color: var(--mrr-text); }
+
+/* Auto-calc bonus pill (skill + save rows) */
+.mrr-p3-save__bonus {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mrr-accent);
+}
+.mrr-p3-row--save .mrr-p3-save__bonus { color: var(--mrr-accent); }
+
+/* Bar */
+.mrr-p3-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+}
+.mrr-p3-bar__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.mrr-p3-bar__name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mrr-text);
+}
+.mrr-p3-bar__values {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--mrr-mono);
+  font-size: 12px;
+  color: var(--mrr-text-dim);
+}
+.mrr-p3-bar__val-input {
+  width: 40px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dotted var(--mrr-border);
+  color: var(--mrr-text);
+  font-family: var(--mrr-mono);
+  font-size: 12px;
+  text-align: center;
+  padding: 1px 0;
+}
+.mrr-p3-bar__val-input::-webkit-outer-spin-button,
+.mrr-p3-bar__val-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.mrr-p3-bar__val-input:hover,
+.mrr-p3-bar__val-input:focus {
+  outline: 0;
+  border-bottom-color: var(--mrr-border-strong);
+}
+.mrr-p3-bar__sep { color: var(--mrr-text-dim); }
+.mrr-p3-bar__track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--mrr-tint-2);
+  overflow: hidden;
+}
+.mrr-p3-bar__fill {
+  height: 100%;
+  transition: width 200ms ease, background 200ms ease;
+}
+.mrr-p3-bar__fill--ok { background: var(--mrr-success); }
+.mrr-p3-bar__fill--warn { background: var(--mrr-warning); }
+.mrr-p3-bar__fill--bad { background: var(--mrr-fail); }
+.mrr-p3-bar__quick {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+.mrr-p3-bar__quick button {
+  background: transparent;
+  border: 1px solid var(--mrr-border);
+  color: var(--mrr-text-dim);
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+}
+.mrr-p3-bar__quick button:hover {
+  background: var(--mrr-accent-dim);
+  color: var(--mrr-text);
+  border-color: var(--mrr-border-strong);
+}
+
+/* Damage track (Exalted) */
+.mrr-p3-bar--damage .mrr-p3-bar__values--track {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  color: var(--mrr-text-dim);
+}
+.mrr-p3-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.mrr-p3-cell {
+  width: 36px;
+  height: 22px;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  color: var(--mrr-text-dim);
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.mrr-p3-cell:hover {
+  border-color: var(--mrr-border-strong);
+  color: var(--mrr-text);
+}
+.mrr-p3-cell--B {
+  background: var(--mrr-warning);
+  color: var(--mrr-on-accent);
+  border-color: var(--mrr-warning);
+}
+.mrr-p3-cell--L {
+  background: var(--mrr-fail);
+  color: var(--mrr-text);
+  border-color: var(--mrr-fail);
+}
+.mrr-p3-cell--A {
+  background: var(--mrr-on-fail);
+  color: var(--mrr-text);
+  border-color: var(--mrr-fail);
+}
+.mrr-p3-track-tools {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.mrr-p3-track-tools__group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mrr-p3-track-tools__label {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  margin-right: 2px;
+  color: var(--mrr-text-dim);
+}
+.mrr-p3-track-tools__add,
+.mrr-p3-track-tools__heal {
+  background: transparent;
+  border: 1px solid var(--mrr-border);
+  color: var(--mrr-text-dim);
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: var(--mrr-radius-sm);
+  cursor: pointer;
+}
+.mrr-p3-track-tools__add:hover,
+.mrr-p3-track-tools__heal:hover:not(:disabled) {
+  background: var(--mrr-accent-dim);
+  color: var(--mrr-text);
+  border-color: var(--mrr-border-strong);
+}
+.mrr-p3-track-tools__heal:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+ * Phase 3.2 — panel-frame chrome (port of panel-frame.jsx)
+ * ═══════════════════════════════════════════════════════════════
+ * Standalone floating panel: drag head + 8 resize handles + body.
+ * Used by future Session 3.4+ flyouts (Inv / Spell / Gear edit forms,
+ * BackpackFlyout, SpellbookFlyout). The current Phase 3.3 sheet body
+ * REUSES the existing .mrr-sheet shell so toggling renderers doesn't
+ * disturb the saved sheet position.
+ * ═══════════════════════════════════════════════════════════════ */
+
+.mrr-p3-panel {
+  position: fixed;
+  background: var(--mrr-bg);
+  border: 1px solid var(--mrr-border);
+  border-radius: var(--mrr-radius);
+  box-shadow: var(--mrr-shadow);
+  color: var(--mrr-text);
+  z-index: var(--mrr-z-sheet);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.mrr-p3-panel__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px var(--mrr-density-pad-x);
+  cursor: move;
+  user-select: none;
+  border-bottom: 1px solid var(--mrr-border);
+  background: var(--mrr-bg-elev);
+}
+.mrr-p3-panel__title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mrr-accent);
+}
+.mrr-p3-panel__title-meta {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--mrr-text-dim);
+  letter-spacing: 0;
+  text-transform: none;
+  margin-left: 4px;
+}
+.mrr-p3-panel__close {
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  color: var(--mrr-text-dim);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 6px;
+  border-radius: var(--mrr-radius-sm);
+}
+.mrr-p3-panel__close:hover {
+  background: var(--mrr-tint-1);
+  color: var(--mrr-text);
+}
+.mrr-p3-panel__body {
+  flex: 1;
+  overflow: auto;
+  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);
+}
+
+/* Resize handles — 4 edges (8px wide along the edge) + 4 corners
+ * (12px square at the corner). Cursor hints encode the drag axis. */
+.mrr-p3-panel__resize {
+  position: absolute;
+  background: transparent;
+  z-index: 1;
+}
+.mrr-p3-panel__resize--n  { top: 0;     left: 8px;   right: 8px;   height: 6px; cursor: ns-resize; }
+.mrr-p3-panel__resize--s  { bottom: 0;  left: 8px;   right: 8px;   height: 6px; cursor: ns-resize; }
+.mrr-p3-panel__resize--e  { top: 8px;   right: 0;    bottom: 8px;  width: 6px;  cursor: ew-resize; }
+.mrr-p3-panel__resize--w  { top: 8px;   left: 0;     bottom: 8px;  width: 6px;  cursor: ew-resize; }
+.mrr-p3-panel__resize--ne { top: 0;     right: 0;                              width: 12px; height: 12px; cursor: nesw-resize; }
+.mrr-p3-panel__resize--nw { top: 0;     left: 0;                               width: 12px; height: 12px; cursor: nwse-resize; }
+.mrr-p3-panel__resize--se {
+  bottom: 0; right: 0;
+  width: 14px; height: 14px;
+  cursor: nwse-resize;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  color: var(--mrr-text-dim);
+}
+.mrr-p3-panel__resize--se:hover { color: var(--mrr-accent); }
+.mrr-p3-panel__resize--sw { bottom: 0;  left: 0;                               width: 12px; height: 12px; cursor: nesw-resize; }
+
+/* Phase 3 attribute-group sub-label (used by mrrP3RenderAttributesSection
+ * to label Exalted's Physical / Social / Mental groups). */
+.mrr-p3-section__subgroup-label {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mrr-text-dim);
+  margin: 8px 0 4px;
+  padding-left: 4px;
+}
+
+/* Phase 3 derived-stat row wrapper (used by mrrP3RenderDerivedSection's
+ * value branch — bars and tracks display their name inside the primitive,
+ * but renderValue does not, so the wrapper supplies a name + formula
+ * label outside the value primitive). */
+.mrr-p3-derived {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.mrr-p3-derived__label {
+  font-family: var(--mrr-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--mrr-text-dim);
+  padding-left: 4px;
+}
+
+/* ── Phase 5 step 5.5: density toggle ──────────────────────────────────
+ * 3-way data-density attribute on .mrr-sheet swaps the five
+ * --mrr-density-* variables. UI: pill button group in the actions row
+ * with aria-pressed indicating selection. Per-character (state.sheet.density),
+ * defaults to "cozy". Source: ~/projects/claude-design-updates/UI-build.md §2.3.
+ * ────────────────────────────────────────────────────────────────────── */
+.mrr-sheet[data-density="compact"] {
+  --mrr-density-pad-x: 8px;
+  --mrr-density-pad-y: 8px;
+  --mrr-density-gap:   4px;
+  --mrr-density-row-h: 24px;
+  --mrr-density-fs:   12px;
+}
+.mrr-sheet[data-density="cozy"] {
+  --mrr-density-pad-x: 12px;
+  --mrr-density-pad-y: 12px;
+  --mrr-density-gap:    6px;
+  --mrr-density-row-h: 28px;
+  --mrr-density-fs:    13px;
+}
+.mrr-sheet[data-density="roomy"] {
+  --mrr-density-pad-x: 16px;
+  --mrr-density-pad-y: 16px;
+  --mrr-density-gap:   10px;
+  --mrr-density-row-h: 34px;
+  --mrr-density-fs:   14px;
+}
+
+/* density toggle pill button group (rendered inside the actions row) */
+.mrr-density-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 2px;
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 999px;
+  background: var(--mrr-tint-1);
+}
+.mrr-density-toggle__label {
+  font-family: var(--mrr-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mrr-text-faint);
+  padding: 0 8px 0 6px;
+}
+.mrr-density-toggle__btn {
+  font-family: var(--mrr-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mrr-text-dim);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.mrr-density-toggle__btn:hover {
+  color: var(--mrr-text);
+  background: var(--mrr-tint-2);
+}
+.mrr-density-toggle__btn:focus-visible {
+  outline: 1px solid var(--mrr-accent-line);
+  outline-offset: 1px;
+}
+.mrr-density-toggle__btn[aria-pressed="true"] {
+  background: var(--mrr-accent-soft);
+  color: var(--mrr-text);
+  box-shadow: inset 0 0 0 1px var(--mrr-accent-line);
+}
+
+/* ── Phase 5 step 5.4: derived tooltip math ──────────────────────────
+ * Cursor + underline affordance on derived value cells whose ruleset
+ * declares a tooltipFormula. The browser's native title-attr tooltip
+ * carries the breakdown ("Soak (Bashing): 7 = Stamina (4) + Bashing
+ * Soak (3)"). Affordance is intentionally subtle — dotted underline
+ * + help cursor is the long-established "this has hover info" pattern
+ * (matches the prototype's skill-bonus pill UX). Scoped to autocalc
+ * value cells with a non-empty title so static-rendered derived stats
+ * without a tooltipFormula keep their default cursor + no underline. */
+.mrr-row__value--autocalc[title]:not([title=""]) {
+  cursor: help;
+  text-decoration: underline dotted var(--mrr-text-faint);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.mrr-row__value--autocalc[title]:not([title=""]):hover {
+  text-decoration-color: var(--mrr-accent-line);
+}
+
+/* ── Phase 5 step 5.2: XP card ───────────────────────────────────────
+ * Visual restructure to prototype parity (sheet.jsx XpCard, UI-build.md
+ * §3.4 + §4.7). The baseline rules at the .mrr-xp-card section above
+ * already supply structure (flex column, row, group). This section
+ * tightens the type scale + spacing to match the prototype:
+ *   - card-level label: 10px / 600 / 0.12em uppercase (already)
+ *   - sub-labels:       9px  / 0.10em uppercase (already)
+ *   - numeric value:    14px → 16px / 600  (PROTOTYPE TARGET)
+ *   - level input:      16px → 18px / 600 / 56px wide (PROTOTYPE)
+ *   - + button placed inline at row end via flex-end self-align.
+ * Selector specificity matches the baseline rule (single-class) so the
+ * cascade resolves the override by source order — appended last wins.
+ * Pool-mode (Exalted) and formula-mode (D&D, PF2e) both consume the
+ * same primitives; the only mode difference is which primitives
+ * appear (pool: current/sep/total/+1; formula: level/current/sep/next/bar).
+ * Mode dispatch lives in renderXpCard() which keys off
+ * ruleset.resolution.mode. */
+.mrr-xp-card__input {
+  font-size: 16px;
+}
+.mrr-xp-card__input--lvl {
+  font-size: 18px;
+  width: 56px;
+}
+.mrr-xp-card__sep {
+  font-size: 18px;
+  padding-bottom: 6px;
+}
+.mrr-xp-card__next {
+  font-size: 16px;
+  font-weight: 600;
+  padding-bottom: 4px;
+}
+/* Pool-mode +1 button now lives inside the row (see renderXpCard pool
+   branch). Anchor it to flex-end so it baselines with the inputs and
+   doesn't stretch the row vertically. The baseline alignment already
+   says align-self: flex-start at the .mrr-xp-card__add base rule;
+   this overrides for the inline placement. */
+.mrr-xp-card__row .mrr-xp-card__add {
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+/* ── Phase 5 step 5.6: state badges + anima banner ──
+ * Visual treatments for state rows whose active value carries narrative
+ * weight: Initiative=Crashed (distress) and Anima=Suppressed (muted).
+ * Uses a data-active-value attribute on .mrr-state plus paired modifier
+ * classes so the row + select restyle without changing the underlying
+ * select-based render (which already handles N values natively, including
+ * the 6-value Anima Banner with Suppressed prepended in Plan B step B.2).
+ *
+ * Crashed token: scoped to this section, no global :root pollution beyond
+ * the three new --mrr-state-crashed-* tokens.
+ * Suppressed: leans on existing --mrr-text-faint for the "no anima" feel.
+ */
+
+:root {
+  --mrr-state-crashed-color: oklch(0.62 0.18 28);
+  --mrr-state-crashed-soft:  oklch(0.62 0.18 28 / 0.18);
+  --mrr-state-crashed-line:  oklch(0.62 0.18 28 / 0.42);
+}
+
+/* Initiative=Crashed — red distress treatment on row + select.
+ * Subtle pulse on the name to draw the eye without being jarring; respects
+ * prefers-reduced-motion below. (!)-glyph appended via ::after pseudo. */
+.mrr-state--initiative-crashed .mrr-state__name {
+  color: var(--mrr-state-crashed-color);
+  font-weight: 600;
+  animation: mrr-state-crashed-pulse 2.4s ease-in-out infinite;
+}
+
+.mrr-state--initiative-crashed .mrr-state__name::after {
+  content: " (!)";
+  color: var(--mrr-state-crashed-color);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.mrr-state--initiative-crashed .mrr-state__select {
+  color: var(--mrr-state-crashed-color);
+  border-color: var(--mrr-state-crashed-line);
+  background: var(--mrr-state-crashed-soft);
+}
+
+@keyframes mrr-state-crashed-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.72; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mrr-state--initiative-crashed .mrr-state__name { animation: none; }
+}
+
+/* Anima=Suppressed — muted "no anima visible" treatment.
+ * Suppressed renders at the top of the Anima Banner select because Plan B
+ * step B.2 prepended it as the first value in ruleset.json — option order
+ * follows ruleset value order. */
+.mrr-state--anima-suppressed .mrr-state__name {
+  color: var(--mrr-text-faint);
+  font-style: italic;
+}
+
+.mrr-state--anima-suppressed .mrr-state__select {
+  color: var(--mrr-text-faint);
+}
+
+/* Defensive overflow guard for state rows on narrow panels (≥320px).
+ * The row is flex-row name+select; if a future ruleset adds a long state
+ * name, the select should compress rather than spill. Anima Banner with 6
+ * values (Suppressed/Dim/Glowing/Burning/Bonfire/Iconic) renders inside
+ * the native <select>, so option count never affects row width. */
+.mrr-state {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.mrr-state__select {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* ── Phase 5 step 5.3: Resources cluster ──────────────────────────────
+ * Horizontal "charbar" cluster of resource readouts rendered above
+ * Attributes when the active ruleset declares resources[] (Plan B v1
+ * schema add). Driven by mrrP3RenderResourcesSection — sub-renderers
+ * dispatch by resource.type (bar / dice / counter / pool / custom).
+ *
+ * Layout: flex-wrap with min 120px per resource so 4+ pools at the top
+ * of a 280-320px panel collapse to a 2x2 grid rather than spilling
+ * horizontally. Adjacent resources sharing a `group` value render under
+ * a shared subheader (D&D Spell Slots case).
+ *
+ * Auto-color thresholds match prototype <Bar> in sheet.jsx:151
+ *   pct < 30%  → bad
+ *   pct < 65%  → warn
+ *   pct >= 65% → ok
+ * Override via resource.color ∈ {ok|warn|bad|accent}.
+ *
+ * Tokens: reuses --mrr-success/-warning/-fail and --mrr-accent. No
+ * global :root pollution. Local section-scoped tokens for the dice
+ * glyph treatment only.
+ */
+
+:root {
+  --mrr-resources-pad: 10px;
+  --mrr-resources-gap: 10px;
+  --mrr-resource-min-w: 120px;
+  --mrr-resource-bar-h: 6px;
+  --mrr-resource-die-size: 22px;
+}
+
+.mrr-resources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mrr-resources-gap);
+  padding: var(--mrr-resources-pad);
+  margin: 0 0 8px 0;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-hairline);
+  border-radius: 8px;
+}
+
+/* Sub-group subheader (D&D Spell Slots). Forces a wrap break so all
+ * resources sharing a group cluster under their label. */
+.mrr-resources__group-break {
+  flex-basis: 100%;
+  height: 0;
+  margin: 0;
+  border: 0;
+}
+.mrr-resources__group-label {
+  flex-basis: 100%;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mrr-text-faint);
+  margin: 4px 0 -2px 0;
+}
+
+.mrr-resource {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 var(--mrr-resource-min-w);
+  min-width: var(--mrr-resource-min-w);
+  padding: 6px 8px;
+  background: var(--mrr-bg-input);
+  border: 1px solid var(--mrr-hairline);
+  border-radius: 6px;
+}
+/* Full-width resource (used by exalted-health-track so the track has room
+   to grow with extra HL added via Ox-Body, Mutations, etc.). Wraps onto
+   its own row regardless of cluster width. */
+.mrr-resource--full-width {
+  flex-basis: 100%;
+}
+
+.mrr-resource__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mrr-text-faint);
+  line-height: 1.1;
+}
+
+.mrr-resource__values {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 13px;
+  color: var(--mrr-text);
+}
+.mrr-resource__val {
+  font-weight: 600;
+}
+.mrr-resource__val-input {
+  min-width: 3ch;
+  width: auto;
+  max-width: 5ch;
+  padding: 2px 4px;
+  background: var(--mrr-bg-app);
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 3px;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  box-sizing: content-box;
+}
+.mrr-resource__val-input:focus {
+  outline: none;
+  border-color: var(--mrr-accent-line);
+}
+.mrr-resource__sep {
+  color: var(--mrr-text-faint);
+  opacity: 0.7;
+}
+
+/* Bar render (type=bar) — fill bar with auto-color. */
+.mrr-resource__bar {
+  position: relative;
+  height: var(--mrr-resource-bar-h);
+  width: 100%;
+  background: var(--mrr-bg-app);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.mrr-resource__bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  transition: width 120ms ease-out, background-color 120ms ease-out;
+}
+.mrr-resource__bar-fill--ok     { background: var(--mrr-success, oklch(0.78 0.14 145)); }
+.mrr-resource__bar-fill--warn   { background: var(--mrr-warning, oklch(0.82 0.14 85)); }
+.mrr-resource__bar-fill--bad    { background: var(--mrr-fail, oklch(0.65 0.18 28)); }
+.mrr-resource__bar-fill--accent { background: var(--mrr-accent); }
+
+/* Dice render (type=dice) — pool of clickable dice glyphs. Spent dice
+ * dim. Reuses --mrr-resource-die-size for sizing. */
+.mrr-resource__dice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 2px;
+}
+.mrr-resource__die {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--mrr-resource-die-size);
+  height: var(--mrr-resource-die-size);
+  padding: 0;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  border-radius: 4px;
+  color: var(--mrr-text);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 100ms ease-out, opacity 100ms ease-out;
+}
+.mrr-resource__die:hover { background: var(--mrr-accent-soft); }
+.mrr-resource__die--spent {
+  opacity: 0.32;
+  cursor: default;
+}
+.mrr-resource__die--spent:hover { background: var(--mrr-bg-elev); }
+
+/* Counter render (type=counter) — numeric stepper. */
+.mrr-resource__counter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mrr-resource__step {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-border);
+  border-radius: 4px;
+  color: var(--mrr-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+.mrr-resource__step:hover { background: var(--mrr-accent-soft); }
+.mrr-resource__step:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Pool render (type=pool) — current/max display, no bar (matches
+ * Exalted motes/willpower pattern; the prominent type-scale recalls the
+ * XP card values). */
+.mrr-resource--pool .mrr-resource__values {
+  font-size: 15px;
+}
+
+/* Custom placeholder — renders when a resource declares
+ * type=custom with a rendererConfig.component name that has not been
+ * registered in the custom-component registry yet. Distinct visual
+ * marker so missing components are obvious during integration. */
+.mrr-resource__placeholder {
+  font-size: 11px;
+  color: var(--mrr-text-faint);
+  font-style: italic;
+  padding: 4px 6px;
+  background: var(--mrr-bg-app);
+  border: 1px dashed var(--mrr-hairline-strong);
+  border-radius: 4px;
+}
+.mrr-resource__placeholder code {
+  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 10px;
+  color: var(--mrr-text);
+}
+
+/* Quick-button row — pill-style, matches XpCard +1 XP affordance. */
+.mrr-resource__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.mrr-resource__quick-btn {
+  padding: 2px 8px;
+  background: var(--mrr-accent-soft);
+  border: 1px solid var(--mrr-accent-line);
+  border-radius: 999px;
+  color: var(--mrr-text);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background-color 100ms ease-out;
+}
+.mrr-resource__quick-btn:hover {
+  background: var(--mrr-accent-dim);
+}
+
+/* Narrow-panel guard (≥320px). Below ~280px the cluster collapses to a
+ * single column; above that the resources wrap as a 2-up grid via
+ * flex-wrap + min-width. */
+@media (max-width: 320px) {
+  .mrr-resource {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+}
+
+/* ── Phase 5 step 5.6: V20 morality + paths + virtues + health-track ─────
+ * V20 visual treatment. Owns the .mrr-morality cluster (Path Rating,
+ * path picker + description, virtue rows with paired-choice toggle) and
+ * the .mrr-health-track grid (7 boxes cycling through B / L / A damage
+ * types per V20 RAW). All rules namespaced under .mrr-morality* and
+ * .mrr-health-track* so they don't collide with the Phase 5 step 5.3
+ * resources cluster above. */
+
+.mrr-morality {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 6px 0;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-hairline);
+  border-radius: 6px;
+}
+.mrr-morality__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mrr-morality__title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mrr-text-faint);
+}
+.mrr-morality__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.mrr-morality__rating-label {
+  font-size: 11px;
+  color: var(--mrr-text-faint);
+}
+.mrr-morality__rating-step {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mrr-bg-input);
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 4px;
+  color: var(--mrr-text);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.mrr-morality__rating-step:hover:not([disabled]) {
+  background: var(--mrr-accent-soft);
+}
+.mrr-morality__rating-step[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.mrr-morality__rating-value {
+  min-width: 1.5em;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mrr-text);
+}
+.mrr-morality__path-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mrr-morality__path-select {
+  background: var(--mrr-bg-input);
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 4px;
+  color: var(--mrr-text);
+  padding: 4px 6px;
+  font-size: 12px;
+  font-family: inherit;
+}
+.mrr-morality__path-desc {
+  font-size: 11px;
+  color: var(--mrr-text-faint);
+  line-height: 1.4;
+  padding: 4px 6px;
+  background: var(--mrr-bg-app);
+  border-left: 2px solid var(--mrr-accent-line);
+  border-radius: 2px;
+}
+.mrr-morality__virtues {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mrr-morality__virtue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.mrr-morality__virtue-label {
+  flex: 1 1 auto;
+  font-size: 12px;
+  color: var(--mrr-text);
+}
+.mrr-morality__virtue-toggle {
+  display: inline-flex;
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.mrr-morality__virtue-toggle-btn {
+  padding: 2px 8px;
+  background: var(--mrr-bg-input);
+  border: 0;
+  color: var(--mrr-text-faint);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color 100ms ease-out, color 100ms ease-out;
+}
+.mrr-morality__virtue-toggle-btn[aria-pressed="true"] {
+  background: var(--mrr-accent-soft);
+  color: var(--mrr-text);
+  font-weight: 600;
+}
+.mrr-morality__virtue-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.mrr-morality__virtue-step {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mrr-bg-input);
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 3px;
+  color: var(--mrr-text);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+.mrr-morality__virtue-step:hover:not([disabled]) {
+  background: var(--mrr-accent-soft);
+}
+.mrr-morality__virtue-step[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.mrr-morality__virtue-value {
+  min-width: 1.25em;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mrr-text);
+}
+
+/* v20-health-track — 7-level V20 health grid. Each box cycles
+ * empty → B (bashing) → L (lethal) → A (aggravated) → empty on click.
+ * Color tier matches damage severity (B = faint, L = warn, A = bad). */
+.mrr-health-track {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+.mrr-health-track__levels {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+.mrr-health-track__level {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.mrr-health-track__box {
+  width: 100%;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mrr-bg-input);
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 3px;
+  color: var(--mrr-text);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  cursor: pointer;
+  transition: background-color 100ms ease-out, border-color 100ms ease-out;
+}
+.mrr-health-track__box[data-damage="B"] {
+  background: var(--mrr-accent-soft);
+  border-color: var(--mrr-accent-line);
+}
+.mrr-health-track__box[data-damage="L"] {
+  background: oklch(0.55 0.16 60 / 0.32);
+  border-color: oklch(0.65 0.18 60 / 0.55);
+  color: oklch(0.94 0.04 60);
+}
+.mrr-health-track__box[data-damage="A"] {
+  background: oklch(0.50 0.20 25 / 0.42);
+  border-color: oklch(0.62 0.22 25 / 0.65);
+  color: oklch(0.96 0.05 25);
+}
+.mrr-health-track__label {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--mrr-text-faint);
+  text-align: center;
+  line-height: 1.1;
+}
+.mrr-health-track__penalty {
+  font-size: 9px;
+  color: var(--mrr-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.mrr-health-track__summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--mrr-text-faint);
+}
+.mrr-health-track__legend {
+  display: inline-flex;
+  gap: 6px;
+}
+.mrr-health-track__legend code {
+  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 10px;
+}
+
+@media (max-width: 320px) {
+  .mrr-health-track__levels {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .mrr-morality__virtue {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ── Round 6: roll-under mechanic ── */
+/* Visual states for roll-under outcomes. The dice tray's existing success/fail
+   modifiers cover plain pass/fail; these two add crit-success and fumble bands
+   the roll-under widget emits. accent ring for crit, warning fill for fumble —
+   same vocabulary as the dice-pool botch state. */
+.mrr-dice__result--crit {
+  border-color: var(--mrr-accent);
+  background: var(--mrr-accent-soft);
+}
+.mrr-dice__result--fumble {
+  border-color: var(--mrr-warning);
+  background: rgba(251, 191, 36, 0.10);
+}
+
+/* ── Round 7: stance-modal-pool ── */
+/* Segmented stance toggle for stance-modal-pool resolution mode (Lasers &
+   Feelings). Two pill buttons render in a single row above the pool size
+   input. Active stance is filled with accent; inactive is the standard
+   hairline-button look so the choice reads at a glance. Per-die "exact"
+   highlight class lights the LASER FEELINGS dice in the result row, and
+   outcome tier classes give the dice tray's result strip a per-tier
+   gradient so miss / barely / good / critical are distinguishable without
+   reading text. */
+.mrr-dice__stance-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 4px;
+}
+.mrr-dice__stance-row > label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mrr-text-faint, oklch(0.7 0.02 285));
+  min-width: 48px;
+}
+.mrr-dice__stance-group {
+  display: inline-flex;
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--mrr-bg-input);
+}
+.mrr-stance-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--mrr-text, inherit);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.mrr-stance-btn + .mrr-stance-btn {
+  border-left: 1px solid var(--mrr-hairline);
+}
+.mrr-stance-btn:hover {
+  background: var(--mrr-accent-soft);
+}
+.mrr-stance-btn--active {
+  background: var(--mrr-accent);
+  color: var(--mrr-on-accent);
+}
+.mrr-stance-btn--active:hover {
+  background: var(--mrr-accent);
+}
+
+/* Pool-formula hint label under the pool input. Pure cosmetic — exposes
+   the rules-text formula for pool composition to the player without
+   forcing them into a parser. */
+.mrr-dice__hint {
+  font-size: 10px;
+  color: var(--mrr-text-faint, oklch(0.65 0.02 285));
+  padding: 0 8px 4px;
+  font-style: italic;
+}
+
+/* LASER FEELINGS / exact-match die highlight. Stronger accent ring than a
+   plain stance-success so the exact-match dice pop on the result strip. */
+.mrr-dice__face--exact {
+  outline: 2px solid var(--mrr-accent);
+  outline-offset: -2px;
+  background: var(--mrr-accent-soft);
+  position: relative;
+}
+
+/* Stance-modal-pool result strip — per-tier visual states. Outcome tiers
+   are open-ended labels (the spec doesn't enumerate them) so we map by
+   the canonical L&F label set: miss / barely / good / critical. Any other
+   tier label falls through to the default --success / --fail kind chosen
+   by rollStanceModalPool. */
+.mrr-dice__result--tier-miss {
+  border-color: var(--mrr-warning);
+  background: rgba(251, 191, 36, 0.08);
+}
+.mrr-dice__result--tier-barely {
+  border-color: var(--mrr-hairline-strong);
+  background: rgba(255, 255, 255, 0.04);
+}
+.mrr-dice__result--tier-good {
+  border-color: var(--mrr-accent-line);
+  background: var(--mrr-accent-soft);
+}
+.mrr-dice__result--tier-critical {
+  border-color: var(--mrr-accent);
+  background: var(--mrr-accent-soft);
+  box-shadow: 0 0 0 1px var(--mrr-accent-dim) inset;
+}
+
+/* ── Phase 6: DERIVED POOLS card grid ────────────────────────────────────
+ * 2-column grid of compact stat cards replacing the legacy row layout.
+ * Card anatomy: name top-left, big value top-right, faint formula
+ * tokens below the head. Auto-calc cards show the computed value with
+ * no edit input; manual cards keep an inline stepper.
+ * Grid wraps to one column at narrow widths so the cards never crowd.
+ * Source: ~/projects/claude-design-updates intent + image 7 (2026-05-08).
+ * ────────────────────────────────────────────────────────────────────── */
+.mrr-derived-pools__subtitle {
+  font-size: 11px;
+  color: var(--mrr-text-faint, var(--mrr-text-dim));
+  margin: 2px 0 8px;
+  padding-left: 4px;
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+.mrr-derived-pools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+@media (max-width: 320px) {
+  .mrr-derived-pools {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mrr-derived-pool-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--mrr-bg-elev);
+  border: 1px solid var(--mrr-hairline);
+  border-radius: 6px;
+  min-width: 0;
+}
+
+.mrr-derived-pool-card:hover {
+  border-color: var(--mrr-hairline-strong);
+}
+
+.mrr-derived-pool-card__head {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mrr-derived-pool-card__name {
+  font-family: var(--mrr-sans, inherit);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mrr-text);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.mrr-derived-pool-card__value-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.mrr-derived-pool-card__value {
+  font-family: var(--mrr-mono, monospace);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--mrr-text);
+  line-height: 1;
+  min-width: 1.5ch;
+  text-align: right;
+}
+
+.mrr-derived-pool-card__value--autocalc {
+  color: var(--mrr-accent);
+}
+
+.mrr-derived-pool-card__value-input {
+  font-family: var(--mrr-mono, monospace);
+  font-size: 18px;
+  font-weight: 600;
+  width: auto;
+  min-width: 3ch;
+  max-width: 5ch;
+  padding: 2px 4px;
+  background: var(--mrr-bg-app);
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 4px;
+  color: var(--mrr-text);
+  text-align: right;
+  box-sizing: content-box;
+}
+
+.mrr-derived-pool-card__max {
+  font-family: var(--mrr-mono, monospace);
+  font-size: 12px;
+  color: var(--mrr-text-dim);
+}
+
+.mrr-derived-pool-card__bonus {
+  font-family: var(--mrr-mono, monospace);
+  font-size: 12px;
+  color: var(--mrr-success, var(--mrr-accent));
+  white-space: nowrap;
+}
+
+.mrr-derived-pool-card__bonus--neg {
+  color: var(--mrr-fail);
+}
+
+.mrr-derived-pool-card__formula {
+  font-family: var(--mrr-mono, monospace);
+  font-size: 10px;
+  color: var(--mrr-text-faint, var(--mrr-text-dim));
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mrr-derived-pool-card__roll {
+  margin-top: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  background: var(--mrr-bg-app);
+  border: 1px solid var(--mrr-hairline-strong);
+  border-radius: 4px;
+  color: var(--mrr-text);
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.mrr-derived-pool-card__roll:hover {
+  background: var(--mrr-accent-soft);
+  border-color: var(--mrr-accent-line);
+}
+
+/* ── Phase 6: state-banner resource (Anima Banner inline) ────────────────
+ * Cycle-button pill that lives inline in the Resources cluster. Per-tier
+ * color tints communicate the banner's intensity at a glance.
+ * Hidden dropdown stays in DOM (sr-only-ish) so keyboard users can pick
+ * a value directly rather than clicking through the cycle.
+ * ────────────────────────────────────────────────────────────────────── */
+.mrr-resource--state-banner {
+  /* Allow the banner to use a contrasting background so it reads as a
+     status pill rather than another stepper. */
+  background: transparent;
+  border: 1px dashed var(--mrr-hairline);
+}
+
+.mrr-state-banner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.mrr-state-banner__pill {
+  font-family: var(--mrr-sans, inherit);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--mrr-bg-app);
+  color: var(--mrr-text);
+  border: 1px solid var(--mrr-hairline-strong);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.mrr-state-banner__pill:hover {
+  border-color: var(--mrr-accent-line);
+}
+
+/* Anima Banner tiers — dim → bonfire follows intensity gradient. */
+.mrr-state-banner__pill--suppressed,
+.mrr-state-banner__pill--none {
+  background: var(--mrr-bg-app);
+  color: var(--mrr-text-dim);
+  border-color: var(--mrr-hairline);
+}
+.mrr-state-banner__pill--dim {
+  background: oklch(0.25 0.04 60 / 0.30);
+  color: oklch(0.85 0.06 60);
+  border-color: oklch(0.6 0.10 60 / 0.5);
+}
+.mrr-state-banner__pill--glowing {
+  background: oklch(0.30 0.08 60 / 0.45);
+  color: oklch(0.92 0.10 60);
+  border-color: oklch(0.7 0.14 60 / 0.7);
+}
+.mrr-state-banner__pill--burning {
+  background: oklch(0.36 0.13 50 / 0.55);
+  color: oklch(0.95 0.14 50);
+  border-color: oklch(0.75 0.18 50 / 0.8);
+  box-shadow: 0 0 8px oklch(0.7 0.20 50 / 0.35);
+}
+.mrr-state-banner__pill--bonfire {
+  background: oklch(0.42 0.18 45 / 0.65);
+  color: oklch(0.97 0.15 50);
+  border-color: oklch(0.80 0.20 45 / 0.9);
+  box-shadow: 0 0 12px oklch(0.75 0.22 45 / 0.50);
+}
+.mrr-state-banner__pill--iconic {
+  background: oklch(0.48 0.22 40 / 0.75);
+  color: oklch(0.98 0.18 45);
+  border-color: oklch(0.85 0.22 40);
+  box-shadow: 0 0 16px oklch(0.80 0.24 40 / 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Visually hide the redundant keyboard-accessible <select> — it's still in
+   the DOM for keyboard users and screen readers (assistive tech can focus
+   the hidden element and pick a value), but it doesn't overlap the pill.
+   The click-to-cycle pill is the primary affordance for mouse users. */
+.mrr-state-banner__select {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

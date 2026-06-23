@@ -1,0 +1,1076 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.4.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.7.0"
+  },
+  "ruleset": {
+    "id": "gurps-lite",
+    "name": "GURPS Lite",
+    "version": "1.0.0",
+    "edition": "GURPS Lite 4th Edition (Steve Jackson Games, 2004)",
+    "license": "Original mechanics references; GURPS is a registered trademark of Steve Jackson Games Incorporated. Stat-vs-3d6 roll-under mechanics are common to the generic-system family; no verbatim SJG text reproduced.",
+    "summary": "Generic universal stat-vs-3d6 roll-under system. Each attribute and skill has a target number; roll 3d6 and succeed if the total is at or under that number. Bonuses raise the target (the cap of success), penalties lower it. Critical success on a natural 3 or 4; critical failure on the target plus ten, the natural 17, or the natural 18.",
+    "dice": {
+      "type": "d6",
+      "notation": "3d6 vs target"
+    },
+    "resolution": {
+      "mode": "roll-under",
+      "diceFormula": "3d6",
+      "skillBonusFormula": "{skill}",
+      "criticalSuccessFormula": "4",
+      "criticalFailureFormula": "{target} + 10"
+    },
+    "difficulties": {
+      "Easy": {
+        "threshold": 0,
+        "description": "Easy skill default — base attribute minus 4."
+      },
+      "Average": {
+        "threshold": -1,
+        "description": "Average skill default — base attribute minus 5."
+      },
+      "Hard": {
+        "threshold": -2,
+        "description": "Hard skill default — base attribute minus 6."
+      },
+      "VeryHard": {
+        "threshold": -3,
+        "description": "Very Hard skill — no default; must be learned. Base attribute minus 9 once trained at 1 point."
+      }
+    },
+    "attributes": [
+      {
+        "name": "Strength",
+        "abbreviation": "ST",
+        "group": "Physical",
+        "min": 1,
+        "max": 25,
+        "default": 10,
+        "description": "Muscle power and bulk. Drives HP, damage, lifting capacity, and any physical activity that depends on raw force."
+      },
+      {
+        "name": "Dexterity",
+        "abbreviation": "DX",
+        "group": "Physical",
+        "min": 1,
+        "max": 25,
+        "default": 10,
+        "description": "Agility, co-ordination, and reaction speed. Underlies most active physical skills and Basic Speed."
+      },
+      {
+        "name": "Intelligence",
+        "abbreviation": "IQ",
+        "group": "Mental",
+        "min": 1,
+        "max": 25,
+        "default": 10,
+        "description": "Brainpower, alertness, and adaptability. Default for Will, Perception, and most mental skills."
+      },
+      {
+        "name": "Health",
+        "abbreviation": "HT",
+        "group": "Physical",
+        "min": 1,
+        "max": 25,
+        "default": 10,
+        "description": "Endurance, resistance to illness and poison, and the body's reserve. Drives FP and recovery."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Acrobatics",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 20,
+        "default": 6,
+        "description": "Tumbling, balance, and athletic feats. Hard skill; default DX-6."
+      },
+      {
+        "name": "Area Knowledge",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 20,
+        "default": 10,
+        "description": "Familiarity with a specific region's people, places, and customs. Easy skill; default IQ."
+      },
+      {
+        "name": "Brawling",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 20,
+        "default": 10,
+        "description": "Unarmed striking. Easy skill; defaults to DX."
+      },
+      {
+        "name": "Camouflage",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 20,
+        "default": 6,
+        "description": "Conceal an object or oneself by blending into surroundings. Easy skill; default IQ-4."
+      },
+      {
+        "name": "Climbing",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Scale walls, ropes, and natural features. Average skill; default DX-5."
+      },
+      {
+        "name": "Driving",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Operate a ground vehicle (specify type on the character sheet). Average skill; default DX-5."
+      },
+      {
+        "name": "Electronics Operation",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Use a specific category of electronic gear. Average skill; default IQ-5."
+      },
+      {
+        "name": "First Aid",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 20,
+        "default": 6,
+        "description": "Stop bleeding and stabilise injuries in the field. Easy skill; default IQ-4."
+      },
+      {
+        "name": "Forensics",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 20,
+        "default": 4,
+        "description": "Apply scientific method to crime-scene evidence. Hard skill; default IQ-6."
+      },
+      {
+        "name": "Gunner",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 20,
+        "default": 6,
+        "description": "Operate a vehicle-mounted or heavy weapon. Easy skill; default DX-4."
+      },
+      {
+        "name": "Guns",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 20,
+        "default": 6,
+        "description": "Fire portable firearms (specify category on the character sheet). Easy skill; default DX-4."
+      },
+      {
+        "name": "Knife",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 20,
+        "default": 6,
+        "description": "Wield a knife in melee or thrown. Easy skill; default DX-4."
+      },
+      {
+        "name": "Lockpicking",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Open a lock without its key. Average skill; default IQ-5."
+      },
+      {
+        "name": "Mechanic",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Maintain and repair a class of machine (specify on the character sheet). Average skill; default IQ-5."
+      },
+      {
+        "name": "Navigation",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Find one's way using maps, instruments, or natural cues. Average skill; default IQ-5."
+      },
+      {
+        "name": "Observation",
+        "linkedAttribute": "Perception",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Notice details about the environment, people, or activity. Average skill; default Per-5."
+      },
+      {
+        "name": "Riding",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Control a mount (specify type on the character sheet). Average skill; default DX-5."
+      },
+      {
+        "name": "Shadowing",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Follow a person without being noticed. Average skill; default IQ-5."
+      },
+      {
+        "name": "Stealth",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Move quietly and remain unseen. Average skill; default DX-5."
+      },
+      {
+        "name": "Streetwise",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Navigate criminal and underground social networks. Average skill; default IQ-5."
+      },
+      {
+        "name": "Survival",
+        "linkedAttribute": "Perception",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Live off the land in a specific environment. Average skill; default Per-5."
+      },
+      {
+        "name": "Swimming",
+        "linkedAttribute": "Health",
+        "min": 0,
+        "max": 20,
+        "default": 6,
+        "description": "Stay afloat and move through water. Easy skill; default HT-4."
+      },
+      {
+        "name": "Throwing",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 20,
+        "default": 7,
+        "description": "Hurl an object at a target accurately. Hard skill; default DX-3."
+      },
+      {
+        "name": "Tracking",
+        "linkedAttribute": "Perception",
+        "min": 0,
+        "max": 20,
+        "default": 5,
+        "description": "Follow a trail through outdoor or urban terrain. Average skill; default Per-5."
+      }
+    ],
+    "derivedStats": [
+      {
+        "name": "Hit Points",
+        "formula": "Equal to ST at baseline; modifiable by Extra HP advantages",
+        "renderAs": "bar",
+        "tooltipFormula": "{Strength}",
+        "aliases": [
+          "hp",
+          "HP",
+          "hitPoints"
+        ]
+      },
+      {
+        "name": "Fatigue Points",
+        "formula": "Equal to HT at baseline; modifiable by Extra FP advantages",
+        "renderAs": "bar",
+        "tooltipFormula": "{Health}",
+        "aliases": [
+          "fp",
+          "FP",
+          "fatiguePoints"
+        ]
+      },
+      {
+        "name": "Will",
+        "formula": "Equal to IQ at baseline; covers mental fortitude and resistance",
+        "renderAs": "value",
+        "tooltipFormula": "{Intelligence}",
+        "aliases": [
+          "will",
+          "WILL"
+        ]
+      },
+      {
+        "name": "Perception",
+        "formula": "Equal to IQ at baseline; the sense-based attribute used for awareness rolls",
+        "renderAs": "value",
+        "tooltipFormula": "{Intelligence}",
+        "aliases": [
+          "per",
+          "PER",
+          "perception"
+        ]
+      },
+      {
+        "name": "Basic Speed",
+        "formula": "(DX + HT) / 4, not rounded",
+        "renderAs": "value",
+        "tooltipFormula": "({Dexterity} + {Health}) / 4",
+        "aliases": [
+          "basicSpeed",
+          "speed"
+        ]
+      },
+      {
+        "name": "Basic Move",
+        "formula": "Basic Speed rounded down; the number of yards moved in a step",
+        "renderAs": "value",
+        "tooltipFormula": "({Dexterity} + {Health}) / 4",
+        "aliases": [
+          "basicMove",
+          "move"
+        ]
+      },
+      {
+        "name": "Dodge",
+        "formula": "Basic Speed + 3, rounded down; the active defence against attacks",
+        "renderAs": "value",
+        "tooltipFormula": "(({Dexterity} + {Health}) / 4) + 3",
+        "aliases": [
+          "dodge"
+        ]
+      }
+    ],
+    "states": [
+      {
+        "name": "Status",
+        "values": [
+          {
+            "label": "Healthy",
+            "description": "Above 1/3 of HP. No injury penalties."
+          },
+          {
+            "label": "Reeling",
+            "description": "Below 1/3 of HP. Move and Dodge halved (round up)."
+          },
+          {
+            "label": "Collapse Risk",
+            "description": "At 0 HP or below. Roll HT each turn to stay conscious."
+          },
+          {
+            "label": "Unconscious",
+            "description": "Failed a consciousness check, knocked out, or HP at -1xHP."
+          },
+          {
+            "label": "Mortally Wounded",
+            "description": "HP at -1xHP or worse. Roll HT to avoid death; each subsequent multiple is a fresh roll."
+          },
+          {
+            "label": "Dead",
+            "description": "Failed a death check, or HP at -5xHP."
+          }
+        ]
+      },
+      {
+        "name": "Fatigue",
+        "values": [
+          {
+            "label": "Fresh",
+            "description": "Above 1/3 of FP. No fatigue penalties."
+          },
+          {
+            "label": "Tired",
+            "description": "Below 1/3 of FP. Move, Dodge, and ST halved (round up)."
+          },
+          {
+            "label": "Exhausted",
+            "description": "FP at 0. Cannot do anything strenuous without losing HP instead."
+          },
+          {
+            "label": "Collapse",
+            "description": "FP below 0. Unconsciousness imminent without rest."
+          }
+        ]
+      },
+      {
+        "name": "Posture",
+        "values": [
+          {
+            "label": "Standing",
+            "description": "Standard combat posture. No penalties."
+          },
+          {
+            "label": "Crouching",
+            "description": "-2 to hit in melee; smaller target for ranged attackers."
+          },
+          {
+            "label": "Kneeling",
+            "description": "-2 to hit; -2 to active defences."
+          },
+          {
+            "label": "Prone",
+            "description": "-4 to hit; -3 to active defences. Half move only."
+          },
+          {
+            "label": "Stunned",
+            "description": "Cannot defend actively this turn. Roll IQ or HT each turn to recover."
+          }
+        ]
+      }
+    ],
+    "diceTagFormat": {
+      "template": "[dice: 3d6 vs {target} -> {result} {outcome}, margin {margin}]",
+      "example": "[dice: 3d6 vs 14 -> 9 SUCCESS, margin 5]"
+    },
+    "sections": {
+      "order": [
+        "identity",
+        "resources",
+        "attributes",
+        "skills",
+        "derived",
+        "states",
+        "inventory",
+        "notes"
+      ]
+    },
+    "resources": [
+      {
+        "id": "hit-points",
+        "label": "HP",
+        "type": "bar",
+        "max": "{Strength}",
+        "current": "{Strength}",
+        "color": "bad",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "-5",
+            "delta": -5
+          },
+          {
+            "label": "Full",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "fatigue-points",
+        "label": "FP",
+        "type": "bar",
+        "max": "{Health}",
+        "current": "{Health}",
+        "color": "warn",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "-5",
+            "delta": -5
+          },
+          {
+            "label": "Rest",
+            "delta": "max"
+          }
+        ]
+      }
+    ],
+    "lorebookKeys": [
+      "advantage",
+      "disadvantage",
+      "skill",
+      "tech-level",
+      "campaign"
+    ],
+    "header": {
+      "raceLabel": "Race",
+      "classLabel": "Template"
+    },
+    "backgrounds": {
+      "enabled": true,
+      "label": "Advantages & Disadvantages",
+      "min": 0,
+      "max": 5,
+      "default": 0,
+      "textOnly": true
+    }
+  },
+  "gmAgent": {
+    "name": "GURPS Lite Ruleset Helper",
+    "description": "Auto-installed by GM-mode bundle. Provides GURPS Lite skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
+    "phase": "pre_generation",
+    "promptTemplate": "You provide rules guidance for a GURPS Lite (4th Edition, Steve Jackson Games, 2004) campaign in Marinara Engine's roleplay mode, working alongside the engine's default world-state, prose-guardian, continuity, and expression agents. Your output is a context injection that the main narration model reads BEFORE narrating the next turn. Do not narrate; only emit rules guidance.\n\n# Mechanics you enforce\n\nResolution: roll 3d6 and SUCCEED if the total is at or under the EFFECTIVE target (attribute or skill plus all current modifiers). The bell curve clusters around 10-11; rolls of 3 and 18 are rare. The MARGIN OF SUCCESS (target - rolled) and MARGIN OF FAILURE (rolled - target) matter — high margins drive contest outcomes, damage stages, and timing.\n\nCritical success: natural 3 or natural 4 (also natural 5 if effective skill 15+, natural 6 if effective skill 16+). Critical failure: natural 18 always; natural 17 if effective target <= 15; any roll of target + 10 or higher. The GM rolls on the critical hit / miss table appropriate to the action.\n\nCombat turn structure: each turn pick ONE maneuver — Do Nothing, Move, Change Posture, Ready, Aim, Attack, Feint, All-Out Attack (+4 to hit / extra attack / +2 damage, NO defense this turn), Move and Attack (-2 to hit or skill capped at 9, whichever is worse), All-Out Defense (no attack, +2 to one defense or two defenses against same attack), Concentrate, Wait, Evaluate. The maneuver chosen FIRST shapes which actions resolve later in the turn.\n\nActive defenses (one per attack against you): Dodge (Basic Speed + 3, rounded down), Parry (skill / 2 + 3 with a weapon already readied; -4 per extra parry that turn), Block (Shield skill / 2 + 3 with a readied shield). On success, the attack misses entirely.\n\nDamage and wounds: thrust / swing damage rolled by weapon and ST. Damage Resistance (DR) from armor subtracts before injury. Wound type multipliers: crushing x1, cutting x1.5, impaling x2, piercing varies x0.5-x2. Below 1/3 HP = REELING (Move and Dodge halved). At 0 HP, roll HT to stay conscious each turn. -1xHP = mortally wounded (HT to avoid death). -5xHP = automatic death.\n\nFatigue (FP): starts at HT. Extra effort, sprinting, spellcasting, forced marches all spend FP. Below 1/3 FP = TIRED (Move, Dodge, ST halved). At 0 FP, strenuous actions cost HP. Recovers 1 per 10 minutes of rest.\n\nSkill difficulty and defaults: Easy / Average / Hard / Very Hard determines learning cost and default penalty. Very Hard skills have no default.\n\n# Output format the main narration model must use\n\nWhen the player attempts something with uncertain outcome, the narration model emits a dice tag in this exact format so the Marinara client can render the result:\n\n[dice: 3d6 vs {target} -> {result} {outcome}, margin {margin}] - call: <Skill or Attribute> at <modifiers>\n\nExample success: \"Hadrian lines up the shot, breath held. [dice: 3d6 vs 14 -> 9 SUCCESS, margin 5] - call: Guns (Pistol) at +1 Aim - the round punches through canvas and finds the deserter's shoulder.\"\n\nExample critical failure: \"Lyle reaches for the door, eyes elsewhere. [dice: 3d6 vs 11 -> 18 CRITICAL FAILURE, margin 7] - call: Stealth at -2 night - he kicks the bucket on the step; the whole house wakes.\"\n\nFor HP and FP changes use the standard mrrp-state tags ([mrrp-state: field=\"hp\" delta=\"-5\" reason=\"Cut, 2x cutting\"], [mrrp-state: field=\"fp\" delta=\"-1\" reason=\"Sprint\"]).\n\n# What you (this agent) emit each turn\n\nEmit a short rules brief (<= 250 tokens) that:\n1. Identifies the most likely attribute or skill check the player's stated action calls for, with the effective target number after all known modifiers.\n2. Names the maneuver the action implies (Attack, All-Out Attack, Feint, Concentrate, etc.) and reminds the narrator that the maneuver shapes available defenses.\n3. Reminds the narration model of the 3d6 roll-under dice tag format, the role of margin, and the critical-success / critical-failure thresholds.\n4. Surfaces current HP, FP, and any active conditions (Reeling, Tired, Prone, Stunned) that modify the roll.\n5. Flags relevant DR for the most likely incoming damage type, since DR vs wound-type-multiplier determines actual injury.\n\nIf no roll is needed, state \"No roll required\" with one-sentence reason.\n\n# Tone and pacing\n\nGURPS rewards specificity. Generic adjectives (\"a strong man\", \"a fast horse\") are weaker than concrete ST 14 and Move 8. Encourage the narrator to name modifiers in fiction — \"the rain costs you -2 Stealth\", \"her firm footing gives +1 Parry\" — so the dice math is legible to the table. Combat in GURPS is lethal; one good hit can drop a fully-armored character. Lean into that — narrate the consequences of margin honestly.\n\n# Rules lookup\n\nThe bundled lorebook contains keyword-triggered entries (3d6 resolution, critical success/failure, maneuvers, active defenses, damage and wounds, fatigue, skill difficulty). Surface them rather than improvising.\n\nNever invent rules. Where GURPS Lite is silent (point costs for high-power campaigns, advanced combat options, magic systems beyond the basic spells), label the call as a GM ruling or refer to the full GURPS 4e Basic Set if the table has it.",
+    "settings": {}
+  },
+  "lorebook": {
+    "name": "GURPS Lite Rules Reference",
+    "description": "Keyword-triggered rules reference for the GM agent running a GURPS Lite (4th Edition) campaign. Each entry surfaces only when its keys appear in recent narration or player input, so the GM gets the right rule at the right moment without inflating every prompt.",
+    "category": "world",
+    "scanDepth": 4,
+    "tokenBudget": 1500,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "name": "3d6 Roll-Under Resolution",
+        "keys": [
+          "3d6",
+          "roll",
+          "check",
+          "skill check",
+          "roll under",
+          "target number",
+          "margin",
+          "margin of success",
+          "margin of failure"
+        ],
+        "content": "Every check rolls 3d6 and SUCCEEDS if the total is at or under the effective target (attribute or skill plus any modifiers). The bell curve means 10-11 is most likely, 3 and 18 are rare. MARGIN OF SUCCESS = target - rolled total; the higher the margin, the better the success (used for damage on some attacks, contests, and timing). MARGIN OF FAILURE = rolled - target; higher margin = worse result. A success by 5 is meaningfully better than a success by 1; tell the player both the result and the margin so the narration can scale.",
+        "position": 0
+      },
+      {
+        "name": "Critical Success and Failure",
+        "keys": [
+          "critical",
+          "crit",
+          "critical success",
+          "critical failure",
+          "fumble",
+          "natural 3",
+          "natural 4",
+          "natural 17",
+          "natural 18"
+        ],
+        "content": "Critical success: natural 3 or natural 4. Critical success on an effective skill of 15+ also fires on a natural 5; an effective skill of 16+ also on a natural 6. The GM rules a spectacular extra benefit. Critical failure: natural 18 always. Natural 17 is a critical failure if the effective target is 15 or less; otherwise it's just a regular failure by 17-target. Any roll of target+10 or higher is also a critical failure (so target 8 fumbles on 18; target 6 fumbles on 16+). Critical failures roll on the critical-miss table appropriate to the action — combat fumbles drop weapons, social fumbles offend, magic fumbles backlash.",
+        "position": 0
+      },
+      {
+        "name": "Combat Maneuvers",
+        "keys": [
+          "maneuver",
+          "attack",
+          "all-out attack",
+          "all-out defense",
+          "feint",
+          "evaluate",
+          "ready",
+          "concentrate",
+          "move and attack",
+          "move",
+          "wait"
+        ],
+        "content": "Each turn pick one MANEUVER: Do Nothing, Move (full Basic Move), Change Posture, Ready (draw/load), Aim, Attack, Feint, All-Out Attack (no defense this turn, +4 to hit OR extra attack OR +2 damage), Move and Attack (-2 or skill cap at 9 whichever is worse), All-Out Defense (no attack, +2 to one active defense OR two active defenses against the same attack OR a second defense roll), Concentrate (mental task), Wait (held action), Evaluate (+1 to next attack per turn evaluating, max +3). The Maneuver chosen FIRST in a turn shapes which actions resolve later.",
+        "position": 0
+      },
+      {
+        "name": "Active Defenses",
+        "keys": [
+          "dodge",
+          "parry",
+          "block",
+          "active defense",
+          "defense"
+        ],
+        "content": "When attacked, choose ONE active defense per attack: Dodge (Basic Speed + 3, rounded down), Parry (skill/2 + 3 with a weapon you've already used this turn; unarmed Parry uses Brawling or DX), Block (Shield skill / 2 + 3, only with a readied shield). Each defense applies its own modifiers — Dodge dodges everything but suffers a -2 against attacks that come from behind; Parry suffers cumulative -4 per extra parry that turn after the first (-4, -8, -12). Block can absorb most attacks but each successful block of a heavy weapon needs a HT check to keep the shield. On a successful active defense, the attack misses entirely.",
+        "position": 0
+      },
+      {
+        "name": "Damage and Wounds",
+        "keys": [
+          "damage",
+          "thrust",
+          "swing",
+          "wound",
+          "HP",
+          "hit points",
+          "DR",
+          "damage resistance",
+          "soak",
+          "armor"
+        ],
+        "content": "Damage rolls vary by weapon and attacker's ST. Thrusting attacks roll the thrust column for the attacker's ST; swinging attacks roll the swing column. The defender's Damage Resistance (DR) from armor and natural toughness subtracts before injury is calculated. Different damage types have wound multipliers: crushing x1, cutting x1.5, impaling x2, piercing x0.5/x1/x1.5/x2 depending on caliber. Below 1/3 HP = REELING (Move and Dodge halved). At 0 HP, roll HT each turn to stay conscious; reach -1xHP and roll HT to avoid death. -5xHP is automatic death. HP recovers 1/day at rest, faster with First Aid (skill / 2, capped) or Physician.",
+        "position": 0
+      },
+      {
+        "name": "Fatigue Points",
+        "keys": [
+          "fatigue",
+          "fatigue points",
+          "FP",
+          "tired",
+          "exhausted"
+        ],
+        "content": "Fatigue Points (FP) start equal to HT. FP costs come from: extra effort (1 FP per use), running long distances (1 FP per 100 yards above Basic Move x10), spellcasting (varies by spell), and forced marches (1 FP per hour past your limit). Below 1/3 FP = TIRED: Move, Dodge, and ST halved (round up). At 0 FP, exhaustion sets in — strenuous actions cost HP instead of FP. Below 0 FP = unconsciousness imminent. FP recovers 1 per 10 minutes of rest, faster with Will rolls (specific cases). Manage FP carefully on long expeditions — running out at the wrong time is as bad as running out of HP.",
+        "position": 0
+      },
+      {
+        "name": "Skill Difficulty and Defaults",
+        "keys": [
+          "skill difficulty",
+          "easy",
+          "average",
+          "hard",
+          "very hard",
+          "default",
+          "skill default",
+          "untrained"
+        ],
+        "content": "Skills come in four difficulty tiers: Easy (default at attribute), Average (attribute - 1 to learn at attribute level; defaults at attribute - 4), Hard (attribute - 2 to learn at attribute level; defaults at attribute - 5), Very Hard (attribute - 3; no default — must learn at 1 point first). Defaults: untrained characters can attempt most skills at a reduced effective skill (e.g., Climbing defaults to DX-5). Some skills have NO default (Very Hard skills, most magic, technique-specific skills). Bonuses for tools, beneficial conditions, and bonus dice raise the effective skill; penalties from injury, environment, distraction lower it.",
+        "position": 0
+      },
+      {
+        "name": "Attribute: Strength (ST)",
+        "keys": [
+          "Strength",
+          "ST"
+        ],
+        "content": "GURPS Lite attribute. Strength (ST) [Physical] — Muscle power and bulk. Drives HP, damage, lifting capacity, and any physical activity that depends on raw force.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DX)",
+        "keys": [
+          "Dexterity",
+          "DX"
+        ],
+        "content": "GURPS Lite attribute. Dexterity (DX) [Physical] — Agility, co-ordination, and reaction speed. Underlies most active physical skills and Basic Speed.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (IQ)",
+        "keys": [
+          "Intelligence",
+          "IQ"
+        ],
+        "content": "GURPS Lite attribute. Intelligence (IQ) [Mental] — Brainpower, alertness, and adaptability. Default for Will, Perception, and most mental skills.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Health (HT)",
+        "keys": [
+          "Health",
+          "HT"
+        ],
+        "content": "GURPS Lite attribute. Health (HT) [Physical] — Endurance, resistance to illness and poison, and the body's reserve. Drives FP and recovery.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Acrobatics",
+        "keys": [
+          "Acrobatics"
+        ],
+        "content": "GURPS Lite skill. Acrobatics. Tumbling, balance, and athletic feats. Hard skill; default DX-6.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Area Knowledge",
+        "keys": [
+          "Area Knowledge"
+        ],
+        "content": "GURPS Lite skill. Area Knowledge. Familiarity with a specific region's people, places, and customs. Easy skill; default IQ.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Brawling",
+        "keys": [
+          "Brawling"
+        ],
+        "content": "GURPS Lite skill. Brawling. Unarmed striking. Easy skill; defaults to DX.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Camouflage",
+        "keys": [
+          "Camouflage"
+        ],
+        "content": "GURPS Lite skill. Camouflage. Conceal an object or oneself by blending into surroundings. Easy skill; default IQ-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Climbing",
+        "keys": [
+          "Climbing"
+        ],
+        "content": "GURPS Lite skill. Climbing. Scale walls, ropes, and natural features. Average skill; default DX-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Driving",
+        "keys": [
+          "Driving"
+        ],
+        "content": "GURPS Lite skill. Driving. Operate a ground vehicle (specify type on the character sheet). Average skill; default DX-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Electronics Operation",
+        "keys": [
+          "Electronics Operation"
+        ],
+        "content": "GURPS Lite skill. Electronics Operation. Use a specific category of electronic gear. Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: First Aid",
+        "keys": [
+          "First Aid"
+        ],
+        "content": "GURPS Lite skill. First Aid. Stop bleeding and stabilise injuries in the field. Easy skill; default IQ-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Forensics",
+        "keys": [
+          "Forensics"
+        ],
+        "content": "GURPS Lite skill. Forensics. Apply scientific method to crime-scene evidence. Hard skill; default IQ-6.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Gunner",
+        "keys": [
+          "Gunner"
+        ],
+        "content": "GURPS Lite skill. Gunner. Operate a vehicle-mounted or heavy weapon. Easy skill; default DX-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Guns",
+        "keys": [
+          "Guns"
+        ],
+        "content": "GURPS Lite skill. Guns. Fire portable firearms (specify category on the character sheet). Easy skill; default DX-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Knife",
+        "keys": [
+          "Knife"
+        ],
+        "content": "GURPS Lite skill. Knife. Wield a knife in melee or thrown. Easy skill; default DX-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Lockpicking",
+        "keys": [
+          "Lockpicking"
+        ],
+        "content": "GURPS Lite skill. Lockpicking. Open a lock without its key. Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Mechanic",
+        "keys": [
+          "Mechanic"
+        ],
+        "content": "GURPS Lite skill. Mechanic. Maintain and repair a class of machine (specify on the character sheet). Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Navigation",
+        "keys": [
+          "Navigation"
+        ],
+        "content": "GURPS Lite skill. Navigation. Find one's way using maps, instruments, or natural cues. Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Observation",
+        "keys": [
+          "Observation"
+        ],
+        "content": "GURPS Lite skill. Observation. Notice details about the environment, people, or activity. Average skill; default Per-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Riding",
+        "keys": [
+          "Riding"
+        ],
+        "content": "GURPS Lite skill. Riding. Control a mount (specify type on the character sheet). Average skill; default DX-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Shadowing",
+        "keys": [
+          "Shadowing"
+        ],
+        "content": "GURPS Lite skill. Shadowing. Follow a person without being noticed. Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "GURPS Lite skill. Stealth. Move quietly and remain unseen. Average skill; default DX-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Streetwise",
+        "keys": [
+          "Streetwise"
+        ],
+        "content": "GURPS Lite skill. Streetwise. Navigate criminal and underground social networks. Average skill; default IQ-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "GURPS Lite skill. Survival. Live off the land in a specific environment. Average skill; default Per-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Swimming",
+        "keys": [
+          "Swimming"
+        ],
+        "content": "GURPS Lite skill. Swimming. Stay afloat and move through water. Easy skill; default HT-4.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Throwing",
+        "keys": [
+          "Throwing"
+        ],
+        "content": "GURPS Lite skill. Throwing. Hurl an object at a target accurately. Hard skill; default DX-3.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Tracking",
+        "keys": [
+          "Tracking"
+        ],
+        "content": "GURPS Lite skill. Tracking. Follow a trail through outdoor or urban terrain. Average skill; default Per-5.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Hit Points",
+        "keys": [
+          "Hit Points"
+        ],
+        "content": "GURPS Lite derived stat. Hit Points — formula: Equal to ST at baseline; modifiable by Extra HP advantages",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Fatigue Points",
+        "keys": [
+          "Fatigue Points"
+        ],
+        "content": "GURPS Lite derived stat. Fatigue Points — formula: Equal to HT at baseline; modifiable by Extra FP advantages",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Will",
+        "keys": [
+          "Will"
+        ],
+        "content": "GURPS Lite derived stat. Will — formula: Equal to IQ at baseline; covers mental fortitude and resistance",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Perception",
+        "keys": [
+          "Perception"
+        ],
+        "content": "GURPS Lite derived stat. Perception — formula: Equal to IQ at baseline; the sense-based attribute used for awareness rolls",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Basic Speed",
+        "keys": [
+          "Basic Speed"
+        ],
+        "content": "GURPS Lite derived stat. Basic Speed — formula: (DX + HT) / 4, not rounded",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Basic Move",
+        "keys": [
+          "Basic Move"
+        ],
+        "content": "GURPS Lite derived stat. Basic Move — formula: Basic Speed rounded down; the number of yards moved in a step",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Dodge",
+        "keys": [
+          "Dodge"
+        ],
+        "content": "GURPS Lite derived stat. Dodge — formula: Basic Speed + 3, rounded down; the active defence against attacks",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "GURPS Lite difficulty ladder. Threshold values needed for success:\n- Easy (threshold 0) — Easy skill default — base attribute minus 4.\n- Average (threshold -1) — Average skill default — base attribute minus 5.\n- Hard (threshold -2) — Hard skill default — base attribute minus 6.\n- VeryHard (threshold -3) — Very Hard skill — no default; must be learned. Base attribute minus 9 once trained at 1 point.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      }
+    ]
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → GURPS Lite surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s+(\\d+)\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → GURPS Lite difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "gurps_lite_reference",
+      "description": "Returns canonical GURPS Lite reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# GURPS Lite — canonical reference\n\nGeneric universal stat-vs-3d6 roll-under system. Each attribute and skill has a target number; roll 3d6 and succeed if the total is at or under that number. Bonuses raise the target (the cap of success), penalties lower it. Critical success on a natural 3 or 4; critical failure on the target plus ten, the natural 17, or the natural 18.\n\n## Dice\n- Type: `d6`\n- Notation: `3d6 vs target`\n\n## Resolution\n- Mode: `roll-under`\n\n## Difficulty ladder\n- **Easy** (threshold 0) — Easy skill default — base attribute minus 4.\n- **Average** (threshold -1) — Average skill default — base attribute minus 5.\n- **Hard** (threshold -2) — Hard skill default — base attribute minus 6.\n- **VeryHard** (threshold -3) — Very Hard skill — no default; must be learned. Base attribute minus 9 once trained at 1 point.\n\n## Attributes\n- **Strength** (ST) [Physical] — Muscle power and bulk. Drives HP, damage, lifting capacity, and any physical activity that depends on raw force.\n- **Dexterity** (DX) [Physical] — Agility, co-ordination, and reaction speed. Underlies most active physical skills and Basic Speed.\n- **Intelligence** (IQ) [Mental] — Brainpower, alertness, and adaptability. Default for Will, Perception, and most mental skills.\n- **Health** (HT) [Physical] — Endurance, resistance to illness and poison, and the body's reserve. Drives FP and recovery.\n\n## Skills\n- **Acrobatics** — Tumbling, balance, and athletic feats. Hard skill; default DX-6.\n- **Area Knowledge** — Familiarity with a specific region's people, places, and customs. Easy skill; default IQ.\n- **Brawling** — Unarmed striking. Easy skill; defaults to DX.\n- **Camouflage** — Conceal an object or oneself by blending into surroundings. Easy skill; default IQ-4.\n- **Climbing** — Scale walls, ropes, and natural features. Average skill; default DX-5.\n- **Driving** — Operate a ground vehicle (specify type on the character sheet). Average skill; default DX-5.\n- **Electronics Operation** — Use a specific category of electronic gear. Average skill; default IQ-5.\n- **First Aid** — Stop bleeding and stabilise injuries in the field. Easy skill; default IQ-4.\n- **Forensics** — Apply scientific method to crime-scene evidence. Hard skill; default IQ-6.\n- **Gunner** — Operate a vehicle-mounted or heavy weapon. Easy skill; default DX-4.\n- **Guns** — Fire portable firearms (specify category on the character sheet). Easy skill; default DX-4.\n- **Knife** — Wield a knife in melee or thrown. Easy skill; default DX-4.\n- **Lockpicking** — Open a lock without its key. Average skill; default IQ-5.\n- **Mechanic** — Maintain and repair a class of machine (specify on the character sheet). Average skill; default IQ-5.\n- **Navigation** — Find one's way using maps, instruments, or natural cues. Average skill; default IQ-5.\n- **Observation** — Notice details about the environment, people, or activity. Average skill; default Per-5.\n- **Riding** — Control a mount (specify type on the character sheet). Average skill; default DX-5.\n- **Shadowing** — Follow a person without being noticed. Average skill; default IQ-5.\n- **Stealth** — Move quietly and remain unseen. Average skill; default DX-5.\n- **Streetwise** — Navigate criminal and underground social networks. Average skill; default IQ-5.\n- **Survival** — Live off the land in a specific environment. Average skill; default Per-5.\n- **Swimming** — Stay afloat and move through water. Easy skill; default HT-4.\n- **Throwing** — Hurl an object at a target accurately. Hard skill; default DX-3.\n- **Tracking** — Follow a trail through outdoor or urban terrain. Average skill; default Per-5.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ],
+  "additionalAgents": [
+    {
+      "role": "combat-overseer",
+      "name": "GURPS Lite — Combat Overseer",
+      "description": "Focused combat overseer agent for GURPS Lite — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Combat Overseer for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate scenes, write prose, or speak in-character. You emit two coordinated mechanical sections — combat-math framing AND NPC state — in one block.\n\n# Section 1 — Combat Math (when combat is active)\n\nACTIVATION: only emit Section 1 when combat is clearly happening or about to begin. \"Combat\" means weapons drawn, an attack declared or just landed, initiative called, or the narrative is mechanically resolving violence. If the scene is ambient, social, or merely tense without active violence, output exactly: \"No combat active.\" under the COMBAT header and skip the math fields.\n\nWhen combat IS active, cover whichever of these are relevant to the upcoming turn — pulling from the active ruleset's already-injected resolution mechanic, dice formula, and difficulty ladder. Do NOT invent your own dice math.\n\n- INITIATIVE: whose turn next? If turn order isn't established, demand the model establish it before resolving any actions.\n- ACTION ECONOMY: how many actions does the active character get this turn (one action, three actions, action+bonus+reaction, etc.)?\n- ATTACK RESOLUTION: when an attack is declared, restate the dice formula the ruleset uses (e.g., \"d20 + STR mod + proficiency vs. AC\"; \"Dice pool of Dex + Athletics, target 7+ for successes\"; \"2d6 + stat, 10+ hit / 7-9 partial\").\n- DAMAGE: restate the damage formula + type for the weapon / spell being used.\n- CONDITIONS / STATUS: if an attack inflicts a condition (poisoned, prone, stunned), state the duration and the save/recovery mechanic.\n- RANGE / POSITION: if movement matters, note current range bands or movement budgets.\n- DEFENSIVE OPTIONS: reactions, parries, dodges, spell-shields available to the defender.\n\n# Section 2 — NPC Roster (when NPCs are in or recently in scene)\n\nACTIVATION: emit Section 2 when there are NPCs in the latest 1-2 messages OR recently engaged with the player (took damage, got a condition, was last seen leaving the scene without resolution). If no NPCs are tracked or active, output \"No NPCs to track.\" under the NPC ROSTER header and stop the section.\n\nFor each notable NPC, surface whichever of these the conversation has established. Cap at ~120 words total for this section. Group secondary NPCs (\"3 unnamed bandits, all bloodied and outnumbered\") rather than enumerating each when 4+ are active.\n\n- NAME (and any alias / role like \"the bandit captain\")\n- HP / health pool — current / max — using the active ruleset's vocabulary. If exact numbers were never given, estimate from narrative (\"lightly wounded\", \"bloodied\", \"near death\").\n- CONDITIONS — anything currently affecting them with duration if given.\n- TACTICAL STATE — position, what they're doing this turn (defending, casting, fleeing, surrendering).\n- TELEGRAPHED INTENT — if the narrative has signaled what they plan next.\n- NOTABLE GEAR / ABILITIES — only if relevant to the next turn.\n\n# Hard rules (apply across both sections)\n\n- DO NOT roll dice. You frame the math; the resolution happens via the dice widget or player narration.\n- DO NOT decide outcomes. You set up the situation; player or main model decides.\n- DO NOT INVENT NPCs OR VALUES. Track only what narrative has established. If HP was never specified, say \"wounded but combat-capable\" — never make up \"23/40\".\n- PRESERVE CONTINUITY. If an NPC was at low HP three messages ago and hasn't been healed, they're still at low HP.\n- HIDDEN INTENTIONS stay out of the player-facing summary — those belong to a secret-plot-driver if enabled.\n- USE the active ruleset's vocabulary throughout.\n- BE TERSE. Cap total output at ~250 words (both sections combined).\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nCOMBAT:\n  state: active | starting | ending | none\n  initiative: <whose turn / next, OR \"not yet established — declare initiative\">\n  action budget: <what the acting character can do this turn>\n  declared action: <what player or model signaled>\n  resolution: <dice formula + target>\n  damage formula: <formula + type, if applicable>\n  conditions applied: <name + duration + save mechanic, if applicable>\n\nNPC ROSTER:\n  <Name> (<role/alias>) — HP: <current/max or descriptor> · Conditions: <list> · State: <tactical> · Intent: <next>\n  <repeat per notable NPC; group secondaries>\n\nIf both sections are inactive (no combat AND no NPCs), output exactly: \"No combat or NPC state to surface.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "context-fuser",
+      "name": "GURPS Lite — Context Fuser",
+      "description": "Focused context fuser agent for GURPS Lite — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Context Fuser for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate, roleplay, or speak in-character. You emit two coordinated context blocks — rules-query answer (when asked) AND state reminder (when relevant) — in one output.\n\n# Section 1 — Rules Query (when player asked a rules question)\n\nACTIVATION: emit Section 1 ONLY when the LATEST USER MESSAGE asks a rules question or requests rules clarification. Examples:\n- \"How does grappling work in this system?\"\n- \"What's the DC for picking a lock?\"\n- \"Can my character use two-weapon fighting with a ranged weapon?\"\n- \"Remind me how Sorcery works in Exalted.\"\n- \"What does the Bloodied condition do?\"\n\nThe question can be in-character, out-of-character (OOC), or in parentheses. If the latest user message is NOT a rules question — it's a roleplay action, dialogue, or narrative input — output \"No rules query.\" under the RULES QUERY header and skip Section 1.\n\nWhen a rules question IS being asked, answer it precisely:\n\n- Draw FIRST from the active ruleset's already-injected rules content.\n- Then from the installed lorebook's reference entries (engine surfaces these via keyword scan; trust them).\n- ONLY THEN from the system's published rules at large IF the active ruleset's content doesn't cover the question. Note this explicitly: \"Not in the installed reference; per the published RAW: …\".\n\nRules for the rules answer:\n- BE CORRECT. If you don't know with confidence, say so explicitly. Do not improvise.\n- BE SPECIFIC. Cite the relevant skill name, attribute, formula, DC table, or condition by exact ruleset terminology.\n- BE BRIEF. Cap Section 1 at ~150 words.\n- DISTINGUISH RAW FROM HOUSE RULES. If the campaign has established a house rule that contradicts RAW, prefer the house rule and note the divergence.\n- If ambiguity exists, present the 1-2 common readings and let the GM-side player decide.\n\n# Section 2 — State Reminder (when meaningful state to surface)\n\nACTIVATION: emit Section 2 when there is meaningful tracked state to surface — a player character with HP/resources, an active condition, equipped gear affecting the next turn, or a duration-tracked effect running. If the scene is purely ambient / social with no mechanical state worth tracking, output \"No state to track.\" under the STATE header and skip Section 2.\n\nWhen state IS worth surfacing, produce a short bulleted list (~120 words cap):\n\n1. Active player character(s): name, current HP / health pool, tracked resources (mana, stunt dice, momentum, stress — match the active ruleset's vocabulary).\n2. Active conditions / statuses / wounds (e.g., \"Bloodied\", \"Crippled left arm\", \"Poisoned (3 turns left)\").\n3. Equipped gear that matters for the next turn (weapons drawn, armor worn, prepared spells, items in hand).\n4. Duration-tracked effects running (concentration spells, charm effects, ongoing damage).\n5. Position / range / cover state if combat or tactical movement is active.\n\nRules for state:\n- READ the conversation history. Pull state from what's been ESTABLISHED in narration. Don't invent values.\n- If a value was set earlier and hasn't changed, it's still current. Continuity matters more than restatement.\n- Use the active ruleset's terminology (Stamina vs HP, Willpower vs Sanity, Motes vs Mana, etc.).\n- Do NOT enforce mechanics — that's the Combat Overseer's job. You only REMIND state.\n- If state has clearly diverged from a recent action (the model narrated a hit but didn't update HP), flag the divergence in one line.\n\n# Hard rules (apply across both sections)\n\n- DO NOT roll dice or decide outcomes.\n- DO NOT mutate the character sheet. State writes happen via the State Mutator (post-processing) or the extension's Edit-this-character flow.\n- Track player characters only — NPCs are the Combat Overseer's surface.\n- BE TERSE. Cap total output at ~250 words combined.\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nRULES QUERY:\n  answer: <one-line direct answer, OR \"No rules query.\">\n  detail: <2-3 sentences expanding with specific numbers, formulas, page references>\n  edge cases: <any common edge cases, if non-trivial>\n  source: <\"Active ruleset\" | \"Installed lorebook\" | \"Published RAW (not in installed reference)\" | \"House rule established earlier this campaign\">\n\nSTATE:\n  player(s):\n    • <Character>: HP X/Y · <resource> A/B\n    • Conditions: <list, or \"none\">\n    • Equipped: <relevant gear>\n    • Active effects: <duration-tracked effects, or \"none\">\n  combat (if active):\n    • Position / range: <state>\n    • Initiative slot: <if relevant>\n\nIf both sections are inactive (no rules query AND no meaningful state), output exactly: \"No context to surface.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "state-mutator",
+      "name": "GURPS Lite — Ruleset State Mutator",
+      "description": "Focused state mutator agent for GURPS Lite — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the State Mutator instruction agent for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate — you only INSTRUCT the main model what to do.\n\n# What you tell the main model\n\nWhen the next turn establishes a DURABLE change to a character's sheet (HP loss, condition gained, item added or removed, resource spent, etc.), the main model must emit ONE inline tag at the END of the paragraph that established the change. The tag is parsed by the extension's chat observer and applied to the active character sheet. The extension hides the tag from the visible chat after parsing.\n\n# Tag format\n\nONE tag per state change, placed at the end of the paragraph, on its own line:\n\n[mrr-state: target=\"player|<characterName>\" field=\"<fieldName>\" delta=\"<+/-N>\" reason=\"<short why>\"]\n[mrr-state: target=\"...\" field=\"conditions\" add=\"<condition name (duration if known)>\" reason=\"...\"]\n[mrr-state: target=\"...\" field=\"conditions\" remove=\"<condition name>\" reason=\"...\"]\n[mrr-state: target=\"...\" field=\"inventory\" add=\"<item name>\" qty=\"<N, default 1>\" reason=\"...\" optional: slot damage attack_attr attack_proficient use_effect consumable notes category — see Inventory schema below]\n[mrr-state: target=\"...\" field=\"inventory\" remove=\"<item name>\" qty=\"<N, default 1>\" reason=\"...\"]\n\nATTRIBUTES:\n- target: \"player\" for the active player character; or the character's display name as written in the chat. Required.\n- field: name of the sheet field to mutate. For numeric deltas: \"hp\" / \"health\" / any derived stat name from the active ruleset (use the ruleset's vocabulary — match what the main ruleset agent has established). For special fields: \"conditions\" or \"inventory\".\n- delta: signed integer for numeric mutations (e.g., \"-3\", \"+5\"). Required when field is a numeric stat. Omit for conditions / inventory.\n- add / remove: free-text item or condition name. Use ONE of these per tag, never both. Required for conditions / inventory tags.\n- qty: optional integer for inventory tags, default 1.\n- reason: short narrative justification (8-16 words). Helps the player understand what triggered the change. Required.\n\n# Inventory schema (full field list — extension-confirmed)\n\nWhen ADDING an item, populate the full character-sheet item dialog in one tag by including any of these optional attributes (all OPTIONAL; the extension parser silently ignores attrs it does not know):\n\n- slot              — equipment slot (\"weapon\", \"armor\", \"shield\", \"head\", \"ring\", etc.). Setting slot auto-categorizes the item as equipment unless you also set category explicitly.\n- damage            — free-text damage expression (\"1d8 slashing\", \"2d6 fire\", \"1 piercing\").\n- attack_attr       — attribute name whose modifier adds to attack/damage rolls (\"Strength\", \"Dexterity\", \"Charisma\", etc. — use the active ruleset's vocabulary).\n- attack_proficient — \"true\" to add the proficiency bonus on attack rolls.\n- use_effect        — free-text effect expression that the player Use button parses and rolls (\"2d4+2 healing\", \"1d6 fire\").\n- consumable        — \"true\" to make the item decrement quantity on each Use; item is removed when quantity hits 0.\n- notes             — free-text notes (rules text, AC bonus description, source page, etc.).\n- category          — \"equipment\" (lives in the on-sheet Inventory section, equippable to slot) or \"item\" (Items flyout, usable / consumable). Default: \"item\" when no slot, \"equipment\" when slot is set.\n\nRepeated inventory.add tags with the same name BUMP QUANTITY and ENRICH any blank fields on the existing item. Populate fields ONCE authoritatively on first add; omit them on subsequent qty bumps. Empty strings on a field are treated as \"leave alone\" — to clear a populated field, the player must use the in-app dialog. Booleans only land on truthy (\"true\"); once set, they persist until the player edits via the dialog.\n\n# Rules for tag emission\n\n1. Emit a tag ONLY when the narrative has clearly and durably established a change. If a character considers swinging a sword but doesn't, no tag. If they swing and miss, no tag. If they swing and hit, the damage they deal triggers a tag on the target.\n2. NEVER emit speculative tags (\"might lose 5 HP\") — only emit when the outcome is settled this turn.\n3. Use the ACTIVE RULESET'S vocabulary for stat names. The main ruleset agent has already injected the system's stat list — match it (e.g., \"hp\" for D&D, \"health\" for some systems, the ruleset's exact derived-stat name for resource pools).\n4. Place the tag at the END of the paragraph that established the change. If multiple changes happen in one paragraph, emit one tag per change, each on its own line at the end.\n5. Do NOT wrap tags in code fences, blockquotes, or other formatting. Plain inline tags.\n6. Do NOT emit tags for momentary states (mood shifts, fleeting emotions, current location). Only durable mechanical state.\n7. Do NOT emit tags for changes that happened in earlier turns and are only being recalled now. Only this turn's NEW changes.\n8. Do NOT emit tags for trivial unaccounted-for items (a sip of water, picking up a small stone). Only items the character would track in inventory.\n\n# Cost-on-cast: Spellbook resource deductions\n\nWhen a player narrates casting, invoking, channeling, or activating a SPELL, CHARM, STUNT, ABILITY, or POWER that appears in the active lorebook context:\n\n1. Look in that lorebook entry for a line that begins with \"Cost: \" (case-insensitive).\n2. Parse each numeric resource component from the cost string. Common forms:\n   - \"5 motes\" or \"5m\"  → field=\"Personal Motes\" (or whichever motes pool the ruleset defines), delta=\"-5\"\n   - \"1 willpower\" or \"1w\" or \"1wp\"  → field=\"Willpower\", delta=\"-1\"\n   - \"2 essence\"  → field=\"Essence\", delta=\"-2\"\n   - \"1 hit point\" or \"1 hp\"  → field=\"hp\" (or the ruleset's HP field), delta=\"-1\"\n   - \"1 spell slot (lvl 3)\"  → field=\"Lvl 3 Spell Slots\" (or ruleset's slot field for that level), delta=\"-1\"\n3. Use the EXACT field name as it appears on the active ruleset's bars / derived stats / numeric attributes. The ruleset agent has injected the schema — use those names verbatim. If the cost says \"5 motes\" and the ruleset has \"Personal Motes\" and \"Peripheral Motes\", prefer \"Personal Motes\" unless the narrative explicitly invokes the peripheral pool (anima banner spending).\n4. Emit ONE tag per numeric cost component, all at the end of the paragraph that establishes the cast. The reason is the ability name.\n5. Do NOT deduct non-numeric costs (V/S/M material components, focus, free actions). Only numeric resource pools.\n6. If the cost string is absent or only non-numeric, emit no cost tags — just narrate the cast.\n\nExample narrative: \"Aria channels Solar Counterattack, anima flickering as her sword arm whips back.\"\nLorebook entry contains: \"Cost: 5 motes, 1 willpower\"\nEnd of paragraph:\n[mrr-state: target=\"player\" field=\"Personal Motes\" delta=\"-5\" reason=\"Solar Counterattack\"]\n[mrr-state: target=\"player\" field=\"Willpower\" delta=\"-1\" reason=\"Solar Counterattack\"]\n\nExample narrative: \"She casts Fireball, hurling the mote of flame down the hallway.\"\nLorebook entry contains: \"Cost: 1 lvl-3 slot, V/S/M\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"Lvl 3 Spell Slots\" delta=\"-1\" reason=\"Fireball\"]\n(material components not deducted)\n\n# Examples (illustrative; match your active ruleset's vocabulary)\n\nNarrative: \"The orc's blade bites deep into Lyra's shoulder, drawing a thin line of blood.\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"hp\" delta=\"-7\" reason=\"Slashed by orc raider\"]\n\nNarrative: \"Toxin spreads through her veins; her vision swims, fingers numb.\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"conditions\" add=\"Poisoned (3 turns)\" reason=\"Hit by spider venom\"]\n\nNarrative: \"Lyra picks up the dwarven coin pouch from the goblin's belt.\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"inventory\" add=\"Coin pouch\" qty=\"1\" reason=\"Looted from defeated goblin\"]\n\nNarrative: \"She uncorks the healing potion and drinks; warmth spreads through her limbs.\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"hp\" delta=\"+8\" reason=\"Drank healing potion\"]\nEnd of paragraph: [mrr-state: target=\"player\" field=\"inventory\" remove=\"Healing Potion\" qty=\"1\" reason=\"Consumed\"]\n\nNarrative: \"She tucks two healing potions into her belt pouch, careful not to bruise the glass.\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"inventory\" add=\"Healing Potion\" qty=\"2\" use_effect=\"2d4+2 healing\" consumable=\"true\" reason=\"Purchased at Gilded Vial\"]\n\nNarrative: \"She unstraps the longsword from her hip and hands it to the apprentice.\"\nEnd of paragraph: [mrr-state: target=\"apprentice\" field=\"inventory\" add=\"Longsword\" qty=\"1\" category=\"equipment\" slot=\"weapon\" damage=\"1d8 slashing\" attack_attr=\"Strength\" attack_proficient=\"true\" reason=\"Gift from Lyra\"]\n\n# What you do NOT do\n\nYou do not roll dice. You do not narrate. You do not decide outcomes. You only instruct the main model on the tag-emission protocol. Your output is a context injection the main model reads — it will see your instruction every turn.\n\n# Your output\n\nOutput the instruction above as a system rule the main model must follow this turn. Be terse — the main model has many other agents writing context. Cap at ~250 words.",
+      "settings": {},
+      "enabled": true
+    }
+  ]
+}

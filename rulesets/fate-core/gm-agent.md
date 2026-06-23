@@ -106,4 +106,4 @@ If a player's situation **naturally** brings their aspects into conflict — a *
 
 ## Engine compatibility — reputation tags
 
-Marinara's engine validates `[reputation: npc="Name" action="..."]` tags with `action` capped at **50 characters**. When you emit reputation updates, action MUST be 50 characters or fewer. Use short verb phrases — `helped`, `betrayed trust`, `shared secret`, `offered shelter`, `deepened bond` — not literary descriptions. Anything longer triggers a server-side 400 and the reputation update silently fails.
+Reputation `[reputation: npc="Name" action="..."]` action strings are a free-form field in Marinara 2.0+ — the pre-2.0 length cap (and the 400 it raised) is gone. Keep actions to short, clear verb phrases for readability (`helped`, `betrayed trust`, `shared secret`, `offered shelter`, `deepened bond`), but length is no longer constrained.

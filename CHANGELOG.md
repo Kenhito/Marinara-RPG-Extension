@@ -12,6 +12,33 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+> The entries below target **v1.0.0**: Marinara 2.0.1 compliance + single-track
+> consolidation (the GM-mode and RP-mode extensions merge into this one).
+
+### Changed — single-track consolidation, this is now the only Marinara RPG extension (v1.0.0)
+
+- This extension now supersedes the separate RP-mode extension (`Marinara-RPG-RP-Mode-Extension`, the `mrrp-` namespace), which is retired/frozen. Marinara 2.0 made custom agents mode-agnostic, so one install runs in **both Game Mode and Roleplay Mode** — the wedge that forced two extensions (mode-scoped agents, the 50-char reputation cap, forced dice-tag format) is gone. The loader is mode-agnostic: it resolves the active chat the same way in both modes and injects one universal GM framing (no mode-branched prompts).
+- Version bumped to **1.0.0** across `package.json` and the loader `EXT_VERSION` (was a `0.5.0` / `0.4.0` drift).
+
+### Added — Marinara 2.0+ folder/manifest packaging
+
+- New `tools/build-extension-package.mjs` emits the 2.0+ folder/manifest import format — `Extensions/Marinara-RPG-Extension/manifest.json` (`kind:"marinara.extension"`, loader inlined, CSS embedded) plus a `marinara-extensions.json` folder envelope — into `releases/<version>/`. The single-file `.js` import remains a supported fallback.
+- New `tools/validate-extension-package.mjs` asserts the generated manifest + envelope against the engine contract (`extension.schema.ts` limits, `manifest-package.ts` shape).
+
+### Added — character + agent migration off the RP-mode extension
+
+- Character import now accepts **both** `mrr-character-bundle` and legacy `mrrp-character-bundle` files (always re-saves `mrr-`). New **Import from RP-mode ext** path reads the installed RP-mode extension's raw `mrrp-character-*` localStorage directly (read-only) and re-saves under the `mrr-` namespace — recovering sheets that early `mrrp-` exports shipped empty.
+- Ported the RP-mode **agent-manager** UI (manage / import / dedupe overlay agents) into the loader, on the `mrr-` namespace. Agent import accepts both `mrr-agents` and legacy `mrrp-agents` JSON on read; always writes `mrr-agents`.
+
+### Fixed — six rulesets emitted unparseable `mrrp-` state/roll tags in Game Mode
+
+- `coc7e`, `stewpot`, `gurps-lite`, `trophy-dark`, `pathfinder2e`, and `lasers-and-feelings` `gm-agent.md` prompts instructed the model to emit `[mrrp-state:]` / `[mrrp-roll:]` / `[mrrp-help:]` tags, but the GM loader's parsers match `mrr-` only — so those state mutations (sanity, ruin, hearth, HP, conditions) were silently dropped in Game Mode. Rewritten to `mrr-` and the bundles rebuilt.
+
+### Changed — terminology + agents schema normalized to `mrr-`
+
+- `tools/build-agents.mjs` now emits `"schema":"mrr-agents"` (was `"mrrp-agents"`) and no longer cross-references the retired RP-mode loader; all 14 `agents.json` rebuilt.
+- The obsolete "50-character reputation cap" workaround note is removed from the `dnd5e`, `vtmv20`, `exalted3e`, and `fate-core` GM prompts (the cap is gone in Marinara 2.0+); replaced with a one-line "reputation is free-form in 2.0+" note. `AGENTS.md` updated to match.
+
 > The four entries below are ported from contributor @Alatheus1's pull
 > requests against the RP-mode repo (Marinara-RPG-RP-Mode-Extension #1–#4),
 > adapted to GM-mode framing and the `mrr-` namespace. Original authorship

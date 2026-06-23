@@ -14,9 +14,9 @@
  *   - Shared <repo>/agents/<role>.md files apply to rulesets that don't
  *     override that role.
  *
- * Output schema mirrors the validator in extension/RPG-Extension-RP-Mode.js
+ * Output schema mirrors the validator in extension/RPG-Extension-GM-Mode.js
  * (validateAgentImport):
- *   { schema: "mrrp-agents", version: 1, rulesetId, rulesetName, authorId,
+ *   { schema: "mrr-agents", version: 1, rulesetId, rulesetName, authorId,
  *     agents: [{role, name, description, phase, enabled, promptTemplate, settings}] }
  */
 import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
@@ -110,7 +110,7 @@ function buildAgents(dir) {
   const subAgents = loadRoleAgents(ruleset.name, dir);
 
   const out = {
-    schema: "mrrp-agents",
+    schema: "mrr-agents",
     version: 1,
     rulesetId: ruleset.id,
     rulesetName: ruleset.name,

@@ -1,10 +1,10 @@
-# Marinara RPG Rulesets — Game Mode (v0.4.0)
+# Marinara RPG Rulesets (v1.0.0)
 
 Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara-Engine)'s Game Mode. Run a D10 dice-pool game (Exalted 3e), a d20 game (D&D 5e), a 4dF narrative game (Fate Core), or **author your own ruleset for any tabletop RPG** — without forking Marinara, without writing TypeScript, without waiting for upstream feature requests.
 
 ## Quick start (5 minutes)
 
-The fastest path: grab the self-contained release at [`releases/v0.4.0/`](releases/v0.4.0/) and follow [`releases/v0.4.0/INSTALL-GUIDE.md`](releases/v0.4.0/INSTALL-GUIDE.md). It includes:
+The fastest path: grab the self-contained release at [`releases/1.0.0/`](releases/1.0.0/) and follow [`releases/1.0.0/INSTALL-GUIDE.md`](releases/1.0.0/INSTALL-GUIDE.md). It includes:
 
 - **The framework JS** to paste into Marinara's Extensions panel
 - **Two complete reference rulesets** (D&D 5e and Exalted 3e) with bundle + agents pre-built, ready to paste
@@ -13,13 +13,24 @@ The fastest path: grab the self-contained release at [`releases/v0.4.0/`](releas
 
 If you just want to play D&D or Exalted, install the extension and import the ruleset bundle and you're on your way. Other systems are being added as requested and you can submit a PR to add one you've created to the repo.
 
-If you want a system the framework doesn't ship, see [`releases/v0.4.0/BUILD-YOUR-OWN-RULESET.md`](releases/v0.4.0/BUILD-YOUR-OWN-RULESET.md) — options for AI-assisted or manual authoring.
+If you want a system the framework doesn't ship, see [`releases/1.0.0/BUILD-YOUR-OWN-RULESET.md`](releases/1.0.0/BUILD-YOUR-OWN-RULESET.md) — options for AI-assisted or manual authoring.
 
 ## What this is
 
 Marinara Engine ships a Game Mode where an AI Game Master runs the table. By default the engine's GM is biased toward d20 / D&D-style mechanics: six attributes (STR/DEX/CON/INT/WIS/CHA), single-roll resolution, DC ladder. This repo adds a thin overlay that lets you swap the GM's mechanical brain (and the player-facing character sheet) for a different RPG system entirely.
 
 The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps insert ruleset instructions while a rules lore book will provide Marinara with instructions on how to run the selected system. This allows systems to be created based around existing dice mechanics. Build instructions are present to allow an AI Agent, chat or CLI, to create a ruleset featuring a character sheet, GM Agent Prompt, and Lore book with the core mechanics.
+
+## What's new in v1.0.0
+
+- **One extension, both modes.** The GM-mode and RP-mode extensions are consolidated into this single extension (the `mrr-` namespace). Marinara 2.0 made custom agents mode-agnostic, so one install works in both Game Mode and Roleplay Mode. The RP-mode extension is retired.
+- **Marinara 2.0.1 compliance.** Verified against the 2.0.x extension contract — `marinara` runtime API, size limits (CSS ≤ 256 KiB, JS ≤ 1 MiB), `parametersSchema` shape, leak-free teardown.
+- **Folder / manifest install.** Ships in the 2.0+ folder/manifest format (`Extensions/<name>/manifest.json` + a `marinara-extensions.json` envelope); the single-file `.js` import still works as a fallback.
+- **Character migration.** Imports both `mrr-` and legacy `mrrp-` character bundles, plus a direct "import from the installed RP-mode extension" path; always saves `mrr-`.
+- **Agent manager.** Manage / import / dedupe overlay agents from the Ruleset dialog (`mrr-agents`, accepts legacy `mrrp-agents` on read).
+- **Reputation tags are free-form.** The old 50-character action cap is gone in Marinara 2.0+; ruleset prompts no longer carry the obsolete workaround.
+- **State-tag fix.** Six rulesets (CoC 7e, Stewpot, GURPS Lite, Trophy Dark, Pathfinder 2e, Lasers & Feelings) emitted legacy `mrrp-state`/`mrrp-roll` tags the loader couldn't parse — their state changes now apply correctly.
+- **Contributor rulesets.** Werewolf: The Apocalypse 20th (w20) and Exalted Versus World of Darkness (exwod), with thanks to @Alatheus1.
 
 ## What's new in v0.4.0
 
@@ -29,7 +40,7 @@ The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps
 - **CSP-safe formula evaluator.** The `{StatName}*N+M` parser uses recursive descent instead of `new Function`. Marinara pages with strict CSP that blocks `'unsafe-eval'` now compute bar maxes correctly.
 - **State-mutator field-name normalization** + max-clamp on numeric deltas + persisted dedupe across reloads.
 - **Lorebook install path rewritten** to fix the silent-failure bulk endpoint. Per-entry POST with delete-then-add for clean re-installs.
-- **Self-contained release folder** at `releases/v0.4.0/` with seven AI-feedable build docs, two complete reference systems, and drop-in install files.
+- **Self-contained release folder** at `releases/1.0.0/` with seven AI-feedable build docs, two complete reference systems, and drop-in install files.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the full list.
 
@@ -85,7 +96,12 @@ If you just want to use the extension and don't have Node, npm, or git installed
 
 **Step 2 — Extract the zip.** Open your **Downloads** folder. Right-click the zip and choose *Extract All* (Windows), double-click it (macOS), or run `unzip Marinara-RPG-Extension-<version>.zip` (Linux). You'll get a folder named `Marinara-RPG-Extension-<version>/` containing `extension/`, `rulesets/`, `docs/`, and a few other files.
 
-**Step 3 — Import the extension into Marinara.** Switch to your Marinara browser tab, click the **gear icon** in the top-right header to open Settings, switch to the **Extensions** tab on the left, then click **Import Extension (.json, .css, or .js)**. In the file picker, navigate to the folder you extracted in Step 2, open `extension/`, and select `RPG-Extension-GM-Mode.js`. The CSS is embedded inside the JS — there is no separate stylesheet to upload.
+**Step 3 — Import the extension into Marinara.** Switch to your Marinara browser tab, click the **gear icon** in the top-right header to open Settings, and switch to the **Extensions** tab on the left. There are two supported import methods:
+
+- **Folder / manifest import (primary, Marinara 2.0+).** Use **Import extension folder** and select the extracted `Extensions/Marinara-RPG-Extension/` folder (it contains `manifest.json`), or import the single `marinara-extensions.json` envelope. Both ship in `releases/1.0.0/`. The manifest bundles the loader (CSS embedded) — nothing else to upload.
+- **Single-file fallback.** Use **Import Extension (.json, .css, or .js)**, navigate to `extension/`, and select `RPG-Extension-GM-Mode.js`. The CSS is embedded inside the JS — there is no separate stylesheet to upload.
+
+Either way you end up with one installed extension that works in **both Game Mode and Roleplay Mode** chats — Marinara 2.0 made custom agents mode-agnostic, so a single install serves both.
 
 ![Marinara Engine Settings dialog opened to the Extensions tab. The General/Appearance/Themes/Extensions/Import/Advanced tab row sits below the Settings header. A large dashed Import Extension (.json, .css, or .js) button is the primary action; below it the Installed Extensions list shows RPG-Extension-GM-Mode with a green on-toggle and a trash icon.](docs/screenshots/extension-menu.png)
 
@@ -110,6 +126,16 @@ After import you should see `RPG-Extension-GM-Mode` listed under **Installed Ext
 **Switching rulesets.** Saved rulesets show up in the **Library** section at the bottom of the Ruleset dialog with a *Switch* button next to each. Switching is a one-click reload-into-the-other-ruleset; both lorebooks and GM agents stay registered with your Marinara server, so swapping back is instant.
 
 **Cleaning up.** Once the extension is imported and at least one bundle is installed via *Choose file…*, the extracted folder is no longer needed by Marinara — feel free to delete it. If you're using *Fetch URL* exclusively, you can skip extraction entirely and just paste the URL.
+
+## Migrating from the RP-mode extension
+
+As of v1.0.0 this is the **single** Marinara RPG extension — it supersedes the separate RP-mode extension (`Marinara-RPG-RP-Mode-Extension`, the `mrrp-` namespace), which is now frozen. One install runs in both Game Mode and Roleplay Mode, so there's no reason to keep both. Your saved characters come across without losing anything:
+
+- **Character bundles.** The Ruleset dialog's character import accepts **both** the new `mrr-character-bundle` files and legacy `mrrp-character-bundle` exports. Loaded sheets are silently re-saved in the `mrr-` format. Just import your old export the same way you'd import any character bundle.
+- **Direct import from the installed RP-mode extension.** If you still have the RP-mode extension installed in the same browser, use **Import from RP-mode ext** in the Ruleset dialog. It reads the RP extension's character sheets straight out of browser storage (the `mrrp-character-*` keys) and re-saves them under the `mrr-` namespace — useful because some early RP-mode exports shipped empty sheets. It only ever **reads** the legacy keys; it never writes them.
+- **Agents.** The **Import agents** dialog accepts both `mrr-agents` and legacy `mrrp-agents` JSON files (it always writes `mrr-agents`).
+
+After migrating, you can uninstall the old RP-mode extension. Nothing in the RP-mode repo is deleted — its history stays intact — it simply receives no further updates.
 
 ## Quick start (developer install)
 

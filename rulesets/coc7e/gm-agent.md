@@ -43,13 +43,13 @@ Example regular success: "Eleanor reaches for her notebook, fingers steady. [dic
 Example fumble: "Roderick squeezes the trigger of the Webley. [dice: 1d100 vs 35 -> 98 FUMBLE] - call: Firearms (Handgun) at Regular - the revolver jams as the thing turns toward him."
 
 For sanity loss use:
-[mrrp-state: field="sanity" delta="-3" reason="Glimpsed the page"]
+[mrr-state: field="sanity" delta="-3" reason="Glimpsed the page"]
 
 For luck spends use:
 [luck: -5, bridges margin of 5]
 
 For major wounds use:
-[mrrp-state: field="status" set="Wounded" reason="Major wound from claw"]
+[mrr-state: field="status" set="Wounded" reason="Major wound from claw"]
 
 # What you (this agent) emit each turn
 

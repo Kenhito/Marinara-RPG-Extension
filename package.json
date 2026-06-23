@@ -1,6 +1,6 @@
 {
   "name": "marinara-rpg-extension",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Custom RPG rulesets for Marinara Engine's Game Mode. System-agnostic framework with two complete reference rulesets (D&D 5e, Exalted 3e), AI-feedable build documentation, and a six-agent architecture (main GM + state-mutator, state-reminder, combat-adjudicator, lore-query, npc-bookkeeper). Build a ruleset for any tabletop RPG by writing three source files plus optional per-system agent overrides.",
   "type": "module",

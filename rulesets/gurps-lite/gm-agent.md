@@ -39,7 +39,7 @@ Example success: "Hadrian lines up the shot, breath held. [dice: 3d6 vs 14 -> 9 
 
 Example critical failure: "Lyle reaches for the door, eyes elsewhere. [dice: 3d6 vs 11 -> 18 CRITICAL FAILURE, margin 7] - call: Stealth at -2 night - he kicks the bucket on the step; the whole house wakes."
 
-For HP and FP changes use the standard mrrp-state tags ([mrrp-state: field="hp" delta="-5" reason="Cut, 2x cutting"], [mrrp-state: field="fp" delta="-1" reason="Sprint"]).
+For HP and FP changes use the standard mrr-state tags ([mrr-state: field="hp" delta="-5" reason="Cut, 2x cutting"], [mrr-state: field="fp" delta="-1" reason="Sprint"]).
 
 # What you (this agent) emit each turn
 

@@ -1,5 +1,5 @@
 {
-  "schema": "mrrp-agents",
+  "schema": "mrr-agents",
   "version": 1,
   "rulesetId": "exwod",
   "rulesetName": "Exalted Versus World of Darkness",

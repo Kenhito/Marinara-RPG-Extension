@@ -35,15 +35,15 @@ Capability is fixed 2-5 at character creation. High Capability favors ACTION; lo
 
 When the player attempts something with uncertain outcome, the narration model emits the stewpot dice tag in this exact format so the Marinara client can render the result:
 
-[mrrp-roll: ruleset=stewpot, stance={stance}, stat=Capability, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]
+[mrr-roll: ruleset=stewpot, stance={stance}, stat=Capability, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]
 
-Example good day: "Hen brings out the mending basket and settles in by the window. [mrrp-roll: ruleset=stewpot, stance=stillness, stat=Capability, statValue=3, pool=3, dice=[1,2,4], successes=2, exactMatches=0, tier=good-day] - the seams she fixes today will outlast the season."
+Example good day: "Hen brings out the mending basket and settles in by the window. [mrr-roll: ruleset=stewpot, stance=stillness, stat=Capability, statValue=3, pool=3, dice=[1,2,4], successes=2, exactMatches=0, tier=good-day] - the seams she fixes today will outlast the season."
 
-Example harvest with Perfect Day: "Marja walks the long way around to the council, gathering her words. [mrrp-roll: ruleset=stewpot, stance=action, stat=Capability, statValue=4, pool=4, dice=[4,5,5,6], successes=4, exactMatches=1, tier=harvest, narrationHook=perfect_day] - and as she speaks, old Petr nods once, like he'd been waiting twenty years to hear it said."
+Example harvest with Perfect Day: "Marja walks the long way around to the council, gathering her words. [mrr-roll: ruleset=stewpot, stance=action, stat=Capability, statValue=4, pool=4, dice=[4,5,5,6], successes=4, exactMatches=1, tier=harvest, narrationHook=perfect_day] - and as she speaks, old Petr nods once, like he'd been waiting twenty years to hear it said."
 
 For Hearth changes use:
-[mrrp-state: field="hearth" delta="+1" reason="Perfect Day with the bees"]
-[mrrp-state: field="hearth" delta="-1" reason="Argument with Petr lasted into the night"]
+[mrr-state: field="hearth" delta="+1" reason="Perfect Day with the bees"]
+[mrr-state: field="hearth" delta="-1" reason="Argument with Petr lasted into the night"]
 
 # What you (this agent) emit each turn
 

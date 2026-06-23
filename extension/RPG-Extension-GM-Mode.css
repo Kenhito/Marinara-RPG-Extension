@@ -1,7 +1,9 @@
 /*
  * Marinara-RPG-Extension — RPG-Extension-GM-Mode.css
- * Companion stylesheet for RPG-Extension-GM-Mode.js. Paste this CSS into Marinara
- * Engine -> Settings -> Extensions -> Add Extension -> CSS field.
+ * Companion stylesheet for RPG-Extension-GM-Mode.js. This file is bundled into
+ * the loader automatically via tools/embed-css.mjs — you do not paste it by hand.
+ * Install the extension by importing the folder/manifest (or the single .js file)
+ * in Marinara Engine -> Settings -> Extensions.
  *
  * License: MIT
  * Source:  https://github.com/Kenhito/Marinara-RPG-Extension

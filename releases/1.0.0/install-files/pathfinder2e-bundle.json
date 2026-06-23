@@ -1,0 +1,1552 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.4.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.7.0"
+  },
+  "ruleset": {
+    "id": "pathfinder2e",
+    "name": "Pathfinder 2nd Edition",
+    "version": "1.0.0",
+    "edition": "Pathfinder 2e (Remaster, 2024)",
+    "license": "Original mechanical references; Pathfinder 2e ruleset content under Paizo's ORC license. Spell, class, and monster names belong to Paizo Publishing.",
+    "summary": "Pathfinder 2nd Edition is a tightly mathematical d20 fantasy system. A check is 1d20 + ability modifier + proficiency bonus + item bonus vs. a Difficulty Class, with four degrees of success: critical success at +10 over the DC, success at meeting it, failure under it, critical failure at -10 below. The three-action economy and Multiple Attack Penalty give every turn meaningful tactical choice.",
+    "commitmentModel": "invested",
+    "xpTable": [
+      {
+        "level": 1,
+        "xp": 0
+      },
+      {
+        "level": 2,
+        "xp": 1000
+      },
+      {
+        "level": 3,
+        "xp": 2000
+      },
+      {
+        "level": 4,
+        "xp": 3000
+      },
+      {
+        "level": 5,
+        "xp": 4000
+      },
+      {
+        "level": 6,
+        "xp": 5000
+      },
+      {
+        "level": 7,
+        "xp": 6000
+      },
+      {
+        "level": 8,
+        "xp": 7000
+      },
+      {
+        "level": 9,
+        "xp": 8000
+      },
+      {
+        "level": 10,
+        "xp": 9000
+      },
+      {
+        "level": 11,
+        "xp": 10000
+      },
+      {
+        "level": 12,
+        "xp": 11000
+      },
+      {
+        "level": 13,
+        "xp": 12000
+      },
+      {
+        "level": 14,
+        "xp": 13000
+      },
+      {
+        "level": 15,
+        "xp": 14000
+      },
+      {
+        "level": 16,
+        "xp": 15000
+      },
+      {
+        "level": 17,
+        "xp": 16000
+      },
+      {
+        "level": 18,
+        "xp": 17000
+      },
+      {
+        "level": 19,
+        "xp": 18000
+      },
+      {
+        "level": 20,
+        "xp": 19000
+      }
+    ],
+    "dice": {
+      "type": "d20",
+      "notation": "1d20+MOD"
+    },
+    "resolution": {
+      "mode": "single-roll",
+      "modifierFormula": "1d20 + ability_mod + proficiency_bonus + item_bonus + circumstance_bonus - status_penalty",
+      "skillBonusFormula": "{linkedAttribute_mod} + {tierBonus}",
+      "spellSaveDcFormula": "10 + {Level} + {spellcastingAttribute_mod}",
+      "attackProficiencyFormula": "{Level} + 2"
+    },
+    "difficulties": {
+      "Trivial": {
+        "threshold": 10,
+        "description": "Untrained character can manage with average stats."
+      },
+      "Low": {
+        "threshold": 15,
+        "description": "Trained at character's level expects to succeed."
+      },
+      "Moderate": {
+        "threshold": 20,
+        "description": "The standard challenge for an at-level expert."
+      },
+      "High": {
+        "threshold": 25,
+        "description": "Pushes a master character; a trained one will need luck."
+      },
+      "Severe": {
+        "threshold": 30,
+        "description": "A serious test even for a Master at level."
+      },
+      "Extreme": {
+        "threshold": 40,
+        "description": "Legendary territory. Stack every bonus."
+      }
+    },
+    "attributes": [
+      {
+        "name": "Strength",
+        "abbreviation": "STR",
+        "min": -1,
+        "max": 8,
+        "default": 0,
+        "description": "Raw physical force. Adds to Athletics, melee attack rolls with non-finesse weapons, and melee damage.",
+        "modifierFormula": "{Score}"
+      },
+      {
+        "name": "Dexterity",
+        "abbreviation": "DEX",
+        "min": -1,
+        "max": 8,
+        "default": 0,
+        "description": "Agility, balance, fine motor control. Adds to AC (capped by armor's Dex cap), Reflex saves, ranged attacks, and finesse melee attacks.",
+        "modifierFormula": "{Score}"
+      },
+      {
+        "name": "Constitution",
+        "abbreviation": "CON",
+        "min": -1,
+        "max": 8,
+        "default": 0,
+        "description": "Health and endurance. Adds to Hit Points each level and to Fortitude saves.",
+        "modifierFormula": "{Score}"
+      },
+      {
+        "name": "Intelligence",
+        "abbreviation": "INT",
+        "min": -1,
+        "max": 8,
+        "default": 0,
+        "description": "Memory, reasoning, education. Grants extra trained skills and Lores at character creation; adds to skills like Arcana, Crafting, Society.",
+        "modifierFormula": "{Score}"
+      },
+      {
+        "name": "Wisdom",
+        "abbreviation": "WIS",
+        "min": -1,
+        "max": 8,
+        "default": 0,
+        "description": "Awareness, intuition, common sense. Adds to Perception, Will saves, and skills like Medicine, Nature, Religion, Survival.",
+        "modifierFormula": "{Score}"
+      },
+      {
+        "name": "Charisma",
+        "abbreviation": "CHA",
+        "min": -1,
+        "max": 8,
+        "default": 0,
+        "description": "Presence, persuasion, force of personality. Adds to social skills (Diplomacy, Deception, Intimidation, Performance, Society) and to spell DCs for Charisma-based casters.",
+        "modifierFormula": "{Score}"
+      }
+    ],
+    "saves": [
+      {
+        "name": "Fortitude",
+        "linkedAttribute": "Constitution",
+        "description": "Resists poison, disease, and physical effects. Constitution + proficiency."
+      },
+      {
+        "name": "Reflex",
+        "linkedAttribute": "Dexterity",
+        "description": "Dodges traps, area effects, and quick hazards. Dexterity + proficiency."
+      },
+      {
+        "name": "Will",
+        "linkedAttribute": "Wisdom",
+        "description": "Resists mind-affecting effects, fear, and possession. Wisdom + proficiency."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Acrobatics",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Tumbling, balancing, escaping grabs. Trained-only actions: Maneuver in Flight."
+      },
+      {
+        "name": "Arcana",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Knowledge of arcane magic and creatures. Trained-only: Identify Magic, Learn a Spell, Decipher Writing of arcane origin."
+      },
+      {
+        "name": "Athletics",
+        "linkedAttribute": "Strength",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Climbing, jumping, swimming, forceful maneuvers (Grapple, Trip, Shove, Disarm). High Jump and Long Jump are signature actions."
+      },
+      {
+        "name": "Crafting",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Making and repairing items. Trained-only: Craft, Repair, Identify Alchemy."
+      },
+      {
+        "name": "Deception",
+        "linkedAttribute": "Charisma",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Lying, disguise, feinting in combat. Trained-only: Impersonate."
+      },
+      {
+        "name": "Diplomacy",
+        "linkedAttribute": "Charisma",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Making requests, gathering information, swaying attitudes. Always available untrained."
+      },
+      {
+        "name": "Intimidation",
+        "linkedAttribute": "Charisma",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Coercing or demoralizing. Demoralize is a frequent combat action."
+      },
+      {
+        "name": "Lore",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "A specific narrow expertise the player chose at character creation (Sailing Lore, Goblin Lore, Absalom Lore, Carpentry Lore, etc.). Each Lore is a separate trained skill; the GM allows it for narrow Recall Knowledge questions."
+      },
+      {
+        "name": "Medicine",
+        "linkedAttribute": "Wisdom",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "First aid, treating poison/disease. Trained-only: Treat Disease, Treat Poison, Treat Wounds."
+      },
+      {
+        "name": "Nature",
+        "linkedAttribute": "Wisdom",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Knowledge of plants, animals, weather. Trained-only: Command an Animal, Identify Magic of primal origin."
+      },
+      {
+        "name": "Occultism",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Knowledge of the occult — esoteric philosophy, ghosts, aberrations. Trained-only: Identify Magic of occult origin."
+      },
+      {
+        "name": "Performance",
+        "linkedAttribute": "Charisma",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Music, oratory, dance, acting. Trained-only: Perform (extended)."
+      },
+      {
+        "name": "Religion",
+        "linkedAttribute": "Wisdom",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Knowledge of deities, dogmas, the planes. Trained-only: Identify Magic of divine origin."
+      },
+      {
+        "name": "Society",
+        "linkedAttribute": "Intelligence",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "History, etiquette, languages, current affairs. Trained-only: Decipher Writing, Subsist (in civilization)."
+      },
+      {
+        "name": "Stealth",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Hiding and sneaking. Used to oppose Perception when avoiding detection."
+      },
+      {
+        "name": "Survival",
+        "linkedAttribute": "Wisdom",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Wilderness skills: tracking, foraging, weathering. Trained-only: Cover Tracks, Track."
+      },
+      {
+        "name": "Thievery",
+        "linkedAttribute": "Dexterity",
+        "min": 0,
+        "max": 30,
+        "default": 0,
+        "description": "Picking locks, picking pockets, disabling traps. Trained-only: Disable Device, Pick a Lock."
+      }
+    ],
+    "skillProficiency": {
+      "tiers": [
+        {
+          "code": "U",
+          "label": "Untrained",
+          "rollBonusFormula": "0"
+        },
+        {
+          "code": "T",
+          "label": "Trained",
+          "rollBonusFormula": "{Level} + 2"
+        },
+        {
+          "code": "E",
+          "label": "Expert",
+          "rollBonusFormula": "{Level} + 4"
+        },
+        {
+          "code": "M",
+          "label": "Master",
+          "rollBonusFormula": "{Level} + 6"
+        },
+        {
+          "code": "L",
+          "label": "Legendary",
+          "rollBonusFormula": "{Level} + 8"
+        }
+      ],
+      "default": "U"
+    },
+    "derivedStats": [
+      {
+        "name": "Hit Points",
+        "formula": "(class HP per level + CON_mod) per character level + ancestry HP at level 1",
+        "renderAs": "bar",
+        "tooltipFormula": "8 + ((10 + {Constitution_mod}) * {Level}) + {bonuses:Hit Points}",
+        "aliases": [
+          "hp",
+          "HP",
+          "hitPoints",
+          "hitpoints"
+        ]
+      },
+      {
+        "name": "Armor Class",
+        "formula": "10 + DEX_mod (capped by armor) + armor proficiency bonus + armor item bonus",
+        "renderAs": "value",
+        "default": 10,
+        "tooltipFormula": "10 + {Dexterity_mod} + {tierBonus} + {bonuses:Armor Class}",
+        "aliases": [
+          "ac",
+          "AC",
+          "armorClass"
+        ]
+      },
+      {
+        "name": "Class DC",
+        "formula": "10 + class proficiency bonus + key ability modifier",
+        "renderAs": "value",
+        "default": 10,
+        "tooltipFormula": "10 + {tierBonus} + {bonuses:Class DC}",
+        "aliases": [
+          "classDC",
+          "classdc"
+        ]
+      },
+      {
+        "name": "Spell DC",
+        "formula": "10 + spell proficiency bonus + casting ability modifier",
+        "renderAs": "value",
+        "default": 10,
+        "tooltipFormula": "10 + {Level} + {bonuses:Spell DC}",
+        "aliases": [
+          "spellDC",
+          "spelldc"
+        ]
+      },
+      {
+        "name": "Perception",
+        "formula": "WIS_mod + perception proficiency bonus + item bonus",
+        "renderAs": "value",
+        "tooltipFormula": "{Wisdom_mod} + {tierBonus} + {bonuses:Perception}",
+        "rollFormula": "{Wisdom_mod} + {tierBonus}",
+        "aliases": [
+          "perception",
+          "PER"
+        ]
+      },
+      {
+        "name": "Fortitude Save",
+        "formula": "CON_mod + fortitude proficiency bonus + item bonus",
+        "renderAs": "value",
+        "tooltipFormula": "{Constitution_mod} + {tierBonus} + {bonuses:Fortitude Save}",
+        "rollFormula": "{Constitution_mod} + {tierBonus}",
+        "aliases": [
+          "fortitude",
+          "fort"
+        ]
+      },
+      {
+        "name": "Reflex Save",
+        "formula": "DEX_mod + reflex proficiency bonus + item bonus",
+        "renderAs": "value",
+        "tooltipFormula": "{Dexterity_mod} + {tierBonus} + {bonuses:Reflex Save}",
+        "rollFormula": "{Dexterity_mod} + {tierBonus}",
+        "aliases": [
+          "reflex",
+          "ref"
+        ]
+      },
+      {
+        "name": "Will Save",
+        "formula": "WIS_mod + will proficiency bonus + item bonus",
+        "renderAs": "value",
+        "tooltipFormula": "{Wisdom_mod} + {tierBonus} + {bonuses:Will Save}",
+        "rollFormula": "{Wisdom_mod} + {tierBonus}",
+        "aliases": [
+          "will"
+        ]
+      },
+      {
+        "name": "Speed",
+        "formula": "Ancestry base speed (typically 25 ft) + bonuses",
+        "renderAs": "value",
+        "default": 25,
+        "tooltipFormula": "25 + {bonuses:Speed}",
+        "aliases": [
+          "speed",
+          "movement"
+        ]
+      },
+      {
+        "name": "Level",
+        "formula": "Character level, 1-20.",
+        "max": 20,
+        "default": 1,
+        "renderAs": "value",
+        "aliases": [
+          "level",
+          "lvl",
+          "LVL",
+          "characterLevel"
+        ]
+      }
+    ],
+    "resources": [
+      {
+        "id": "hit-points",
+        "label": "HP",
+        "type": "bar",
+        "max": 10,
+        "current": 10,
+        "color": "bad",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "-5",
+            "delta": -5
+          },
+          {
+            "label": "Heal",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "hero-points",
+        "label": "Hero Points",
+        "type": "counter",
+        "max": 3,
+        "current": 1,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Session Reset",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "focus-points",
+        "label": "Focus Points",
+        "type": "counter",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Refocus",
+            "delta": 1
+          },
+          {
+            "label": "Refill",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "spell-slots-1",
+        "label": "Spell Slots (1st)",
+        "type": "counter",
+        "group": "Spell Slots",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Daily Prep",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "spell-slots-2",
+        "label": "Spell Slots (2nd)",
+        "type": "counter",
+        "group": "Spell Slots",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Daily Prep",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "spell-slots-3",
+        "label": "Spell Slots (3rd)",
+        "type": "counter",
+        "group": "Spell Slots",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Daily Prep",
+            "delta": "max"
+          }
+        ]
+      }
+    ],
+    "states": [
+      {
+        "name": "Condition",
+        "values": [
+          {
+            "label": "None"
+          },
+          {
+            "label": "Off-Guard",
+            "description": "-2 circumstance penalty to AC. Renamed from 'flat-footed' in the Remaster. Not graduated — either you are off-guard or you aren't. Most attackers gain off-guard against a target they've successfully feinted; many other effects (grabbing, restraining, stunning) also impose it.",
+            "trigger": "Being flanked, prone, grabbed, restrained, climbing, hidden from your attacker, successfully feinted, or affected by an ability or maneuver that explicitly imposes off-guard."
+          },
+          {
+            "label": "Frightened",
+            "description": "Graduated 1-4. Take a status penalty equal to the current value on ALL checks and DCs (attack rolls, saves, skill checks, AC, class DC, spell DC, etc.). At the end of each of your turns the value decreases by 1 unless an effect specifies otherwise. Frightened 4 is the maximum; some effects cap a creature at lower values (e.g. successful save = frightened 1).",
+            "trigger": "Failing a Demoralize check, failing a save against a fear effect, witnessing a particularly grim event, or any ability that explicitly inflicts the frightened condition."
+          },
+          {
+            "label": "Sickened",
+            "description": "Graduated 1-4. Take a status penalty equal to the current value on all checks and DCs, AND cannot willingly ingest anything (food, potion, elixir). You may spend 1 action retching to attempt a Fortitude save: success reduces sickened by 1, critical success reduces by 2; failure does nothing; critical failure increases by 1. Allies may use Battle Medicine or comparable abilities to grant a bonus to the save.",
+            "trigger": "Failing a save against a disgust, poison, or disease effect; taking an action that revolts the character; or any ability that explicitly inflicts the sickened condition."
+          },
+          {
+            "label": "Stunned",
+            "description": "Numeric value OR a duration. When numeric (e.g. stunned 2), at the start of your turn lose actions equal to the value, then reduce the stunned value by the actions lost; if the value exceeds your remaining actions, the overflow carries into the next turn. When durational (e.g. stunned for 1 minute), you lose ALL actions on your turn until the duration ends. Stunned doesn't reduce reactions you've already gained.",
+            "trigger": "Failing a save against a stunning effect, certain critical hits, monk Stunning Strike, or any ability that explicitly inflicts the stunned condition."
+          },
+          {
+            "label": "Slowed",
+            "description": "Lose actions equal to the value at the start of each turn (does not stack with Stunned for the lost-action calculation; take the worse)."
+          },
+          {
+            "label": "Quickened",
+            "description": "Gain 1 extra action at the start of each turn, usable only for the specified purpose granted by the source."
+          },
+          {
+            "label": "Prone",
+            "description": "You're lying on the ground. You take a -2 circumstance penalty to attack rolls and are off-guard. You can Crawl (1 action, 5 ft) or Stand (1 action) to leave prone. Ranged attackers against you may suffer additional penalties depending on cover and range. You can Take Cover while prone to gain greater cover against ranged attacks.",
+            "trigger": "Failing a Trip (Athletics) check against you, certain area effects and spells that knock targets prone, voluntarily Dropping Prone (1 action), or any ability that explicitly inflicts the prone condition."
+          },
+          {
+            "label": "Grabbed",
+            "description": "Off-guard and immobilized; you can Escape (Acrobatics or Athletics, or attempt a basic check) as an action."
+          },
+          {
+            "label": "Restrained",
+            "description": "Off-guard and immobilized; cannot use manipulate actions other than Escape or to break free."
+          },
+          {
+            "label": "Wounded",
+            "description": "Graduated 1-3+. Whenever you lose the dying condition, your wounded value increases by 1 (or by 2 if you were dying 4 or higher). The next time you'd become dying, add your wounded value to the dying value — meaning subsequent knockouts come faster. Wounded only fully removes when you've been at full HP for 10 minutes of rest (or via Treat Wounds at appropriate proficiency that explicitly removes wounded).",
+            "trigger": "Losing the dying condition by recovering to positive HP; the value increases each time you go from dying-N back to alive."
+          },
+          {
+            "label": "Dying",
+            "description": "Graduated 1-3 (with 4 = death). You're unconscious and progressing toward death. Becoming dying for the first time starts you at dying 1 (or dying 2 if dropped by a critical hit, or dying 1 + wounded value if already wounded). At the start of each of your turns make a recovery flat check: DC 10 + current dying. Success reduces dying by 1, critical success by 2; failure increases by 1, critical failure by 2. Reaching dying 4 means you die. Taking damage while dying increases the value by 1 (by 2 if critical). Regaining at least 1 HP removes dying entirely (but inflicts wounded).",
+            "trigger": "Being reduced to 0 HP from positive HP — automatically dying 1 (or dying 2 on a critical hit). Add your current wounded value to the dying value when you enter dying."
+          },
+          {
+            "label": "Doomed",
+            "description": "Graduated 1-3+. Your effective maximum dying value (normally 4) is reduced by your doomed value. So doomed 1 means dying 3 = death; doomed 2 means dying 2 = death; doomed 3 means dying 1 = death; doomed 4 means going dying at all = death. Doomed reduces by 1 each time you take a full night's rest (typically 8 hours). Some powerful effects bypass normal restoration — only high-rank divine intervention can remove doomed early.",
+            "trigger": "Failing a save against a death effect, certain demons' aura, or any ability that explicitly inflicts the doomed condition. Doomed does NOT automatically come from being knocked out — only from specified sources."
+          },
+          {
+            "label": "Confused",
+            "description": "You attack any creature in reach (or use cantrip on a random adjacent target if no melee). You're off-guard."
+          },
+          {
+            "label": "Fascinated",
+            "description": "-2 status to Perception and skill checks; cannot Concentrate or use actions with concentrate trait other than Seek; ends if hostile action is taken against you."
+          },
+          {
+            "label": "Drained",
+            "description": "Graduated 1-4. Status penalty equal to the value applies to all Constitution-based checks (including Fortitude saves). Your maximum HP is reduced by your level × drained value, and you lose current HP equal to your level × the AMOUNT the drained value increased by when first applied (so going from drained 0 to drained 2 deals level × 2 immediate damage). The value decreases by 1 every full night's rest. Restoring drained doesn't restore the lost HP — those need to be healed normally.",
+            "trigger": "Failing a save against a negative-energy effect, certain undead's life-drain attacks, severe disease progression, vampire bite, or any ability that explicitly inflicts the drained condition."
+          },
+          {
+            "label": "Enfeebled",
+            "description": "Status penalty equal to value to Strength-based rolls and damage."
+          },
+          {
+            "label": "Stupefied",
+            "description": "Status penalty equal to value to Intelligence/Wisdom/Charisma checks and to spell DCs and spell attack rolls."
+          },
+          {
+            "label": "Clumsy",
+            "description": "Status penalty equal to value to Dexterity-based rolls and to AC."
+          },
+          {
+            "label": "Persistent Damage",
+            "description": "Damage of a specific type (e.g. persistent fire 1d6, persistent bleed 2d4) applied at the END of each of your turns. After the damage, attempt a flat check DC 15 (or DC 10 if you or an ally took an action to provide assistance appropriate to the damage type — pouring water on fire, bandaging bleed, scraping off acid) to end the condition. Each damage type has its own track and assistance method; multiple persistent damages run in parallel. Resistances and weaknesses apply normally.",
+            "trigger": "Critical hits with weapons that deal bleed/poison/acid/fire, alchemical splash items, certain spells (Flaming Sphere, Acid Arrow), and creature special attacks. Persistent damage is suffixed by its type (persistent bleed, persistent fire, etc.)."
+          },
+          {
+            "label": "Unconscious",
+            "description": "Off-guard; -4 status to AC, Perception, and Reflex; cannot act. Wakes if HP restored or shaken (1 action) and DC 5 Perception."
+          }
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "name": "Off-Guard",
+        "description": "-2 circumstance penalty to AC. Renamed from 'flat-footed' in the Remaster. Triggered by being flanked, prone, grabbed, restrained, climbing, hidden from your attacker, successfully feinted, or affected by an ability that explicitly imposes off-guard."
+      },
+      {
+        "name": "Frightened",
+        "description": "Status penalty equal to value to all checks and DCs. Decreases by 1 at end of each turn.",
+        "imposesDisadvantageOn": [
+          "attack",
+          "save",
+          "skill"
+        ]
+      },
+      {
+        "name": "Sickened",
+        "description": "Status penalty equal to value to all checks and DCs. Spend 1 action and Fortitude save to reduce.",
+        "imposesDisadvantageOn": [
+          "attack",
+          "save",
+          "skill"
+        ]
+      },
+      {
+        "name": "Prone",
+        "description": "-2 circumstance to attacks; off-guard. Standing up is a single action.",
+        "imposesDisadvantageOn": [
+          "attack"
+        ]
+      },
+      {
+        "name": "Drained",
+        "description": "Graduated 1-4 status penalty to all Constitution-based checks (including Fortitude saves) and to HP maximum. Initial application also deals immediate level × increase damage. Decreases by 1 per full night's rest; lost HP must be healed normally.",
+        "imposesDisadvantageOn": [
+          "save"
+        ]
+      },
+      {
+        "name": "Enfeebled",
+        "description": "Status penalty equal to value to Strength-based rolls and damage.",
+        "imposesDisadvantageOn": [
+          "attack"
+        ]
+      },
+      {
+        "name": "Stupefied",
+        "description": "Graduated 1-4 status penalty to all Intelligence-, Wisdom-, and Charisma-based checks, spell DCs, and spell attack rolls. When attempting to Cast a Spell, first attempt a flat check DC 5 + stupefied value; failure makes the spell fizzle and lose its slot/cost. Hits casters particularly hard.",
+        "imposesDisadvantageOn": [
+          "skill"
+        ]
+      },
+      {
+        "name": "Clumsy",
+        "description": "Status penalty to Dexterity-based rolls and to AC.",
+        "imposesDisadvantageOn": [
+          "attack",
+          "save"
+        ]
+      },
+      {
+        "name": "Fascinated",
+        "description": "-2 status penalty to Perception and to all skill checks. You cannot use actions with the concentrate trait other than Seek (no Casting Spells, no Sustain). The condition ends automatically if any creature uses hostile action against you or any ally you can perceive, and you can attempt a Will save against the source's DC at the end of each of your turns.",
+        "imposesDisadvantageOn": [
+          "skill"
+        ]
+      }
+    ],
+    "diceTagFormat": {
+      "template": "[dice: 1d20{+MOD} vs DC{DC} = {result}]",
+      "example": "[dice: 1d20+9 vs DC20 = 24 success]"
+    },
+    "sheetSections": [
+      "attributes",
+      "saves",
+      "skills",
+      "derived",
+      "states",
+      "conditions",
+      "inventory",
+      "abilities",
+      "notes"
+    ],
+    "sections": {
+      "order": [
+        "identity",
+        "xp",
+        "resources",
+        "attributes",
+        "saves",
+        "skills",
+        "derived",
+        "abilities",
+        "states",
+        "conditions",
+        "inventory",
+        "notes"
+      ]
+    },
+    "abilities": {
+      "label": "Spellbook",
+      "categories": [
+        {
+          "id": "cantrip",
+          "label": "Cantrips"
+        },
+        {
+          "id": "focus",
+          "label": "Focus Spells"
+        },
+        {
+          "id": "rank-1",
+          "label": "1st Rank"
+        },
+        {
+          "id": "rank-2",
+          "label": "2nd Rank"
+        },
+        {
+          "id": "rank-3",
+          "label": "3rd Rank"
+        },
+        {
+          "id": "rank-4",
+          "label": "4th Rank"
+        },
+        {
+          "id": "rank-5",
+          "label": "5th Rank"
+        },
+        {
+          "id": "rank-6",
+          "label": "6th Rank"
+        },
+        {
+          "id": "rank-7",
+          "label": "7th Rank"
+        },
+        {
+          "id": "rank-8",
+          "label": "8th Rank"
+        },
+        {
+          "id": "rank-9",
+          "label": "9th Rank"
+        },
+        {
+          "id": "rank-10",
+          "label": "10th Rank"
+        }
+      ]
+    },
+    "lorebookKeys": [
+      "degrees of success",
+      "critical success",
+      "critical failure",
+      "three actions",
+      "MAP",
+      "multiple attack penalty",
+      "proficiency",
+      "untrained",
+      "trained",
+      "expert",
+      "master",
+      "legendary",
+      "Fortitude",
+      "Reflex",
+      "Will",
+      "save",
+      "Hero Point",
+      "Focus Point",
+      "Recall Knowledge",
+      "spell rank",
+      "off-guard",
+      "wounded",
+      "dying",
+      "doomed",
+      "ancestry",
+      "heritage",
+      "background",
+      "class"
+    ],
+    "header": {
+      "raceLabel": "Ancestry",
+      "classLabel": "Class"
+    },
+    "vocabularyHints": [
+      {
+        "pattern": "I attack / I strike",
+        "hint": "Pathfinder 2e Strike: 1d20 + Strength (melee) or Dexterity (ranged/finesse) + proficiency + item bonus vs target AC. Each subsequent Strike in the same turn takes a Multiple Attack Penalty: -5 on the second, -10 on the third (or -4/-8 with agile). Confirm action cost and current MAP before resolving."
+      },
+      {
+        "pattern": "I take an action / I cast / I use a feat",
+        "hint": "Each turn provides 3 actions plus 1 reaction. Spells cost actions equal to their cast time (usually 2 actions for most spells, 1 or 3 for variants). Activities (Stride, Strike, Cast a Spell, Demoralize, etc.) are bundles of actions. Free actions and reactions are separate budgets — don't conflate."
+      },
+      {
+        "pattern": "I make a saving throw / I save",
+        "hint": "Saves are 1d20 + Fortitude/Reflex/Will modifier (ability + proficiency + item). Degrees of success: Crit Success (≥10 over DC), Success (≥DC), Failure (<DC), Crit Failure (≤10 under DC). Nat-20 bumps result one step up; nat-1 bumps one step down."
+      },
+      {
+        "pattern": "I cast a spell / I cast a cantrip",
+        "hint": "Cantrips heighten to half-level rounded up automatically; leveled spells consume a slot of their rank (or higher to heighten). Verify caster has slots, the spell is prepared/known (prepared casters lose the slot after cast; spontaneous use signature spells or known list). Note metamagic feats add an action."
+      },
+      {
+        "pattern": "I roll initiative",
+        "hint": "Pathfinder 2e initiative uses Perception by default, but a skill the GM rules appropriate (Stealth in ambush, Diplomacy in social) is fair. Highest result acts first; ties favor PCs over NPCs. No special bonuses unless from feats (Incredible Initiative +2)."
+      }
+    ],
+    "scenarioDefaultDerive": true
+  },
+  "gmAgent": {
+    "name": "Pathfinder 2nd Edition Ruleset Helper",
+    "description": "Auto-installed by GM-mode bundle. Provides Pathfinder 2nd Edition skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
+    "phase": "pre_generation",
+    "promptTemplate": "You provide rules guidance for a Pathfinder 2nd Edition (2024 Remaster) game in Marinara Engine's roleplay mode, working alongside the engine's default world-state, prose-guardian, continuity, and expression agents. Your output is a context injection that the main narration model reads BEFORE narrating the next turn. Do not narrate; only emit rules guidance.\n\n# Mechanics you enforce\n\nResolution: 1d20 + ability_mod + proficiency_bonus (Level + tier bonus) + item_bonus + circumstance_bonus - status_penalty, compared to a Difficulty Class. The result lands on a four-band ladder:\n\n- Critical success: result >= DC + 10 (also: natural 20 bumps a success up one band).\n- Success: result >= DC.\n- Failure: result < DC.\n- Critical failure: result <= DC - 10 (also: natural 1 bumps a failure down one band).\n\nNatural 20 and natural 1 are BAND SHIFTS, not auto-anything — a nat 20 on a roll that would still miss by 10 only upgrades miss to hit. Spells, attacks, and skill actions all read their effects off this four-band ladder. Always tell the narrator which band fired.\n\nThree-action economy: each turn = 3 actions + 1 reaction + any number of free actions. Multiple Attack Penalty (MAP): first Strike +0, second -5 (-4 agile), third -10 (-8 agile). MAP resets at the start of next turn.\n\nProficiency tiers (UTEML): Untrained +0 (no Level), Trained +2+Level, Expert +4+Level, Master +6+Level, Legendary +8+Level. Many skill actions are Trained-only.\n\nDC table by encounter difficulty: Trivial 10, Low 15, Moderate 20, High 25, Severe 30, Extreme 40 — adjust the DC by level using the standard table.\n\nHero Points: each PC starts a session with 1, gains 1 per hour of significant play, caps at 3 banked, and resets to 1 next session. Spend 1 to reroll and take the better; spend all to avoid death.\n\nDying / Wounded: 0 HP from positive = dying 1 (dying 2 on a crit). Start-of-turn recovery flat check DC 10 + dying. Dying 4 = death. Returning to positive HP removes dying, increases wounded by 1.\n\n# Output format the main narration model must use\n\nWhen the player attempts something with uncertain outcome, the narration model emits a dice tag in this exact format so the Marinara client can render the result:\n\n[dice: 1d20+MOD vs DC{DC} = {result} {band}] - call: <Skill or Attack> vs DC <D>\n\nExample success: \"Vivian eyes the lock and slides her picks into the tumblers. [dice: 1d20+9 vs DC20 = 24 success] - call: Thievery (Pick a Lock) vs DC 20 - the pins click in sequence and the door yields.\"\n\nExample critical failure: \"Borin charges, axe high. [dice: 1d20-2 vs DC18 = 4 critical failure] - call: Strike (MAP -5) vs AC 18 - the axe bites the doorframe; the haft splinters.\"\n\nFor Hero Point spends use:\n[hero-point: spent, reroll]\n[hero-point: spent, avoid death]\n\nFor condition changes use the standard mrrp-state tags ([mrrp-state: field=\"conditions\" add=\"Frightened 2\"], etc.).\n\n# What you (this agent) emit each turn\n\nEmit a short rules brief (<= 250 tokens) that:\n1. Identifies the most likely check the player's stated action calls for (skill, attack, or save) and the appropriate DC from the difficulty table.\n2. Reminds the narration model of the four-band degrees-of-success ladder and the dice tag format.\n3. Surfaces the relevant proficiency tier the PC has in that skill/attack so the narrator knows whether trained-only restrictions apply.\n4. Flags MAP if the action is the PC's second or third Strike of the turn.\n5. Flags any active conditions (off-guard, frightened, sickened, drained, etc.) that modify the roll, and call out persistent damage end-of-turn ticks if any are active.\n\nIf no roll is needed, state \"No roll required\" with one-sentence reason.\n\n# Rules lookup\n\nThe bundled lorebook contains keyword-triggered rules entries (three-action economy, degrees of success, UTEML proficiency, hero points, dying/wounded, common conditions, saves/DCs, spellcasting). When a player asks about a mechanic, surface the relevant entry rather than improvising. When the Remaster differs from earlier-era PF2e (off-guard vs. flat-footed, spell rank vs. spell level, ORC license), follow the Remaster.\n\nNever invent rules. Where the 2024 Remaster Player Core / GM Core is silent, label the call as a GM ruling.",
+    "settings": {}
+  },
+  "lorebook": {
+    "name": "Pathfinder 2e Rules Reference",
+    "description": "Keyword-triggered rules reference for the GM agent running a Pathfinder Second Edition (Remaster) game. Each entry surfaces only when its keys appear in recent narration or player input, so the GM gets the right rule at the right moment without inflating every prompt.",
+    "category": "world",
+    "scanDepth": 4,
+    "tokenBudget": 1500,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "name": "Three Action Economy",
+        "keys": [
+          "three actions",
+          "action economy",
+          "actions",
+          "reaction",
+          "free action",
+          "MAP",
+          "multiple attack penalty"
+        ],
+        "content": "Each turn a creature gets 3 actions, 1 reaction, and any number of free actions. Most things cost 1 action (Strike, Stride, Demoralize); some cost 2 (Sustain a 2-action spell, two-action activities); a few cost 3 (full-round spells, Confident Finisher). Reactions trigger on specified events (Attack of Opportunity, Shield Block) outside your turn. Multiple Attack Penalty (MAP): your first Strike per turn is at +0, second at -5 (or -4 with an agile weapon), third at -10 (or -8 agile). MAP resets at the start of your next turn.",
+        "position": 0
+      },
+      {
+        "name": "Degrees of Success",
+        "keys": [
+          "degrees of success",
+          "critical success",
+          "critical failure",
+          "crit success",
+          "crit fail",
+          "natural 20",
+          "natural 1"
+        ],
+        "content": "Every d20 check resolves on four bands: critical success when the result beats the DC by 10 or more (or a natural 20 bumps a success up one band); success when the result meets or exceeds the DC; failure when the result is below the DC; critical failure when the result is 10 or more under the DC (or a natural 1 bumps a failure down one band). Natural 20 and natural 1 are SHIFTS, not autocrits — a nat 20 on a roll that would still miss by 10 only upgrades miss to hit. Spells, attacks, and skill actions all read their effects off this four-band ladder.",
+        "position": 0
+      },
+      {
+        "name": "Proficiency Tiers (UTEML)",
+        "keys": [
+          "proficiency",
+          "untrained",
+          "trained",
+          "expert",
+          "master",
+          "legendary",
+          "UTEML"
+        ],
+        "content": "Proficiency in skills, saves, weapons, and class DC is one of five tiers: Untrained (+0, no level), Trained (+2 + Level), Expert (+4 + Level), Master (+6 + Level), Legendary (+8 + Level). Level adds to the bonus at every trained-or-higher tier, which is why PF2e math stays tight as parties scale. Many skill actions are Trained-only (Treat Wounds, Identify Magic, Disable Device). Class features and skill increases raise tiers at specific levels.",
+        "position": 0
+      },
+      {
+        "name": "Hero Points",
+        "keys": [
+          "hero point",
+          "hero points",
+          "reroll"
+        ],
+        "content": "Each PC starts the session with 1 Hero Point and gains 1 per hour of significant play (max 3 banked). Spend 1 Hero Point to reroll a check you just made and take the better result, OR spend ALL Hero Points to avoid death when reduced to dying with no Stabilize available. Hero Points reset to 1 at the start of each session — banking is not cross-session. Encourage spending; the system assumes PCs use them.",
+        "position": 0
+      },
+      {
+        "name": "Dying and Wounded",
+        "keys": [
+          "dying",
+          "wounded",
+          "doomed",
+          "stabilize",
+          "recovery check",
+          "death"
+        ],
+        "content": "At 0 HP from positive, you fall unconscious and gain dying 1 (dying 2 on a critical hit; add your current wounded value to the starting dying value). At the start of each of your turns make a recovery flat check: DC 10 + current dying. Success reduces dying by 1, critical success by 2; failure increases by 1, critical failure by 2. Reaching dying 4 means you die. Regaining at least 1 HP removes dying entirely but increases wounded by 1 (or 2 if you were dying 4+). Wounded only clears after 10 minutes at full HP or with Treat Wounds that explicitly removes it. Doomed reduces the dying-4 death threshold (doomed 1 = die at dying 3, etc.); decreases by 1 per full night's rest.",
+        "position": 0
+      },
+      {
+        "name": "Common Conditions",
+        "keys": [
+          "off-guard",
+          "flat-footed",
+          "frightened",
+          "sickened",
+          "stunned",
+          "slowed",
+          "prone",
+          "grabbed",
+          "restrained",
+          "clumsy",
+          "enfeebled",
+          "stupefied",
+          "drained",
+          "persistent damage"
+        ],
+        "content": "Off-Guard: -2 circumstance penalty to AC; renamed from flat-footed in the Remaster. Frightened/Sickened/Clumsy/Enfeebled/Stupefied/Drained: graduated 1-4, apply a status penalty equal to the value to relevant rolls; frightened decreases by 1 each turn-end automatically. Stunned: lose actions equal to the value at the start of your turn. Slowed: lose actions equal to the value at the start of each turn (does not stack with Stunned — take the worse). Prone: -2 circumstance to attacks; off-guard. Persistent Damage (bleed/fire/acid/etc.): take the listed damage at the END of each of your turns, then flat-check DC 15 (DC 10 with assistance) to end.",
+        "position": 0
+      },
+      {
+        "name": "Saves and DCs",
+        "keys": [
+          "save",
+          "saving throw",
+          "fortitude",
+          "reflex",
+          "will",
+          "DC",
+          "spell DC",
+          "class DC",
+          "perception"
+        ],
+        "content": "Three saves: Fortitude (CON + prof), Reflex (DEX + prof), Will (WIS + prof). Spell DC = 10 + spell proficiency bonus + casting attribute mod. Class DC = 10 + class proficiency bonus + key ability mod. Set encounter DCs from the Difficulty table: Trivial 10, Low 15, Moderate 20, High 25, Severe 30, Extreme 40 — adjust by level. Recall Knowledge uses the Lore/Society/Arcana/etc. DC from the same table tied to the subject's level.",
+        "position": 0
+      },
+      {
+        "name": "Spellcasting and Slots",
+        "keys": [
+          "spell",
+          "spell slot",
+          "spell rank",
+          "cantrip",
+          "focus spell",
+          "heightened",
+          "sustain"
+        ],
+        "content": "Prepared casters fill spell slots at a daily preparation; spontaneous casters cast known spells from slots of the appropriate rank (PF2e uses 'rank' instead of 'level' for spells post-Remaster). Cantrips are at-will and auto-heighten to half your level rounded up. Focus spells use Focus Points (refocus during a 10-minute rest to regain 1 point per focus spell trained). Heightening a spell at a higher rank often adds dice or extra targets — read the spell's heightened entry. Sustained spells require a sustain action (1 action) on each subsequent turn to remain in effect.",
+        "position": 0
+      },
+      {
+        "name": "Attribute: Strength (STR)",
+        "keys": [
+          "Strength",
+          "STR"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Strength (STR) — Raw physical force. Adds to Athletics, melee attack rolls with non-finesse weapons, and melee damage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DEX)",
+        "keys": [
+          "Dexterity",
+          "DEX"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Dexterity (DEX) — Agility, balance, fine motor control. Adds to AC (capped by armor's Dex cap), Reflex saves, ranged attacks, and finesse melee attacks.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Constitution (CON)",
+        "keys": [
+          "Constitution",
+          "CON"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Constitution (CON) — Health and endurance. Adds to Hit Points each level and to Fortitude saves.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (INT)",
+        "keys": [
+          "Intelligence",
+          "INT"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Intelligence (INT) — Memory, reasoning, education. Grants extra trained skills and Lores at character creation; adds to skills like Arcana, Crafting, Society.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Wisdom (WIS)",
+        "keys": [
+          "Wisdom",
+          "WIS"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Wisdom (WIS) — Awareness, intuition, common sense. Adds to Perception, Will saves, and skills like Medicine, Nature, Religion, Survival.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Charisma (CHA)",
+        "keys": [
+          "Charisma",
+          "CHA"
+        ],
+        "content": "Pathfinder 2nd Edition attribute. Charisma (CHA) — Presence, persuasion, force of personality. Adds to social skills (Diplomacy, Deception, Intimidation, Performance, Society) and to spell DCs for Charisma-based casters.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Acrobatics",
+        "keys": [
+          "Acrobatics"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Acrobatics. Tumbling, balancing, escaping grabs. Trained-only actions: Maneuver in Flight.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Arcana",
+        "keys": [
+          "Arcana"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Arcana. Knowledge of arcane magic and creatures. Trained-only: Identify Magic, Learn a Spell, Decipher Writing of arcane origin.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Athletics",
+        "keys": [
+          "Athletics"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Athletics. Climbing, jumping, swimming, forceful maneuvers (Grapple, Trip, Shove, Disarm). High Jump and Long Jump are signature actions.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Crafting",
+        "keys": [
+          "Crafting"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Crafting. Making and repairing items. Trained-only: Craft, Repair, Identify Alchemy.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Deception",
+        "keys": [
+          "Deception"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Deception. Lying, disguise, feinting in combat. Trained-only: Impersonate.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Diplomacy",
+        "keys": [
+          "Diplomacy"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Diplomacy. Making requests, gathering information, swaying attitudes. Always available untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Intimidation",
+        "keys": [
+          "Intimidation"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Intimidation. Coercing or demoralizing. Demoralize is a frequent combat action.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Lore",
+        "keys": [
+          "Lore"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Lore. A specific narrow expertise the player chose at character creation (Sailing Lore, Goblin Lore, Absalom Lore, Carpentry Lore, etc.). Each Lore is a separate trained skill; the GM allows it for narrow Recall Knowledge questions.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Medicine",
+        "keys": [
+          "Medicine"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Medicine. First aid, treating poison/disease. Trained-only: Treat Disease, Treat Poison, Treat Wounds.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Nature",
+        "keys": [
+          "Nature"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Nature. Knowledge of plants, animals, weather. Trained-only: Command an Animal, Identify Magic of primal origin.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Occultism",
+        "keys": [
+          "Occultism"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Occultism. Knowledge of the occult — esoteric philosophy, ghosts, aberrations. Trained-only: Identify Magic of occult origin.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Performance",
+        "keys": [
+          "Performance"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Performance. Music, oratory, dance, acting. Trained-only: Perform (extended).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Religion",
+        "keys": [
+          "Religion"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Religion. Knowledge of deities, dogmas, the planes. Trained-only: Identify Magic of divine origin.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Society",
+        "keys": [
+          "Society"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Society. History, etiquette, languages, current affairs. Trained-only: Decipher Writing, Subsist (in civilization).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Stealth. Hiding and sneaking. Used to oppose Perception when avoiding detection.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Survival. Wilderness skills: tracking, foraging, weathering. Trained-only: Cover Tracks, Track.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Thievery",
+        "keys": [
+          "Thievery"
+        ],
+        "content": "Pathfinder 2nd Edition skill. Thievery. Picking locks, picking pockets, disabling traps. Trained-only: Disable Device, Pick a Lock.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Off-Guard",
+        "keys": [
+          "Off-Guard"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Off-Guard — -2 circumstance penalty to AC. Renamed from 'flat-footed' in the Remaster. Triggered by being flanked, prone, grabbed, restrained, climbing, hidden from your attacker, successfully feinted, or affected by an ability that explicitly imposes off-guard.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Frightened",
+        "keys": [
+          "Frightened"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Frightened — Status penalty equal to value to all checks and DCs. Decreases by 1 at end of each turn.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Sickened",
+        "keys": [
+          "Sickened"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Sickened — Status penalty equal to value to all checks and DCs. Spend 1 action and Fortitude save to reduce.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Prone",
+        "keys": [
+          "Prone"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Prone — -2 circumstance to attacks; off-guard. Standing up is a single action.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Drained",
+        "keys": [
+          "Drained"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Drained — Graduated 1-4 status penalty to all Constitution-based checks (including Fortitude saves) and to HP maximum. Initial application also deals immediate level × increase damage. Decreases by 1 per full night's rest; lost HP must be healed normally.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Enfeebled",
+        "keys": [
+          "Enfeebled"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Enfeebled — Status penalty equal to value to Strength-based rolls and damage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Stupefied",
+        "keys": [
+          "Stupefied"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Stupefied — Graduated 1-4 status penalty to all Intelligence-, Wisdom-, and Charisma-based checks, spell DCs, and spell attack rolls. When attempting to Cast a Spell, first attempt a flat check DC 5 + stupefied value; failure makes the spell fizzle and lose its slot/cost. Hits casters particularly hard.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Clumsy",
+        "keys": [
+          "Clumsy"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Clumsy — Status penalty to Dexterity-based rolls and to AC.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Fascinated",
+        "keys": [
+          "Fascinated"
+        ],
+        "content": "Pathfinder 2nd Edition condition. Fascinated — -2 status penalty to Perception and to all skill checks. You cannot use actions with the concentrate trait other than Seek (no Casting Spells, no Sustain). The condition ends automatically if any creature uses hostile action against you or any ally you can perceive, and you can attempt a Will save against the source's DC at the end of each of your turns.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Hit Points",
+        "keys": [
+          "Hit Points"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Hit Points — formula: (class HP per level + CON_mod) per character level + ancestry HP at level 1",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Armor Class",
+        "keys": [
+          "Armor Class"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Armor Class — formula: 10 + DEX_mod (capped by armor) + armor proficiency bonus + armor item bonus",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Class DC",
+        "keys": [
+          "Class DC"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Class DC — formula: 10 + class proficiency bonus + key ability modifier",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Spell DC",
+        "keys": [
+          "Spell DC"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Spell DC — formula: 10 + spell proficiency bonus + casting ability modifier",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Perception",
+        "keys": [
+          "Perception"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Perception — formula: WIS_mod + perception proficiency bonus + item bonus",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Fortitude Save",
+        "keys": [
+          "Fortitude Save"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Fortitude Save — formula: CON_mod + fortitude proficiency bonus + item bonus",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Reflex Save",
+        "keys": [
+          "Reflex Save"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Reflex Save — formula: DEX_mod + reflex proficiency bonus + item bonus",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Will Save",
+        "keys": [
+          "Will Save"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Will Save — formula: WIS_mod + will proficiency bonus + item bonus",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Speed",
+        "keys": [
+          "Speed"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Speed — formula: Ancestry base speed (typically 25 ft) + bonuses",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Level",
+        "keys": [
+          "Level"
+        ],
+        "content": "Pathfinder 2nd Edition derived stat. Level — formula: Character level, 1-20.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Pathfinder 2nd Edition difficulty ladder. Threshold values needed for success:\n- Trivial (threshold 10) — Untrained character can manage with average stats.\n- Low (threshold 15) — Trained at character's level expects to succeed.\n- Moderate (threshold 20) — The standard challenge for an at-level expert.\n- High (threshold 25) — Pushes a master character; a trained one will need luck.\n- Severe (threshold 30) — A serious test even for a Master at level.\n- Extreme (threshold 40) — Legendary territory. Stack every bonus.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      }
+    ]
+  },
+  "customTools": [
+    {
+      "name": "pathfinder2e_reference",
+      "description": "Returns canonical Pathfinder 2nd Edition reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {},
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Pathfinder 2nd Edition — canonical reference\n\nPathfinder 2nd Edition is a tightly mathematical d20 fantasy system. A check is 1d20 + ability modifier + proficiency bonus + item bonus vs. a Difficulty Class, with four degrees of success: critical success at +10 over the DC, success at meeting it, failure under it, critical failure at -10 below. The three-action economy and Multiple Attack Penalty give every turn meaningful tactical choice.\n\n## Dice\n- Type: `d20`\n- Notation: `1d20+MOD`\n\n## Resolution\n- Mode: `single-roll`\n\n## Difficulty ladder\n- **Trivial** (threshold 10) — Untrained character can manage with average stats.\n- **Low** (threshold 15) — Trained at character's level expects to succeed.\n- **Moderate** (threshold 20) — The standard challenge for an at-level expert.\n- **High** (threshold 25) — Pushes a master character; a trained one will need luck.\n- **Severe** (threshold 30) — A serious test even for a Master at level.\n- **Extreme** (threshold 40) — Legendary territory. Stack every bonus.\n\n## Attributes\n- **Strength** (STR) — Raw physical force. Adds to Athletics, melee attack rolls with non-finesse weapons, and melee damage.\n- **Dexterity** (DEX) — Agility, balance, fine motor control. Adds to AC (capped by armor's Dex cap), Reflex saves, ranged attacks, and finesse melee attacks.\n- **Constitution** (CON) — Health and endurance. Adds to Hit Points each level and to Fortitude saves.\n- **Intelligence** (INT) — Memory, reasoning, education. Grants extra trained skills and Lores at character creation; adds to skills like Arcana, Crafting, Society.\n- **Wisdom** (WIS) — Awareness, intuition, common sense. Adds to Perception, Will saves, and skills like Medicine, Nature, Religion, Survival.\n- **Charisma** (CHA) — Presence, persuasion, force of personality. Adds to social skills (Diplomacy, Deception, Intimidation, Performance, Society) and to spell DCs for Charisma-based casters.\n\n## Skills\n- **Acrobatics** — Tumbling, balancing, escaping grabs. Trained-only actions: Maneuver in Flight.\n- **Arcana** — Knowledge of arcane magic and creatures. Trained-only: Identify Magic, Learn a Spell, Decipher Writing of arcane origin.\n- **Athletics** — Climbing, jumping, swimming, forceful maneuvers (Grapple, Trip, Shove, Disarm). High Jump and Long Jump are signature actions.\n- **Crafting** — Making and repairing items. Trained-only: Craft, Repair, Identify Alchemy.\n- **Deception** — Lying, disguise, feinting in combat. Trained-only: Impersonate.\n- **Diplomacy** — Making requests, gathering information, swaying attitudes. Always available untrained.\n- **Intimidation** — Coercing or demoralizing. Demoralize is a frequent combat action.\n- **Lore** — A specific narrow expertise the player chose at character creation (Sailing Lore, Goblin Lore, Absalom Lore, Carpentry Lore, etc.). Each Lore is a separate trained skill; the GM allows it for narrow Recall Knowledge questions.\n- **Medicine** — First aid, treating poison/disease. Trained-only: Treat Disease, Treat Poison, Treat Wounds.\n- **Nature** — Knowledge of plants, animals, weather. Trained-only: Command an Animal, Identify Magic of primal origin.\n- **Occultism** — Knowledge of the occult — esoteric philosophy, ghosts, aberrations. Trained-only: Identify Magic of occult origin.\n- **Performance** — Music, oratory, dance, acting. Trained-only: Perform (extended).\n- **Religion** — Knowledge of deities, dogmas, the planes. Trained-only: Identify Magic of divine origin.\n- **Society** — History, etiquette, languages, current affairs. Trained-only: Decipher Writing, Subsist (in civilization).\n- **Stealth** — Hiding and sneaking. Used to oppose Perception when avoiding detection.\n- **Survival** — Wilderness skills: tracking, foraging, weathering. Trained-only: Cover Tracks, Track.\n- **Thievery** — Picking locks, picking pockets, disabling traps. Trained-only: Disable Device, Pick a Lock.\n\n## Commitment\n- Model: `invested`",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ],
+  "additionalAgents": [
+    {
+      "role": "combat-overseer",
+      "name": "Pathfinder 2nd Edition — Combat Overseer",
+      "description": "Focused combat overseer agent for Pathfinder 2nd Edition — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Combat Overseer for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate scenes, write prose, or speak in-character. You emit two coordinated mechanical sections — combat-math framing AND NPC state — in one block.\n\n# Section 1 — Combat Math (when combat is active)\n\nACTIVATION: only emit Section 1 when combat is clearly happening or about to begin. \"Combat\" means weapons drawn, an attack declared or just landed, initiative called, or the narrative is mechanically resolving violence. If the scene is ambient, social, or merely tense without active violence, output exactly: \"No combat active.\" under the COMBAT header and skip the math fields.\n\nWhen combat IS active, cover whichever of these are relevant to the upcoming turn — pulling from the active ruleset's already-injected resolution mechanic, dice formula, and difficulty ladder. Do NOT invent your own dice math.\n\n- INITIATIVE: whose turn next? If turn order isn't established, demand the model establish it before resolving any actions.\n- ACTION ECONOMY: how many actions does the active character get this turn (one action, three actions, action+bonus+reaction, etc.)?\n- ATTACK RESOLUTION: when an attack is declared, restate the dice formula the ruleset uses (e.g., \"d20 + STR mod + proficiency vs. AC\"; \"Dice pool of Dex + Athletics, target 7+ for successes\"; \"2d6 + stat, 10+ hit / 7-9 partial\").\n- DAMAGE: restate the damage formula + type for the weapon / spell being used.\n- CONDITIONS / STATUS: if an attack inflicts a condition (poisoned, prone, stunned), state the duration and the save/recovery mechanic.\n- RANGE / POSITION: if movement matters, note current range bands or movement budgets.\n- DEFENSIVE OPTIONS: reactions, parries, dodges, spell-shields available to the defender.\n\n# Section 2 — NPC Roster (when NPCs are in or recently in scene)\n\nACTIVATION: emit Section 2 when there are NPCs in the latest 1-2 messages OR recently engaged with the player (took damage, got a condition, was last seen leaving the scene without resolution). If no NPCs are tracked or active, output \"No NPCs to track.\" under the NPC ROSTER header and stop the section.\n\nFor each notable NPC, surface whichever of these the conversation has established. Cap at ~120 words total for this section. Group secondary NPCs (\"3 unnamed bandits, all bloodied and outnumbered\") rather than enumerating each when 4+ are active.\n\n- NAME (and any alias / role like \"the bandit captain\")\n- HP / health pool — current / max — using the active ruleset's vocabulary. If exact numbers were never given, estimate from narrative (\"lightly wounded\", \"bloodied\", \"near death\").\n- CONDITIONS — anything currently affecting them with duration if given.\n- TACTICAL STATE — position, what they're doing this turn (defending, casting, fleeing, surrendering).\n- TELEGRAPHED INTENT — if the narrative has signaled what they plan next.\n- NOTABLE GEAR / ABILITIES — only if relevant to the next turn.\n\n# Hard rules (apply across both sections)\n\n- DO NOT roll dice. You frame the math; the resolution happens via the dice widget or player narration.\n- DO NOT decide outcomes. You set up the situation; player or main model decides.\n- DO NOT INVENT NPCs OR VALUES. Track only what narrative has established. If HP was never specified, say \"wounded but combat-capable\" — never make up \"23/40\".\n- PRESERVE CONTINUITY. If an NPC was at low HP three messages ago and hasn't been healed, they're still at low HP.\n- HIDDEN INTENTIONS stay out of the player-facing summary — those belong to a secret-plot-driver if enabled.\n- USE the active ruleset's vocabulary throughout.\n- BE TERSE. Cap total output at ~250 words (both sections combined).\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nCOMBAT:\n  state: active | starting | ending | none\n  initiative: <whose turn / next, OR \"not yet established — declare initiative\">\n  action budget: <what the acting character can do this turn>\n  declared action: <what player or model signaled>\n  resolution: <dice formula + target>\n  damage formula: <formula + type, if applicable>\n  conditions applied: <name + duration + save mechanic, if applicable>\n\nNPC ROSTER:\n  <Name> (<role/alias>) — HP: <current/max or descriptor> · Conditions: <list> · State: <tactical> · Intent: <next>\n  <repeat per notable NPC; group secondaries>\n\nIf both sections are inactive (no combat AND no NPCs), output exactly: \"No combat or NPC state to surface.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "context-fuser",
+      "name": "Pathfinder 2nd Edition — Context Fuser",
+      "description": "Focused context fuser agent for Pathfinder 2nd Edition — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Context Fuser for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate, roleplay, or speak in-character. You emit two coordinated context blocks — rules-query answer (when asked) AND state reminder (when relevant) — in one output.\n\n# Section 1 — Rules Query (when player asked a rules question)\n\nACTIVATION: emit Section 1 ONLY when the LATEST USER MESSAGE asks a rules question or requests rules clarification. Examples:\n- \"How does grappling work in this system?\"\n- \"What's the DC for picking a lock?\"\n- \"Can my character use two-weapon fighting with a ranged weapon?\"\n- \"Remind me how Sorcery works in Exalted.\"\n- \"What does the Bloodied condition do?\"\n\nThe question can be in-character, out-of-character (OOC), or in parentheses. If the latest user message is NOT a rules question — it's a roleplay action, dialogue, or narrative input — output \"No rules query.\" under the RULES QUERY header and skip Section 1.\n\nWhen a rules question IS being asked, answer it precisely:\n\n- Draw FIRST from the active ruleset's already-injected rules content.\n- Then from the installed lorebook's reference entries (engine surfaces these via keyword scan; trust them).\n- ONLY THEN from the system's published rules at large IF the active ruleset's content doesn't cover the question. Note this explicitly: \"Not in the installed reference; per the published RAW: …\".\n\nRules for the rules answer:\n- BE CORRECT. If you don't know with confidence, say so explicitly. Do not improvise.\n- BE SPECIFIC. Cite the relevant skill name, attribute, formula, DC table, or condition by exact ruleset terminology.\n- BE BRIEF. Cap Section 1 at ~150 words.\n- DISTINGUISH RAW FROM HOUSE RULES. If the campaign has established a house rule that contradicts RAW, prefer the house rule and note the divergence.\n- If ambiguity exists, present the 1-2 common readings and let the GM-side player decide.\n\n# Section 2 — State Reminder (when meaningful state to surface)\n\nACTIVATION: emit Section 2 when there is meaningful tracked state to surface — a player character with HP/resources, an active condition, equipped gear affecting the next turn, or a duration-tracked effect running. If the scene is purely ambient / social with no mechanical state worth tracking, output \"No state to track.\" under the STATE header and skip Section 2.\n\nWhen state IS worth surfacing, produce a short bulleted list (~120 words cap):\n\n1. Active player character(s): name, current HP / health pool, tracked resources (mana, stunt dice, momentum, stress — match the active ruleset's vocabulary).\n2. Active conditions / statuses / wounds (e.g., \"Bloodied\", \"Crippled left arm\", \"Poisoned (3 turns left)\").\n3. Equipped gear that matters for the next turn (weapons drawn, armor worn, prepared spells, items in hand).\n4. Duration-tracked effects running (concentration spells, charm effects, ongoing damage).\n5. Position / range / cover state if combat or tactical movement is active.\n\nRules for state:\n- READ the conversation history. Pull state from what's been ESTABLISHED in narration. Don't invent values.\n- If a value was set earlier and hasn't changed, it's still current. Continuity matters more than restatement.\n- Use the active ruleset's terminology (Stamina vs HP, Willpower vs Sanity, Motes vs Mana, etc.).\n- Do NOT enforce mechanics — that's the Combat Overseer's job. You only REMIND state.\n- If state has clearly diverged from a recent action (the model narrated a hit but didn't update HP), flag the divergence in one line.\n\n# Hard rules (apply across both sections)\n\n- DO NOT roll dice or decide outcomes.\n- DO NOT mutate the character sheet. State writes happen via the State Mutator (post-processing) or the extension's Edit-this-character flow.\n- Track player characters only — NPCs are the Combat Overseer's surface.\n- BE TERSE. Cap total output at ~250 words combined.\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nRULES QUERY:\n  answer: <one-line direct answer, OR \"No rules query.\">\n  detail: <2-3 sentences expanding with specific numbers, formulas, page references>\n  edge cases: <any common edge cases, if non-trivial>\n  source: <\"Active ruleset\" | \"Installed lorebook\" | \"Published RAW (not in installed reference)\" | \"House rule established earlier this campaign\">\n\nSTATE:\n  player(s):\n    • <Character>: HP X/Y · <resource> A/B\n    • Conditions: <list, or \"none\">\n    • Equipped: <relevant gear>\n    • Active effects: <duration-tracked effects, or \"none\">\n  combat (if active):\n    • Position / range: <state>\n    • Initiative slot: <if relevant>\n\nIf both sections are inactive (no rules query AND no meaningful state), output exactly: \"No context to surface.\"",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "state-mutator",
+      "name": "Pathfinder 2nd Edition — Ruleset State Mutator",
+      "description": "Focused state mutator agent for Pathfinder 2nd Edition — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the State Mutator instruction agent for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate — you only INSTRUCT the main model what to do.\n\n# What you tell the main model\n\nWhen the next turn establishes a DURABLE change to a character's sheet (HP loss, condition gained, item added or removed, resource spent, etc.), the main model must emit ONE inline tag at the END of the paragraph that established the change. The tag is parsed by the extension's chat observer and applied to the active character sheet. The extension hides the tag from the visible chat after parsing.\n\n# Tag format\n\nONE tag per state change, placed at the end of the paragraph, on its own line:\n\n[mrr-state: target=\"player|<characterName>\" field=\"<fieldName>\" delta=\"<+/-N>\" reason=\"<short why>\"]\n[mrr-state: target=\"...\" field=\"conditions\" add=\"<condition name (duration if known)>\" reason=\"...\"]\n[mrr-state: target=\"...\" field=\"conditions\" remove=\"<condition name>\" reason=\"...\"]\n[mrr-state: target=\"...\" field=\"inventory\" add=\"<item name>\" qty=\"<N, default 1>\" reason=\"...\" optional: slot damage attack_attr attack_proficient use_effect consumable notes category — see Inventory schema below]\n[mrr-state: target=\"...\" field=\"inventory\" remove=\"<item name>\" qty=\"<N, default 1>\" reason=\"...\"]\n\nATTRIBUTES:\n- target: \"player\" for the active player character; or the character's display name as written in the chat. Required.\n- field: name of the sheet field to mutate. For numeric deltas: \"hp\" / \"health\" / any derived stat name from the active ruleset (use the ruleset's vocabulary — match what the main ruleset agent has established). For special fields: \"conditions\" or \"inventory\".\n- delta: signed integer for numeric mutations (e.g., \"-3\", \"+5\"). Required when field is a numeric stat. Omit for conditions / inventory.\n- add / remove: free-text item or condition name. Use ONE of these per tag, never both. Required for conditions / inventory tags.\n- qty: optional integer for inventory tags, default 1.\n- reason: short narrative justification (8-16 words). Helps the player understand what triggered the change. Required.\n\n# Inventory schema (full field list — extension-confirmed)\n\nWhen ADDING an item, populate the full character-sheet item dialog in one tag by including any of these optional attributes (all OPTIONAL; the extension parser silently ignores attrs it does not know):\n\n- slot              — equipment slot (\"weapon\", \"armor\", \"shield\", \"head\", \"ring\", etc.). Setting slot auto-categorizes the item as equipment unless you also set category explicitly.\n- damage            — free-text damage expression (\"1d8 slashing\", \"2d6 fire\", \"1 piercing\").\n- attack_attr       — attribute name whose modifier adds to attack/damage rolls (\"Strength\", \"Dexterity\", \"Charisma\", etc. — use the active ruleset's vocabulary).\n- attack_proficient — \"true\" to add the proficiency bonus on attack rolls.\n- use_effect        — free-text effect expression that the player Use button parses and rolls (\"2d4+2 healing\", \"1d6 fire\").\n- consumable        — \"true\" to make the item decrement quantity on each Use; item is removed when quantity hits 0.\n- notes             — free-text notes (rules text, AC bonus description, source page, etc.).\n- category          — \"equipment\" (lives in the on-sheet Inventory section, equippable to slot) or \"item\" (Items flyout, usable / consumable). Default: \"item\" when no slot, \"equipment\" when slot is set.\n\nRepeated inventory.add tags with the same name BUMP QUANTITY and ENRICH any blank fields on the existing item. Populate fields ONCE authoritatively on first add; omit them on subsequent qty bumps. Empty strings on a field are treated as \"leave alone\" — to clear a populated field, the player must use the in-app dialog. Booleans only land on truthy (\"true\"); once set, they persist until the player edits via the dialog.\n\n# Rules for tag emission\n\n1. Emit a tag ONLY when the narrative has clearly and durably established a change. If a character considers swinging a sword but doesn't, no tag. If they swing and miss, no tag. If they swing and hit, the damage they deal triggers a tag on the target.\n2. NEVER emit speculative tags (\"might lose 5 HP\") — only emit when the outcome is settled this turn.\n3. Use the ACTIVE RULESET'S vocabulary for stat names. The main ruleset agent has already injected the system's stat list — match it (e.g., \"hp\" for D&D, \"health\" for some systems, the ruleset's exact derived-stat name for resource pools).\n4. Place the tag at the END of the paragraph that established the change. If multiple changes happen in one paragraph, emit one tag per change, each on its own line at the end.\n5. Do NOT wrap tags in code fences, blockquotes, or other formatting. Plain inline tags.\n6. Do NOT emit tags for momentary states (mood shifts, fleeting emotions, current location). Only durable mechanical state.\n7. Do NOT emit tags for changes that happened in earlier turns and are only being recalled now. Only this turn's NEW changes.\n8. Do NOT emit tags for trivial unaccounted-for items (a sip of water, picking up a small stone). Only items the character would track in inventory.\n\n# Cost-on-cast: Spellbook resource deductions\n\nWhen a player narrates casting, invoking, channeling, or activating a SPELL, CHARM, STUNT, ABILITY, or POWER that appears in the active lorebook context:\n\n1. Look in that lorebook entry for a line that begins with \"Cost: \" (case-insensitive).\n2. Parse each numeric resource component from the cost string. Common forms:\n   - \"5 motes\" or \"5m\"  → field=\"Personal Motes\" (or whichever motes pool the ruleset defines), delta=\"-5\"\n   - \"1 willpower\" or \"1w\" or \"1wp\"  → field=\"Willpower\", delta=\"-1\"\n   - \"2 essence\"  → field=\"Essence\", delta=\"-2\"\n   - \"1 hit point\" or \"1 hp\"  → field=\"hp\" (or the ruleset's HP field), delta=\"-1\"\n   - \"1 spell slot (lvl 3)\"  → field=\"Lvl 3 Spell Slots\" (or ruleset's slot field for that level), delta=\"-1\"\n3. Use the EXACT field name as it appears on the active ruleset's bars / derived stats / numeric attributes. The ruleset agent has injected the schema — use those names verbatim. If the cost says \"5 motes\" and the ruleset has \"Personal Motes\" and \"Peripheral Motes\", prefer \"Personal Motes\" unless the narrative explicitly invokes the peripheral pool (anima banner spending).\n4. Emit ONE tag per numeric cost component, all at the end of the paragraph that establishes the cast. The reason is the ability name.\n5. Do NOT deduct non-numeric costs (V/S/M material components, focus, free actions). Only numeric resource pools.\n6. If the cost string is absent or only non-numeric, emit no cost tags — just narrate the cast.\n\nExample narrative: \"Aria channels Solar Counterattack, anima flickering as her sword arm whips back.\"\nLorebook entry contains: \"Cost: 5 motes, 1 willpower\"\nEnd of paragraph:\n[mrr-state: target=\"player\" field=\"Personal Motes\" delta=\"-5\" reason=\"Solar Counterattack\"]\n[mrr-state: target=\"player\" field=\"Willpower\" delta=\"-1\" reason=\"Solar Counterattack\"]\n\nExample narrative: \"She casts Fireball, hurling the mote of flame down the hallway.\"\nLorebook entry contains: \"Cost: 1 lvl-3 slot, V/S/M\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"Lvl 3 Spell Slots\" delta=\"-1\" reason=\"Fireball\"]\n(material components not deducted)\n\n# Examples (illustrative; match your active ruleset's vocabulary)\n\nNarrative: \"The orc's blade bites deep into Lyra's shoulder, drawing a thin line of blood.\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"hp\" delta=\"-7\" reason=\"Slashed by orc raider\"]\n\nNarrative: \"Toxin spreads through her veins; her vision swims, fingers numb.\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"conditions\" add=\"Poisoned (3 turns)\" reason=\"Hit by spider venom\"]\n\nNarrative: \"Lyra picks up the dwarven coin pouch from the goblin's belt.\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"inventory\" add=\"Coin pouch\" qty=\"1\" reason=\"Looted from defeated goblin\"]\n\nNarrative: \"She uncorks the healing potion and drinks; warmth spreads through her limbs.\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"hp\" delta=\"+8\" reason=\"Drank healing potion\"]\nEnd of paragraph: [mrr-state: target=\"player\" field=\"inventory\" remove=\"Healing Potion\" qty=\"1\" reason=\"Consumed\"]\n\nNarrative: \"She tucks two healing potions into her belt pouch, careful not to bruise the glass.\"\nEnd of paragraph: [mrr-state: target=\"player\" field=\"inventory\" add=\"Healing Potion\" qty=\"2\" use_effect=\"2d4+2 healing\" consumable=\"true\" reason=\"Purchased at Gilded Vial\"]\n\nNarrative: \"She unstraps the longsword from her hip and hands it to the apprentice.\"\nEnd of paragraph: [mrr-state: target=\"apprentice\" field=\"inventory\" add=\"Longsword\" qty=\"1\" category=\"equipment\" slot=\"weapon\" damage=\"1d8 slashing\" attack_attr=\"Strength\" attack_proficient=\"true\" reason=\"Gift from Lyra\"]\n\n# What you do NOT do\n\nYou do not roll dice. You do not narrate. You do not decide outcomes. You only instruct the main model on the tag-emission protocol. Your output is a context injection the main model reads — it will see your instruction every turn.\n\n# Your output\n\nOutput the instruction above as a system rule the main model must follow this turn. Be terse — the main model has many other agents writing context. Cap at ~250 words.",
+      "settings": {},
+      "enabled": true
+    },
+    {
+      "role": "pre-input-transformer",
+      "name": "Pathfinder 2nd Edition — Pre-Input Transformer",
+      "description": "Re-frames common player-input phrases in Pathfinder 2nd Edition-native vocabulary before the narration model sees them.",
+      "phase": "pre_generation",
+      "enabled": true,
+      "promptTemplate": "# Pathfinder 2nd Edition — pre-input transformer\n\nYou are a pre-generation context-injection agent for an RPG roleplay using the Pathfinder 2nd Edition ruleset overlay. Your job is to read the player's most recent input and emit a SHORT annotation that re-frames common verbs and action phrases in Pathfinder 2nd Edition-flavored vocabulary.\n\n## Output format\n\nEmit a context-injection block of the form:\n```\n[pathfinder2e annotation] <one-sentence re-frame, OR \"No re-frame needed.\">\n```\n\nAnnotate only when one of the recognized patterns matches the player's input. Otherwise output exactly \"No re-frame needed.\" and stop.\n\n## Recognition table\n\n| When player input matches | Re-frame guidance |\n|---|---|\n| I attack / I strike | Pathfinder 2e Strike: 1d20 + Strength (melee) or Dexterity (ranged/finesse) + proficiency + item bonus vs target AC. Each subsequent Strike in the same turn takes a Multiple Attack Penalty: -5 on the second, -10 on the third (or -4/-8 with agile). Confirm action cost and current MAP before resolving. |\n| I take an action / I cast / I use a feat | Each turn provides 3 actions plus 1 reaction. Spells cost actions equal to their cast time (usually 2 actions for most spells, 1 or 3 for variants). Activities (Stride, Strike, Cast a Spell, Demoralize, etc.) are bundles of actions. Free actions and reactions are separate budgets — don't conflate. |\n| I make a saving throw / I save | Saves are 1d20 + Fortitude/Reflex/Will modifier (ability + proficiency + item). Degrees of success: Crit Success (≥10 over DC), Success (≥DC), Failure (<DC), Crit Failure (≤10 under DC). Nat-20 bumps result one step up; nat-1 bumps one step down. |\n| I cast a spell / I cast a cantrip | Cantrips heighten to half-level rounded up automatically; leveled spells consume a slot of their rank (or higher to heighten). Verify caster has slots, the spell is prepared/known (prepared casters lose the slot after cast; spontaneous use signature spells or known list). Note metamagic feats add an action. |\n| I roll initiative | Pathfinder 2e initiative uses Perception by default, but a skill the GM rules appropriate (Stealth in ambush, Diplomacy in social) is fair. Highest result acts first; ties favor PCs over NPCs. No special bonuses unless from feats (Incredible Initiative +2). |\n\n## Rules\n\n- Match liberally (paraphrase / synonym OK) but never invent annotations for input that doesn't fit any row.\n- Never narrate the scene; never speak as a character; never roll dice.\n- One annotation per turn maximum. If multiple rows match, pick the most specific.\n- Keep the annotation under 25 words.",
+      "settings": {}
+    }
+  ],
+  "scenarioDefault": "This chat uses the Pathfinder 2nd Edition ruleset overlay.\n\nPathfinder 2nd Edition is a tightly mathematical d20 fantasy system. A check is 1d20 + ability modifier + proficiency bonus + item bonus vs. a Difficulty Class, with four degrees of success: critical success at +10 over the DC, success at meeting it, failure under it, critical failure at -10 below. The three-action economy and Multiple Attack Penalty give every turn meaningful tactical choice.\n\nMechanics: primary die d20, notation 1d20+MOD.\nResolution: single-roll.\n\nThe GM should keep narration consistent with Pathfinder 2nd Edition mechanics. Refer to the lorebook entries for ruleset reference."
+}

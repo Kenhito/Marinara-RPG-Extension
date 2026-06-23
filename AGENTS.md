@@ -512,7 +512,7 @@ This is the system prompt the user pastes into Marinara's Agent Editor. Cover at
 2. **Vocabulary** — names of difficulty levels, success classes, key resources. The model writes much better narration when it has the system's own vocabulary.
 3. **Resource economy** — Fate Points, motes, sorcery charges, ammo. Anything the player and GM track together.
 4. **Negative space** — explicit "do NOT" rules. e.g., for Fate: "do not emit `[skill_check: ...]` (other system); do not track HP."
-5. **Engine compatibility note** — the reputation 50-char gotcha (see Section 8). Always include this paragraph in any new GM prompt.
+5. **Engine compatibility note** — reputation `action` is free-form in Marinara 2.0+ (see Section 8.1); no length-limit paragraph is required. Ship the one-line "free-form in 2.0+" note the reference rulesets use.
 6. **Phase**: `pre_generation`. Result type: `context_injection`.
 
 Length: 2,000-8,000 characters is typical. Aim for at least 800.
@@ -534,7 +534,7 @@ Mirror the structure of `rulesets/fate-core/INSTALL.md` (the most recent and mos
 5. Install lorebook.
 6. Build a character.
 7. Play.
-8. Troubleshooting (include the 50-char reputation gotcha).
+8. Troubleshooting (reputation `action` is free-form in Marinara 2.0+ — see Section 8.1).
 
 ### Step 6 — final validation
 
@@ -601,11 +601,11 @@ All three must pass. The Function-body parse check is critical: `node --check` a
 
 ## 8. Engine compatibility — known gotchas
 
-### 8.1 Reputation tag 50-char limit (Marinara 1.5.6)
+### 8.1 Reputation tags are free-form (Marinara 2.0+)
 
-The engine's `/api/game/reputation/update` endpoint validates `action` strings at **max 50 characters** (`packages/server/src/routes/game.routes.ts:3940` upstream). The default GM prompt at `packages/server/src/services/game/gm-prompts.ts:604` instructs the LLM to emit `[reputation: npc="Name" action="..."]` tags without communicating the length limit. Verbose models (Opus, GPT-4-class) routinely emit 100+ character action descriptions and trigger 400 Validation Errors that surface to the user as "connection error" toasts.
+**Historical note (pre-2.0):** Marinara ≤ 1.5.x validated reputation `action` strings at **max 50 characters** and returned a 400 on anything longer, surfacing to users as "connection error" toasts. GM prompts in this repo used to carry a workaround paragraph telling the model to keep actions short.
 
-**Mitigation in every GM prompt this repo ships:** include a paragraph telling the model the limit. Copy from any of the three reference rulesets' `gm-agent.md` (look for the section "Engine compatibility — reputation tags"). Always include this in any new GM prompt you author.
+**As of Marinara 2.0+ that cap is gone** — reputation `action` is a free-form field. The shipped rulesets' `gm-agent.md` files now carry a one-line "reputation is free-form in Marinara 2.0+" note instead of the cap workaround (look for the section "Engine compatibility — reputation tags"). You do NOT need to add a length-limit paragraph to new GM prompts. Keep actions reasonably short for readability, but length is no longer enforced.
 
 ### 8.2 Combat encounter modal stays d20-shaped
 
@@ -635,7 +635,7 @@ These are validated patterns from the three shipped rulesets. Copy or adapt.
 
 **Negative space:** explicitly tell the model what NOT to do. "Do not emit `[skill_check:]` tags — that's a different system." "Do not track HP — Fate uses stress and consequences." This kills hallucination of cross-system mechanics.
 
-**Engine compat:** include the reputation 50-char paragraph. Always.
+**Engine compat:** reputation `action` is free-form in Marinara 2.0+ — no length-limit paragraph is needed (see Section 8.1). The shipped rulesets carry a one-line "free-form in 2.0+" note instead.
 
 ## 10. Lorebook patterns that work
 

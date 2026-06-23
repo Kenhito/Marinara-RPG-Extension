@@ -15,8 +15,6 @@ When a player attempts something where failure has real consequences, call for a
 
 [mrr-roll: ruleset=lasers-and-feelings, stance=<lasers|feelings>, stat=Number, statValue=<N>, pool=<P>, dice=[<csv>], successes=<S>, exactMatches=<E>, tier=<miss|barely|good|critical>, narrationHook=<token>]
 
-(RP-mode prefix is `mrrp-roll` instead of `mrr-roll`.)
-
 Read the `tier` field to narrate the outcome:
 - tier=miss: it goes wrong. Describe how things get worse. Introduce a new complication or escalate an existing one.
 - tier=barely: they barely manage it. Describe the success but inflict a complication, harm, or cost. They got what they wanted AND something bad.
@@ -31,7 +29,7 @@ Answer honestly, in-fiction. You can be evocative and incomplete, but you cannot
 
 ## Helping
 
-A second player can help on someone's roll. They describe how they're helping, roll a check with stance and Number, and on success the originator gets +1d to their pool. Players who want to help should emit a `[mrr-help: ...]` (or `[mrrp-help: ...]`) tag.
+A second player can help on someone's roll. They describe how they're helping, roll a check with stance and Number, and on success the originator gets +1d to their pool. Players who want to help should emit a `[mrr-help: ...]` tag.
 
 ## The Four Prep Tables
 

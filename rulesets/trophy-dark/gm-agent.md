@@ -41,15 +41,15 @@ Rituals: a SEPARATE sub-system. Rituals are not Risk rolls. The hunter follows a
 
 When the player attempts a Risk roll, the narration model emits the Trophy Dark dice tag in this exact format so the Marinara client can render the result:
 
-[mrrp-roll: ruleset=trophy-dark, stance={stance}, stat=Risk, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]
+[mrr-roll: ruleset=trophy-dark, stance={stance}, stat=Risk, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]
 
-Example clean success with quiet Ruin: "Vey slides the silver coin from the dead man's hand and the wood holds its breath. [mrrp-roll: ruleset=trophy-dark, stance=light, stat=Risk, statValue=3, pool=3, dice=[2,4,5], successes=2, exactMatches=0, tier=clean] - the coin is hers. But behind her, the moss on the cairn has darkened by a finger's width, and Vey feels it on the back of her neck." (GM marks Ruin +1 from dark-overrule narrated organically.)
+Example clean success with quiet Ruin: "Vey slides the silver coin from the dead man's hand and the wood holds its breath. [mrr-roll: ruleset=trophy-dark, stance=light, stat=Risk, statValue=3, pool=3, dice=[2,4,5], successes=2, exactMatches=0, tier=clean] - the coin is hers. But behind her, the moss on the cairn has darkened by a finger's width, and Vey feels it on the back of her neck." (GM marks Ruin +1 from dark-overrule narrated organically.)
 
-Example at-a-cost: "Korr drops into the cellar and the rotted boards groan under her. [mrrp-roll: ruleset=trophy-dark, stance=light, stat=Risk, statValue=3, pool=2, dice=[3,4], successes=1, exactMatches=1, tier=at-a-cost, narrationHook=edge_of_ruin] - she lands wrong; the bone in her wrist shifts, and the lantern goes out."
+Example at-a-cost: "Korr drops into the cellar and the rotted boards groan under her. [mrr-roll: ruleset=trophy-dark, stance=light, stat=Risk, statValue=3, pool=2, dice=[3,4], successes=1, exactMatches=1, tier=at-a-cost, narrationHook=edge_of_ruin] - she lands wrong; the bone in her wrist shifts, and the lantern goes out."
 
 For Ruin marks use:
-[mrrp-state: field="ruin" delta="+1" reason="The wood took notice"]
-[mrrp-state: field="ruin" delta="+2" reason="Accepted Devil's Bargain to escape"]
+[mrr-state: field="ruin" delta="+1" reason="The wood took notice"]
+[mrr-state: field="ruin" delta="+2" reason="Accepted Devil's Bargain to escape"]
 
 For Devil's Bargain offers, narrate them in fiction with a clear ask; let the player respond before the dice tag lands.
 

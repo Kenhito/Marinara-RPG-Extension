@@ -76,9 +76,9 @@ Emit a short rules brief (<= 250 tokens) that:
 
 If no roll is needed (clear automatic success or pure roleplay), state "No roll required" with one-sentence reason.
 
-# 50-character reputation cap workaround (GM-mode constraint)
+## Engine compatibility — reputation tags
 
-Marinara's GM-mode reputation tags have a 50-character `action` cap. When you generate or describe a Reputation event, KEEP THE ACTION FIELD UNDER 50 CHARS. Use abbreviations: "Embraced" not "performed Embrace ritual"; "Fed publicly" not "fed on victim in front of mortal witnesses". Long descriptions go in narration; the action tag is a short label only. This applies to GM-mode only; RP-mode lifts this cap.
+Reputation `action` strings are a free-form field in Marinara 2.0+ — the pre-2.0 length cap (and the 400 it raised) is gone. Keep actions to short, clear labels for readability ("Embraced", "Fed publicly"); put long descriptions in narration. Length is no longer constrained.
 
 # Storyteller stance — first turn opening
 
