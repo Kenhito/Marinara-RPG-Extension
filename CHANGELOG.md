@@ -12,6 +12,27 @@ explicitly when they do).
 Pending the next published release. New entries land here between releases;
 each release moves the entries into a dated section below.
 
+> The four entries below are ported from contributor @Alatheus1's pull
+> requests against the RP-mode repo (Marinara-RPG-RP-Mode-Extension #1–#4),
+> adapted to GM-mode framing and the `mrr-` namespace. Original authorship
+> credited via `Co-authored-by` trailers on the porting commits.
+
+### Fixed — `parametersSchema` rejected by the host validator (ported from RP-mode #4)
+
+- `tools/build-custom-tools.mjs` shipped `parametersSchema: {}` for the static reference tool baked into every ruleset bundle. Current Marinara v2.0 host builds reject that shape and silently drop the tool on install, so the per-ruleset `<id>_reference` tool never reached the model. The generator now emits `parametersSchema: { type: "object", properties: {} }` — the explicit JSON Schema shape the host expects. All `rulesets/*/bundle.json` rebuilt to pick up the fix.
+
+### Fixed — character-bundle export/import round-trip (ported from RP-mode #3)
+
+- `collectBundle()` / `applyBundle()` in `extension/RPG-Extension-GM-Mode.js` were still reading/writing the legacy chat-scoped `sheetKey(chatId, charId)`, missed by the v0.2.1 migration that moved authoritative sheet storage to the chat-independent `characterKey(charId)`. Symptom: exported `mrr-character-bundle` files shipped with `sheets: {}` for every character, and re-imports loaded blank sheets. Fix reads `characterKey` first (legacy `sheetKey` fallback), writes imported sheets to `characterKey`, and clears both keys symmetrically on overwrite. No schema change.
+
+### Added — Exalted Versus World of Darkness reference ruleset (ported from RP-mode #1)
+
+- `rulesets/exwod/` — *Exalted Versus World of Darkness* (Revised), a fan crossover running Exalted-style Chosen on the WoD 20th-anniversary Storyteller chassis. Hybrid of the `vtmv20` chassis (V20 d10 dice-pool, Talents/Skills/Knowledges, 7-level health track) and `exalted3e` Essence/Charm machinery (mote commitment, Anima Banner state-banner, Intimacies, Ox-Body extensible health track). Supports all nine playable Exalt types on a type-agnostic sheet. Ships `ruleset.json` + GM-mode `gm-agent.md` + 29-entry `lorebook.json` + five per-ruleset sub-agent overrides + `INSTALL.md`; built `bundle.json` / `agents.json` included.
+
+### Added — Werewolf: The Apocalypse 20th Anniversary reference ruleset (ported from RP-mode #2)
+
+- `rulesets/w20/` — *Werewolf: The Apocalypse 20th Anniversary Edition* (W20, 2013 Onyx Path). Built on the `vtmv20` chassis with W20 machinery: Primal-Urge / Enigmas / Rituals ability swaps, a three-pool Rage/Gnosis/Willpower economy (each capped by a Permanent-X stat set by Auspice/Breed/Tribe), permanent + temporary Renown (Glory/Honour/Wisdom), Rank, five-form shifting as a state-banner, and Frenzy/Harano/Spirit-World states. Ships `ruleset.json` + GM-mode `gm-agent.md` + 29-entry `lorebook.json` + five per-ruleset sub-agent overrides + `INSTALL.md`; built `bundle.json` / `agents.json` included.
+
 ## [0.5.0] - 2026-05-22
 
 **BREAKING for v0.4.x users.** GM-mode now ships only the canonical sub-agent pool (no menu), auto-installed and enabled at ruleset import. Migration is uninstall-then-reinstall the ruleset. Two new reference rulesets (Blades in the Dark, Genesys), three new per-system parallel-phase overlays (Exalted's anima banner + Charm cooldowns, VTM's blood pool), and the Vector 8 per-chat scenario-default install path also land. Companion to RP-mode v0.3.0 which preserves the toggleable two-path model.
