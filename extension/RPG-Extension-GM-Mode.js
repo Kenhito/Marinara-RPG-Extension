@@ -1012,7 +1012,19 @@ function collectBundle() {
   flushSave();
   var sheets = {};
   state.characters.forEach(function (c) {
-    var raw = lsGet(sheetKey(state.chatId, c.id));
+    /* v0.2.1 migrated sheet storage from the chat-scoped sheetKey
+       (chatId, charId) to the chat-independent characterKey(charId).
+       saveSheet writes to characterKey; loadSheet reads characterKey
+       first and auto-migrates any remaining legacy chat-scoped data.
+       collectBundle was missed in that migration — it kept reading
+       the legacy chat-scoped key, which is empty for any character
+       whose sheet has been touched since v0.2.1. Result: exported
+       bundles silently shipped with sheets: {} for every character.
+       Try the modern key first; fall back to the legacy chat-scoped
+       key so a user with one unmigrated character (never loaded
+       since v0.2.1) still exports cleanly. */
+    var raw = lsGet(characterKey(c.id));
+    if (!raw && state.chatId) raw = lsGet(sheetKey(state.chatId, c.id));
     if (raw) {
       var parsed = safeParse(raw);
       if (parsed) sheets[c.id] = parsed;
@@ -1055,14 +1067,23 @@ function applyBundle(b) {
     return false;
   }
 
-  /* Wipe the current chat's per-character sheets (overwrite mode) so that
-     characters present in the old chat but absent from the bundle don't
-     linger in localStorage. */
-  state.characters.forEach(function (c) { lsDel(sheetKey(state.chatId, c.id)); });
+  /* Wipe existing per-character sheets (overwrite mode) so characters
+     present in the prior state but absent from the bundle don't linger
+     in localStorage. Symmetrically clear both the modern character-
+     library key (post-v0.2.1) and the legacy chat-scoped key, in case
+     a never-loaded legacy entry would otherwise resurface on next
+     loadSheet via its auto-migration fallback. */
+  state.characters.forEach(function (c) {
+    lsDel(characterKey(c.id));
+    if (state.chatId) lsDel(sheetKey(state.chatId, c.id));
+  });
 
-  /* Write the bundle back into chat-keyed localStorage. The persistence
-     layer stays chatId-bound (Marinara's design); the bundle is a
-     transport format that lets the user move data between chats. */
+  /* Write the bundle into the modern character-library localStorage key.
+     v0.2.1 made sheet storage chatId-independent so the same character
+     can move between chats; writing to characterKey is what saveSheet /
+     loadSheet operate on. (Previously written to the legacy chat-scoped
+     key, which loadSheet would never find unless the legacy fallback
+     kicked in — most users saw "Import succeeded" then a blank sheet.) */
   state.characters = b.characters.map(function (c) { return { id: c.id, name: c.name }; });
   saveCharacters();
 
@@ -1071,7 +1092,7 @@ function applyBundle(b) {
      next load and we avoid an O(n*m) lookup. */
   b.characters.forEach(function (c) {
     var sheet = b.sheets && b.sheets[c.id];
-    if (sheet) lsSet(sheetKey(state.chatId, c.id), JSON.stringify(sheet));
+    if (sheet) lsSet(characterKey(c.id), JSON.stringify(sheet));
   });
 
   var nextActive = b.activeCharacterId;
