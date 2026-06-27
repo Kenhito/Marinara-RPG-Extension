@@ -621,6 +621,13 @@ The engine's `PlayerStats.attributes` field cannot store arbitrary attribute nam
 
 Marinara's chat IDs rotate per session. Sheets in localStorage are keyed by chat ID, so a fresh chat looks like a brand-new character. The save/load buttons in the sheet header export/import all characters as a JSON file to work around this. Never tell users their data is lost — point them at the save/load workflow.
 
+### 8.5 Extension packaging & loading (Marinara 2.0.x)
+
+- **Loading:** as of 2.0, `CustomThemeInjector` no longer evals extensions via `new Function`. It builds an ES-module source, serves it as a `Blob`, and dynamic-`import()`s it; the `marinara` API is read from `globalThis.__marinaraExtensionApis`. **But the contract is unchanged** — the engine wraps your code as `const executeExtension = function(marinara){ <your js> }; executeExtension.call(globalThis, marinara);`, so `marinara` still arrives as the function argument and `this === globalThis`. Classic-script-style loaders keep working under module strict mode. Don't assume `new Function`.
+- **Packaging:** the canonical import/export is a **folder/zip** — `Extensions/<name>/manifest.json` (`kind:"marinara.extension"`, config with `cssPath`/`jsPath` to sibling `extension.css`/`extension.js`, which may ALSO be inlined as `css`/`js`) + a `marinara-extensions.json` envelope (`kind:"marinara.extension-folder"`), zipped as `<name>.extension.zip`. The importer prefers the sibling file and falls back to inline. `tools/build-extension-package.mjs` generates this; `tools/validate-extension-package.mjs` checks it against the engine contract. Single-`.js` import is still accepted.
+- **Persistence & denylist:** extensions persist server-side via `/api/extensions` (the old client-only `useUIStore.installedExtensions` localStorage is legacy, migrated once then cleared). The extension `apiFetch` **blocks** `/extensions`, `/extensions/*`, `/admin`, `/admin/*` (canonical pathname). Don't author tooling that reaches those.
+- **Native theming:** 2.0 added Settings → Appearance (colors, fonts, presets) + server-synced custom themes (`/api/themes`). Reach for a custom-CSS extension only for structural/DOM changes the native controls can't express.
+
 ## 9. GM prompt patterns that work
 
 These are validated patterns from the three shipped rulesets. Copy or adapt.

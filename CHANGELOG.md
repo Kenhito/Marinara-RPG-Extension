@@ -20,10 +20,11 @@ each release moves the entries into a dated section below.
 - This extension now supersedes the separate RP-mode extension (`Marinara-RPG-RP-Mode-Extension`, the `mrrp-` namespace), which is retired/frozen. Marinara 2.0 made custom agents mode-agnostic, so one install runs in **both Game Mode and Roleplay Mode** — the wedge that forced two extensions (mode-scoped agents, the 50-char reputation cap, forced dice-tag format) is gone. The loader is mode-agnostic: it resolves the active chat the same way in both modes and injects one universal GM framing (no mode-branched prompts).
 - Version bumped to **1.0.0** across `package.json` and the loader `EXT_VERSION` (was a `0.5.0` / `0.4.0` drift).
 
-### Added — Marinara 2.0+ folder/manifest packaging
+### Added — Marinara 2.0+ folder/manifest/zip packaging
 
-- New `tools/build-extension-package.mjs` emits the 2.0+ folder/manifest import format — `Extensions/Marinara-RPG-Extension/manifest.json` (`kind:"marinara.extension"`, loader inlined, CSS embedded) plus a `marinara-extensions.json` folder envelope — into `releases/<version>/`. The single-file `.js` import remains a supported fallback.
-- New `tools/validate-extension-package.mjs` asserts the generated manifest + envelope against the engine contract (`extension.schema.ts` limits, `manifest-package.ts` shape).
+- New `tools/build-extension-package.mjs` emits the 2.0+ folder/manifest import format into `releases/<version>/`, **byte-compatible with Marinara's own export** (`packages/client/src/lib/extension-transfer.ts`): `Extensions/Marinara-RPG-Extension/manifest.json` (`kind:"marinara.extension"`, config carries inline `js` + `jsPath:"extension.js"`; `css:null` since the loader self-injects embedded CSS) + a sibling `extension.js` + a `marinara-extensions.json` folder envelope, packaged as `Marinara-RPG-Extension.extension.zip`. The single-file `.js` import remains a supported fallback.
+- New `tools/validate-extension-package.mjs` asserts the generated manifest + envelope + sibling files + zip against the engine contract (`extension.schema.ts` limits, `manifest-package.ts` shape), including an inline-`js` syntax-parse guard and sibling/inline consistency.
+- Verified against the **Marinara 2.0.5** extension load mechanism (`CustomThemeInjector` now imports extensions as ES modules from a Blob with `marinara` supplied via `globalThis.__marinaraExtensionApis`); the loader is unaffected because the engine still wraps it as `function(marinara){…}` called with `this === globalThis`.
 
 ### Added — character + agent migration off the RP-mode extension
 

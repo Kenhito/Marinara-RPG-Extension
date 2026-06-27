@@ -64,10 +64,11 @@ function checkConfig(config, where) {
     try { new Function("marinara", config.js); }
     catch (e) { fail(`${where}: inline config.js fails to parse (escaping corruption?): ${e.message}`); }
   }
-  // Inline css/js and a *Path pointing at sibling files are mutually exclusive
-  // ways to supply the same asset; mixing them risks double-injection.
-  if (config.cssPath != null && config.css != null) fail(`${where}: set either config.css or config.cssPath, not both`);
-  if (config.jsPath != null && config.js != null) fail(`${where}: set either config.js or config.jsPath, not both`);
+  // NOTE: the engine's own export sets BOTH inline css/js AND cssPath/jsPath
+  // (extension-transfer.ts); the importer prefers the sibling file and falls
+  // back to inline. So inline+path together is the canonical form, not an error.
+  if (config.cssPath != null && typeof config.cssPath !== "string") fail(`${where}: config.cssPath must be a string`);
+  if (config.jsPath != null && typeof config.jsPath !== "string") fail(`${where}: config.jsPath must be a string`);
 }
 
 function checkItemManifest(manifest, where) {
@@ -96,10 +97,25 @@ if (!existsSync(envPath)) {
   });
 }
 
-// 2. The on-disk manifest.json the envelope points at must exist and validate.
+// 2. The on-disk manifest.json the envelope points at must exist and validate,
+//    and any cssPath/jsPath must resolve to a sibling file that matches inline.
 if (foundManifestPath) {
   if (!existsSync(foundManifestPath)) fail(`missing on-disk manifest: ${foundManifestPath}`);
-  else checkItemManifest(JSON.parse(readFileSync(foundManifestPath, "utf8")), `on-disk ${foundManifestPath}`);
+  else {
+    const m = JSON.parse(readFileSync(foundManifestPath, "utf8"));
+    checkItemManifest(m, `on-disk ${foundManifestPath}`);
+    const cfg = getManifestConfig(m) || {};
+    const folder = dirname(foundManifestPath);
+    for (const [pathKey, inlineKey] of [["cssPath", "css"], ["jsPath", "js"]]) {
+      if (cfg[pathKey] == null) continue;
+      const sib = join(folder, cfg[pathKey]);
+      if (!existsSync(sib)) { fail(`sibling asset missing: ${cfg[pathKey]} (referenced by config.${pathKey})`); continue; }
+      if (typeof cfg[inlineKey] === "string") {
+        const sibContent = readFileSync(sib, "utf8");
+        if (sibContent !== cfg[inlineKey]) fail(`sibling ${cfg[pathKey]} content != inline config.${inlineKey} (must match when both present)`);
+      }
+    }
+  }
 }
 
 // 3. Anti (ISC-41): no mrrp token in the manifest METADATA (name/kind/paths/
@@ -123,6 +139,21 @@ for (const p of [envPath, foundManifestPath].filter(Boolean)) {
   if (!existsSync(p)) continue;
   const meta = JSON.stringify(stripCodeBlobs(JSON.parse(readFileSync(p, "utf8"))));
   if (meta.includes("mrrp")) fail(`${p}: manifest metadata contains a "mrrp" token (must be mrr- only)`);
+}
+
+// 4. The importable zip exists and contains the canonical entries.
+try {
+  const { execFileSync } = await import("node:child_process");
+  const { readdirSync } = await import("node:fs");
+  const zip = readdirSync(outDir).find((n) => n.endsWith(".extension.zip"));
+  if (!zip) fail(`missing <name>.extension.zip in ${outDir}`);
+  else {
+    const listing = execFileSync("unzip", ["-Z1", join(outDir, zip)], { encoding: "utf8" });
+    if (!/(^|\n)marinara-extensions\.json/.test(listing)) fail(`zip ${zip} missing marinara-extensions.json`);
+    if (!/manifest\.json/.test(listing)) fail(`zip ${zip} missing Extensions/<name>/manifest.json`);
+  }
+} catch (e) {
+  fail(`zip verification failed: ${e.message}`);
 }
 
 if (errs.length) {

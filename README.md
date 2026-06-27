@@ -98,7 +98,7 @@ If you just want to use the extension and don't have Node, npm, or git installed
 
 **Step 3 — Import the extension into Marinara.** Switch to your Marinara browser tab, click the **gear icon** in the top-right header to open Settings, and switch to the **Extensions** tab on the left. There are two supported import methods:
 
-- **Folder / manifest import (primary, Marinara 2.0+).** Use **Import extension folder** and select the extracted `Extensions/Marinara-RPG-Extension/` folder (it contains `manifest.json`), or import the single `marinara-extensions.json` envelope. Both ship in `releases/1.0.0/`. The manifest bundles the loader (CSS embedded) — nothing else to upload.
+- **Folder / zip / manifest import (primary, Marinara 2.0+).** Easiest: import `releases/1.0.0/Marinara-RPG-Extension.extension.zip` directly — it's packaged in Marinara's own canonical export layout (`Extensions/<name>/manifest.json` + `extension.js` + a `marinara-extensions.json` envelope), so it round-trips with the engine's import/export. You can also point **Import extension folder** at the extracted `releases/1.0.0/Extensions/Marinara-RPG-Extension/` folder, or import the `marinara-extensions.json` envelope. The CSS is embedded in the loader — nothing else to upload.
 - **Single-file fallback.** Use **Import Extension (.json, .css, or .js)**, navigate to `extension/`, and select `RPG-Extension-GM-Mode.js`. The CSS is embedded inside the JS — there is no separate stylesheet to upload.
 
 Either way you end up with one installed extension that works in **both Game Mode and Roleplay Mode** chats — Marinara 2.0 made custom agents mode-agnostic, so a single install serves both.
