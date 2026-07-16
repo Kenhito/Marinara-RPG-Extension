@@ -1610,7 +1610,11 @@ function removeActiveCharacter() {
      each ability's lorebook entry. Failures are swallowed; orphan entries
      in the spellbook lorebook are recoverable through the native UI. */
   try {
-    var raw = lsGet(sheetKey(state.chatId, current.id));
+    /* P0-4: sheets live at characterKey(id) since v0.2.1; the legacy
+       sheetKey(chatId,id) home is read only as a fallback for un-migrated
+       saves. Reading the wrong key silently skipped ability-lorebook
+       cleanup and orphaned the real sheet in localStorage. */
+    var raw = lsGet(characterKey(current.id)) || lsGet(sheetKey(state.chatId, current.id));
     if (raw) {
       var saved = JSON.parse(raw);
       if (saved && saved.abilities && typeof saved.abilities === "object") {
@@ -1624,6 +1628,9 @@ function removeActiveCharacter() {
       }
     }
   } catch (e) { /* malformed save — skip cleanup but proceed with delete */ }
+  /* P0-4: delete BOTH the real (characterKey) and legacy (sheetKey) homes so
+     the sheet can't survive removal and resurrect for a future same-id char. */
+  lsDel(characterKey(current.id));
   lsDel(sheetKey(state.chatId, current.id));
   state.characters = state.characters.filter(function (c) { return c.id !== current.id; });
   saveCharacters();
@@ -7909,14 +7916,21 @@ function ensureTrackCells(d, totalLen) {
     }
     state.sheet.trackCells[name] = cells;
   }
-  /* Pad / truncate to current visible cell count. Truncation is safe —
-     overflow damage is preserved in the typed counter via syncTrackCellsToTyped
-     after every mutation; if the user adds back the box later it just renders
-     empty (the damage is a number, not a position). */
+  /* Pad up to the visible cell count. */
   while (cells.length < totalLen) cells.push(null);
+  /* P0-2: truncate ONLY trailing empty cells. The old code sliced to
+     totalLen unconditionally; because syncTrackCellsToTyped re-derives the
+     typed counter FROM this array, dropping a filled overflow cell silently
+     destroyed that damage. Never cut below the last filled cell — trim empties
+     only, so removing a box can never reduce the recorded damage total. */
   if (cells.length > totalLen) {
-    cells = cells.slice(0, totalLen);
-    state.sheet.trackCells[name] = cells;
+    var lastFilled = -1;
+    for (var fi = 0; fi < cells.length; fi++) { if (cells[fi]) lastFilled = fi; }
+    var cut = Math.max(totalLen, lastFilled + 1);
+    if (cut < cells.length) {
+      cells = cells.slice(0, cut);
+      state.sheet.trackCells[name] = cells;
+    }
   }
   return cells;
 }
@@ -9766,6 +9780,42 @@ function castAbilityPool(ability, catId) {
      blood-pool commitment models so non-Exalted/V20 rulesets that
      borrow this cast path don't get surprise sheet edits. */
   var commitModel = state.ruleset.commitmentModel || null;
+  /* P0-6: affordability gate. Without this, spends clamp to 0 silently while
+     the cast tag still claims full cost, and repeated clicks re-deduct every
+     time. Compute what the cast needs vs. what the pools hold; if short,
+     refuse the whole cast — no deduction, no full-cost tag. */
+  if (cost && commitModel === "mote") {
+    var _d = state.sheet.derived || {};
+    var _mReq = 0, _wReq = 0;
+    var _mM = cost.match(/(\d+)\s*m\b(?!p)/i); if (_mM) _mReq = parseInt(_mM[1], 10) || 0;
+    var _wM = cost.match(/(\d+)\s*(?:wp\b|willpower)/i); if (_wM) _wReq = parseInt(_wM[1], 10) || 0;
+    var _mAvail = ((typeof _d["Peripheral Motes"] === "number") ? _d["Peripheral Motes"] : 0)
+                + ((typeof _d["Personal Motes"] === "number") ? _d["Personal Motes"] : 0);
+    var _wAvail = (typeof _d["Willpower"] === "number") ? _d["Willpower"] : 0;
+    if ((_mReq > 0 && _mAvail < _mReq) || (_wReq > 0 && _wAvail < _wReq)) {
+      warn("cast refused: " + name + " needs " + cost + " but pools hold "
+           + _mAvail + "m / " + _wAvail + "wp");
+      if (typeof window !== "undefined" && window.alert) {
+        window.alert("Not enough to cast " + name + " (" + cost + "). You have "
+                     + _mAvail + " motes and " + _wAvail + " willpower.");
+      }
+      return;
+    }
+  } else if (cost && commitModel !== "attuned") {
+    var _bReq = 0, _bM = cost.match(/(\d+)\s*(?:b\b|blood)/i);
+    if (_bM) _bReq = parseInt(_bM[1], 10) || 0;
+    if (_bReq > 0) {
+      var _bAvail = (state.sheet.derived && typeof state.sheet.derived["Blood Pool"] === "number")
+        ? state.sheet.derived["Blood Pool"] : 0;
+      if (_bAvail < _bReq) {
+        warn("cast refused: " + name + " needs " + cost + " but Blood Pool holds " + _bAvail);
+        if (typeof window !== "undefined" && window.alert) {
+          window.alert("Not enough blood to cast " + name + " (" + cost + "). Pool: " + _bAvail + ".");
+        }
+        return;
+      }
+    }
+  }
   if (cost && commitModel === "mote") {
     if (!state.sheet.derived || typeof state.sheet.derived !== "object") {
       state.sheet.derived = {};
@@ -10334,16 +10384,32 @@ function upsertAbilityLorebookEntry(ability, charId, catId) {
 }
 
 function deleteAbilityLorebookEntry(ability) {
-  if (!ability || !ability.lorebookEntryId || !state.spellbookLbId) {
+  if (!ability || !ability.lorebookEntryId) {
     return Promise.resolve();
   }
-  return apiDeleteRaw("/lorebooks/" + state.spellbookLbId + "/entries/" + ability.lorebookEntryId);
+  /* P0-5: state.spellbookLbId is null on a fresh page load, so the old
+     early-return silently no-op'd every delete-after-reload and orphaned
+     the ability's lorebook entry (the GM kept seeing deleted abilities).
+     Resolve the id first — findOrCreateSpellbookLorebook hits its cache /
+     LS / tag-search before ever creating, so an existing book is reused. */
+  var resolveLb = state.spellbookLbId
+    ? Promise.resolve(state.spellbookLbId)
+    : findOrCreateSpellbookLorebook();
+  return resolveLb.then(function (lbId) {
+    return apiDeleteRaw("/lorebooks/" + lbId + "/entries/" + ability.lorebookEntryId);
+  });
 }
 
 /* ─────  dice widget  ───── */
 
 function buildDice() {
   if (state.diceEl) return state.diceEl;
+  /* D8: a ruleset missing its `resolution` block would TypeError on
+     `state.ruleset.resolution.mode` below and take the dice UI down. */
+  if (!state.ruleset || !state.ruleset.resolution) {
+    warn("buildDice: ruleset has no resolution block; dice UI unavailable");
+    return null;
+  }
   state.diceEl = marinara.addElement(document.body, "div", { "class": "mrr-dice" });
   if (!state.diceEl) return null;
 
@@ -11500,6 +11566,10 @@ function buildSyncFields(prefix) {
         .replace(/\{tierBonus\}/g, String(tierBonus));
       var v = evalFormula(subbed, ctx);
       var num = (typeof v === "number" && isFinite(v)) ? Math.floor(v) : 0;
+      /* P0-7: the dice widget adds equippedBonuses(name).value into the roll
+         (see renderOneSkill), so the synced number must include it too — else
+         the "do NOT invent stats" block shows a value that contradicts rolls. */
+      num += (equippedBonuses(n) || {}).value || 0;
       var sign = num >= 0 ? "+" : "";
       fresh.push({ name: prefix + n, value: sign + String(num) });
     } else {
@@ -11526,6 +11596,8 @@ function buildSyncFields(prefix) {
           .replace(/\{tierBonus\}/g, String(tierBonus));
         var v = evalFormula(subbed, ctx);
         var num = (typeof v === "number" && isFinite(v)) ? Math.floor(v) : 0;
+        /* P0-7: include equipped gear bonus, mirroring the dice widget. */
+        num += (equippedBonuses(sk.name) || {}).value || 0;
         var sign = num >= 0 ? "+" : "";
         fresh.push({ name: prefix + sk.name, value: sign + String(num) });
       } else {
@@ -11556,6 +11628,10 @@ function buildSyncFields(prefix) {
       } else {
         num = attrMod + tierBonus;
       }
+      /* P0-7: saves pick up equipped gear bonus in the dice widget (line
+         ~7012 uses bonuses.value + tierBonus); include it in the synced
+         value so injected numbers match what rolls produce. */
+      num += (equippedBonuses(sv.name) || {}).value || 0;
       var sign = num >= 0 ? "+" : "";
       fresh.push({ name: prefix + sv.name, value: sign + String(num) });
     });
@@ -11640,7 +11716,12 @@ function buildSyncFields(prefix) {
 function syncSheetToChat() {
   if (!state.chatId) { warn("no chat id; cannot sync"); return; }
   var current = state.characters.find(function (c) { return c.id === state.activeCharacterId; });
-  var prefix = current ? "[" + current.name + "] " : "";
+  /* P0-1 guard: a stale/absent activeCharacterId yields prefix === "", and
+     `indexOf("") === 0` matches EVERY field — the read-modify-write below
+     would then strip and re-write every character's synced fields, wiping
+     other characters' and any user-created customTrackerFields. Bail. */
+  if (!current) { warn("sync skipped: no active character for id " + state.activeCharacterId); return; }
+  var prefix = "[" + current.name + "] ";
 
   marinara.apiFetch("/chats/" + state.chatId).then(function (chat) {
     var existing = (chat && chat.customTrackerFields) || [];
@@ -11711,14 +11792,18 @@ function buildSheetForPrompt() {
     var t = tierForSkill(name);
     var tierBonus = (t && t.rollBonusFormula) ? evalFormula(t.rollBonusFormula, ctx) : 0;
     if (tierBonus == null) tierBonus = 0;
+    /* P0-7: gear bonus is part of the rolled total in the dice widget;
+       fold it into the prompt-block number so the narrator's view of a
+       skill/save matches what a roll actually produces. */
+    var gearBonus = (equippedBonuses(name) || {}).value || 0;
     if (skillFormula) {
       var subbed = String(skillFormula)
         .replace(/\{linkedAttribute_mod\}/g, String(attrMod))
         .replace(/\{tierBonus\}/g, String(tierBonus));
       var v = evalFormula(subbed, ctx);
-      return (typeof v === "number" && isFinite(v)) ? Math.floor(v) : 0;
+      return ((typeof v === "number" && isFinite(v)) ? Math.floor(v) : 0) + gearBonus;
     }
-    return attrMod + tierBonus;
+    return attrMod + tierBonus + gearBonus;
   }
 
   if (Array.isArray(state.ruleset.skills) && state.ruleset.skills.length) {
@@ -12148,7 +12233,9 @@ function injectSheetIntoPromptTemplate(promptTemplate, sheetBlock) {
      introduce a new helper for one call site. */
   var beginEsc = SHEET_INJECT_BEGIN.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   var endEsc   = SHEET_INJECT_END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  var stripRe  = new RegExp(beginEsc + "[\\s\\S]*?" + endEsc + "\\n*", "");
+  /* D7: `g` flag so a template that somehow accumulated more than one
+     injected block gets ALL of them stripped, not just the first. */
+  var stripRe  = new RegExp(beginEsc + "[\\s\\S]*?" + endEsc + "\\n*", "g");
   var stripped = template.replace(stripRe, "");
   if (!sheetBlock) return stripped.trim();
   return SHEET_INJECT_BEGIN + "\n" + sheetBlock + "\n" + SHEET_INJECT_END + "\n\n" + stripped.trim();
@@ -12443,6 +12530,10 @@ function scheduleAutoSync() {
   if (autoSyncTimer) clearTimeout(autoSyncTimer);
   autoSyncTimer = setTimeout(function () {
     autoSyncTimer = null;
+    /* D7: don't sync mid-install/uninstall — a PATCH here can re-add managed
+       agents or recreate the field-reference lorebook entry an in-flight
+       uninstall is busy removing. */
+    if (state.installing) { warn("auto-sync skipped: install/uninstall in progress"); return; }
     try { syncSheetToChat(); } catch (e) { warn("auto-sync chat threw: " + e); }
     try { syncSheetToAgents(); } catch (e) { warn("auto-sync agents threw: " + e); }
     try { syncFieldReferenceToLorebook(); } catch (e) { warn("auto-sync lorebook threw: " + e); }
