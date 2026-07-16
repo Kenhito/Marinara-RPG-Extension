@@ -30,6 +30,19 @@ var LS_SPELLBOOK_POS = "mrr-spellbook-pos";
 var LS_INTIMACIES_POS = "mrr-intimacies-pos";
 var LS_SPELLBOOK_LB_PFX = "mrr-spellbook-lb-";   // appended with chatId
 var LS_PROCESSED_MSGS_PFX = "mrr-processed-msgs-"; // appended with chatId — set of message ids whose state-mutator tags have already applied; persisted so hard-refresh doesn't re-apply historic mutations
+var LS_PROCESSED_RUNS_PFX = "mrr-processed-runs-"; // appended with chatId — set of custom-agent run ids whose [mrr-state:] tags have applied via the runs-endpoint transport (B1 replacement)
+/* B1 replacement gate. The old console.log sniff of the State Mutator overlay
+   is dead on every 2.0.x+ build (engine line is debug-gated console.warn,
+   prod-stripped since v1.4.0). The sanctioned source is GET /agents/runs/
+   :chatId/custom (exists since engine v1.5.7). Three-stage so a second live
+   state-writer is NEVER activated blind:
+     "off"   — inert. Narrator DOM path is the sole writer (today's behavior).
+     "dump"  — poll + log ONE raw run row, apply NOTHING. Used at the live
+               smoke to confirm a run row carries a messageId that matches the
+               narrator's data-message-id BEFORE cross-transport dedup can work.
+     "apply" — full second transport with shared cross-transport dedup.
+   Default "off": nothing changes until the smoke session flips it. */
+var MRR_RUNS_POLLER_MODE = "off"; // "off" | "dump" | "apply"
 var MRR_TAG_SPELLBOOK = "mrr-spellbook";
 var MRR_TAG_CHAR_PFX  = "mrr-char-";
 var MRR_TAG_CAT_PFX   = "mrr-cat-";
@@ -12568,9 +12581,57 @@ var STATE_KV_RE  = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 var processedMessageIds = {};
 var processedMessageIdsChatId = null;
 
+/* Shared cross-transport mutation-dedup set (per chat, in-memory). A given
+   sheet mutation can now arrive via TWO transports: the narrator DOM message
+   (processChatMessage) and the custom-agent runs endpoint (pollCustomAgentRuns).
+   Key = anchorId::contentSig::occIdx so that:
+     - identical tags on DIFFERENT anchors (different turns) BOTH apply
+       (different anchorId → different key), and
+     - the SAME tag from two transports on ONE turn applies ONCE
+       (same anchorId + same content → same key), and
+     - legitimately-repeated identical tags within a SINGLE message/run
+       ("take 1, take 1 more") BOTH apply (occIdx disambiguates).
+   contentSig is built from the PARSED attrs, not raw text, so DOM-vs-JSON
+   whitespace/encoding differences between transports never split a match.
+   Reset on chat switch (loadProcessedMessageIds). When MRR_RUNS_POLLER_MODE
+   is "off" only the narrator writes, and — because its outer per-msgId gate
+   already prevents reprocessing — this set is populated but never suppresses,
+   so narrator behavior is byte-identical to before B1. */
+var appliedMutationKeys = Object.create(null);
+
+function mutationContentSig(attrs) {
+  if (!attrs || typeof attrs !== "object") return "";
+  var keys = Object.keys(attrs).sort();
+  var parts = [];
+  for (var i = 0; i < keys.length; i++) {
+    parts.push(keys[i] + "=" + String(attrs[keys[i]]).trim());
+  }
+  return parts.join("|");
+}
+
+/* Apply a parsed [mrr-state:] tag list with cross-transport dedup. Returns
+   the count applied. Both the narrator DOM path and the runs poller route
+   through here so a tag present in BOTH sources applies exactly once. The key
+   is recorded before applying (idempotent under re-entrancy). */
+function applyStateTagsWithDedup(tags, anchorId) {
+  if (!tags || !tags.length) return 0;
+  var occ = Object.create(null);
+  var applied = 0;
+  for (var i = 0; i < tags.length; i++) {
+    var sig = mutationContentSig(tags[i].attrs);
+    var idx = (occ[sig] = (occ[sig] || 0) + 1) - 1;
+    var key = String(anchorId) + "::" + sig + "::" + idx;
+    if (appliedMutationKeys[key]) continue; /* other transport already applied this exact mutation for this turn */
+    appliedMutationKeys[key] = true;
+    if (applyStateMutation(tags[i].attrs)) applied++;
+  }
+  return applied;
+}
+
 function loadProcessedMessageIds(chatId) {
-  if (!chatId) { processedMessageIds = {}; processedMessageIdsChatId = null; return; }
+  if (!chatId) { processedMessageIds = {}; processedMessageIdsChatId = null; appliedMutationKeys = Object.create(null); return; }
   if (processedMessageIdsChatId === chatId) return; /* already loaded */
+  appliedMutationKeys = Object.create(null); /* new chat — clear cross-transport dedup so old-chat keys can't suppress new applies */
   var raw = lsGet(LS_PROCESSED_MSGS_PFX + chatId);
   var parsed = raw ? safeParse(raw) : null;
   processedMessageIds = (parsed && typeof parsed === "object") ? parsed : {};
@@ -13460,10 +13521,11 @@ function processChatMessage(node) {
 
   if (!processedMessageIds[msgId]) {
     var tags = parseStateTags(text);
-    var applied = 0;
-    for (var i = 0; i < tags.length; i++) {
-      if (applyStateMutation(tags[i].attrs)) applied++;
-    }
+    /* Route through the shared cross-transport dedup keyed by this message id.
+       The outer processedMessageIds gate still governs whole-message
+       reprocessing (unchanged); the helper additionally lets the runs poller
+       skip any tag the narrator already applied for this same turn. */
+    var applied = applyStateTagsWithDedup(tags, msgId);
     processedMessageIds[msgId] = true;
     saveProcessedMessageIds();
     log("state-mutator: applied " + applied + "/" + tags.length + " mutation(s) from message " + msgId);
@@ -13473,74 +13535,108 @@ function processChatMessage(node) {
   hideStateTagsInElement(node);
 }
 
-/* ─── Overlay state-mutator capture (deterministic backup for narrator drop) ───
-   The State Mutator overlay agent emits valid [mrr-state: ...] tags as part
-   of its overlay output, which Marinara logs via console.log as
-   `[Agent] ✓ MRR: ... State Mutator (mrr-overlay-...) — Ns {text: "..."}`.
-   That overlay text is consumed only as next-turn prompt context for the
-   narrator; it never lands in chat DOM, so processChatMessage above never
-   sees it. If the narrator drops the tags (paraphrases as prose, asserts
-   they "already fired", etc.) the player's sheet shows zero change. To
-   make sheet writes deterministic regardless of narrator follow-through,
-   we wrap console.log to detect the State Mutator overlay's completion
-   line, extract its text, and feed it directly to parseStateTags +
-   applyStateMutation. Per-text idempotency hash prevents double-apply
-   if the same overlay output is logged twice in a session. The narrator
-   path remains active too — the existing processChatMessage idempotency
-   set (processedMessageIds) prevents the narrator's echoed tags from
-   double-applying on top of the overlay capture. */
+/* ─── Custom-agent run capture (B1 replacement for the dead console sniff) ───
+   The State Mutator overlay agent emits [mrr-state: ...] tags whose text is
+   consumed only as next-turn prompt context for the narrator; it never lands
+   in chat DOM, so processChatMessage above never sees it. The old approach
+   monkey-patched console.log to sniff the engine's "[Agent] ... State Mutator"
+   completion line — but that line is console.warn, debug-gated, and prod-
+   stripped since engine v1.4.0, so it has never fired on any 2.0.x+ build
+   (impact review B1). The sanctioned source is the REST endpoint
+   GET /agents/runs/:chatId/custom — persisted successful custom-agent runs,
+   present since engine v1.5.7 (no version floor). We poll it from the existing
+   route-poll loop and route parsed tags through the SAME cross-transport dedup
+   (applyStateTagsWithDedup) as the narrator path, so a tag arriving via BOTH
+   the narrator DOM and an agent run applies exactly once.
 
-var overlayMutatorCaptureInstalled = false;
-var overlayMutatorOriginalLog = null;
-var overlayProcessedHashes = Object.create(null);
+   Gated by MRR_RUNS_POLLER_MODE (see top of file) so a second live state-
+   writer is never activated blind: "off" is inert (today's narrator-only
+   behavior); "dump" logs one raw run row and applies nothing (used at the
+   smoke test to confirm a run row's messageId maps to the narrator's
+   data-message-id); "apply" is the full transport. */
 
-function hashOverlayText(text) {
-  if (!text) return "";
-  return (state.chatId || "no-chat") + "::" + text.length + "::" + text.slice(0, 64) + "::" + text.slice(-32);
+var processedRunIds = Object.create(null);
+var processedRunIdsChatId = null;
+var runsPollInFlight = false;
+var runsPollDumpedOnce = false;
+
+function loadProcessedRunIds(chatId) {
+  if (!chatId) { processedRunIds = Object.create(null); processedRunIdsChatId = null; return; }
+  if (processedRunIdsChatId === chatId) return; /* already loaded */
+  var raw = lsGet(LS_PROCESSED_RUNS_PFX + chatId);
+  var parsed = raw ? safeParse(raw) : null;
+  processedRunIds = (parsed && typeof parsed === "object") ? parsed : Object.create(null);
+  processedRunIdsChatId = chatId;
 }
 
-function processOverlayMutatorOutput(text) {
-  if (!text || typeof text !== "string") return;
-  if (text.indexOf("[mrr-state:") === -1) return;
-  var hash = hashOverlayText(text);
-  if (overlayProcessedHashes[hash]) return;
-  overlayProcessedHashes[hash] = true;
-  var tags = parseStateTags(text);
-  if (!tags.length) return;
-  var applied = 0;
-  for (var i = 0; i < tags.length; i++) {
-    if (applyStateMutation(tags[i].attrs)) applied++;
+function saveProcessedRunIds() {
+  if (!processedRunIdsChatId) return;
+  lsSet(LS_PROCESSED_RUNS_PFX + processedRunIdsChatId, JSON.stringify(processedRunIds));
+}
+
+/* Defensive field extraction — the exact run-row shape is confirmed at the
+   smoke's "dump" stage, so probe the likely output fields without throwing. */
+function extractRunText(row) {
+  if (!row || typeof row !== "object") return "";
+  var candidates = [
+    row.output, row.text, row.result, row.data,
+    (row.output && row.output.text), (row.result && row.result.text)
+  ];
+  for (var i = 0; i < candidates.length; i++) {
+    if (typeof candidates[i] === "string" && candidates[i].indexOf("[mrr-state:") !== -1) return candidates[i];
   }
-  log("overlay-mutator: applied " + applied + "/" + tags.length + " mutation(s) from State Mutator overlay (parser-side capture)");
+  try {
+    var s = JSON.stringify(row);
+    if (s.indexOf("[mrr-state:") !== -1) return s; /* fallback: scan whole row; dump stage reveals the real field */
+  } catch (e) { /* circular / unstringifiable — ignore */ }
+  return "";
 }
 
-function installOverlayMutatorCapture() {
-  if (overlayMutatorCaptureInstalled) return;
-  overlayMutatorCaptureInstalled = true;
-  overlayMutatorOriginalLog = console.log.bind(console);
-  console.log = function () {
-    try {
-      var args = arguments;
-      if (args.length >= 2 && typeof args[0] === "string"
-          && args[0].indexOf("[Agent]") !== -1
-          && args[0].indexOf("State Mutator") !== -1) {
-        var resultObj = args[args.length - 1];
-        if (resultObj && typeof resultObj === "object" && typeof resultObj.text === "string") {
-          processOverlayMutatorOutput(resultObj.text);
-        }
+function extractRunId(row) {
+  return (row && (row.id || row.runId || row._id)) || null;
+}
+
+function extractRunAnchor(row, fallbackId) {
+  /* The turn anchor must equal the narrator's data-message-id for cross-
+     transport dedup to collide. Confirmed at the dump stage. Fall back to a
+     run-unique id so a missing messageId can't collide across unrelated runs. */
+  var mid = row && (row.messageId || row.message_id || (row.message && row.message.id));
+  return mid || ("run:" + fallbackId);
+}
+
+function pollCustomAgentRuns(chatId) {
+  if (MRR_RUNS_POLLER_MODE === "off") return;
+  if (!chatId || runsPollInFlight) return;
+  runsPollInFlight = true;
+  loadProcessedRunIds(chatId);
+  apiFetch("/agents/runs/" + encodeURIComponent(chatId) + "/custom?limit=50").then(function (rows) {
+    /* marinara.apiFetch does not check status (returns res.json() always), so
+       a 404/error body arrives as a non-array — degrade silently. */
+    if (!Array.isArray(rows)) return;
+    if (MRR_RUNS_POLLER_MODE === "dump") {
+      if (!runsPollDumpedOnce && rows.length) {
+        runsPollDumpedOnce = true;
+        log("runs-poller DUMP — inspect this row's output + messageId fields, confirm messageId matches the narrator data-message-id, then set MRR_RUNS_POLLER_MODE='apply': " + JSON.stringify(rows[0]));
       }
-    } catch (e) { /* never let our interceptor break logging */ }
-    return overlayMutatorOriginalLog.apply(console, arguments);
-  };
-  marinara.onCleanup(function () {
-    if (overlayMutatorOriginalLog) {
-      console.log = overlayMutatorOriginalLog;
-      overlayMutatorOriginalLog = null;
+      return; /* dump mode applies NOTHING */
     }
-    overlayMutatorCaptureInstalled = false;
-    overlayProcessedHashes = Object.create(null);
-  });
-  log("overlay-mutator: console.log capture installed");
+    var total = 0, applied = 0, sawNew = false;
+    for (var i = 0; i < rows.length; i++) {
+      var runId = extractRunId(rows[i]);
+      if (runId != null && processedRunIds[runId]) continue;
+      var text = extractRunText(rows[i]);
+      var tags = text ? parseStateTags(text) : [];
+      if (tags.length) {
+        applied += applyStateTagsWithDedup(tags, extractRunAnchor(rows[i], runId));
+        total += tags.length;
+      }
+      if (runId != null) { processedRunIds[runId] = true; sawNew = true; }
+    }
+    if (sawNew) saveProcessedRunIds();
+    if (total) log("runs-poller: applied " + applied + "/" + total + " mutation(s) from custom-agent runs");
+  }).catch(function (e) {
+    warn("runs-poller: /agents/runs fetch failed (" + (e && e.message ? e.message : e) + ") — degrading; narrator path unaffected");
+  }).then(function () { runsPollInFlight = false; }, function () { runsPollInFlight = false; });
 }
 
 function watchChatMessages() {
@@ -13662,7 +13758,6 @@ function init() {
   watchRouteChanges();
   watchLifecycleSaves();
   watchChatMessages();
-  installOverlayMutatorCapture();
   exposeDebug();
   log("activated ruleset " + rs.id + " v" + rs.version + " on chat " + (state.chatId || "(none)") + " as " + state.activeCharacterId);
   /* Initial sync to chat customTrackerFields so the overlay agents see
@@ -13715,6 +13810,12 @@ function exposeDebug() {
 function watchRouteChanges() {
   var lastSeenChatId = state.chatId;
   marinara.setInterval(function () {
+    /* B1 replacement: poll custom-agent runs for the ACTIVE chat every tick
+       (not just on chat change) so new State Mutator output within a chat is
+       caught. pollCustomAgentRuns returns immediately when the poller mode is
+       "off" — zero fetch, zero localStorage, no side effects. */
+    pollCustomAgentRuns(state.chatId);
+
     var newId = getChatId();
     if (newId === lastSeenChatId) return;
     lastSeenChatId = newId;
