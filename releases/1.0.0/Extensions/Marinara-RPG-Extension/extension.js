@@ -3028,25 +3028,45 @@ function evalFormula(formula, ctx) {
 }
 
 function findChatInputTextarea() {
-  var sels = ["textarea.chat-input", "textarea[placeholder*='message' i]", "textarea[placeholder*='type' i]", "textarea"];
+  /* Positive anchors FIRST (live GM-mode failure, 2026-08-22: generic
+     selectors + bottom-most picked the Extensions panel's JS source
+     editor while the settings surface was open). Every composer shell —
+     conversation, game, roleplay — carries `marinara-chat-input-shell`
+     (chat-input-styles.ts, present since at least v2.0.9: the engine's
+     own QuickSwitchers anchor to it), and the chat composer's textarea
+     itself carries `mari-chat-input-textarea`. The generic fallbacks
+     stay for unknown engines but EXCLUDE dialog-contained textareas —
+     no composer lives in a dialog, and the settings/extension editors
+     do; a null return degrades to the clipboard path, which is the
+     correct behavior when no real composer is on screen. */
+  var sels = [
+    ".marinara-chat-input-shell textarea",
+    ".mari-chat-input-box textarea",
+    "textarea.mari-chat-input-textarea",
+    "textarea.chat-input",
+    "textarea[placeholder*='message' i]",
+    "textarea[placeholder*='type' i]",
+    "textarea"
+  ];
   for (var i = 0; i < sels.length; i++) {
     var els = document.querySelectorAll(sels[i]);
-    if (els.length) {
-      var visible = Array.prototype.filter.call(els, function (el) { return el.offsetParent !== null && !el.disabled; });
-      if (!visible.length) continue;
-      /* GM mode (GameSurface) renders MANY textareas — journal, narration
-         editors, sheet fields. "Last in DOM order" picked wrong ones.
-         The composer lives at the bottom of the viewport in BOTH modes,
-         so prefer the visible textarea whose bottom edge is lowest
-         on screen (live GM-mode dice-send failure, 2026-08-22). */
-      var best = visible[0];
-      var bestBottom = -Infinity;
-      for (var v = 0; v < visible.length; v++) {
-        var r = visible[v].getBoundingClientRect();
-        if (r.bottom > bestBottom) { bestBottom = r.bottom; best = visible[v]; }
-      }
-      return best;
+    if (!els.length) continue;
+    var bare = (sels[i] === "textarea");
+    var visible = Array.prototype.filter.call(els, function (el) {
+      if (el.offsetParent === null || el.disabled) return false;
+      if (bare && el.closest && el.closest("[role='dialog'], [aria-modal='true']")) return false;
+      return true;
+    });
+    if (!visible.length) continue;
+    /* Multiple visible matches (e.g. mobile + desktop shells): prefer
+       the bottom-most — composers live at the viewport bottom. */
+    var best = visible[0];
+    var bestBottom = -Infinity;
+    for (var v = 0; v < visible.length; v++) {
+      var r = visible[v].getBoundingClientRect();
+      if (r.bottom > bestBottom) { bestBottom = r.bottom; best = visible[v]; }
     }
+    return best;
   }
   return null;
 }
