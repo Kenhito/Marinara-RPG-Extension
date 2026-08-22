@@ -15,6 +15,11 @@ each release moves the entries into a dated section below.
 > The entries below target **v1.0.0**: Marinara 2.0.1 compliance + single-track
 > consolidation (the GM-mode and RP-mode extensions merge into this one).
 
+### Fixed — regexScripts rejected by the engine's catastrophic-backtracking check (live-bug, found during Phase A smoke)
+
+- Every non-d20 ruleset's `regexScripts` (12 of 14; `dnd5e`/`pathfinder2e` ship none by design) used unbounded `\s*`/`\s+`/`\d+` quantifiers that the engine's `isPatternSafe()` heuristic flags as an unsafe pattern — the live Exalted 3e install hit this as a 400 on `POST /regex-scripts`. Root-caused to the shared generator (`tools/build-regex-scripts.mjs`, not per-ruleset authoring); bounded every quantifier to a finite `{n,m}` (whitespace up to 20 chars to tolerate LLM pretty-printed multi-line tags, digits up to 6). Verified safe against the actual engine validator function, not just re-tested against our own copy.
+- Added `tools/lib/regex-safety.mjs`, a verified port of the engine's safety heuristic, wired into `npm run validate-bundles` — a future or user-authored ruleset with an unsafe `regexScripts` pattern now fails locally with a clear message instead of failing mid-import on a live engine.
+
 ### Fixed — Marinara 2.4.3 extension-loading compatibility (Phase A)
 
 - Marinara v2.3.4 deleted the pre-existing `CustomThemeInjector` extension API entirely; v2.4.0+ reinstated extensions under a thinner `FullPageExtensionApi` v1 shape via the Full-page External Extension lane. Added a compat shim (top of `extension/RPG-Extension-GM-Mode.js`) that reconstructs `addElement`/`on`/`apiFetch` on top of the new API, replicating the old engine's exact semantics, so all existing call sites work unchanged on 2.4.3 (and best-effort on pre-2.3.4 hosts via passthrough).
