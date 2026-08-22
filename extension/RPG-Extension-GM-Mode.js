@@ -138,6 +138,109 @@ var barRefreshers = [];
 
 var derivedBonusRefreshers = [];
 
+// ── 2.4.3 full-page compat shim (see COUPLINGS.md row 1) ─────────────
+// Pre-2.3.4 engines pass the legacy API (has addElement) → use it unchanged.
+// 2.4.0+ full-page hosts pass FullPageExtensionApi v1 → wrap it.
+// Fill-in bodies recovered 2026-08-22 from engine git history:
+//   v2.3.3 packages/client/src/components/layout/CustomThemeInjector.tsx
+//   (addElement / wrapCallback / apiFetch — the extensionAPI object).
+marinara = (function (host) {
+  if (host && typeof host.addElement === "function") return host; // legacy engine
+  var trackedNodes = [];
+  var trackedListeners = [];
+  function addElement(parent, tag, attrs) {
+    var target = typeof parent === "string" ? document.querySelector(parent) : parent;
+    if (!target) return null;
+    var el = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function (k) {
+        var v = attrs[k];
+        if (k === "innerHTML") el.innerHTML = v;
+        else if (k === "textContent") el.textContent = v;
+        else el.setAttribute(k, v);
+      });
+    }
+    target.appendChild(el);
+    trackedNodes.push(el);
+    return el;
+  }
+  // Opus + Anvil review (2026-08-22): don't trust host.log's shape blindly —
+  // FullPageExtensionApi types it as Pick<Console,...>, but a defensive
+  // guard costs nothing and keeps log-and-continue from throwing inside
+  // its own catch block if that contract is ever violated.
+  var errLog = (host && host.log && typeof host.log.error === "function") ? host.log : console;
+  function wrapHandler(fn) {
+    // v2.3.3 wrapCallback: log-and-continue on throw — 190 existing `on`
+    // sites depend on a handler error never killing the event loop.
+    return function () {
+      try {
+        return fn.apply(this, arguments);
+      } catch (e) {
+        errLog.error("[MRR] event handler error:", e);
+      }
+    };
+  }
+  function on(target, evt, fn) {
+    var wrapped =
+      typeof fn === "function"
+        ? wrapHandler(fn)
+        : { handleEvent: wrapHandler(function (e) { return fn.handleEvent(e); }) };
+    target.addEventListener(evt, wrapped);
+    trackedListeners.push([target, evt, wrapped]);
+    // v2.3.3 `on` returns undefined; zero loader sites use the return value (audited) — return nothing.
+  }
+  function apiFetch(path, opts) {
+    // Replicates v2.3.3 :132-153 semantics deliberately: /api prefix, DEFAULT
+    // Content-Type: application/json header (MRR's write sites pass bodies with no
+    // headers and depend on it), no status check, unconditional res.json().
+    // The loader's own wrapper (function apiFetch, :341) and apiPostRaw/apiDeleteRaw
+    // compensate for the quirks — do NOT "improve" this here.
+    // 2.4.x addition: the engine's CSRF hook gates unsafe methods — always send the header.
+    var normalized = path.charAt(0) === "/" ? path : "/" + path;
+    var init = Object.assign({ headers: { "Content-Type": "application/json" } }, opts || {});
+    var method = String(init.method || "GET").toUpperCase();
+    if (method !== "GET" && method !== "HEAD") {
+      init.headers = Object.assign({}, init.headers, { "x-marinara-csrf": "1" });
+    }
+    return mrrFetch("/api" + normalized, init).then(function (r) { return r.json(); });
+  }
+  // Opus + Anvil review (2026-08-22): extracting host.fetch/setTimeout/etc as
+  // bare function references and calling them later off the SHIM object
+  // (not `host`) rebinds `this` to the shim at call time under strict mode —
+  // wrong if the host's real implementation relies on internal `this` state.
+  // Bind every extracted host method back to `host` explicitly; cost is
+  // negligible and it removes the ambiguity entirely.
+  var shim = {
+    extensionId: host && host.extension ? host.extension.id : "mrr-legacy",
+    extensionName: host && host.extension ? host.extension.name : "Marinara-RPG-Extension",
+    extension: host ? host.extension : null,
+    log: (host && host.log) || console,
+    fetch: host ? host.fetch.bind(host) : window.fetch.bind(window),
+    storage: host ? host.storage : null,          // unused today; P1-A consumes it
+    addElement: addElement,
+    on: on,
+    apiFetch: apiFetch,
+    setTimeout: host ? host.setTimeout.bind(host) : window.setTimeout.bind(window),
+    clearTimeout: host ? host.clearTimeout.bind(host) : window.clearTimeout.bind(window),
+    setInterval: host ? host.setInterval.bind(host) : window.setInterval.bind(window),
+    clearInterval: host ? host.clearInterval.bind(host) : window.clearInterval.bind(window),
+    onCleanup: host && host.onCleanup ? host.onCleanup.bind(host) : function () {}
+  };
+  if (host && host.onCleanup) host.onCleanup(function () {
+    trackedListeners.forEach(function (l) { try { l[0].removeEventListener(l[1], l[2]); } catch (e) {} });
+    trackedNodes.forEach(function (n) { try { n.remove(); } catch (e) {} });
+  });
+  return shim;
+})(marinara);
+
+// Module-level fetch accessor — A3 depends on this. The legacy passthrough
+// host (pre-2.3.4) has NO `.fetch` member, so `marinara.fetch` alone would
+// TypeError there; this accessor is the ONLY fetch reference call sites use.
+// Bound to `marinara` (Opus + Anvil review, 2026-08-22) — `marinara` here IS
+// already the post-shim wrapper (itself bound to host, see above), so this
+// keeps `this` stable if the underlying implementation ever depends on it.
+var mrrFetch = (typeof marinara.fetch === "function") ? marinara.fetch.bind(marinara) : window.fetch.bind(window);
+
 function refreshAllBars() {
   for (var i = 0; i < barRefreshers.length; i++) {
     try { barRefreshers[i](); } catch (e) {}
@@ -200,7 +303,7 @@ function loadRuleset() {
 }
 
 function fetchRulesetFromUrl(url) {
-  return fetch(url).then(function (r) {
+  return mrrFetch(url).then(function (r) {
     if (!r.ok) throw new Error("HTTP " + r.status);
     return r.text();
   }).then(function (text) {
@@ -745,8 +848,10 @@ function installBundle(bundle, progressCb) {
 function apiDeleteRaw(path) {
   /* No Content-Type header: the engine's Fastify config rejects requests
      with `content-type: application/json` and an empty body (400 "Body
-     cannot be empty"). DELETE has no body, so omit the header entirely. */
-  return fetch("/api" + path, { method: "DELETE" }).then(function (res) {
+     cannot be empty"). DELETE has no body, so omit the header entirely.
+     x-marinara-csrf IS required (2.4.x CSRF hook gates unsafe methods —
+     see COUPLINGS.md row 14). */
+  return mrrFetch("/api" + path, { method: "DELETE", headers: { "x-marinara-csrf": "1" } }).then(function (res) {
     if (res.status === 204 || res.ok || res.status === 404) return;
     return res.text().then(function (body) {
       var err = new Error("DELETE " + path + " failed: " + res.status + " " + (body || ""));
@@ -762,9 +867,9 @@ function apiDeleteRaw(path) {
    (400 with a JSON error body) parse successfully and look like creates
    to our caller. */
 function apiPostRaw(path, body) {
-  return fetch("/api" + path, {
+  return mrrFetch("/api" + path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-marinara-csrf": "1" },
     body: JSON.stringify(body)
   }).then(function (res) {
     if (res.ok) return res.json().catch(function () { return null; });

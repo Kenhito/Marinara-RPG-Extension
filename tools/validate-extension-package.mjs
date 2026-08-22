@@ -53,7 +53,10 @@ function checkConfig(config, where) {
   }
   if (config.js != null) {
     if (typeof config.js !== "string") fail(`${where}: config.js must be string|null`);
-    else if (Buffer.byteLength(config.js, "utf8") > MAX_JS_BYTES) fail(`${where}: config.js over ${MAX_JS_BYTES} bytes`);
+    // 2.4.3 removed the engine's 1 MiB personal-extension JS source cap
+    // (commit 97a3a56ff) — kept here as a soft discipline warning, not a
+    // hard failure, since the engine no longer enforces it.
+    else if (Buffer.byteLength(config.js, "utf8") > MAX_JS_BYTES) console.warn(`WARN ${where}: config.js over ${MAX_JS_BYTES} bytes (soft — engine cap removed at 2.4.3)`);
   }
   if (config.css == null && config.js == null) fail(`${where}: at least one of css/js must be present`);
   if (config.enabled != null && typeof config.enabled !== "boolean") fail(`${where}: config.enabled must be boolean`);
@@ -63,6 +66,11 @@ function checkConfig(config, where) {
   if (typeof config.js === "string") {
     try { new Function("marinara", config.js); }
     catch (e) { fail(`${where}: inline config.js fails to parse (escaping corruption?): ${e.message}`); }
+    // Mirrors the 2.4.3 full-page wrapper (run(extension, async (marinara) => {...}))
+    // so a strict-mode/top-level-await mistake that only breaks under the async
+    // wrapper (but parses fine as a plain Function body) is caught pre-import.
+    try { new Function('"use strict"; return async (marinara) => {\n' + config.js + '\n};'); }
+    catch (e) { fail(`${where}: inline config.js fails the 2.4.3 async-wrapper parse: ${e.message}`); }
   }
   // NOTE: the engine's own export sets BOTH inline css/js AND cssPath/jsPath
   // (extension-transfer.ts); the importer prefers the sibling file and falls
