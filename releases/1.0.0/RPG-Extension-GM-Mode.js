@@ -42,7 +42,7 @@ var LS_PROCESSED_RUNS_PFX = "mrr-processed-runs-"; // appended with chatId — s
                narrator's data-message-id BEFORE cross-transport dedup can work.
      "apply" — full second transport with shared cross-transport dedup.
    Default "off": nothing changes until the smoke session flips it. */
-var MRR_RUNS_POLLER_MODE = "off"; // "off" | "dump" | "apply"
+var MRR_RUNS_POLLER_MODE = "dump"; // "off" | "dump" | "apply" — A6.6 dump stage active (2026-08-22 live smoke: mutator output confirmed landing in runs store, not DOM)
 var MRR_TAG_SPELLBOOK = "mrr-spellbook";
 var MRR_TAG_CHAR_PFX  = "mrr-char-";
 var MRR_TAG_CAT_PFX   = "mrr-cat-";
