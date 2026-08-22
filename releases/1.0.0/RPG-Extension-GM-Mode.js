@@ -12328,6 +12328,22 @@ function buildSheetForPrompt() {
   } else if (commitMod === "mote") {
     refLines.push("- commitment (use field=\"commitment\" item=\"<item name>\" motes=\"N\" pool=\"Personal|Peripheral\" — Exalted mote commit)");
   }
+  /* Live smoke 2026-08-22: agents guessed delta-form for label-valued
+     states (warned + refused) and invented type-attribute forms for
+     damage tracks (normalized, but teach the native form to cut the
+     variance) — neither family was documented here. */
+  if (Array.isArray(state.ruleset.states) && state.ruleset.states.length) {
+    state.ruleset.states.forEach(function (st) {
+      if (!st || typeof st.name !== "string") return;
+      var stLabels = (Array.isArray(st.values) ? st.values : []).map(function (v) { return v && v.label; }).filter(Boolean);
+      refLines.push("- " + st.name + " (label-valued STATE — set with field=\"" + st.name + "\" value=\"<label>\", NEVER delta; labels: " + stLabels.join(" | ") + ")");
+    });
+  }
+  (state.ruleset.derivedStats || []).forEach(function (d) {
+    if (!d || d.renderAs !== "track" || !Array.isArray(d.damageTypes) || !d.damageTypes.length) return;
+    var typeIds = d.damageTypes.map(function (t) { return t.id; }).join(" | ");
+    refLines.push("- " + d.name + " damage (use the damage TYPE as the field: field=\"" + d.damageTypes[0].id + "\" delta=\"+3\" — types: " + typeIds + "; do NOT use field=\"" + d.name + "\" with type attributes)");
+  });
   if (refLines.length) {
     lines.push("State-mutator field reference (use these EXACT names — not display labels — in [mrr-state: field=\"...\"] tags):");
     Array.prototype.push.apply(lines, refLines);
@@ -12427,7 +12443,25 @@ function buildFieldReferenceContent() {
   pushDef("Derived Stats", state.ruleset.derivedStats);
   pushDef("Attributes",    state.ruleset.attributes);
   pushDef("Skills",        state.ruleset.skills);
+  if (Array.isArray(state.ruleset.states) && state.ruleset.states.length) {
+    lines.push("Label-valued States (SET BY LABEL — value=\"<label>\", never delta):");
+    state.ruleset.states.forEach(function (st) {
+      if (!st || typeof st.name !== "string") return;
+      var stLabels = (Array.isArray(st.values) ? st.values : []).map(function (v) { return v && v.label; }).filter(Boolean);
+      lines.push("- " + st.name + ": " + stLabels.join(" | "));
+    });
+    var st0 = state.ruleset.states[0];
+    var st0Label = (Array.isArray(st0.values) && st0.values[1] && st0.values[1].label) ||
+                   (Array.isArray(st0.values) && st0.values[0] && st0.values[0].label) || "";
+    if (st0Label) lines.push("  Example: [mrr-state: target=\"player\" field=\"" + st0.name + "\" value=\"" + st0Label + "\"]");
+    lines.push("");
+  }
   lines.push("Common compound mutations the narrator may emit:");
+  (state.ruleset.derivedStats || []).forEach(function (d) {
+    if (!d || d.renderAs !== "track" || !Array.isArray(d.damageTypes) || !d.damageTypes.length) return;
+    var typeIds = d.damageTypes.map(function (t) { return t.id; }).join(" | ");
+    lines.push("- " + d.name + " damage: use the damage TYPE as the field — [mrr-state: target=\"player\" field=\"" + d.damageTypes[0].id + "\" delta=\"+3\" reason=\"...\"] (types: " + typeIds + "). Never field=\"" + d.name + "\" with type attributes.");
+  });
   lines.push("- Damage: [mrr-state: target=\"player\" field=\"hp\" delta=\"-5\" reason=\"orc sword hit\"]");
   lines.push("- Healing: [mrr-state: target=\"player\" field=\"hp\" delta=\"+10\" reason=\"healing potion\"]");
   lines.push("- Add condition: [mrr-state: target=\"player\" field=\"conditions\" add=\"poisoned\" reason=\"failed CON save\"]");
