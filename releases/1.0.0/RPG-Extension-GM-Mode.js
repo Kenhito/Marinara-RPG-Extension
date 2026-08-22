@@ -3032,19 +3032,56 @@ function findChatInputTextarea() {
   for (var i = 0; i < sels.length; i++) {
     var els = document.querySelectorAll(sels[i]);
     if (els.length) {
-      var visible = Array.prototype.filter.call(els, function (el) { return el.offsetParent !== null; });
-      if (visible.length) return visible[visible.length - 1];
+      var visible = Array.prototype.filter.call(els, function (el) { return el.offsetParent !== null && !el.disabled; });
+      if (!visible.length) continue;
+      /* GM mode (GameSurface) renders MANY textareas — journal, narration
+         editors, sheet fields. "Last in DOM order" picked wrong ones.
+         The composer lives at the bottom of the viewport in BOTH modes,
+         so prefer the visible textarea whose bottom edge is lowest
+         on screen (live GM-mode dice-send failure, 2026-08-22). */
+      var best = visible[0];
+      var bestBottom = -Infinity;
+      for (var v = 0; v < visible.length; v++) {
+        var r = visible[v].getBoundingClientRect();
+        if (r.bottom > bestBottom) { bestBottom = r.bottom; best = visible[v]; }
+      }
+      return best;
     }
   }
   return null;
 }
 
+/* Write a value into a React-controlled input so React actually SEES it.
+   Direct `.value =` assignment also updates React's internal value
+   tracker, so the subsequent input event diffs as "no change" and React
+   silently discards the text on its next render — observed live
+   2026-08-22 in GM mode, whose composer (GameInput.tsx) is strictly
+   controlled (value={state}); RP mode's composer tolerated the naive
+   path, masking the bug. Calling the PROTOTYPE's native value setter
+   bypasses the instance-level tracker so the event diffs correctly. */
+function setNativeInputValue(el, value) {
+  var proto = (typeof HTMLTextAreaElement !== "undefined" && el instanceof HTMLTextAreaElement) ? HTMLTextAreaElement.prototype
+            : (typeof HTMLInputElement !== "undefined" && el instanceof HTMLInputElement) ? HTMLInputElement.prototype
+            : null;
+  var desc = proto ? Object.getOwnPropertyDescriptor(proto, "value") : null;
+  if (desc && desc.set) desc.set.call(el, value);
+  else el.value = value;
+}
+
 function insertIntoChatInput(text) {
   var ta = findChatInputTextarea();
-  if (!ta) { warn("chat input not found; tag was: " + text); return false; }
+  if (!ta) {
+    /* Visible degradation per COUPLINGS.md row 9: clipboard fallback so
+       the roll is never lost, plus the console warn. */
+    warn("chat input not found; tag copied to clipboard: " + text);
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      try { navigator.clipboard.writeText(text); } catch (e) {}
+    }
+    return false;
+  }
   var prev = ta.value || "";
   var sep = (prev && !prev.endsWith(" ") && !prev.endsWith("\n")) ? " " : "";
-  ta.value = prev + sep + text;
+  setNativeInputValue(ta, prev + sep + text);
   ta.dispatchEvent(new Event("input",  { bubbles: true }));
   ta.dispatchEvent(new Event("change", { bubbles: true }));
   ta.focus();
