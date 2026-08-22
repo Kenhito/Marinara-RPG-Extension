@@ -42,7 +42,7 @@ var LS_PROCESSED_RUNS_PFX = "mrr-processed-runs-"; // appended with chatId — s
                narrator's data-message-id BEFORE cross-transport dedup can work.
      "apply" — full second transport with shared cross-transport dedup.
    Default "off": nothing changes until the smoke session flips it. */
-var MRR_RUNS_POLLER_MODE = "dump"; // "off" | "dump" | "apply" — A6.6 dump stage active (2026-08-22 live smoke: mutator output confirmed landing in runs store, not DOM)
+var MRR_RUNS_POLLER_MODE = "apply"; // "off" | "dump" | "apply" — A6.7 apply stage (2026-08-22: dump confirmed run shape resultData.text + messageId == narrator data-message-id)
 var MRR_TAG_SPELLBOOK = "mrr-spellbook";
 var MRR_TAG_CHAR_PFX  = "mrr-char-";
 var MRR_TAG_CAT_PFX   = "mrr-cat-";
@@ -13683,7 +13683,12 @@ function saveProcessedRunIds() {
    smoke's "dump" stage, so probe the likely output fields without throwing. */
 function extractRunText(row) {
   if (!row || typeof row !== "object") return "";
+  /* Live shape CONFIRMED at the 2026-08-22 dump stage (engine 2.4.3):
+     run rows carry { resultType: "context_injection", resultData: { text } }.
+     resultData.text leads; the original speculative candidates stay as
+     fallbacks for older/newer engine shapes. */
   var candidates = [
+    (row.resultData && row.resultData.text),
     row.output, row.text, row.result, row.data,
     (row.output && row.output.text), (row.result && row.result.text)
   ];
