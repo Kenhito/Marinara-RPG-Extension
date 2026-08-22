@@ -13664,14 +13664,21 @@ var processedRunIds = Object.create(null);
 var processedRunIdsChatId = null;
 var runsPollInFlight = false;
 var runsPollDumpedOnce = false;
+/* False until this chat has a persisted processed-runs record. Gates the
+   first-activation baseline seed in pollCustomAgentRuns — without it, the
+   first apply-mode poll on a pre-existing chat sweeps the ENTIRE run
+   backlog in one pass (observed live 2026-08-22: 15 historical tags
+   applied at once, Peripheral 47 → 7 instead of 47 → 42). */
+var runsBaselineExists = false;
 
 function loadProcessedRunIds(chatId) {
-  if (!chatId) { processedRunIds = Object.create(null); processedRunIdsChatId = null; return; }
+  if (!chatId) { processedRunIds = Object.create(null); processedRunIdsChatId = null; runsBaselineExists = false; return; }
   if (processedRunIdsChatId === chatId) return; /* already loaded */
   var raw = lsGet(LS_PROCESSED_RUNS_PFX + chatId);
   var parsed = raw ? safeParse(raw) : null;
   processedRunIds = (parsed && typeof parsed === "object") ? parsed : Object.create(null);
   processedRunIdsChatId = chatId;
+  runsBaselineExists = (parsed !== null && typeof parsed === "object");
 }
 
 function saveProcessedRunIds() {
@@ -13729,6 +13736,20 @@ function pollCustomAgentRuns(chatId) {
         log("runs-poller DUMP — inspect this row's output + messageId fields, confirm messageId matches the narrator data-message-id, then set MRR_RUNS_POLLER_MODE='apply': " + JSON.stringify(rows[0]));
       }
       return; /* dump mode applies NOTHING */
+    }
+    if (!runsBaselineExists) {
+      /* First poller activation on this chat: every run already visible
+         predates the poller, so applying them would replay an entire
+         session's mutations in one sweep. Seed them as processed and
+         apply nothing — only runs created AFTER this baseline apply. */
+      for (var s = 0; s < rows.length; s++) {
+        var seedId = extractRunId(rows[s]);
+        if (seedId != null) processedRunIds[seedId] = true;
+      }
+      runsBaselineExists = true;
+      saveProcessedRunIds();
+      log("runs-poller: baseline seeded — " + rows.length + " pre-existing run(s) marked processed, none applied");
+      return;
     }
     var total = 0, applied = 0, sawNew = false;
     for (var i = 0; i < rows.length; i++) {
