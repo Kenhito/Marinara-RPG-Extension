@@ -92,22 +92,27 @@ If you want an AI to do the authoring for you, point it at [`AGENTS.md`](AGENTS.
 
 If you just want to use the extension and don't have Node, npm, or git installed, this is the path. You'll do two file imports total: one for the extension itself, one for the ruleset bundle. **Marinara Engine should already be running in a browser tab before you start** — if you don't have it set up yet, follow Marinara's own [installation guide](https://github.com/Pasta-Devs/Marinara-Engine#installation) first, then come back here.
 
+> **Requires Marinara Engine 2.4.3+ with External Extensions enabled.** Pre-2.3.4 engines may work but are untested (best-effort passthrough only); engines 2.3.4–2.3.x have no extension support at all and cannot load MRR. See `docs/INSTALL.md` for the two gates you need enabled before Step 3 below.
+
 **Step 1 — Download the release zip.** Open the [Releases page](https://github.com/Kenhito/Marinara-RPG-Extension/releases/latest), scroll to the **Assets** section, and click the file ending in `.zip` (named like `Marinara-RPG-Extension-<version>.zip`). It will save to your Downloads folder.
 
 **Step 2 — Extract the zip.** Open your **Downloads** folder. Right-click the zip and choose *Extract All* (Windows), double-click it (macOS), or run `unzip Marinara-RPG-Extension-<version>.zip` (Linux). You'll get a folder named `Marinara-RPG-Extension-<version>/` containing `extension/`, `rulesets/`, `docs/`, and a few other files.
 
-**Step 3 — Import the extension into Marinara.** Switch to your Marinara browser tab, click the **gear icon** in the top-right header to open Settings, and switch to the **Extensions** tab on the left. There are two supported import methods:
+**Step 3 — Import the extension into Marinara.** MRR loads through the **External Extensions** lane (Full page access). Before importing, confirm both gates are on: `ENABLE_EXTERNAL_EXTENSIONS=true` on the engine host, and **Settings -> Advanced -> Danger Zone -> Allow third-party extension imports**. Then go to **Settings -> Addons -> External Extensions -> Import** and use ONE of these forms:
 
-- **Folder / zip / manifest import (primary, Marinara 2.0+).** Easiest: import `releases/1.0.0/Marinara-RPG-Extension.extension.zip` directly — it's packaged in Marinara's own canonical export layout (`Extensions/<name>/manifest.json` + `extension.js` + a `marinara-extensions.json` envelope), so it round-trips with the engine's import/export. You can also point **Import extension folder** at the extracted `releases/1.0.0/Extensions/Marinara-RPG-Extension/` folder, or import the `marinara-extensions.json` envelope. The CSS is embedded in the loader — nothing else to upload.
-- **Single-file fallback.** Use **Import Extension (.json, .css, or .js)**, navigate to `extension/`, and select `RPG-Extension-GM-Mode.js`. The CSS is embedded inside the JS — there is no separate stylesheet to upload.
+- **Zip import (primary).** Import `releases/1.0.0/Marinara-RPG-Extension.extension.zip` directly — it's packaged in Marinara's own canonical export layout (`Extensions/<name>/manifest.json` + `extension.js` + a `marinara-extensions.json` envelope).
+- **Folder import.** Point **Import Folder** at the extracted `releases/1.0.0/Extensions/Marinara-RPG-Extension/` folder.
+- **Manifest-only import.** Import the `manifest.json` from that same folder.
 
-Either way you end up with one installed extension that works in **both Game Mode and Roleplay Mode** chats — Marinara 2.0 made custom agents mode-agnostic, so a single install serves both.
+**Do NOT use a loose single-file `.js` import.** At 2.4.3, importing `RPG-Extension-GM-Mode.js` by itself builds a **sandboxed Worker extension** with no DOM and no same-origin API access — it "succeeds" but MRR cannot run in that sandbox. Always use one of the three forms above.
+
+Either way you end up with one installed extension that works in **both Game Mode and Roleplay Mode** chats — Marinara made custom agents mode-agnostic, so a single install serves both.
 
 ![Marinara Engine Settings dialog opened to the Extensions tab. The General/Appearance/Themes/Extensions/Import/Advanced tab row sits below the Settings header. A large dashed Import Extension (.json, .css, or .js) button is the primary action; below it the Installed Extensions list shows RPG-Extension-GM-Mode with a green on-toggle and a trash icon.](docs/screenshots/extension-menu.png)
 
-After import you should see `RPG-Extension-GM-Mode` listed under **Installed Extensions** with the toggle switched **on** (green). A new **Ruleset** button will appear in the top-right of the chat header next to a small round button with a parchment-scroll icon — that scroll button toggles the floating character sheet on and off.
+After import the extension arrives **disabled and unapproved** — open it, inspect the code, and click **Review and Run** to approve its exact hash and enable it. **Every future update re-requires this approval step.** You should then see `RPG-Extension-GM-Mode` listed with the toggle switched **on** (green). A new **Ruleset** button will appear in the top-right of the chat header next to a small round button with a parchment-scroll icon — that scroll button toggles the floating character sheet on and off.
 
-> **If the Ruleset button doesn't show up,** hard-refresh the page (Ctrl + Shift + R on Windows/Linux, Cmd + Shift + R on macOS). If you picked the wrong file, the import will reject it — make sure you selected `RPG-Extension-GM-Mode.js` and not the surrounding `extension/` folder or the `.css` file.
+> **If the Ruleset button doesn't show up,** hard-refresh the page (Ctrl + Shift + R on Windows/Linux, Cmd + Shift + R on macOS) and confirm the extension shows enabled (approved) in Addons -> External Extensions.
 
 **Step 4 — Open the Ruleset dialog and import a bundle.** Click the **Ruleset** button in the chat header. The dialog accepts a `bundle.json` three ways:
 

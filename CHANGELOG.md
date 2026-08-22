@@ -15,6 +15,34 @@ each release moves the entries into a dated section below.
 > The entries below target **v1.0.0**: Marinara 2.0.1 compliance + single-track
 > consolidation (the GM-mode and RP-mode extensions merge into this one).
 
+### Fixed — Marinara 2.4.3 extension-loading compatibility (Phase A)
+
+- Marinara v2.3.4 deleted the pre-existing `CustomThemeInjector` extension API entirely; v2.4.0+ reinstated extensions under a thinner `FullPageExtensionApi` v1 shape via the Full-page External Extension lane. Added a compat shim (top of `extension/RPG-Extension-GM-Mode.js`) that reconstructs `addElement`/`on`/`apiFetch` on top of the new API, replicating the old engine's exact semantics, so all existing call sites work unchanged on 2.4.3 (and best-effort on pre-2.3.4 hosts via passthrough).
+- Added the `x-marinara-csrf` header (required by the engine's 2.4.x CSRF hook) to every unsafe-method `/api` call — the compat shim's `apiFetch`, plus `apiPostRaw` and `apiDeleteRaw`.
+- Routed the extension's three raw `fetch(` call sites (`apiDeleteRaw`, `apiPostRaw`, `fetchRulesetFromUrl`) through the new `mrrFetch` accessor so 2.4.3's Extensions UI can attribute MRR's network traffic.
+- `tools/validate-extension-package.mjs`: added an async-arrow strict-parse check mirroring the 2.4.3 full-page wrapper; changed the 1&nbsp;MiB inline-JS size check from a hard failure to a warning (the engine removed that cap at 2.4.3).
+- Added `COUPLINGS.md` — a repo-root ledger of every engine touchpoint (REST routes, DOM selectors, storage keys) with its coupling class, probe, and fallback. Any future commit touching an engine surface must update it in the same commit.
+- Rewrote `docs/INSTALL.md` and the README quickstart for the 2.4.3 External Extensions import flow (both gates, Review-and-Run hash approval, per-edit re-approval) and documented the loose-`.js`-import trap (silently imports as a sandboxed Worker extension where MRR cannot run).
+- `AGENTS.md` §8.5 rewritten to the 2.4.3 loading/trust/CSRF/packaging truth.
+
+### Fixed — 2026-07-03 code-review correctness batch (`89f4c5c`)
+
+- `syncSheetToChat` bails when no active character — an empty name prefix previously made `indexOf("")` match every field and wipe other characters' `customTrackerFields` on read-modify-write (P0-1).
+- `ensureTrackCells` now truncates trailing-empty cells only; the old unconditional slice-to-totalLen destroyed filled overflow damage (P0-2).
+- `removeActiveCharacter` reads/deletes the real `characterKey` home (with legacy `sheetKey` fallback) so ability-lorebook cleanup runs and the sheet can't resurrect for a future same-id character (P0-4).
+- `deleteAbilityLorebookEntry` resolves the spellbook lorebook id before deleting, so a fresh-reload null `spellbookLbId` no longer no-ops and orphans the entry (P0-5).
+- `castAbilityPool` refuses a cast the pools can't afford (mote/willpower/blood models) instead of clamping to 0 while still emitting a full-cost tag (P0-6).
+- `buildSyncFields`/`buildSheetForPrompt` fold equipped-gear bonuses into synced + prompt numbers so injected stats match dice-widget rolls (P0-7).
+- `g`-flag added to the sheet-block strip regex (removes all accumulated blocks); auto-sync skips while install/uninstall is in flight (D7).
+- `buildDice` guards against a ruleset with no `resolution` block (D8).
+
+### Fixed — dead State Mutator console-sniff replaced with runs-endpoint transport (`81c6117`, B1, ships inert)
+
+- The State Mutator overlay's `[mrr-state:]` output never reaches chat DOM, so the narrator path can't see it. The old capture monkey-patched `console.log` to sniff the engine's State Mutator line — that line has been a prod-stripped debug-gated `console.warn` since engine v1.4.0 and has never fired on any 2.0.x+ build (impact review finding). Removed the console-sniff entirely; replaced with a poller on `GET /agents/runs/:chatId/custom` (persisted custom-agent runs, present since engine v1.5.7).
+- Ships **inert by design**: `MRR_RUNS_POLLER_MODE` = `"off"` (default, byte-identical to prior narrator-only behavior) | `"dump"` (log one raw run row for live-smoke verification, apply nothing) | `"apply"` (full second transport). Two-stage so a second live state-writer is never activated blind.
+- New shared `applyStateTagsWithDedup(tags, anchorId)` keyed on `anchorId::contentSig::occIdx` — both the narrator path and the poller route through it, so identical tags across turns/transports apply exactly once.
+- Live activation and the apply-exactly-once proof are deferred to the live-smoke session (plan §4.A6) — needs the running engine.
+
 ### Changed — single-track consolidation, this is now the only Marinara RPG extension (v1.0.0)
 
 - This extension now supersedes the separate RP-mode extension (`Marinara-RPG-RP-Mode-Extension`, the `mrrp-` namespace), which is retired/frozen. Marinara 2.0 made custom agents mode-agnostic, so one install runs in **both Game Mode and Roleplay Mode** — the wedge that forced two extensions (mode-scoped agents, the 50-char reputation cap, forced dice-tag format) is gone. The loader is mode-agnostic: it resolves the active chat the same way in both modes and injects one universal GM framing (no mode-branched prompts).

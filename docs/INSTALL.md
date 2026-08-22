@@ -4,8 +4,22 @@ Each ruleset folder has its own step-by-step `INSTALL.md`. This page is the orie
 
 ## What you install, in order
 
-1. **Client extension (once per Marinara install)**
-   `extension/RPG-Extension-GM-Mode.css` and `extension/RPG-Extension-GM-Mode.js` go into Marinara's **Settings -> Extensions -> Add Extension** as the CSS and JS fields of a single extension. Enable it. The extension starts in dormant mode (no ruleset selected) — it adds a "Ruleset" button to the chat header but otherwise leaves Marinara untouched.
+1. **Client extension (once per Marinara install) — requires engine 2.4.3+**
+   MRR loads through Marinara's **External Extensions** import lane (Full page access). Two gates must be on:
+   - `ENABLE_EXTERNAL_EXTENSIONS=true` in the engine host's `.env`.
+   - **Settings -> Advanced -> Danger Zone -> Allow third-party extension imports** (toggle on).
+   - (Remote/non-localhost management additionally needs `ADMIN_SECRET` set + **Settings -> Advanced -> Admin Access**.)
+
+   With both gates on, go to **Settings -> Addons -> External Extensions -> Import** and import the package. Use ONE of these forms (in order of preference):
+   - `Marinara-RPG-Extension.extension.zip` (from `releases/<version>/`)
+   - **Import Folder** pointed at `releases/<version>/Extensions/Marinara-RPG-Extension/`
+   - The `manifest.json` alone from that folder
+
+   **Do not import the loose `RPG-Extension-GM-Mode.js` file by itself.** At 2.4.3 a loose-`.js` import silently becomes a **sandboxed Worker extension** — no DOM, no same-origin API access — where MRR cannot function. It "succeeds" but does nothing. Only the zip/folder/manifest forms route into the Full-page review flow MRR needs.
+
+   The import arrives **disabled and unapproved**. Open it, inspect the code, and click **Review and Run** to approve its exact SHA-256 hash and enable it. The extension starts in dormant mode (no ruleset selected) — it adds a "Ruleset" button to the chat header but otherwise leaves Marinara untouched.
+
+   **Every subsequent update re-requires this approval step** — any edit to the extension's code or CSS invalidates the prior hash.
 
 2. **Pick a ruleset and activate it**
    Click the **Ruleset** button. Either paste a `ruleset.json` blob into the textarea, or paste a raw URL (e.g. a GitHub `raw.githubusercontent.com` link to one of the rulesets in this repo) and click **Fetch URL**. Click **Save and reload**. The page reloads with the ruleset active.
@@ -32,7 +46,7 @@ The character sheet state is per-chat (stored in browser `localStorage` keyed by
 
 If you used **Fetch URL** to install a ruleset, you can re-fetch it whenever the upstream version changes — Save-and-reload pulls the new `ruleset.json` into the active state.
 
-The extension itself updates require pasting the new CSS/JS into the same Extensions entry. Marinara doesn't have an extension marketplace yet (as of v1.5.5), so updates are manual.
+The extension itself updates by re-importing the package (same form as install) and re-approving the new hash via **Review and Run** — every code/CSS change requires this, with no exceptions. Marinara doesn't have an extension marketplace, so updates are manual.
 
 ## Uninstall
 
@@ -40,6 +54,6 @@ Open the Ruleset dialog and click **Clear**. Reload. The default Marinara Game M
 
 - Disable the custom GM agent in **Settings -> Agents**.
 - Detach the lorebook from your chats.
-- Delete the extension from **Settings -> Extensions** if you don't plan to use any ruleset.
+- Remove the extension from **Settings -> Addons -> External Extensions** if you don't plan to use any ruleset.
 
 Your chat history and Marinara state are unaffected by any of this — the overlay only adds; it never modifies engine data.
