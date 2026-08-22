@@ -12714,6 +12714,69 @@ function mutationContentSig(attrs) {
   return parts.join("|");
 }
 
+/* Canonicalize equivalent [mrr-state:] surface forms BEFORE the dedup
+   signature is computed, so the same intended mutation emitted by
+   different agents in different shapes collides to ONE apply. Observed
+   live 2026-08-22 — three agents reported one wound in two shapes:
+     field="Health Track" bashing="3"                (Mutator + Helper)
+     field="Health Track" damage="3" type="bashing"  (Combat Overseer)
+   Both normalize to the pipeline-native field="bashing" delta="+3",
+   which (a) the existing typed-damage branch already applies correctly
+   and (b) gives both shapes the SAME contentSig, so the cross-transport
+   dedup collapses them instead of double-applying the wound.
+   Returns an ARRAY of attr objects: usually [attrs] untouched; a
+   multi-type tag (bashing="1" lethal="2") splits into one canonical
+   mutation per type. Only rewrites when field names a renderAs:"track"
+   derived stat — everything else passes through byte-identical. */
+function normalizeStateAttrs(attrs) {
+  if (!attrs || typeof attrs !== "object") return [attrs];
+  if (!state.ruleset || !Array.isArray(state.ruleset.derivedStats)) return [attrs];
+  if (typeof attrs.field !== "string") return [attrs];
+  var target = normalizeFieldKey(attrs.field);
+  if (!target) return [attrs];
+  var trackDef = null;
+  for (var i = 0; i < state.ruleset.derivedStats.length; i++) {
+    var d = state.ruleset.derivedStats[i];
+    if (d.renderAs === "track" && Array.isArray(d.damageTypes) && normalizeFieldKey(d.name) === target) {
+      trackDef = d;
+      break;
+    }
+  }
+  if (!trackDef) return [attrs];
+  var types = damageTypesFor(trackDef) || [];
+  var carry = {};
+  if (attrs.target != null) carry.target = attrs.target;
+  if (attrs.reason != null) carry.reason = attrs.reason;
+  var out = [];
+  /* Form A: a declared damage type as a bare attribute — bashing="3". */
+  var attrKeys = Object.keys(attrs);
+  for (var t = 0; t < types.length; t++) {
+    var dt = types[t];
+    for (var k = 0; k < attrKeys.length; k++) {
+      var key = attrKeys[k];
+      if (key === "field" || key === "target" || key === "reason" || key === "damage" || key === "type") continue;
+      var nk = normalizeFieldKey(key);
+      if (nk !== normalizeFieldKey(dt.id) && nk !== normalizeFieldKey(dt.label)) continue;
+      var n = parseInt(attrs[key], 10);
+      if (isNaN(n)) continue; /* non-numeric — leave for the warn path */
+      out.push(Object.assign({ field: dt.id, delta: (n >= 0 ? "+" + n : String(n)) }, carry));
+    }
+  }
+  /* Form B: damage="N" type="<type>". */
+  if (attrs.damage != null && attrs.type != null) {
+    var typeNorm = normalizeFieldKey(String(attrs.type));
+    for (var t2 = 0; t2 < types.length; t2++) {
+      var dt2 = types[t2];
+      if (typeNorm === normalizeFieldKey(dt2.id) || typeNorm === normalizeFieldKey(dt2.label)) {
+        var n2 = parseInt(attrs.damage, 10);
+        if (!isNaN(n2)) out.push(Object.assign({ field: dt2.id, delta: (n2 >= 0 ? "+" + n2 : String(n2)) }, carry));
+        break;
+      }
+    }
+  }
+  return out.length ? out : [attrs];
+}
+
 /* Apply a parsed [mrr-state:] tag list with cross-transport dedup. Returns
    the count applied. Both the narrator DOM path and the runs poller route
    through here so a tag present in BOTH sources applies exactly once. The key
@@ -12723,12 +12786,17 @@ function applyStateTagsWithDedup(tags, anchorId) {
   var occ = Object.create(null);
   var applied = 0;
   for (var i = 0; i < tags.length; i++) {
-    var sig = mutationContentSig(tags[i].attrs);
-    var idx = (occ[sig] = (occ[sig] || 0) + 1) - 1;
-    var key = String(anchorId) + "::" + sig + "::" + idx;
-    if (appliedMutationKeys[key]) continue; /* other transport already applied this exact mutation for this turn */
-    appliedMutationKeys[key] = true;
-    if (applyStateMutation(tags[i].attrs)) applied++;
+    /* Normalize BEFORE the signature so equivalent surface forms from
+       different agents collide (see normalizeStateAttrs). */
+    var normalized = normalizeStateAttrs(tags[i].attrs);
+    for (var n = 0; n < normalized.length; n++) {
+      var sig = mutationContentSig(normalized[n]);
+      var idx = (occ[sig] = (occ[sig] || 0) + 1) - 1;
+      var key = String(anchorId) + "::" + sig + "::" + idx;
+      if (appliedMutationKeys[key]) continue; /* other transport already applied this exact mutation for this turn */
+      appliedMutationKeys[key] = true;
+      if (applyStateMutation(normalized[n])) applied++;
+    }
   }
   return applied;
 }
@@ -12892,6 +12960,21 @@ function resolvedFieldMax(map, key) {
    "aggravated" route to the active ruleset's typed health track without
    falling through to the generic numeric resolver. Returns
    {trackName, typeId, types} or null. */
+/* Resolve an AI-emitted field name against the ruleset's label-valued
+   states (ruleset.states[].name), exact then case/punctuation-normalized.
+   Returns the state definition or null. Companion to resolveSheetField,
+   which deliberately keeps to the NUMERIC families. */
+function resolveRulesetState(field) {
+  if (!state.ruleset || !Array.isArray(state.ruleset.states)) return null;
+  var target = normalizeFieldKey(field);
+  if (!target) return null;
+  for (var i = 0; i < state.ruleset.states.length; i++) {
+    var st = state.ruleset.states[i];
+    if (st && typeof st.name === "string" && normalizeFieldKey(st.name) === target) return st;
+  }
+  return null;
+}
+
 function resolveDamageType(field) {
   if (!state.ruleset || !Array.isArray(state.ruleset.derivedStats)) return null;
   var target = normalizeFieldKey(field);
@@ -13491,21 +13574,65 @@ function applyStateMutation(attrs) {
      refresh after a "rest" / "recover all motes" narration). Without
      the absolute path, the agent's pool-reset to max-values silently
      no-ops because the function used to require delta and rejected. */
+  /* States path — label-valued enum stats declared in ruleset.states
+     (Exalted's Anima Banner, V20's Frenzy, W20's forms). Found live
+     2026-08-22: the resolver only searched derived/attributes/skills,
+     so state writes warned "unmatched field" and stashed dead data on
+     the sheet root. States are SET BY LABEL (value="Dim"), never by
+     delta — the label must match one of the state's declared values
+     (case-insensitive); anything else warns with the valid list so the
+     model can self-correct on the next turn's context. */
+  var stateDef = resolveRulesetState(field);
+  if (stateDef) {
+    var rawStateVal = (attrs.value != null) ? attrs.value
+                    : (attrs.set   != null) ? attrs.set
+                    : attrs.current;
+    var stateLabels = (stateDef.values || []).map(function (v) { return v.label; });
+    if (rawStateVal == null) {
+      warn("state-mutator: state '" + stateDef.name + "' is set by label, not delta — use value=\"<label>\"; valid: " + stateLabels.join(", "));
+      return false;
+    }
+    var canonicalLabel = null;
+    var nsv = String(rawStateVal).trim().toLowerCase();
+    for (var sl = 0; sl < stateLabels.length; sl++) {
+      if (String(stateLabels[sl]).trim().toLowerCase() === nsv) { canonicalLabel = stateLabels[sl]; break; }
+    }
+    if (canonicalLabel == null) {
+      warn("state-mutator: state '" + stateDef.name + "' has no label matching '" + rawStateVal + "' — valid: " + stateLabels.join(", "));
+      return false;
+    }
+    if (!sheet.states || typeof sheet.states !== "object") sheet.states = {};
+    sheet.states[stateDef.name] = canonicalLabel;
+    return finalizeMutation(attrs);
+  }
+
   var hasDelta = (attrs.delta != null);
   var hasAbsolute = (attrs.current != null || attrs.value != null || attrs.set != null);
-  if (!hasDelta && !hasAbsolute) return false;
+  if (!hasDelta && !hasAbsolute) {
+    /* Loud, not silent — observed live 2026-08-22: track-shaped tags
+       with neither delta nor value were dropped with zero console
+       evidence ("applied 0/3" and nothing else to go on). */
+    warn("state-mutator: no delta/value/current/set in tag for field '" + field + "' — dropped: " + mutationContentSig(attrs));
+    return false;
+  }
   var delta = 0;
   var absoluteValue = null;
   if (hasDelta) {
     delta = parseInt(attrs.delta, 10);
-    if (isNaN(delta)) return false;
+    if (isNaN(delta)) {
+      warn("state-mutator: delta '" + attrs.delta + "' for field '" + field + "' is not an integer — dropped");
+      return false;
+    }
   }
   if (hasAbsolute) {
     var rawAbs = (attrs.current != null) ? attrs.current
                : (attrs.value   != null) ? attrs.value
                : attrs.set;
     absoluteValue = parseInt(rawAbs, 10);
-    if (isNaN(absoluteValue)) return false;
+    if (isNaN(absoluteValue)) {
+      warn("state-mutator: value '" + rawAbs + "' for field '" + field + "' is not an integer — dropped (label-valued stats must be declared in ruleset.states)");
+      return false;
+    }
   }
 
   /* Typed-damage path. If the field names a damage type declared on a
