@@ -270,10 +270,460 @@ function safeParse(text) {
   catch (e) { return null; }
 }
 
-/* localStorage wrappers — private-mode and quota-safe */
-function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
-function lsSet(key, val) { try { localStorage.setItem(key, val); return true; } catch (e) { return false; } }
-function lsDel(key) { try { localStorage.removeItem(key); } catch (e) {} }
+/* local-storage wrappers — private-mode and quota-safe. RAW variants talk to
+   the physical browser store unconditionally; the public lsGet/lsSet/lsDel
+   below wrap them with the B1 server-storage adapter. Every existing call
+   site in the file (~66) keeps calling lsGet/lsSet/lsDel unchanged. */
+function lsGetRaw(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+function lsSetRaw(key, val) { try { localStorage.setItem(key, val); return true; } catch (e) { return false; } }
+function lsDelRaw(key) { try { localStorage.removeItem(key); } catch (e) {} }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   B1 — server-backed character/pref state via marinara.storage
+   Design authority: Plans/2026-07-15_engine-2.3-compliance-plan.md §4.1
+   2.4.3 deltas: Plans/2026-08-22_engine-2.4.3-upgrade-and-rolemaster-plan.md B1
+   Coupling: COUPLINGS.md row 1 (marinara.storage)
+
+   Engine ground truth (verified against engine source 2026-08-22):
+     marinara.storage.get()/.patch(obj)/.delete() — async, Promise-returning.
+     patch is a server-side shallow merge {...current, ...patch}, then
+     re-validated as z.record(z.string(), z.unknown()) with a 1,000,000-byte
+     UTF-8 cap on the MERGED record. patch({k: null}) STORES null (does not
+     delete) — treated here as a tombstone (present-but-absent on read).
+     .delete() nukes the ENTIRE extension record — NEVER called from here.
+
+   Storage layout: ONE record, ONE TOP-LEVEL KEY PER LS KEY, mirroring
+   today's localStorage key strings exactly. Never a nested sub-object.
+
+   Key classification (allowlist — everything else stays LOCAL, i.e. the
+   original localStorage-only behavior is preserved unchanged):
+     SYNCED:
+       - LS_CHARACTER_PFX  "mrr-character-<id>"        character sheets
+       - LS_RULESET        "marinara-rpg-ruleset"      active ruleset id
+       - LS_SPELLBOOK_LB_PFX "mrr-spellbook-lb-<chatId>" spellbook lorebook-id cache
+       - MRR_CHARS_PFX     "mrr-chars-<chatId>"        per-chat character roster
+       - MRR_ACTIVE_CHAR_PFX "mrr-active-char-<chatId>" per-chat active-character pointer
+         (RULING 1, coordinator validation round 1: without these two the
+         design's own verify criterion — "sheet edited in one browser
+         appears in the other after reload" — is unreachable, since a
+         second browser couldn't see the chat's roster or which character
+         is active even with the sheets themselves synced.)
+     LOCAL (explicit per spec):
+       - LS_PROCESSED_MSGS_PFX / LS_PROCESSED_RUNS_PFX  per-browser dedup sets
+       - LS_LIBRARY         "marinara-rpg-ruleset-library"  bulky, re-importable
+       - LS_RULESET_URL     "marinara-rpg-ruleset-url"
+       - LS_SHEET_SIZE, LS_SPELLBOOK_POS, LS_INTIMACIES_POS  panel size/position
+         geometry (mrrP3CreatePanel's OWN geometry store at ~4338/4354 is a
+         second, already-physical-LS mechanism — untouched either way)
+       - LS_SHEET_COLLAPSED_PFX  panel show/hide chrome — JUDGMENT CALL, not
+         explicitly enumerated in either bucket of the design spec; treated
+         as geometry-adjacent device-local UI chrome. Flagged for review.
+       - LS_SHEET_PFX legacy chat-scoped sheet key ("mrr-sheet-<chatId>-<id>")
+         — distinct prefix from LS_CHARACTER_PFX; write-once migration
+         source only, never the modern home for sheet data.
+       - MRR_MIGRATED_FLAG "mrr-migrated-v1" — must be per-device by
+         definition (the migration gate itself).
+       - RP_LEGACY_* ("mrrp-*") — read-only, owned by the retired RP
+         extension, never written from here.
+       - "marinara-active-chat-id" — the ENGINE's own key, not ours.
+     "Per-chat ruleset stamps" named in the design spec's allowlist are NOT
+     a localStorage key at all — they live in the engine's own
+     chat.metadata (mrrChatRulesetId, PATCHed via /chats/:id/metadata; see
+     reconcileActiveAgents ~12679). Nothing to migrate/sync here for that
+     bullet; noted for the record. */
+
+var hasServerStorage = !!(marinara && marinara.storage && typeof marinara.storage.get === "function");
+
+var MRR_MIGRATED_FLAG = "mrr-migrated-v1";
+var MRR_STORAGE_SIZE_GUARD_BYTES = 900000;
+var MRR_FLUSH_DEBOUNCE_MS = 1000;
+var MRR_RETRY_DELAYS_MS = [2000, 8000, 30000];
+
+var mrrServerCache = null;          /* becomes {} once hydrated; hasOwnProperty(key) => "server has an entry" (null value = tombstone) */
+var mrrHydratePromise = null;       /* memoized hydrateStore() promise */
+var mrrPendingPatchKeys = {};       /* keys mutated since the last flush */
+var mrrFlushTimer = null;
+var mrrQuarantinedKeys = {};        /* keys forced LS-only for the session after repeated patch failure or a size-guard trip */
+
+/* RULING 1 (coordinator, validation round 1): the roster ("mrr-chars-
+   <chatId>") and active-character pointer ("mrr-active-char-<chatId>")
+   are SYNCED, not LOCAL — the design's own verify criterion ("sheet
+   edited in one browser appears in the other after reload") is
+   unreachable if the second browser can't see the chat's roster or which
+   character is active. Small, non-derivable user data, same class as
+   per-chat stamps. Named here (they're inline string literals at their
+   original call sites, not LS_ constants) so the classifier and the
+   migration scan share one spelling. */
+var MRR_CHARS_PFX = "mrr-chars-";
+var MRR_ACTIVE_CHAR_PFX = "mrr-active-char-";
+
+function mrrIsSyncedKey(key) {
+  if (typeof key !== "string") return false;
+  if (key.indexOf(LS_CHARACTER_PFX) === 0) return true;
+  if (key === LS_RULESET) return true;
+  if (key.indexOf(LS_SPELLBOOK_LB_PFX) === 0) return true;
+  if (key.indexOf(MRR_CHARS_PFX) === 0) return true;
+  if (key.indexOf(MRR_ACTIVE_CHAR_PFX) === 0) return true;
+  return false;
+}
+
+/* "Character family" = sheets + roster + active pointer — the set that
+   dominates record size and gets quarantined (rather than left to fail
+   the size guard forever) when a patch batch trips the budget. */
+function mrrIsCharacterFamilyKey(key) {
+  return key.indexOf(LS_CHARACTER_PFX) === 0
+    || key.indexOf(MRR_CHARS_PFX) === 0
+    || key.indexOf(MRR_ACTIVE_CHAR_PFX) === 0;
+}
+
+/* Single choke point for iterating the raw local-storage keyspace by
+   prefix. Keeps the "new direct localStorage call site" budget from
+   growing: the mrrp import scan (originally an inline loop here) and this
+   adapter's migration scan both route through the same two physical
+   length/key(i) reads below instead of each keeping their own. */
+function forEachLocalStorageKey(prefix, cb) {
+  var total = (typeof localStorage !== "undefined" && localStorage.length) || 0;
+  for (var i = 0; i < total; i++) {
+    var key = localStorage.key(i);
+    if (key && key.indexOf(prefix) === 0) cb(key);
+  }
+}
+
+function mrrByteLength(str) {
+  if (typeof TextEncoder !== "undefined") return new TextEncoder().encode(str).length;
+  return unescape(encodeURIComponent(str)).length; /* fallback for hosts without TextEncoder */
+}
+
+function mrrProjectedMergedRecord(patch) {
+  var merged = {}, k;
+  for (k in mrrServerCache) { if (Object.prototype.hasOwnProperty.call(mrrServerCache, k)) merged[k] = mrrServerCache[k]; }
+  for (k in patch) { if (Object.prototype.hasOwnProperty.call(patch, k)) merged[k] = patch[k]; }
+  return merged;
+}
+
+/* hydrateStore(): memoized, TOTAL (never rejects). On success, caches the
+   server record in memory and runs the one-time migration. On ANY failure
+   (get() rejects, or a migration key permanently fails — see
+   mrrMigrateOneKey, which swallows its own failures so they never reach
+   here), logs one warning, disables server storage for the session, and
+   resolves so callers can always proceed. */
+function hydrateStore() {
+  if (mrrHydratePromise) return mrrHydratePromise;
+  if (!hasServerStorage) {
+    mrrServerCache = {};
+    mrrHydratePromise = Promise.resolve();
+    return mrrHydratePromise;
+  }
+  mrrHydratePromise = marinara.storage.get().then(function (record) {
+    mrrServerCache = (record && typeof record === "object") ? record : {};
+    return mrrRunMigration();
+  }).catch(function (e) {
+    warn("marinara.storage hydrate failed — falling back to local storage for this session: " + (e && e.message ? e.message : e));
+    hasServerStorage = false;
+    mrrServerCache = {};
+  });
+  return mrrHydratePromise;
+}
+
+/* One-time migration, gated on BOTH the per-device MRR_MIGRATED_FLAG (never
+   re-run once present) and per-key no-clobber (server already has an entry,
+   including a null tombstone => "present" => skip). Copy-not-move: LS
+   values are retained. Order: characters -> roster/active-char pointers
+   (RULING 1) -> ruleset id (per-chat ruleset stamps are not an LS key, see
+   header note; nothing to do for that sub-bullet) -> prefs (none
+   classified as synced beyond ruleset id — see classification table above;
+   intentionally empty) -> spellbook caches. Per-key patches so it is
+   resumable/idempotent across sessions: a key that fails to patch is
+   logged and left for next session (does not block the other keys this
+   session); the flag is only set once every attempted key this session
+   reported success (patched, no-clobber-skipped, or deliberately
+   size-guard-skipped). */
+function mrrRunMigration() {
+  if (!hasServerStorage) return Promise.resolve();
+  if (lsGetRaw(MRR_MIGRATED_FLAG)) return Promise.resolve();
+
+  var tasks = [];
+  forEachLocalStorageKey(LS_CHARACTER_PFX, function (key) { tasks.push(key); });
+  forEachLocalStorageKey(MRR_CHARS_PFX, function (key) { tasks.push(key); });
+  forEachLocalStorageKey(MRR_ACTIVE_CHAR_PFX, function (key) { tasks.push(key); });
+  if (lsGetRaw(LS_RULESET) !== null) tasks.push(LS_RULESET);
+  forEachLocalStorageKey(LS_SPELLBOOK_LB_PFX, function (key) { tasks.push(key); });
+
+  return mrrMigrateKeysSequential(tasks, 0, true).then(function (allOk) {
+    if (allOk) lsSetRaw(MRR_MIGRATED_FLAG, "1");
+  });
+}
+
+function mrrMigrateKeysSequential(keys, idx, allOk) {
+  if (idx >= keys.length) return Promise.resolve(allOk);
+  return mrrMigrateOneKey(keys[idx]).then(function (ok) {
+    return mrrMigrateKeysSequential(keys, idx + 1, allOk && ok);
+  });
+}
+
+function mrrMigrateOneKey(key) {
+  /* No-clobber: a tombstone (null) counts as present. */
+  if (Object.prototype.hasOwnProperty.call(mrrServerCache, key)) return Promise.resolve(true);
+  var raw = lsGetRaw(key);
+  if (raw === null || raw === undefined) return Promise.resolve(true);
+  var patch = {}; patch[key] = raw;
+  if (mrrByteLength(JSON.stringify(mrrProjectedMergedRecord(patch))) > MRR_STORAGE_SIZE_GUARD_BYTES) {
+    warn("migration: skipped \"" + key + "\" — would exceed the server-sync size budget; left local-only.");
+    if (mrrIsCharacterFamilyKey(key)) mrrQuarantinedKeys[key] = true;
+    return Promise.resolve(true); /* deliberate skip — does not block the migrated flag */
+  }
+  return marinara.storage.patch(patch).then(function () {
+    mrrServerCache[key] = raw;
+    return true;
+  }).catch(function (e) {
+    warn("migration: failed to sync \"" + key + "\" this session (" + (e && e.message ? e.message : e) + ") — will retry next session.");
+    return false;
+  });
+}
+
+function mrrMarkDirty(key) {
+  mrrPendingPatchKeys[key] = true;
+  if (!mrrFlushTimer) {
+    mrrFlushTimer = marinara.setTimeout(function () {
+      mrrFlushTimer = null;
+      mrrFlushPendingPatch();
+    }, MRR_FLUSH_DEBOUNCE_MS);
+  }
+}
+
+/* Forces the debounced background patch immediately — called from
+   flushSave() (visibilitychange/beforeunload/pagehide already route
+   through it) and from the onCleanup disposer. */
+function mrrFlushPendingPatch() {
+  if (mrrFlushTimer) { marinara.clearTimeout(mrrFlushTimer); mrrFlushTimer = null; }
+  if (!hasServerStorage || !mrrServerCache) return;
+  var keys = Object.keys(mrrPendingPatchKeys);
+  if (!keys.length) return;
+  mrrPendingPatchKeys = {};
+  mrrPatchKeys(keys, 0);
+}
+
+/* Size guard (900,000-byte soft margin under the engine's 1,000,000-byte
+   cap): JSON.stringify the PROJECTED merged record (cached record + this
+   patch) before every send. Over budget: any character-family keys
+   (sheets, roster, active pointer — see mrrIsCharacterFamilyKey) in this
+   batch are quarantined to LS-only for the session (character sheets are
+   the dominant contributor to record size), one panel warning fires, and
+   null is returned so the caller sends nothing. */
+function mrrBuildPatchFromCache(keys) {
+  var patch = {};
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    patch[k] = Object.prototype.hasOwnProperty.call(mrrServerCache, k) ? mrrServerCache[k] : null;
+  }
+  if (mrrByteLength(JSON.stringify(mrrProjectedMergedRecord(patch))) > MRR_STORAGE_SIZE_GUARD_BYTES) {
+    keys.forEach(function (k) { if (mrrIsCharacterFamilyKey(k)) mrrQuarantinedKeys[k] = true; });
+    mrrPanelWarn("character library exceeds server-sync budget — sheets stored locally");
+    return null;
+  }
+  return patch;
+}
+
+/* Backoff-retried background patch for a batch of dirty keys. On
+   exhaustion (after MRR_RETRY_DELAYS_MS run out): a single-key batch is
+   quarantined directly; a multi-key batch is split so each key gets its
+   own independent retry-then-quarantine cycle (isolates the offender
+   instead of quarantining innocent keys alongside it). */
+function mrrPatchKeys(keys, attempt) {
+  keys = keys.filter(function (k) { return !mrrQuarantinedKeys[k]; });
+  if (!keys.length) return;
+  var patch = mrrBuildPatchFromCache(keys);
+  if (!patch) return; /* size guard already handled/warned */
+  marinara.storage.patch(patch).catch(function () {
+    if (attempt < MRR_RETRY_DELAYS_MS.length) {
+      marinara.setTimeout(function () { mrrPatchKeys(keys, attempt + 1); }, MRR_RETRY_DELAYS_MS[attempt]);
+      return;
+    }
+    if (keys.length > 1) {
+      keys.forEach(function (k) { mrrPatchOneKey(k, 0); });
+    } else {
+      mrrQuarantinedKeys[keys[0]] = true;
+      mrrPanelWarn("storage sync failed repeatedly for \"" + keys[0] + "\" — quarantined to local storage for this session");
+    }
+  });
+}
+
+function mrrPatchOneKey(key, attempt) {
+  if (mrrQuarantinedKeys[key]) return;
+  var patch = mrrBuildPatchFromCache([key]);
+  if (!patch) return;
+  marinara.storage.patch(patch).catch(function () {
+    if (attempt < MRR_RETRY_DELAYS_MS.length) {
+      marinara.setTimeout(function () { mrrPatchOneKey(key, attempt + 1); }, MRR_RETRY_DELAYS_MS[attempt]);
+    } else {
+      mrrQuarantinedKeys[key] = true;
+      mrrPanelWarn("storage sync failed repeatedly for \"" + key + "\" — quarantined to local storage for this session");
+    }
+  });
+}
+
+/* Fire-and-forget best-effort flush for the onCleanup disposer — the page
+   is unloading, so no retry/backoff, just one attempt. */
+function mrrBestEffortFlushOnCleanup() {
+  if (!hasServerStorage || !mrrServerCache) return;
+  var keys = Object.keys(mrrPendingPatchKeys);
+  if (!keys.length) return;
+  mrrPendingPatchKeys = {};
+  var patch = mrrBuildPatchFromCache(keys);
+  if (patch) { try { marinara.storage.patch(patch); } catch (e) {} }
+}
+
+/* RULING 2 (coordinator, validation round 1): a visible degradation-warning
+   strip, not console-only. No pre-existing persistent "MRR panel status
+   area" was found anywhere in this codebase (the runs-poller's own
+   degradation path ~13987-area also only ever called warn(); the only
+   visible-message primitives were dialog-scoped .mrr-msg/setMsg(),
+   requiring an open dialog). Built here instead:
+     - a lazily-created div.mrr-warn-strip, mounted at the TOP of the
+       extension's real main sheet panel content area. NOTE: the ruling's
+       phrasing ("the panel root mrrP3CreatePanel creates") pointed at the
+       wrong symbol — mrrP3CreatePanel (~4676) builds the three AUXILIARY
+       floating flyouts (Intimacies/Items/Spellbook), never the main
+       sheet. The actual main sheet content root is state.mountEl, built
+       exactly once per render inside mrrP3RenderSheet (~4879, the sole
+       place that creates it — renderSheet ~6833 unconditionally
+       delegates to it). Hooked there, right after state.mountEl exists
+       and before any other content is added, so a fresh strip always
+       lands as the first child — "hook the panel-creation path once,
+       don't poll" satisfied against the correct symbol. See final report.
+     - messages queue (mrrWarnMessages) so a warning fired before the
+       sheet has ever rendered (e.g. during migration inside
+       hydrateStore(), which runs before init()) is not lost — it shows on
+       the next render automatically.
+     - live update: mrrPanelWarn also pushes straight into an
+       already-mounted strip (via mrrRenderWarnStrip) so a background
+       failure mid-session doesn't need to wait for an unrelated full
+       sheet re-render to become visible.
+     - identical-consecutive dedupe, most-recent-message + "(+N more)"
+       display, session-local × dismiss that a NEW distinct warning
+       un-dismisses.
+     - created via marinara.addElement (the file's own element-creation
+       idiom, same as every other panel element) so it lives inside
+       state.mountEl's subtree and is torn down/recreated with it exactly
+       like the rest of the sheet — no separate cleanup bookkeeping
+       needed. Styling reuses the existing --mrr-warning design token
+       (already used at ~4025 as `errEl.style.color`) with the file's own
+       oklch-alpha "soft" idiom (see --mrr-accent-soft in the embedded
+       CSS) rather than inventing a new color or a color-mix() technique
+       not used anywhere else in this file. No embed-css/CSS pipeline
+       touched — inline styles only. */
+var mrrWarnMessages = [];      /* distinct-consecutive queue, most recent last */
+var mrrWarnDismissed = false;  /* session-local; a new distinct message clears this */
+var mrrWarnStripEl = null;     /* the currently-mounted strip node, if any */
+
+function mrrRenderWarnStrip() {
+  if (mrrWarnStripEl && !mrrWarnStripEl.isConnected) mrrWarnStripEl = null; /* orphaned by a prior full re-render */
+
+  if (!mrrWarnMessages.length || mrrWarnDismissed) {
+    if (mrrWarnStripEl && mrrWarnStripEl.parentNode) mrrWarnStripEl.parentNode.removeChild(mrrWarnStripEl);
+    mrrWarnStripEl = null;
+    return;
+  }
+  if (!state.mountEl) return; /* nothing to mount into yet — stays queued for the next render */
+
+  if (!mrrWarnStripEl || !mrrWarnStripEl.parentNode) {
+    var before = state.mountEl.firstChild; /* captured BEFORE the append below so the strip can be moved to the top */
+    mrrWarnStripEl = marinara.addElement(state.mountEl, "div", { "class": "mrr-warn-strip" });
+    if (!mrrWarnStripEl) return;
+    if (before) state.mountEl.insertBefore(mrrWarnStripEl, before);
+    mrrWarnStripEl.style.display = "flex";
+    mrrWarnStripEl.style.alignItems = "center";
+    mrrWarnStripEl.style.gap = "8px";
+    mrrWarnStripEl.style.width = "100%";
+    mrrWarnStripEl.style.boxSizing = "border-box";
+    mrrWarnStripEl.style.padding = "6px 10px";
+    mrrWarnStripEl.style.marginBottom = "6px";
+    mrrWarnStripEl.style.fontSize = "12px";
+    mrrWarnStripEl.style.lineHeight = "1.3";
+    mrrWarnStripEl.style.background = "oklch(0.84 0.14 85 / 0.16)";  /* --mrr-warning L/C/H, file's own soft-alpha idiom */
+    mrrWarnStripEl.style.border = "1px solid oklch(0.84 0.14 85 / 0.4)";
+    mrrWarnStripEl.style.borderRadius = "6px";
+    mrrWarnStripEl.style.color = "var(--mrr-warning)";
+
+    var textEl = marinara.addElement(mrrWarnStripEl, "span", { "class": "mrr-warn-strip__text" });
+    if (textEl) {
+      textEl.style.flex = "1 1 auto";
+      textEl.style.minWidth = "0";
+      textEl.style.overflowWrap = "break-word";
+    }
+
+    var dismissBtn = marinara.addElement(mrrWarnStripEl, "button", {
+      "class": "mrr-warn-strip__dismiss",
+      type: "button",
+      textContent: "×",
+      title: "Dismiss"
+    });
+    if (dismissBtn) {
+      dismissBtn.style.flex = "0 0 auto";
+      dismissBtn.style.background = "transparent";
+      dismissBtn.style.border = "none";
+      dismissBtn.style.cursor = "pointer";
+      dismissBtn.style.fontSize = "14px";
+      dismissBtn.style.lineHeight = "1";
+      dismissBtn.style.padding = "0 2px";
+      dismissBtn.style.color = "inherit";
+      marinara.on(dismissBtn, "click", function () {
+        mrrWarnDismissed = true;
+        mrrRenderWarnStrip();
+      });
+    }
+  }
+
+  var textNode = mrrWarnStripEl.querySelector(".mrr-warn-strip__text");
+  if (textNode) {
+    var latest = mrrWarnMessages[mrrWarnMessages.length - 1];
+    var extra = mrrWarnMessages.length - 1;
+    textNode.textContent = latest + (extra > 0 ? " (+" + extra + " more)" : "");
+  }
+}
+
+function mrrPanelWarn(msg) {
+  warn(msg);
+  if (mrrWarnMessages[mrrWarnMessages.length - 1] !== msg) mrrWarnMessages.push(msg); /* identical-consecutive dedupe */
+  mrrWarnDismissed = false; /* a new distinct warning re-shows a dismissed strip */
+  mrrRenderWarnStrip();
+}
+
+function mrrIsQuarantined(key) { return !!mrrQuarantinedKeys[key]; }
+
+/* Public wrappers — EVERY existing call site (~66) keeps calling these
+   three names with the same signatures; server-storage awareness is
+   entirely internal. Precedence (deterministic, no timestamps): a key is
+   read from LS only when the server record has no entry for it (a null
+   tombstone counts as an entry); once a key exists server-side, its LS
+   copy is never read again. */
+function lsGet(key) {
+  if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key) && !mrrIsQuarantined(key)) {
+    if (Object.prototype.hasOwnProperty.call(mrrServerCache, key)) {
+      var v = mrrServerCache[key];
+      return (v === null || v === undefined) ? null : v;
+    }
+  }
+  return lsGetRaw(key);
+}
+
+function lsSet(key, val) {
+  var ok = lsSetRaw(key, val); /* LS remains a current local mirror this release — never removed */
+  if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key) && !mrrIsQuarantined(key)) {
+    mrrServerCache[key] = val;
+    mrrMarkDirty(key);
+  }
+  return ok;
+}
+
+function lsDel(key) {
+  lsDelRaw(key);
+  if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key) && !mrrIsQuarantined(key)) {
+    mrrServerCache[key] = null; /* tombstone — never resurrected by a later LS read or migration */
+    mrrMarkDirty(key);
+  }
+}
+/* ═══════════════════════════════════════════════════════════════════════ */
 
 function validateRuleset(rs) {
   if (!rs || typeof rs !== "object") return "ruleset is not an object";
@@ -1031,11 +1481,16 @@ function updateSavedIndicator() {
 /* Defensive: if state.sheet has data, persist before any switch. The
    stepper handlers already save on each click, but this catches any path
    that might mutate state.sheet without going through a stepper (e.g.
-   bulk operations, future features). Cheap insurance. */
+   bulk operations, future features). Cheap insurance.
+   B1: this is also the existing chokepoint wired to visibilitychange
+   (hidden), beforeunload, and pagehide (see watchLifecycleSaves ~14211+
+   its own line count), so forcing the debounced background storage patch
+   here covers all three flush triggers for free — no new listeners. */
 function flushSave() {
   if (state.chatId && state.activeCharacterId && state.sheet) {
     saveSheet(state.chatId, state.sheet);
   }
+  if (hasServerStorage) mrrFlushPendingPatch();
 }
 
 /* Generate a chat-independent character id. Used both for new characters
@@ -1262,22 +1717,21 @@ function importFromRpExtension() {
 
   /* Collect names from any mrrp-chars-<chatId> rosters and sheets from
      mrrp-character-<id> keys. Scan the whole keyspace — we don't know the
-     RP extension's chat ids. */
+     RP extension's chat ids. B1: routed through the shared
+     forEachLocalStorageKey scanner (see the adapter block ~line 273) so
+     this READ side stays on physical localStorage exactly as before,
+     without adding a second raw scan of its own. */
   var names = Object.create(null);
   var sheets = Object.create(null);
-  var total = (typeof localStorage !== "undefined" && localStorage.length) || 0;
-  for (var i = 0; i < total; i++) {
-    var key = localStorage.key(i);
-    if (!key) continue;
-    if (key.indexOf(RP_LEGACY_CHARS_PFX) === 0) {
-      var roster = safeParse(lsGet(key));
-      if (Array.isArray(roster)) roster.forEach(function (c) { if (c && c.id) names[c.id] = c.name || names[c.id]; });
-    } else if (key.indexOf(RP_LEGACY_CHARACTER_PFX) === 0) {
-      var id = key.slice(RP_LEGACY_CHARACTER_PFX.length);
-      var sheet = safeParse(lsGet(key));
-      if (id && sheet) sheets[id] = sheet;
-    }
-  }
+  forEachLocalStorageKey(RP_LEGACY_CHARS_PFX, function (key) {
+    var roster = safeParse(lsGet(key));
+    if (Array.isArray(roster)) roster.forEach(function (c) { if (c && c.id) names[c.id] = c.name || names[c.id]; });
+  });
+  forEachLocalStorageKey(RP_LEGACY_CHARACTER_PFX, function (key) {
+    var id = key.slice(RP_LEGACY_CHARACTER_PFX.length);
+    var sheet = safeParse(lsGet(key));
+    if (id && sheet) sheets[id] = sheet;
+  });
 
   var ids = Object.keys(sheets);
   if (!ids.length) { window.alert("No RP-mode (mrrp-) character sheets found in this browser's storage."); return false; }
@@ -4550,6 +5004,12 @@ function mrrP3RenderSheet() {
     state.mountEl = marinara.addElement(host, "div", { "class": "mrr-sheet" });
   }
   if (!state.mountEl) return;
+
+  /* B1/RULING 2: state.mountEl was just (re)created — it is the ONLY
+     place the real main sheet panel content root comes into existence.
+     Re-mount the warning strip (if any queued/undismissed warnings exist)
+     as the very first child, before anything else below adds content. */
+  mrrRenderWarnStrip();
 
   /* Phase 5 step 5.5 — apply per-character density preset on render. CSS
      in RPG-Extension-GM-Mode.css branches the --mrr-density-* variables
@@ -14697,4 +15157,29 @@ mrr_resourceRenderers["exalted-health-track"] = function (resource, parent, ctx)
   mrrP3RenderDerivedTrack(parent, synthDerived);
 };
 
-init();
+/* B1: no top-level await anywhere in this file — hydrateStore() is async
+   but init() itself stays fully synchronous once called. onCleanup is
+   registered SYNCHRONOUSLY and FIRST, before any async gap, so a
+   disable-during-hydrate still runs cleanup correctly. No pre-existing
+   top-level marinara.onCleanup registration was found to unify with —
+   the only other onCleanup call sites are the compat shim's own internal
+   node/listener teardown (~line 229, scoped to the shim's IIFE closure)
+   and watchChatMessages' observer teardown (registered only once init()
+   itself runs) — neither conflicts with this one. See final report. */
+var mrrDisposed = false;
+var mrrInitStarted = false;
+
+marinara.onCleanup(function () {
+  mrrDisposed = true;
+  mrrBestEffortFlushOnCleanup();
+});
+
+function mrrInitOnce() {
+  if (mrrInitStarted) return;
+  mrrInitStarted = true;
+  init();
+}
+
+hydrateStore().then(function () {
+  if (!mrrDisposed) mrrInitOnce();
+});
