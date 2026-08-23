@@ -12,11 +12,11 @@ I want to build a Marinara-RPG-Extension ruleset for <YOUR SYSTEM HERE — e.g.,
 The framework lives at: https://github.com/Kenhito/Marinara-RPG-Extension
 
 The build documentation is in:
-- releases/v0.4.1/docs-for-ai/01-OVERVIEW.md through 07-EXAMPLE-PROMPTS.md (read all seven in order)
+- releases/1.0.0/docs-for-ai/01-OVERVIEW.md through 07-EXAMPLE-PROMPTS.md (read all seven in order)
 
 Two complete worked examples are in:
-- releases/v0.4.1/examples/exalted3e/ (a complex system with typed damage, multi-turn sorcery casting, and per-system agent overrides)
-- releases/v0.4.1/examples/dnd5e/ (a simpler single-roll system that mostly inherits the shared agent baselines)
+- releases/1.0.0/examples/exalted3e/ (a complex system with typed damage, multi-turn sorcery casting, and per-system agent overrides)
+- releases/1.0.0/examples/dnd5e/ (a simpler single-roll system that mostly inherits the shared agent baselines)
 
 Please:
 
@@ -35,9 +35,9 @@ Important constraints:
 - Match the JSON schema exactly. Validate against the field list in 03-RULESET-SCHEMA.md.
 - Use the system's own vocabulary throughout the main narrator agent prompt and lorebook entries. Don't import D&D vocabulary into a non-d20 system.
 - Mechanics-only references — don't reproduce verbatim text from the system's published books. Paraphrase rules; flavor text is the publisher's IP.
-- Keep the gm-agent prompt between 2,000 and 8,000 characters. Include the engine compatibility paragraph about the 50-char reputation tag limit.
+- Keep the gm-agent prompt between 2,000 and 8,000 characters. Include the engine compatibility paragraph about the reputation tag length limit (tell the model to keep `action` short — a few words, not a sentence — regardless of the numeric cap; see 06-BUILD-PIPELINE.md "Engine compatibility").
 - Lorebook entry count: 14-25 typical. One entry per discrete rule, 50-300 words each.
-- Include the "Optional Sub-Agents — what they do and how to enable" lorebook entry (copy verbatim from one of the example bundles, only changing the system name).
+- Include the "Sub-Agents — what they do and how to enable them" lorebook entry (copy verbatim from one of the example bundles, only changing the system name).
 
 Ask me clarifying questions if any system mechanics are ambiguous. Otherwise produce the files in code blocks I can save directly.
 ```
@@ -46,7 +46,7 @@ Ask me clarifying questions if any system mechanics are ambiguous. Otherwise pro
 
 This works when your AI accepts file uploads but can't browse. Extract the release zip locally and upload these to the AI:
 
-- The seven `.md` files in `releases/v0.4.1/docs-for-ai/`
+- The seven `.md` files in `releases/1.0.0/docs-for-ai/`
 - The `examples/exalted3e/` folder (or just its `ruleset.json`, `gm-agent.md`, `lorebook.json`, and `agents/` contents)
 - The `examples/dnd5e/` folder
 
@@ -67,9 +67,9 @@ Constraints:
 - Match the schema in 03-RULESET-SCHEMA.md exactly.
 - Use the system's own vocabulary; no cross-system contamination.
 - Mechanics references only; no verbatim flavor text from the original books.
-- 2,000-8,000 character narrator prompt with the reputation-tag-50-char paragraph.
+- 2,000-8,000 character narrator prompt with the reputation-tag length paragraph (keep `action` short, don't hardcode a specific character count).
 - 14-25 lorebook entries, one per discrete rule.
-- Include the "Optional Sub-Agents" lorebook entry verbatim.
+- Include the "Sub-Agents — what they do and how to enable them" lorebook entry verbatim.
 
 Walk me through your design decisions before producing the files. Ask clarifying questions if any system mechanics are ambiguous.
 ```
@@ -110,7 +110,7 @@ Now produce gm-agent.md following the structure in 05-AGENT-AUTHORING.md "Writin
 ### Step 4: Produce lorebook.json
 
 ```
-Now produce lorebook.json with 14-25 entries. One per discrete rule. Cover: core mechanics (resolution, ladder, initiative, damage, resources), conditions, example powers / spells / charms, the bestiary entries (mooks vs elites), and the canonical "Optional Sub-Agents — what they do and how to enable" entry (copy from the exalted3e example, only changing the system name).
+Now produce lorebook.json with 14-25 entries. One per discrete rule. Cover: core mechanics (resolution, ladder, initiative, damage, resources), conditions, example powers / spells / charms, the bestiary entries (mooks vs elites), and the canonical "Sub-Agents — what they do and how to enable them" entry (copy from the exalted3e example, only changing the system name).
 ```
 
 ### Step 5: Produce per-system agent overrides
@@ -132,7 +132,7 @@ Skip overrides for roles that don't need them — the framework falls back to th
 ### Step 6: Produce INSTALL.md
 
 ```
-Now produce INSTALL.md following the structure in the example INSTALL.md files. Sections: prerequisites, install client extension (one-time), activate ruleset (paste bundle), import agents (paste agents.json), build a character, play, troubleshooting (include the 50-char reputation gotcha and the chat-id sheet-keyed quirk).
+Now produce INSTALL.md following the structure in the example INSTALL.md files. Sections: prerequisites, install the framework extension (one-time, via the External Extensions zip import), install the bundle (one import — installs the ruleset, lorebook, GM agent, and every role agent together; no separate agents.json step), attach the lorebook and enable the agents per game, build a character, play, troubleshooting (include the reputation-tag length gotcha — keep `action` short regardless of the numeric cap a given engine build enforces — and the chat-id sheet-keyed quirk).
 ```
 
 ## Validation prompt — paste output back to AI for review
@@ -169,21 +169,20 @@ When you've finished:
 
 ```bash
 node tools/validate-ruleset.mjs rulesets/<your-system>/ruleset.json     # PASS
-node tools/build-bundle.mjs rulesets/<your-system>/                     # PASS
-node tools/build-agents.mjs rulesets/<your-system>/                     # PASS (N agents)
+node tools/build-bundle.mjs rulesets/<your-system>/                     # PASS (embeds ruleset + lorebook + gmAgent + additionalAgents)
 node tools/validate-bundle.mjs rulesets/<your-system>/bundle.json       # PASS
+node tools/build-agents.mjs rulesets/<your-system>/                     # optional — toolchain-parity agents.json only
 ```
 
 Then in Marinara:
 
-1. Reinstall the framework JS.
-2. Reinstall the bundle (Ruleset dialog).
-3. Re-import the agents (Import Agents dialog).
-4. Launch a game, attach the ruleset lorebook to it, and enable the MRR agents for that game (combat-overseer, context-fuser, state-mutator — agents are enabled per game at load time).
-5. Build a character, play a few turns.
+1. If not already installed, import the framework extension once (Settings → Addons → External Extensions → Import → the `.extension.zip`, then approve it).
+2. Reinstall the bundle (Ruleset dialog → load the new `bundle.json` → Save and reload). This one step reinstalls the ruleset, lorebook, GM agent, AND every role agent — there is no separate agent-import step.
+3. Launch a game, attach the ruleset lorebook to it, and enable the MRR agents for that game (combat-overseer, context-fuser, state-mutator — agents are enabled per game at load time).
+4. Build a character, play a few turns.
 
 If the sheet updates correctly when narration causes mechanical changes, and the narrator model uses your system's vocabulary instead of D&D-isms, you've shipped a working ruleset.
 
 ## Done. What now?
 
-Share your `bundle.json` and `agents.json` with anyone who runs Marinara and they can install your system in three clicks. If you want to upstream it as a reference ruleset alongside the four shipped (D&D, Exalted, Pathfinder, Fate), open a PR — but the framework doesn't require that. Local-only rulesets are first-class citizens.
+Share your `bundle.json` with anyone who runs Marinara — that one file (plus the one-time framework extension) is everything they need to install your system. `agents.json` is an optional toolchain-parity artifact; you don't need to share it. If you want to upstream your ruleset as a reference alongside the ones already shipped in `rulesets/`, open a PR — but the framework doesn't require that. Local-only rulesets are first-class citizens.

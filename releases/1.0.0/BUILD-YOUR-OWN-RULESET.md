@@ -4,7 +4,7 @@ Want to play GURPS, Cyberpunk RED, Mörk Borg, Vampire: The Masquerade, or any o
 
 This guide walks you through three options. Pick whichever matches your tools and comfort level.
 
-> **v0.4.2 is self-contained.** This release ships `tools/`, `schema/`, `agents/`, and `package.json` inside the release zip. After extracting, run `bun install` (or `npm install`) once to pull Ajv and other build dependencies — then the validators and build tools run from inside this directory without cloning the repo. Cloning the repo is still encouraged for in-engine testing and contributing back, but offline validation works out of the box. These tools are a **v0.4.2 snapshot**; the repo HEAD may have newer versions.
+> **1.0.0 is self-contained.** This release ships `tools/`, `schema/`, `agents/`, and `package.json` inside the release zip. After extracting, run `bun install` (or `npm install`) once to pull Ajv and other build dependencies — then the validators and build tools run from inside this directory without cloning the repo. Cloning the repo is still encouraged for in-engine testing and contributing back, but offline validation works out of the box. These tools are a **1.0.0 snapshot**; the repo HEAD may have newer versions.
 
 ## Option A — AI-assisted (recommended for most users)
 
@@ -28,12 +28,12 @@ I want to build a Marinara-RPG-Extension ruleset for <YOUR SYSTEM HERE>.
 The framework lives at: https://github.com/Kenhito/Marinara-RPG-Extension
 
 The build documentation is in:
-  releases/v0.4.1/docs-for-ai/01-OVERVIEW.md through 07-EXAMPLE-PROMPTS.md
+  releases/1.0.0/docs-for-ai/01-OVERVIEW.md through 07-EXAMPLE-PROMPTS.md
   (read all seven in order)
 
 Two complete worked examples are in:
-  releases/v0.4.1/examples/exalted3e/  (complex: typed damage, multi-turn sorcery, three agent overrides)
-  releases/v0.4.1/examples/dnd5e/      (simpler: single-roll d20, one agent override)
+  releases/1.0.0/examples/exalted3e/  (complex: typed damage, multi-turn sorcery, three agent overrides)
+  releases/1.0.0/examples/dnd5e/      (simpler: single-roll d20, one agent override)
 
 Please read all seven docs, skim both example folders, then produce a complete ruleset folder for <YOUR SYSTEM>:
 

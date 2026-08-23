@@ -15,17 +15,16 @@ A working ruleset is exactly **three source files** plus optional **per-ruleset 
 | `lorebook.json` | Keyword-triggered rules reference the model pulls into context | Yes |
 | `agents/<role>.md` (optional) | Per-system override of any role agent (combat-overseer, context-fuser, state-mutator), or a per-system `parallel`-phase tracker. Overrides fall back to the shared baseline at the repo root's `agents/<role>.md` when absent; parallel trackers have no shared baseline. | Optional |
 
-From these source files, two CLI tools produce the user-facing artifacts:
+From these source files, two CLI tools produce build artifacts, but **only one of them is a user-facing install file**:
 
-- `bundle.json` — single-file envelope users paste into the extension (built by `tools/build-bundle.mjs`)
-- `agents.json` — agent collection users import via the Import Agents dialog (built by `tools/build-agents.mjs`)
+- `bundle.json` (built by `tools/build-bundle.mjs`) — **the single file the user imports.** It embeds the `ruleset`, the `lorebook`, the main `gmAgent` prompt, AND `additionalAgents[]` — the role agents (`combat-overseer`, `context-fuser`, `state-mutator`, and any optional per-system agents), each resolved through the same override-fallback rule described above and forced `enabled: true`. One import installs everything.
+- `agents.json` (built by `tools/build-agents.mjs`) — the same agent prompts wrapped in a standalone `mrr-agents` envelope. **Users never import this file.** It exists purely for build-tooling parity (a way to inspect or diff the agent prompts outside the bundle, and for any external tooling that expects the older standalone-agents shape); GM-mode has no "Import Agents" dialog and never reads it.
 
 A user installs your ruleset by:
 
-1. Pasting the framework JS into Marinara's Extensions panel (one-time, system-independent)
-2. Pasting your `bundle.json` into Marinara's Ruleset dialog
-3. Pasting your `agents.json` into Marinara's Import Agents dialog
-4. Launching a game, attaching the ruleset lorebook to that game, and enabling the MRR agents for it — agents are enabled per game at load time (not during generation); without the attached lorebook the agents have no ruleset info to follow
+1. Importing the extension package once, per Marinara install (system-independent): **Settings → Addons → External Extensions → Import**, pick `Marinara-RPG-Extension.extension.zip`, then approve it (**Review and Run** — it arrives disabled). Never import the loose `RPG-Extension-GM-Mode.js` file directly; on Marinara 2.4.3+ that installs as a sandboxed Worker with no page access and silently does nothing.
+2. Loading your `bundle.json` through the extension's **Ruleset** dialog (Choose file, Fetch URL, or paste into the textarea), then **Save and reload**. This one import installs the sheet/dice config, the lorebook, the main GM agent, and every role agent in `additionalAgents[]` — all bundled together as data, no extension re-approval needed.
+3. Launching a game, attaching the ruleset's lorebook to that game, and enabling the MRR agents for it — agents install with the bundle but are not active until the user enables them per game at load time (not during generation, and not automatically); without the attached lorebook the agents have no ruleset info to follow.
 
 ## The system-agnostic agent architecture
 
@@ -40,7 +39,7 @@ The framework ships a consolidated pool: the `main` narrator (system-specific by
 | `pre-input-transformer` *(optional)* | Pre-generation. Translates D&D-flavored player input ("I roll Strength") into the ruleset's own vocabulary before generation. | Derived from `ruleset.json` `vocabularyHints[]`; omitted from bundles that don't need it. |
 | Per-system `parallel` tracker *(optional, at most one per ruleset)* | Parallel phase. Tracks a system-specific resource alongside the narrator without blocking it (e.g., Exalted anima banners, V20 blood pools). | Per-system only — no shared baseline; the tracked resource exists only in that system. |
 
-**The override pattern is a file-system fallback.** When the build-agents tool packages your ruleset's agents, it looks for `rulesets/<your-system>/agents/<role>.md` first. If that file exists, it's the prompt for that role in your system. If not, the shared baseline at `agents/<role>.md` (repo root) is used. This means:
+**The override pattern is a file-system fallback.** Both `build-bundle.mjs` (embedding `additionalAgents[]` into the user-facing `bundle.json`) and `build-agents.mjs` (the toolchain-parity `agents.json`) apply the same rule: look for `rulesets/<your-system>/agents/<role>.md` first. If that file exists, it's the prompt for that role in your system. If not, the shared baseline at `agents/<role>.md` (repo root) is used. This means:
 
 - A small ruleset can ship with **zero** per-system agent overrides and still get the full agent pool working.
 - A complex system (Exalted, with typed damage, sorcery, combat tempo) overrides the role agents that matter and inherits the rest.
@@ -54,7 +53,7 @@ The release zip you're reading exists so a user can hand all this to a chat AI a
 
 If your AI platform supports browsing or repo ingestion (Claude.ai with the GitHub URL, ChatGPT with web browsing, Gemini, etc.), give it:
 
-> Read the repo at `github.com/Kenhito/Marinara-RPG-Extension`. The directory `releases/v0.4.1/docs-for-ai/` contains the build documentation. The directory `releases/v0.4.1/examples/` contains two complete working examples (D&D 5e and Exalted 3e). Build me a ruleset bundle for **<your target system>**, including ruleset.json, gm-agent.md, lorebook.json, and any per-system agent overrides under `rulesets/<system>/agents/`. Match the file shapes shown in the examples exactly.
+> Read the repo at `github.com/Kenhito/Marinara-RPG-Extension`. The directory `releases/1.0.0/docs-for-ai/` contains the build documentation. The directory `releases/1.0.0/examples/` contains two complete working examples (D&D 5e and Exalted 3e). Build me a ruleset bundle for **<your target system>**, including ruleset.json, gm-agent.md, lorebook.json, and any per-system agent overrides under `rulesets/<system>/agents/`. Match the file shapes shown in the examples exactly.
 
 ### Pattern B — AI can't browse but accepts file uploads
 
@@ -76,7 +75,7 @@ Then write your three source files plus any overrides, run the build tools, and 
 
 ## Versioning
 
-Framework JS, bundle envelope schema, and the agents.json envelope schema each have their own version. The extension's `package.json` carries the framework version (currently `0.4.0`); the bundle declares its `minExtensionVersion` so older framework JS won't try to parse a newer bundle.
+Framework JS, bundle envelope schema, and the agents.json envelope schema each have their own version. The extension's `package.json` and its `EXT_VERSION` constant carry the framework version (currently `1.0.0`); the bundle declares its `minExtensionVersion` so older framework JS won't try to parse a newer bundle. Note that a bundle's `minExtensionVersion` field can still read `"0.4.0"` even under the 1.0.0 framework — that field records the oldest compatible extension build, not the current one, and hasn't needed bumping since the bundle envelope shape itself hasn't broken compatibility.
 
 Per-ruleset `version` in `ruleset.json` is independent — that's the version of YOUR data file, not the framework. Bump it when you ship updates to your ruleset.
 

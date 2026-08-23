@@ -4,7 +4,7 @@ Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara
 
 ## Quick start (5 minutes)
 
-The fastest path: grab the self-contained release at [`releases/v0.4.0/`](releases/v0.4.0/) and follow [`releases/v0.4.0/INSTALL-GUIDE.md`](releases/v0.4.0/INSTALL-GUIDE.md). It includes:
+The fastest path: grab the self-contained release at [`releases/1.0.0/`](releases/1.0.0/) and follow [`releases/1.0.0/INSTALL-GUIDE.md`](releases/1.0.0/INSTALL-GUIDE.md). It includes:
 
 - **The importable extension package** (`Marinara-RPG-Extension.extension.zip`) for Marinara's External Extensions import (Settings → Addons; requires engine 2.4.3+ with `ENABLE_EXTERNAL_EXTENSIONS=true` and the Danger Zone import toggle — see `INSTALL-GUIDE.md`)
 - **Two complete reference rulesets** (D&D 5e and Exalted 3e) with bundle + agents pre-built, ready to import
@@ -13,7 +13,7 @@ The fastest path: grab the self-contained release at [`releases/v0.4.0/`](releas
 
 If you just want to play D&D or Exalted, install the extension and import the ruleset bundle and you're on your way. Other systems are being added as requested and you can submit a PR to add one you've created to the repo.
 
-If you want a system the framework doesn't ship, see [`releases/v0.4.0/BUILD-YOUR-OWN-RULESET.md`](releases/v0.4.0/BUILD-YOUR-OWN-RULESET.md) — options for AI-assisted or manual authoring.
+If you want a system the framework doesn't ship, see [`releases/1.0.0/BUILD-YOUR-OWN-RULESET.md`](releases/1.0.0/BUILD-YOUR-OWN-RULESET.md) — options for AI-assisted or manual authoring.
 
 ## What this is
 
@@ -29,7 +29,7 @@ The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps
 - **CSP-safe formula evaluator.** The `{StatName}*N+M` parser uses recursive descent instead of `new Function`. Marinara pages with strict CSP that blocks `'unsafe-eval'` now compute bar maxes correctly.
 - **State-mutator field-name normalization** + max-clamp on numeric deltas + persisted dedupe across reloads.
 - **Lorebook install path rewritten** to fix the silent-failure bulk endpoint. Per-entry POST with delete-then-add for clean re-installs.
-- **Self-contained release folder** at `releases/v0.4.0/` with seven AI-feedable build docs, two complete reference systems, and drop-in install files.
+- **Self-contained release folder** at `releases/1.0.0/` with seven AI-feedable build docs, two complete reference systems, and drop-in install files.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the full list.
 

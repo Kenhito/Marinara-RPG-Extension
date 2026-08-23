@@ -18,9 +18,9 @@ The validator uses Ajv to check against `schema/ruleset.schema.json` (JSON Schem
 
 ## Tool 2 — `tools/build-bundle.mjs`
 
-**Input:** `rulesets/<your-system>/{ruleset.json, lorebook.json}`
+**Input:** `rulesets/<your-system>/{ruleset.json, lorebook.json, gm-agent.md}` plus the shared `agents/*.md` and any per-system `rulesets/<your-system>/agents/*.md` overrides
 **Output:** `rulesets/<your-system>/bundle.json`
-**When to run:** after `ruleset.json` or `lorebook.json` change.
+**When to run:** after `ruleset.json`, `lorebook.json`, `gm-agent.md`, or any agent prompt file changes.
 
 ```bash
 node tools/build-bundle.mjs rulesets/<your-system>/
@@ -30,8 +30,11 @@ npm run build-bundles                                      # same as --all
 
 What it does:
 
-1. Reads `ruleset.json` and `lorebook.json` from the ruleset directory.
-2. Wraps them in the `mrr-bundle` envelope:
+1. Reads `ruleset.json`, `lorebook.json`, and `gm-agent.md` from the ruleset directory.
+2. Resolves the role-agent pool (`combat-overseer`, `context-fuser`, `state-mutator`, plus any optional per-system agents) the same way `build-agents.mjs` does: per-system override at `rulesets/<system>/agents/<role>.md` wins if present, otherwise the shared baseline at `agents/<role>.md` applies.
+3. Derives additional lorebook entries from `ruleset.json` fields (attributes, skills, conditions, derivedStats, difficulties) and merges them with the hand-authored `lorebook.json` entries — hand-authored entries win on a name conflict. See `04-LOREBOOK-FORMAT.md` for what this typically adds.
+4. Strips `id` fields from lorebook entries (Marinara assigns its own server-side IDs).
+5. Wraps everything in the `mrr-bundle` envelope:
    ```json
    {
      "schema": "mrr-bundle",
@@ -40,21 +43,28 @@ What it does:
      "authorId": "kenhito",
      "generator": { "name": "build-bundle.mjs", "version": "..." },
      "ruleset": { /* ruleset.json content */ },
-     "lorebook": { /* lorebook.json content with id fields stripped from entries */ }
+     "gmAgent": { "name": "...", "phase": "pre_generation", "promptTemplate": "...", "settings": {} },
+     "lorebook": { /* merged lorebook.json content, id fields stripped from entries */ },
+     "additionalAgents": [
+       { "role": "combat-overseer", "name": "...", "phase": "pre_generation", "enabled": true, "promptTemplate": "...", "settings": {} },
+       { "role": "context-fuser", "...": "..." },
+       { "role": "state-mutator", "...": "..." }
+       /* plus any optional pre-input-transformer or per-system parallel-phase agents */
+     ]
+     /* regexScripts, customTools, scenarioDefault appear only when the ruleset generates them */
    }
    ```
-3. Strips `id` fields from lorebook entries (Marinara assigns its own server-side IDs).
-4. Writes `rulesets/<your-system>/bundle.json`.
+6. Writes `rulesets/<your-system>/bundle.json`.
 
-The bundle is the file users paste into Marinara's Ruleset dialog (Choose file, Fetch URL, or paste-into-textarea).
+**The bundle is the ONE file users import** — through the extension's **Ruleset** dialog (Choose file, Fetch URL, or paste-into-textarea), then **Save and reload**. This single import installs the sheet/dice config, the lorebook, the main GM agent, AND every role agent in `additionalAgents[]` (all forced `enabled: true` — GM-mode has no per-agent import toggle at install time; per-game enablement is separate, see "End-to-end install for a user" below). Re-installing an updated bundle updates the extension's managed agents/lorebook in place (keyed by `mrrAgentRole` / ruleset id) rather than duplicating.
 
-**Note:** as of bundle schema v1, agents are **NOT** included in the bundle. They install through a separate path (Tool 3 below). This decoupling lets you ship prompt updates without forcing users to reinstall the entire ruleset.
+**Agents are embedded, not separate.** Earlier bundle-schema revisions kept agents out of the bundle and installed them through a standalone `agents.json` + an "Import Agents" dialog. That path no longer exists for GM-mode — `additionalAgents[]` inside `bundle.json` is the only install mechanism. `tools/build-agents.mjs` (Tool 3, below) still produces a standalone `agents.json`, but purely as a toolchain-parity artifact; nothing in the current install flow reads it.
 
 ## Tool 3 — `tools/build-agents.mjs`
 
 **Input:** `rulesets/<your-system>/{gm-agent.md, agents/*.md}` plus the shared `agents/*.md`
 **Output:** `rulesets/<your-system>/agents.json`
-**When to run:** after any agent prompt edit (per-system or shared baseline).
+**When to run:** optional. Not required for install — `build-bundle.mjs` (Tool 2) already embeds every resolved agent prompt into `bundle.json`, which is the file users actually import. Run this tool only if you want a standalone `agents.json` for inspection, diffing, or external toolchain parity.
 
 ```bash
 node tools/build-agents.mjs rulesets/<your-system>/
@@ -87,7 +97,7 @@ What it does:
    ```
 6. Writes `rulesets/<your-system>/agents.json`.
 
-The agents.json is what users paste into Marinara's Import Agents dialog. The dialog does **delete-then-replace** — re-importing after a prompt edit cleanly resyncs without leaving stale duplicates.
+**`agents.json` is a toolchain-parity artifact, not an install file.** GM-mode has no "Import Agents" dialog — there is nothing in the current install flow that reads `agents.json`. Users install and update agent prompts exclusively by (re-)importing `bundle.json` (Tool 2), whose `additionalAgents[]` array is built from the exact same resolved prompts. Keep running `build-bundle.mjs` after any agent prompt edit; running `build-agents.mjs` too is optional.
 
 ## Tool 4 (extension-side) — `tools/embed-css.mjs`
 
@@ -112,10 +122,10 @@ cd <repo-root>
 # 1. Validate the schema
 node tools/validate-ruleset.mjs rulesets/<your-system>/ruleset.json
 
-# 2. Build the bundle (ruleset + lorebook envelope)
+# 2. Build the bundle (ruleset + lorebook + gmAgent + additionalAgents envelope)
 node tools/build-bundle.mjs rulesets/<your-system>/
 
-# 3. Build the agents collection
+# 3. Optional: build the standalone agents.json (toolchain parity only, not installed by users)
 node tools/build-agents.mjs rulesets/<your-system>/
 
 # 4. Validate the bundle
@@ -127,16 +137,15 @@ npm run validate-bundles
 npm run build-bundles
 ```
 
-The two artifacts you ship to users are `rulesets/<your-system>/bundle.json` and `rulesets/<your-system>/agents.json`.
+**The one artifact you ship to users is `rulesets/<your-system>/bundle.json`.** `agents.json` is produced for toolchain parity only; nothing in the install flow consumes it.
 
 ## End-to-end install for a user
 
 A user installs your ruleset by:
 
-1. **Paste the framework JS into Extensions** (one-time, system-independent). Marinara → Settings → Extensions → Add Extension → paste `extension/RPG-Extension-GM-Mode.js` (the version with embedded CSS) into the JS field. CSS field stays empty.
-2. **Paste the bundle into the Ruleset dialog**. Click the gear icon on the floating sheet → Ruleset → paste `bundle.json` into the textarea → Save.
-3. **Paste the agents into the Import Agents dialog.** Marinara → Settings → Agents → Import → paste `agents.json` → Confirm.
-4. **Attach the lorebook and enable the agents per game.** After launching or creating a game, attach the ruleset's lorebook to that game, then enable the MRR agents for it (agents are enabled per game at load time, not during generation). Without the attached lorebook the agents have no ruleset info to follow.
+1. **Import the framework extension once, per Marinara install** (system-independent, skip if already installed for another ruleset). Marinara → **Settings → Addons → External Extensions → Import** → pick `Marinara-RPG-Extension.extension.zip` from the project's `releases/<version>/` folder. It arrives disabled and unapproved — open it and click **Review and Run** to approve its code hash and enable it. Never import the loose `RPG-Extension-GM-Mode.js` file by itself: on Marinara 2.4.3+ that installs as a sandboxed Worker extension with no page access and silently does nothing.
+2. **Load the bundle into the Ruleset dialog.** Click the **Ruleset** button in the chat header → load `bundle.json` (Choose file, Fetch URL, or paste into the textarea) → **Save and reload**. This one import installs the ruleset (sheet + dice widget), the lorebook, the main GM agent, and every role agent in `additionalAgents[]` — all bundled together as data, no extension re-approval needed.
+3. **Attach the lorebook and enable the agents per game.** After launching or creating a game, attach the ruleset's lorebook to that game, then enable the MRR agents for it (agents are enabled per game at load time, not during generation). Without the attached lorebook the agents have no ruleset info to follow.
 
 ## What changes when you edit which files
 
@@ -144,11 +153,13 @@ A user installs your ruleset by:
 |---|---|---|
 | `ruleset.json` | `validate-ruleset.mjs`, then `build-bundle.mjs` | User reinstalls bundle |
 | `lorebook.json` | `build-bundle.mjs` | User reinstalls bundle |
-| `gm-agent.md` | `build-agents.mjs` | User re-imports agents |
-| `agents/<role>.md` (shared) | `build-agents.mjs` for every ruleset that inherits | Each affected user re-imports agents |
-| `rulesets/<sys>/agents/<role>.md` (override) | `build-agents.mjs <sys>` | User re-imports agents for that system |
-| `extension/<file>.css` | `embed-css.mjs` | User pastes new framework JS |
-| `extension/<file>.js` | nothing (already final) | User pastes new framework JS |
+| `gm-agent.md` | `build-bundle.mjs` (re-embeds the `gmAgent` prompt) | User reinstalls bundle |
+| `agents/<role>.md` (shared) | `build-bundle.mjs` for every ruleset that inherits | Each affected user reinstalls that ruleset's bundle |
+| `rulesets/<sys>/agents/<role>.md` (override) | `build-bundle.mjs <sys>` | User reinstalls that ruleset's bundle |
+| `extension/<file>.css` | `embed-css.mjs` | User re-imports the extension zip |
+| `extension/<file>.js` | nothing (already final) | User re-imports the extension zip |
+
+`build-agents.mjs` reruns are optional in every row above — they refresh the toolchain-parity `agents.json` but nothing user-facing depends on it.
 
 ## CI gates
 
@@ -189,11 +200,11 @@ This is a framework change. Users running an older framework JS won't see the ne
 
 ## Engine compatibility — gotchas to call out in your gm-agent
 
-### Reputation tag 50-char limit
+### Reputation tag length limit
 
-Marinara's `/api/game/reputation/update` endpoint validates `action` strings at max 50 characters. The default narrator prompt instructs models to emit `[reputation: npc="Name" action="..."]` tags without communicating this limit. Verbose models (Opus, GPT-4-class) routinely emit 100+ char actions and trigger 400 errors that surface as connection toasts.
+Marinara's `/reputation/update` endpoint validates `action` strings against a max-length constant, `GAME_REPUTATION_ACTION_MAX_LENGTH` in `packages/server/src/routes/game.routes.ts`. **Verified against current engine HEAD (v2.4.4, commit `b1ec60409`) on 2026-08-22: that constant is 500 characters** (defined at line 1714, consumed at line 9913 as `action: z.string().min(1).max(GAME_REPUTATION_ACTION_MAX_LENGTH)`). Older project documentation describes a 50-character cap — that was accurate for engine v1.5.6 but the limit has since been widened; don't encode 50 as a hard fact. The default narrator prompt instructs models to emit `[reputation: npc="Name" action="..."]` tags without stating either number. Verbose models (Opus, GPT-4-class) can still trip a 400 error on an unusually long `action` string even at 500 characters.
 
-Every `gm-agent.md` should include a paragraph telling the model the limit. Copy from any reference ruleset's prompt (search for "Engine compatibility — reputation tags").
+Every `gm-agent.md` should include a paragraph telling the model to keep `action` short (a few words, not a sentence) — that's safe regardless of which numeric cap a given engine build enforces. Copy from any reference ruleset's prompt (search for "Engine compatibility — reputation tags"). If you need the exact number for a specific self-hosted engine, check that build's own `GAME_REPUTATION_ACTION_MAX_LENGTH` value rather than assuming 50 or 500.
 
 ### Combat encounter modal stays d20-shaped
 

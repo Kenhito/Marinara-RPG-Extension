@@ -21,13 +21,19 @@ node tools/validate-ruleset.mjs rulesets/<your-system>/ruleset.json
 
   "dice": { "type": "d20", "notation": "d20+mod vs DC" },
   "resolution": { "mode": "single-roll", "modifierFormula": "1d20 + ability_mod + proficiency_bonus" },
+  "xpTable": [ { "level": 1, "xp": 0 }, ... ],
+  "scenarioDefaultDerive": false,
 
   "difficulties": { ... },
   "attributes": [ ... ],
   "skills": [ ... ],
+  "saves": [ ... ],
+  "conditions": [ ... ],
   "skillProficiency": { ... },
   "skillSpecialties": { ... },
   "backgrounds": { ... },
+  "classOptions": [ ... ],
+  "header": { "raceLabel": "...", "classLabel": "..." },
 
   "derivedStats": [ ... ],
   "states": [ ... ],
@@ -41,6 +47,8 @@ node tools/validate-ruleset.mjs rulesets/<your-system>/ruleset.json
   "equipmentBonusTargets": ["..."]
 }
 ```
+
+(All of the above except `id`, `name`, `version`, `dice`, `resolution`, `attributes`, and `skills` are optional — see "Required fields" and "Optional fields" below. `saves`, `conditions`, `classOptions`, `header`, `backgrounds.textOnly`, and `scenarioDefaultDerive` are load-bearing for several shipped rulesets but easy to miss when skimming this example; each gets its own subsection below.)
 
 `additionalProperties: false` is enforced at every level. Unknown fields are rejected.
 
@@ -207,6 +215,20 @@ If your system's dice math doesn't fit any of these modes, see `06-BUILD-PIPELIN
 
 For systems where attributes don't naturally exist (some Fate variants), supply at least one synthetic attribute capturing a key resource.
 
+#### Per-attribute `modifierFormula` — auto-calculated modifiers
+
+```json
+{
+  "name": "Strength",
+  "abbreviation": "STR",
+  "min": 3, "max": 18, "default": 10,
+  "modifierFormula": "({Score} - 10) / 2",
+  "modifierName": "STR Mod"
+}
+```
+
+Any attribute can declare `modifierFormula` to auto-compute a derived modifier (D&D-style ability modifiers, PF2e modifiers). Use the magic token `{Score}` for the attribute's own raw value, plus standard `{StatName}` placeholders for cross-attribute references. The result is floored. `modifierName` optionally labels the computed value on the sheet. **This is arithmetic-only** — see "Known schema limits" near the end of this doc for what it cannot express (piecewise/stepped modifier tables) and the documented workaround.
+
 ### `skills` — at least one
 
 ```json
@@ -239,6 +261,53 @@ For systems where attributes don't naturally exist (some Fate variants), supply 
 ```
 
 Min 2 entries. Surfaces in the main narrator agent prompt as the standard target-number vocabulary.
+
+### `saves` — saving throws linked to an attribute
+
+```json
+[
+  { "name": "Strength Save", "linkedAttribute": "Strength", "description": "Resist being physically forced or moved." },
+  { "name": "Wisdom Save", "linkedAttribute": "Wisdom" }
+]
+```
+
+Each save renders a row whose displayed value auto-computes from the linked attribute's modifier plus the active `skillProficiency` tier (saves share the same tier system as skills). Both `name` and `linkedAttribute` are required per entry — **the schema has no "flat, unlinked save" shape**, which is D&D/PF2e-shaped by design (attribute-modifier-plus-proficiency).
+
+**Workaround for a system whose saves are NOT attribute-modified** (e.g. classic B/X-tradition retroclones, where saving throws are flat class-and-level numbers with no ability modifier added): still declare `linkedAttribute` on each save — the schema requires it, and it's useful for sheet grouping and lorebook cross-referencing even when unused mechanically — but instruct the main narrator agent's prompt (and a lorebook entry) to ignore the sheet's auto-computed attribute-modifier contribution and treat the value as flat. The `Old School Essentials` reference ruleset (`rulesets/ose/`) ships this exact pattern: its `saves[]` entries declare a `linkedAttribute` for each of the five B/X save categories, but `gm-agent.md` explicitly states "saves in this system are flat class/level numbers with NO ability modifier added — do not add STR/DEX/etc. to a save."
+
+### `conditions` — status condition definitions
+
+```json
+[
+  {
+    "name": "Prone",
+    "description": "Lying on the ground. Melee attacks against you have advantage; your attacks vs. adjacent foes have disadvantage.",
+    "imposesDisadvantageOn": ["attack"],
+    "grantsAdvantageOn": []
+  }
+]
+```
+
+When declared, the sheet renders a Conditions section with an add dropdown of these names plus a free-text option. `name` is required; `description` surfaces as a tooltip and feeds the agent prompt. `imposesDisadvantageOn` / `grantsAdvantageOn` are optional arrays drawn from the enum `["attack", "save", "skill"]` — the dice widget's `quickRoll*` helpers consult these so the player doesn't have to remember which roll category a condition affects, auto-arming advantage/disadvantage on the matching category.
+
+### `classOptions` — class / playbook / archetype picker
+
+```json
+[
+  { "name": "Fighter", "hitDie": "d10", "description": "Martial expert with the most hit points and attacks." },
+  { "name": "Wizard", "hitDie": "d6", "description": "Weak in melee, powerful with prepared spells." }
+]
+```
+
+Optional list of class/playbook/archetype choices the player picks from in the sheet header. Both `name` and `hitDie` (pattern `^d[0-9]+$`) are required per entry; `description` is optional flavor for the dropdown hint. Resources declaring `dieFromClass: true` pick up `hitDie` from the selected class. D&D 5e ships the canonical 12-class example; Pathfinder 2e, Mörk Borg, and Old School Essentials (Fighter/Cleric/Magic-User/Thief plus demi-human race-as-class options) use the same shape. Note: as of this doc, the class-driven dropdown UI wiring is still a handoff item (see `docs/BUILDING.md` "Class-driven dropdown") — declaring `classOptions` documents the choice set even where the renderer still treats the field as free text.
+
+### `header` — identity field labels
+
+```json
+{ "raceLabel": "Exalt Type", "classLabel": "Caste/Aspect" }
+```
+
+Optional per-ruleset labels for the two free-text identity fields in the sheet header (normally "Race" and "Class"). D&D ships `"Race"` / `"Class"` (the defaults, so it can omit this block entirely); Exalted ships `"Type"` / `"Caste/Aspect"`. Both sub-fields are optional strings; omit the whole block to keep the defaults.
 
 ### `derivedStats` — computed pools and tracks
 
@@ -373,7 +442,9 @@ Adds a "+S" button per skill row that opens a sub-row for naming a specialty and
 }
 ```
 
-Renders a `Backgrounds` section on the sheet for free-text named traits with numeric values.
+Renders a `Backgrounds` section on the sheet for free-text named traits with numeric values. `enabled` is the only required sub-field.
+
+**`textOnly` (optional boolean)** — when `true`, the section renders name-only rows with no dot value and no stepper, for systems whose entries are described rather than rated. D&D 5e Feats use this shape (`min`/`max`/`default` become irrelevant when `textOnly` is set — Feats aren't dot-rated). Old School Essentials also ships `textOnly: true` for its "Class Features & Restrictions" section, since B/X class abilities are prose, not numeric traits. The convention for a `textOnly` section is that the user adds a companion lorebook entry per row to teach the agent the row's actual mechanics — the schema has no structured way to encode "what this named trait does," only that it exists.
 
 ### `abilities` — Charms / Spells / Powers
 
@@ -414,6 +485,14 @@ Enum: any of these in any order. Sections you omit don't render. The framework's
 ### `lorebookKeys` — suggested keys
 
 Free-text array of suggested keywords for the bundled lorebook. Advisory only; the lorebook's actual keys live in `lorebook.json`.
+
+### `scenarioDefaultDerive` — auto-derive a scenario default
+
+```json
+"scenarioDefaultDerive": true
+```
+
+Boolean, default `false`. When `true` AND top-level `scenarioDefault` is absent, `tools/build-scenario-default.mjs` auto-derives a scenario-default string from `ruleset.json` (name + summary + dice + resolution mode) and embeds it in the bundle as `bundle.scenarioDefault`, which the engine reads via `chatMeta.groupScenarioText` override. When `false` (the default) and `scenarioDefault` is absent, the bundle ships no scenario default at all. If you've hand-written a `scenarioDefault` string yourself, it always wins regardless of this flag.
 
 ### `equipmentSlots` and `equipmentBonusTargets` — autocomplete hints
 
@@ -490,6 +569,14 @@ See the "Equipment + bonuses" section above. New `damage-pool` kind ships dice-p
 ### Boundary: widget surfaces, narrator resolves
 
 The widget reports honest dice-roll data — the Wild Die's face, the explode chain, the critFail flag, the totals — but does NOT auto-apply in-fiction effects. OpenD6 says the GM picks the consequence of a Wild-Die crit-fail (subtract highest other die OR add complication — GM-fiat). The narrator reads the chat tag and resolves. Same for `narrative-handled` mode: the widget rolls, the narrator does the math against the system the `description` field declared.
+
+## Known schema limits
+
+Honest boundaries — know these before you start authoring, so you don't discover them mid-session:
+
+- **One `resolution.mode` per ruleset.** A ruleset declares exactly one dice-resolution mode. Multi-mechanic systems (a game that rolls a d20 for combat but a card draw or a diceless resource spend for something else) can only automate the one declared mode through the dice widget — every other subsystem has to be resolved in prose by the GM agent, with a lorebook entry ("Off-Widget Subsystems," in framework convention) telling both the GM and the player which rolls are off-widget and how to call for them by hand. Old School Essentials (`rulesets/ose/`) is the shipped example: `resolution.mode` is `single-roll` (the d20 attack/save math), while its percentile Thief Skills and d6-in-X checks (Open Doors, Listen, Surprise) are documented as prose-adjudicated, with no dice-widget automation. A multi-mode extension (letting one ruleset declare more than one resolution block) is on the framework roadmap but not implemented — don't promise it in a bundle you're authoring today.
+- **Single universal `xpTable`.** The top-level `xpTable` array is one ladder per ruleset. Systems where XP-to-level is class-specific (each class needs a different total to reach the next level — classic B/X-tradition retroclones are the common case) can only embed ONE class's progression as the sheet's XP-bar reference; there's no schema shape for "this array, but keyed per class." The documented workaround (see `rulesets/ose/ruleset.json` and its `INSTALL.md`) is to embed one class's table (commonly the simplest or most "baseline" class — OSE uses Fighter), clearly label it as that class's progression only in the ruleset `summary`, the derived-stat description referencing it, and the install docs, and instruct players of other classes to consult their own class's table externally. Do not invent numbers for classes you haven't embedded.
+- **`modifierFormula` is arithmetic-only.** Both the per-attribute `modifierFormula` and the `derivedStats[].maxFormula` fields go through the same CSP-safe recursive-descent parser: `+ - * / ( )`, integer/decimal literals, and `{StatName}` placeholders. There is no conditional logic and no lookup-table support — you cannot express "if score is 13-15, modifier is +1; if 16-17, modifier is +2" (a piecewise step function) as a formula. This blocks a class of classic systems outright: B/X-tradition ability-modifier tables (the OSE reference ruleset's non-linear STR/DEX/CON/etc. step table) and Rolemaster Fantasy Role Playing's stat-bonus tables (e.g. RMFRP Table T-2.1) cannot be expressed as `modifierFormula` — only smooth linear formulas like D&D 5e's `({Score} - 10) / 2` fit. The documented workaround, used by the OSE reference ruleset: omit `modifierFormula` on the affected attributes, publish the step table as a constant lorebook entry (e.g. "Ability Modifiers (step table)"), and have the player read the modifier off the table by hand and enter it as a flat value wherever it's needed. This is a real authoring constraint, not an oversight to work around cleverly — don't try to fake a lookup table by chaining arithmetic tricks; it will misbehave at the table boundaries.
 
 ## Next
 

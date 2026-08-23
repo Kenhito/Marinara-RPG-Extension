@@ -10,7 +10,7 @@
 > - `docs/AUTHORING-PHASE-6.md` — Phase 5/6/7 schema deep dive (Resources cluster, derived stats, V20 trinity, etc.)
 > - `docs/ADDING-RULESETS.md` — decision tree + new-resolution-mode procedure
 > - `docs/ENGINE-CONSTRAINTS.md` — what overlay can vs cannot do
-> - `releases/v0.4.0/docs-for-ai/` — pinned-to-v0.4.0 build-pipeline reference (this doc supersedes for v0.4.x+)
+> - `releases/1.0.0/docs-for-ai/` — pinned-to-1.0.0 build-pipeline reference (this doc supersedes for newer schema features)
 >
 > **AUTHORING-PROMPT.md is still the entry point for chatbot-driven authoring.** This doc is the underlying contract; the prompt is the workflow. Both stay in sync.
 

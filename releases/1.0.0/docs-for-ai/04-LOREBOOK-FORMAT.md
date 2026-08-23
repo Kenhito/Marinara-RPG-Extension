@@ -106,9 +106,17 @@ A full lorebook is typically **14–25 entries**. Coverage:
 - The system's elite / boss rules
 - Faction-level groups if relevant (Shadowrun corps, Exalted Wyld Hunt)
 
-### "Optional Sub-Agents — what they do and how to enable" entry
+### "Sub-Agents — what they do and how to enable them" entry
 
-The framework convention. Surfaces all installed sub-agents to the user in-engine. The shipped bundles include this entry as the canonical exemplar — copy it verbatim from any reference bundle's `lorebook.json` (search for `"sub-agent"` in keys), only changing the system name in the surrounding text.
+The framework convention. Surfaces all installed sub-agents to the user in-engine. The shipped bundles include this entry as the canonical exemplar — copy it verbatim from any reference bundle's `lorebook.json` (search for `"sub-agent"` in keys), only changing the system name in the surrounding text. Use this exact title — some older reference material in this project uses a slightly different wording ("Optional Sub-Agents — what they do and how to enable"); the dnd5e reference bundle's title is the canonical one.
+
+## The bundle auto-derives additional entries — don't be surprised by the count
+
+`tools/build-bundle.mjs` doesn't just copy your hand-authored `lorebook.json` entries into the bundle verbatim. It also runs `build-lorebook-expansions.mjs`, which derives one lorebook entry each from `ruleset.json`'s `attributes[]`, `skills[]`, `conditions[]`, and `derivedStats[]` (when they carry a description), plus a single difficulty-ladder reference entry — then merges the two entry sets. **Hand-authored entries win on a name collision**, so an entry you already wrote for, say, "Strength" simply overrides the auto-derived "Strength" entry rather than duplicating it.
+
+This means the entry count in the built `bundle.json` is normally noticeably higher than what you wrote by hand — a **14–25 hand-authored** lorebook (this doc's recommended range, above) typically becomes **30–45 entries** in the final bundle once the derived attribute/skill/condition/derived-stat entries are added. That's expected, not a bug: it's how the framework closes keyword-coverage gaps (a player typing "wits" or "DC" gets a ruleset-accurate definition even if you never hand-wrote that specific entry) without requiring every author to hand-write 25+ mechanical-definition entries. You can see the hand-authored/derived split by running `node tools/build-bundle.mjs rulesets/<your-system>/` and reading its PASS line, which reports both counts (e.g. `43 entries [21 hand + 22 derived]`).
+
+If you want to suppress or fully control the derived set for your ruleset, declare `ruleset.lorebookExpansions` as an explicit array — when present, the generator returns it verbatim instead of deriving anything.
 
 ## Sorcery-specific entries (when relevant)
 

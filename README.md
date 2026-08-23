@@ -40,6 +40,7 @@ Every ruleset ships as a single `bundle.json`, right here on GitHub — no build
 | Genesys | d6 | [`rulesets/genesys/bundle.json`](rulesets/genesys/bundle.json) |
 | GURPS Lite | 3d6 | [`rulesets/gurps-lite/bundle.json`](rulesets/gurps-lite/bundle.json) |
 | Lasers & Feelings | d6 | [`rulesets/lasers-and-feelings/bundle.json`](rulesets/lasers-and-feelings/bundle.json) |
+| Old School Essentials | d20 | [`rulesets/ose/bundle.json`](rulesets/ose/bundle.json) |
 | Pathfinder 2nd Edition | d20 | [`rulesets/pathfinder2e/bundle.json`](rulesets/pathfinder2e/bundle.json) |
 | The Stewpot | d6 | [`rulesets/stewpot/bundle.json`](rulesets/stewpot/bundle.json) |
 | Trophy Dark | d6 | [`rulesets/trophy-dark/bundle.json`](rulesets/trophy-dark/bundle.json) |

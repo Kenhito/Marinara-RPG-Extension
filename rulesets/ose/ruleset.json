@@ -1,0 +1,184 @@
+{
+  "id": "ose",
+  "name": "Old School Essentials",
+  "version": "1.0.0",
+  "edition": "B/X-compatible retroclone (Necrotic Gnome)",
+  "license": "Mechanics reference only, paraphrased from the public B/X tradition; no verbatim text from Old School Essentials. OSE trade dress and text belong to Necrotic Gnome.",
+  "summary": "Classic dungeon-crawling d20 retroclone. Attacks and saving throws are a single d20 roll compared to a target number. This bundle uses the ASCENDING Armor Class convention (AC 10 unarmored baseline, higher AC = harder to hit) instead of the original descending/THAC0 convention, chosen for dice-widget compatibility — see the 'Ascending AC — a house convention' lorebook entry. Two further subsystems exist OUTSIDE the dice widget: percentile Thief Skills (d100 roll-under) and d6-in-X checks (Open Doors, Listen, Surprise) — both are GM-adjudicated by hand; see 'Off-Widget Subsystems'. Ability score modifiers follow a non-linear step table, not a formula. Every class has its own XP-to-level progression; the sheet's XP table below shows the Fighter progression only — consult your class table for any other class. Low-level play is lethal: a 1st-level character has a single Hit Die and can die to one bad roll.",
+
+  "xpTable": [
+    { "level": 1, "xp": 0 },
+    { "level": 2, "xp": 2000 },
+    { "level": 3, "xp": 4000 },
+    { "level": 4, "xp": 8000 },
+    { "level": 5, "xp": 16000 },
+    { "level": 6, "xp": 32000 },
+    { "level": 7, "xp": 64000 },
+    { "level": 8, "xp": 120000 },
+    { "level": 9, "xp": 240000 },
+    { "level": 10, "xp": 360000 },
+    { "level": 11, "xp": 480000 },
+    { "level": 12, "xp": 600000 },
+    { "level": 13, "xp": 720000 },
+    { "level": 14, "xp": 840000 }
+  ],
+
+  "dice": { "type": "d20", "notation": "1d20 + mod vs AC / Save Target" },
+  "resolution": {
+    "mode": "single-roll",
+    "modifierFormula": "1d20 + attack_bonus + ability_mod (STR for melee, DEX for missile; ability_mod from the step table, not a formula)"
+  },
+
+  "difficulties": {
+    "Routine": { "threshold": 9, "description": "GM ruling for an unopposed ability check the fiction makes plausible; not an official B/X mechanic — house guidance for improvised checks only." },
+    "Average": { "threshold": 12, "description": "A trained adventurer succeeds more often than not." },
+    "Hard": { "threshold": 15, "description": "Needs a good roll or a strong ability score." },
+    "Very Hard": { "threshold": 18, "description": "Rare; usually paired with a specific class or race advantage." }
+  },
+
+  "attributes": [
+    { "name": "Strength", "abbreviation": "STR", "min": 3, "max": 18, "default": 10, "description": "Melee attack/damage bonus, Open Doors, encumbrance capacity. Modifier from the step table — see the Ability Modifiers lorebook entry." },
+    { "name": "Intelligence", "abbreviation": "INT", "min": 3, "max": 18, "default": 10, "description": "Languages known, Magic-User max spell level at low levels (house-optional). No B/X combat modifier." },
+    { "name": "Wisdom", "abbreviation": "WIS", "min": 3, "max": 18, "default": 10, "description": "Saving throw bonus/penalty vs. Spells at high/low WIS (house-optional in some B/X tables). No B/X combat modifier." },
+    { "name": "Dexterity", "abbreviation": "DEX", "min": 3, "max": 18, "default": 10, "description": "Missile attack bonus and AC bonus. Modifier from the step table — see the Ability Modifiers lorebook entry." },
+    { "name": "Constitution", "abbreviation": "CON", "min": 3, "max": 18, "default": 10, "description": "Hit Point bonus per Hit Die. Modifier from the step table — see the Ability Modifiers lorebook entry." },
+    { "name": "Charisma", "abbreviation": "CHA", "min": 3, "max": 18, "default": 10, "description": "Max retainers and retainer morale. Modifier from the step table — see the Ability Modifiers lorebook entry." }
+  ],
+
+  "skills": [
+    { "name": "Open Locks", "min": 0, "max": 99, "default": 15, "description": "Thief only. d100 roll UNDER this value succeeds. Off dice-widget — GM calls for the roll narratively; see 'Off-Widget Subsystems'." },
+    { "name": "Find/Remove Traps", "min": 0, "max": 99, "default": 10, "description": "Thief only. d100 roll-under. Off dice-widget." },
+    { "name": "Pick Pockets", "min": 0, "max": 99, "default": 20, "description": "Thief only. d100 roll-under. Off dice-widget." },
+    { "name": "Move Silently", "min": 0, "max": 99, "default": 20, "description": "Thief only. d100 roll-under. Off dice-widget." },
+    { "name": "Hide in Shadows", "min": 0, "max": 99, "default": 10, "description": "Thief only. d100 roll-under. Off dice-widget." },
+    { "name": "Climb Sheer Surfaces", "min": 0, "max": 99, "default": 87, "description": "Thief only. d100 roll-under. Off dice-widget." }
+  ],
+
+  "saves": [
+    { "name": "Death Ray or Poison", "linkedAttribute": "Constitution" },
+    { "name": "Magic Wands", "linkedAttribute": "Intelligence" },
+    { "name": "Paralysis or Petrify", "linkedAttribute": "Dexterity" },
+    { "name": "Dragon Breath", "linkedAttribute": "Dexterity" },
+    { "name": "Spells", "linkedAttribute": "Wisdom" }
+  ],
+
+  "derivedStats": [
+    { "name": "Hit Points", "formula": "Sum of class Hit Dice rolled at each level (Fighter/Dwarf d8, Cleric/Thief/Halfling/Elf d6, Magic-User d4) plus CON modifier per die, minimum 1 HP per die. A 1st-level character has exactly one Hit Die.", "renderAs": "bar", "default": 4, "aliases": ["hp", "HP", "hitPoints", "hit points"] },
+    { "name": "Armor Class", "formula": "Ascending house convention: 10 unarmored, +armor bonus, +DEX modifier (step table). Higher is better. See 'Ascending AC — a house convention'.", "renderAs": "value", "default": 10, "aliases": ["ac", "AC", "armorClass", "armor class"] },
+    { "name": "Attack Bonus", "formula": "Class-and-level lookup table, not a formula. Fighters gain +1 every level; Cleric/Thief roughly every 2-3 levels; Magic-User roughly every 3-5 levels. See 'Attack Bonus Progression'.", "renderAs": "value", "default": 0, "aliases": ["attackBonus", "attack bonus", "toHit", "to-hit"] },
+    { "name": "Open Doors", "formula": "X-in-6, roll 1d6, success on a result <= this value. Most classes 2, Fighter/Dwarf/Half-Orc-type strongfolk 3-4 with high STR. Off dice-widget.", "renderAs": "value", "default": 2, "aliases": ["openDoors", "open doors"] },
+    { "name": "Listen", "formula": "X-in-6 (Hear Noise), roll 1d6, success on a result <= this value. 1 for most classes, 2 for Thief/Elf/Halfling. Off dice-widget.", "renderAs": "value", "default": 1, "aliases": ["listen", "hearNoise", "hear noise"] },
+    { "name": "Surprise", "formula": "X-in-6, roll 1d6 for each side at an unexpected encounter, success on a result <= this value causes that side to be surprised (loses the first round). Baseline 2 for both PCs and monsters. Off dice-widget.", "renderAs": "value", "default": 2, "aliases": ["surprise"] },
+    { "name": "Level", "formula": "Character level. XP thresholds are class-specific; the xpTable above (and this sheet's XP bar) show the Fighter progression only — see 'Experience & Class-Specific XP Tables'.", "renderAs": "value", "default": 1, "max": 14, "aliases": ["level", "lvl"] }
+  ],
+
+  "conditions": [
+    { "name": "Held (Paralyzed)", "description": "Cannot move, act, or speak. Attacks against a held target automatically hit; some effects grant an automatic kill or extra damage on a helpless target — GM ruling." },
+    { "name": "Poisoned", "description": "Effect is whatever the poison source specifies — commonly an immediate saving throw vs. Death Ray or Poison, failure meaning death or a stated ongoing effect. Not a generic damage-over-time unless the source says so." },
+    { "name": "Turned", "description": "Undead that fail their turn roll flee from the cleric for the rest of the encounter (or are destroyed outright at high enough cleric level vs. low-HD undead)." },
+    { "name": "Unconscious/Dying", "description": "At 0 HP the character is unconscious and dying. Most B/X-tradition tables treat 0 HP or below as dead outright; some tables allow a 0-to-negative-CON death's-door variant — confirm which the table is using before play; this bundle defaults to dead at 0 HP unless the GM rules otherwise." }
+  ],
+
+  "diceTagFormat": {
+    "template": "[dice: 1d20{+mod} vs {target}{label} = {result} {success|failure}]",
+    "example": "[dice: 1d20+3 vs AC13 = 15 hit]"
+  },
+
+  "sheetSections": ["attributes", "saves", "skills", "derived", "states", "conditions", "backgrounds", "inventory", "abilities", "notes"],
+  "sections": {
+    "order": ["identity", "xp", "resources", "attributes", "saves", "skills", "derived", "abilities", "states", "conditions", "backgrounds", "inventory", "notes"]
+  },
+
+  "resources": [
+    {
+      "id": "hit-points",
+      "label": "HP",
+      "type": "bar",
+      "max": 4,
+      "current": 4,
+      "color": "bad",
+      "stateName": "Hit Points",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "-5", "delta": -5 },
+        { "label": "Full", "delta": "max" }
+      ]
+    },
+    {
+      "id": "mu-spells-1",
+      "label": "MU Spells (1st)",
+      "type": "counter",
+      "group": "Spells Memorized",
+      "max": 0,
+      "current": 0,
+      "color": "accent",
+      "stateName": "MU Spells L1",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "Rest", "delta": "max" }
+      ]
+    },
+    {
+      "id": "mu-spells-2",
+      "label": "MU Spells (2nd)",
+      "type": "counter",
+      "group": "Spells Memorized",
+      "max": 0,
+      "current": 0,
+      "color": "accent",
+      "stateName": "MU Spells L2",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "Rest", "delta": "max" }
+      ]
+    },
+    {
+      "id": "cleric-spells-1",
+      "label": "Cleric Spells (1st)",
+      "type": "counter",
+      "group": "Spells Memorized",
+      "max": 0,
+      "current": 0,
+      "color": "accent",
+      "stateName": "Cleric Spells L1",
+      "quickButtons": [
+        { "label": "-1", "delta": -1 },
+        { "label": "Rest", "delta": "max" }
+      ]
+    }
+  ],
+
+  "lorebookKeys": ["class", "race", "condition", "spell", "thief skill", "saving throw", "morale", "encumbrance"],
+
+  "abilities": {
+    "label": "Spells",
+    "categories": [
+      { "id": "mu-spells", "label": "Magic-User Spells" },
+      { "id": "cleric-spells", "label": "Cleric Spells" }
+    ]
+  },
+
+  "backgrounds": {
+    "enabled": true,
+    "label": "Class Features & Restrictions",
+    "min": 0,
+    "max": 0,
+    "default": 0,
+    "textOnly": true
+  },
+
+  "equipmentSlots": ["Weapon", "Armor", "Shield", "Helmet"],
+  "equipmentBonusTargets": ["Melee", "Missile", "Armor Class", "Damage"],
+
+  "classOptions": [
+    { "name": "Fighter", "hitDie": "d8", "description": "Best attack bonus progression, widest weapon/armor access, no spells." },
+    { "name": "Cleric", "hitDie": "d6", "description": "Turns undead, gains spells from level 2, blunt weapons only by most tables." },
+    { "name": "Magic-User", "hitDie": "d4", "description": "Weakest combatant, casts from level 1, must memorize spells from a spellbook each day, cannot wear armor." },
+    { "name": "Thief", "hitDie": "d4", "description": "Backstab (double or greater damage from surprise/behind), the six percentile Thief Skills, light armor only." },
+    { "name": "Dwarf", "hitDie": "d8", "description": "Race-as-class. Fighter-like combat, infravision, bonus to detect stonework tricks/traps." },
+    { "name": "Elf", "hitDie": "d6", "description": "Race-as-class. Fights and casts Magic-User spells, infravision, immune to ghoul paralysis, surprised only 1-in-6." },
+    { "name": "Halfling", "hitDie": "d6", "description": "Race-as-class. AC and missile bonuses, +2 initiative in some tables, surprised only 1-in-6, best Open Doors is still low." }
+  ],
+
+  "scenarioDefaultDerive": true
+}

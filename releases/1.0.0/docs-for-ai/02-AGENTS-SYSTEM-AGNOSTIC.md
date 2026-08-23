@@ -22,9 +22,9 @@ The architecture lets you build a working ruleset for any system with **zero** p
             └── <tracker>.md             # optional parallel-phase tracker (no shared baseline)
 ```
 
-`tools/build-agents.mjs` reads both directories. For each role, the per-system override at `rulesets/<system>/agents/<role>.md` wins if present; otherwise the shared baseline at `agents/<role>.md` applies. The `main` agent is always system-specific (no shared baseline) and lives at `rulesets/<system>/gm-agent.md`. Per-system `parallel` trackers likewise live only in the ruleset directory — the resources they track exist only in that system.
+Both `tools/build-bundle.mjs` and `tools/build-agents.mjs` read these two directories with the same resolution rule. For each role, the per-system override at `rulesets/<system>/agents/<role>.md` wins if present; otherwise the shared baseline at `agents/<role>.md` applies. The `main` agent is always system-specific (no shared baseline) and lives at `rulesets/<system>/gm-agent.md`. Per-system `parallel` trackers likewise live only in the ruleset directory — the resources they track exist only in that system.
 
-The output is `rulesets/<system>/agents.json` — a single envelope holding every agent prompt that the user imports through Marinara's Import Agents dialog.
+**The user-facing output is `rulesets/<system>/bundle.json`** (from `build-bundle.mjs`) — it embeds every resolved agent prompt directly in its `additionalAgents[]` array, forced `enabled: true`, alongside the ruleset, lorebook, and main `gmAgent`. One bundle import installs the whole agent pool; the user then enables the agents they want per game (see "Enablement" below). `build-agents.mjs` also writes `rulesets/<system>/agents.json`, the same agent prompts in a standalone `mrr-agents` envelope — this is a toolchain-parity artifact only (useful for inspecting/diffing agent prompts outside the bundle). GM-mode has no "Import Agents" dialog and never reads `agents.json`; users only ever import `bundle.json`.
 
 ## The state-mutator tag protocol
 
@@ -132,7 +132,7 @@ Pre-generation. Translates D&D-flavored player input ("I roll Strength") into th
 
 The bundle installs the agents, but they are not active until the user **enables them for each game** after the game launches (at load time, not during generation). The ruleset's lorebook must also be **manually attached to the game** — without it the agents have no ruleset info to follow and will misfire.
 
-The lorebook entry "Optional Sub-Agents — what they do and how to enable" exists in every shipped bundle so users can ask the in-engine chat about them.
+The lorebook entry "Sub-Agents — what they do and how to enable them" exists in every shipped bundle so users can ask the in-engine chat about them.
 
 ## Building a new system's agents
 
@@ -140,9 +140,10 @@ The minimum:
 
 1. Write `rulesets/<system>/gm-agent.md` (the main agent — always required).
 2. Optionally drop overrides in `rulesets/<system>/agents/<role>.md` for any role that needs system-specific tuning.
-3. Run `node tools/build-agents.mjs rulesets/<system>/` — produces `rulesets/<system>/agents.json`.
+3. Run `node tools/build-bundle.mjs rulesets/<system>/` — produces `rulesets/<system>/bundle.json`, embedding every resolved agent prompt in `additionalAgents[]`. This is the file the user imports through the extension's **Ruleset** dialog — one import installs the ruleset, lorebook, main GM agent, and every role agent together.
+4. Optionally also run `node tools/build-agents.mjs rulesets/<system>/` — produces `rulesets/<system>/agents.json` for toolchain parity. Users never import this file directly; GM-mode has no separate "Import Agents" dialog.
 
-The user imports that `agents.json` via the Import Agents dialog. The dialog does delete-then-replace, so re-import after you edit the prompt files re-syncs cleanly without duplicates.
+Re-running `build-bundle.mjs` after editing any agent prompt file re-syncs the bundle; re-installing the bundle updates the extension's managed agents in place (keyed by `mrrAgentRole`) rather than accumulating duplicates.
 
 ## Next
 

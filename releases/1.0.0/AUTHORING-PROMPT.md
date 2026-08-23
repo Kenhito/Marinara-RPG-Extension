@@ -2,7 +2,7 @@
 
 > **CURRENT (Phase 5 / 6 / 7):** for the live schema — Resources cluster, sections.order / sections.hidden, autocalc derived stats with valueFormula / tooltipFormula / formulaShort, commitmentModel + commitmentPool, state-banner resource type, the **nine resolution modes** (single-roll, dice-pool, d100-percentile, 2d6-stat, fate-ladder, roll-under, stance-modal-pool, dice-pool-sum with Wild Die, narrative-handled), the item.hardness / item.moteCommitment + item.motePool auto-inheritance, **pipGranularity** (OpenD6 sub-die precision), **effects.onSpend** (Character-Points style spend-driven bonuses), **roundCounters[]** (per-round combat penalties), **penaltyKind** flat/dice on track cells, **abilities.groups[]** (V20 Talents/Skills/Knowledges trinity), and the **meritsFlaws** section type — see **[`docs/AUTHORING-PHASE-6.md`](docs/AUTHORING-PHASE-6.md)**. Paste that file into your chat AI's context alongside the prompt block below when authoring a new bundle.
 >
-> **v0.4 reference:** the AI-authoring documentation at [`releases/v0.4.0/docs-for-ai/`](releases/v0.4.0/docs-for-ai/) covers the pre-Phase-5 surface (system-agnostic agent architecture, typed damage, sorcery/multi-turn casting, the build pipeline). Read it AFTER `docs/AUTHORING-PHASE-6.md` if you want the deeper agent and pipeline context.
+> **v0.4 reference:** the AI-authoring documentation at [`releases/1.0.0/docs-for-ai/`](releases/1.0.0/docs-for-ai/) covers the pre-Phase-5 surface (system-agnostic agent architecture, typed damage, sorcery/multi-turn casting, the build pipeline). Read it AFTER `docs/AUTHORING-PHASE-6.md` if you want the deeper agent and pipeline context.
 >
 > This file remains as a pre-v0.4 single-paste template. It still produces a working v0.3-style bundle but doesn't cover v0.4 features (typed damage, sorcery, agents.json separation) or Phase 5/6/7 features (Resources cluster, commitment reconciler, card grid, OpenD6 pip granularity, V20 trinity, meritsFlaws). For a fully-current schema-aware bundle, paste the prompt block below PLUS `docs/AUTHORING-PHASE-6.md` into your chat AI; both fit comfortably in a single context window.
 
@@ -115,10 +115,14 @@ Reference prompts for the three universal agents live at `agents/<role>.md`. Dro
 
 ## After you have the JSON
 
-1. Open Marinara Engine. Make sure the Marinara-RPG-Extension is installed
-   (import the framework JS file into Settings → Extensions → Add Extension,
-   enable it — Marinara's Extensions screen accepts file uploads, not pasted
-   text).
+1. Open Marinara Engine (2.4.3+). Make sure the Marinara-RPG-Extension
+   framework is installed once: **Settings → Addons → External Extensions →
+   Import**, pick `Marinara-RPG-Extension.extension.zip` from the project's
+   `releases/<version>/` folder, then open the import and click **Review and
+   Run** to approve and enable it (it arrives disabled and unapproved). Never
+   import the loose `RPG-Extension-GM-Mode.js` file by itself — on 2.4.3+
+   that installs as a sandboxed Worker with no page access and silently does
+   nothing.
 2. Click the **Ruleset** button in the chat header.
 3. In the dialog, load your `bundle.json` one of three ways: click
    **Choose file…** to upload it from disk, click **Fetch URL** with a raw
