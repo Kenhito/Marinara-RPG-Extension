@@ -31,6 +31,7 @@ var LS_INTIMACIES_POS = "mrr-intimacies-pos";
 var LS_SPELLBOOK_LB_PFX = "mrr-spellbook-lb-";   // appended with chatId
 var LS_PROCESSED_MSGS_PFX = "mrr-processed-msgs-"; // appended with chatId — set of message ids whose state-mutator tags have already applied; persisted so hard-refresh doesn't re-apply historic mutations
 var LS_PROCESSED_RUNS_PFX = "mrr-processed-runs-"; // appended with chatId — set of custom-agent run ids whose [mrr-state:] tags have applied via the runs-endpoint transport (B1 replacement)
+var LS_MUTATION_JOURNAL_PFX = "mrr-mutation-journal-"; // appended with chatId — B2-R swipe-revert journal, per messageId:swipeIndex bucket. Same per-browser observation class as the two prefixes above — LOCAL-only, NEVER server-synced (see mrrIsSyncedKey and the classification comment below).
 /* B1 replacement gate. The old console.log sniff of the State Mutator overlay
    is dead on every 2.0.x+ build (engine line is debug-gated console.warn,
    prod-stripped since v1.4.0). The sanctioned source is GET /agents/runs/
@@ -270,10 +271,810 @@ function safeParse(text) {
   catch (e) { return null; }
 }
 
-/* localStorage wrappers — private-mode and quota-safe */
-function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
-function lsSet(key, val) { try { localStorage.setItem(key, val); return true; } catch (e) { return false; } }
-function lsDel(key) { try { localStorage.removeItem(key); } catch (e) {} }
+/* local-storage wrappers — private-mode and quota-safe. RAW variants talk to
+   the physical browser store unconditionally; the public lsGet/lsSet/lsDel
+   below wrap them with the B1 server-storage adapter. Every existing call
+   site in the file (~66) keeps calling lsGet/lsSet/lsDel unchanged. */
+function lsGetRaw(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+function lsSetRaw(key, val) { try { localStorage.setItem(key, val); return true; } catch (e) { return false; } }
+/* Round-9 fix 4b: now returns a boolean (was fire-and-forget) so lsDel can
+   gate its ts-map stamp on the removal having actually happened, same as
+   lsSet already gates on lsSetRaw's return. */
+function lsDelRaw(key) { try { localStorage.removeItem(key); return true; } catch (e) { return false; } }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   B1 — server-backed character/pref state via marinara.storage
+   Design authority: Plans/2026-07-15_engine-2.3-compliance-plan.md §4.1
+   2.4.3 deltas: Plans/2026-08-22_engine-2.4.3-upgrade-and-rolemaster-plan.md B1
+   Coupling: COUPLINGS.md row 1 (marinara.storage)
+
+   Engine ground truth (verified against engine source 2026-08-22):
+     marinara.storage.get()/.patch(obj)/.delete() — async, Promise-returning.
+     patch is a server-side shallow merge {...current, ...patch}, then
+     re-validated as z.record(z.string(), z.unknown()) with a 1,000,000-byte
+     UTF-8 cap on the MERGED record. patch({k: null}) STORES null (does not
+     delete) — treated here as a tombstone (present-but-absent on read).
+     .delete() nukes the ENTIRE extension record — NEVER called from here.
+
+   Storage layout: ONE record, ONE TOP-LEVEL KEY PER LS KEY, mirroring
+   today's localStorage key strings exactly. Never a nested sub-object.
+
+   TIMESTAMPED ENVELOPES + NEWEST-WINS MERGE (Corey override, 2026-08-22,
+   coordinator validation round 4 — SUPERSEDES the original "deterministic,
+   no timestamps" precedence below wherever the two conflict): crash
+   recovery must never resurrect older character data. Every synced-key
+   VALUE stored server-side is now an envelope {"t": <epoch ms>, "v": <raw
+   string value>}; a tombstone is {"t": <epoch ms>, "v": null} — deletions
+   are timestamped too. Defensive read: a server value that is present but
+   NOT shaped like an envelope (not an object with a numeric `t`) is
+   treated as {t: 0, v: <that raw value>} — degrade, don't crash (see
+   mrrNormalizeEnvelope). There was no legacy unwrapped server data to
+   migrate — B1 had never been pushed or live-imported when this landed —
+   so the write/read paths change outright, no back-compat shim needed.
+
+   localStorage stays untouched — every LS value is still the raw string it
+   is today (zero compat risk for the ~66 existing call sites). The LS-side
+   timestamp for a synced key lives in ONE local-only sidecar map,
+   MRR_TS_MAP_KEY = "mrr-ts-map" (a JSON object {<syncedKey>: <epoch ms>}),
+   written via lsSetRaw every time lsSet/lsDel touches a synced key. This
+   sidecar is deliberately NOT itself a synced key (NOT in mrrIsSyncedKey):
+   it is per-browser device state, not portable user data — if it were
+   synced, the engine's SHALLOW patch merge would let one browser's
+   ts-map (keyed by chatId/characterId) silently whole-map-clobber every
+   other browser's independently-touched keys the next time either side
+   flushed, corrupting the very mechanism meant to prevent data loss.
+
+   Hydrate merge (mrrHydrateMerge, replaces the old "server always wins
+   once present" precedence): runs on EVERY hydrate, not gated by the
+   one-time migration flag — this is what makes crash recovery work every
+   session, not just on first activation. For every synced key found in
+   EITHER store (the just-fetched server record, or the local ts-map):
+   serverTs = the envelope's `t` (0 if malformed, and effectively "lower
+   than anything" if the server has no entry for the key at all — that
+   case unconditionally adopts the LS side, same outcome migration already
+   gave a never-before-synced key); lsTs = tsMap[key] || 0 (an LS value
+   with no ts-map entry is legacy/unstamped = 0, which is exactly the old
+   server-wins behavior preserved as the degenerate case). If lsTs is
+   STRICTLY greater than serverTs: adopt the current LS value into the
+   cache and mark it dirty so it re-flushes — with its ORIGINAL lsTs as
+   the envelope's `t`, never a fresh now() (preserves true edit time, so a
+   third browser comparing later still sees the real history). Otherwise
+   the server envelope wins as-is, including tombstones: a newer server
+   tombstone keeps a key deleted even if an older LS copy still physically
+   exists (LS is intentionally left alone — see "localStorage stays
+   untouched" above; lsGet already resolves to the cache first for synced
+   keys, so the stale LS bytes are just inert until the next lsSet); a
+   strictly-newer LS value beats an older server tombstone (recreate
+   survives). mrrRunMigration (the one-time, flag-gated scan for
+   never-before-touched LS-only keys — still necessary because it is the
+   only mechanism that discovers a key by raw-scanning localStorage
+   rather than by already having a ts-map/server footprint) now stamps
+   each migrated value with its ts-map entry when one exists, else 0 —
+   0 is correct here, not a bug: it means any future real edit on any
+   device will always outrank an unstamped migrated value. now() source
+   is plain Date.now(); clock skew across one user's browsers is accepted
+   (no monotonic counter — decided).
+
+   Key classification (allowlist — everything else stays LOCAL, i.e. the
+   original localStorage-only behavior is preserved unchanged):
+     SYNCED:
+       - LS_CHARACTER_PFX  "mrr-character-<id>"        character sheets
+       - LS_RULESET        "marinara-rpg-ruleset"      active ruleset id
+       - LS_SPELLBOOK_LB_PFX "mrr-spellbook-lb-<chatId>" spellbook lorebook-id cache
+       - MRR_CHARS_PFX     "mrr-chars-<chatId>"        per-chat character roster
+       - MRR_ACTIVE_CHAR_PFX "mrr-active-char-<chatId>" per-chat active-character pointer
+         (RULING 1, coordinator validation round 1: without these two the
+         design's own verify criterion — "sheet edited in one browser
+         appears in the other after reload" — is unreachable, since a
+         second browser couldn't see the chat's roster or which character
+         is active even with the sheets themselves synced.)
+     LOCAL (explicit per spec):
+       - LS_PROCESSED_MSGS_PFX / LS_PROCESSED_RUNS_PFX  per-browser dedup sets
+       - LS_MUTATION_JOURNAL_PFX "mrr-mutation-journal-<chatId>" — B2-R
+         swipe-revert journal (round 7). Same per-browser-observation class
+         as the two dedup sets above: what this specific browser watched
+         apply, so it alone can invert it. A second device wouldn't have
+         seen the same DOM stream and has no basis to revert anything —
+         syncing this would be actively wrong, not just unnecessary.
+       - LS_LIBRARY         "marinara-rpg-ruleset-library"  bulky, re-importable
+       - LS_RULESET_URL     "marinara-rpg-ruleset-url"
+       - LS_SHEET_SIZE, LS_SPELLBOOK_POS, LS_INTIMACIES_POS  panel size/position
+         geometry (mrrP3CreatePanel's OWN geometry store at ~4338/4354 is a
+         second, already-physical-LS mechanism — untouched either way)
+       - LS_SHEET_COLLAPSED_PFX  panel show/hide chrome — JUDGMENT CALL, not
+         explicitly enumerated in either bucket of the design spec; treated
+         as geometry-adjacent device-local UI chrome. Flagged for review.
+       - LS_SHEET_PFX legacy chat-scoped sheet key ("mrr-sheet-<chatId>-<id>")
+         — distinct prefix from LS_CHARACTER_PFX; write-once migration
+         source only, never the modern home for sheet data.
+       - MRR_MIGRATED_FLAG "mrr-migrated-v1" — must be per-device by
+         definition (the migration gate itself).
+       - MRR_TS_MAP_KEY "mrr-ts-map" — per-device by definition (see the
+         "Corey override" section above for why syncing it would corrupt
+         the merge it exists to drive).
+       - RP_LEGACY_* ("mrrp-*") — read-only, owned by the retired RP
+         extension, never written from here.
+       - "marinara-active-chat-id" — the ENGINE's own key, not ours.
+     "Per-chat ruleset stamps" named in the design spec's allowlist are NOT
+     a localStorage key at all — they live in the engine's own
+     chat.metadata (mrrChatRulesetId, PATCHed via /chats/:id/metadata; see
+     reconcileActiveAgents ~12679). Nothing to migrate/sync here for that
+     bullet; noted for the record. */
+
+var hasServerStorage = !!(marinara && marinara.storage && typeof marinara.storage.get === "function");
+
+var MRR_MIGRATED_FLAG = "mrr-migrated-v1";
+var MRR_TS_MAP_KEY = "mrr-ts-map"; /* local-only sidecar: {<syncedKey>: <epoch ms>} — see "Corey override" header note. NOT a synced key. */
+var MRR_STORAGE_SIZE_GUARD_BYTES = 900000;
+var MRR_FLUSH_DEBOUNCE_MS = 1000;
+var MRR_RETRY_DELAYS_MS = [2000, 8000, 30000];
+var MRR_HYDRATE_TIMEOUT_MS = 8000; /* FIX-8: a hung marinara.storage.get() must not brick init() forever */
+
+var mrrServerCache = null;          /* becomes {} once hydrated. Cache internals choice (round 4): stores ENVELOPES {t, v} per key, mirroring the wire format exactly — hasOwnProperty(key) => "server has an entry" (v === null => tombstone). Chosen over a parallel raw-value/ts-object split because mrrProjectedMergedRecord/mrrBuildPatchFromCache already need to measure the envelope record; with envelopes in the cache those two functions need ZERO shape-specific changes. */
+var mrrHydratePromise = null;       /* memoized hydrateStore() promise */
+var mrrPendingPatchKeys = {};       /* keys mutated since the last flush */
+var mrrFlushTimer = null;
+var mrrQuarantinedKeys = {};        /* keys forced LS-only for the session after repeated patch failure or a size-guard trip */
+
+/* RULING 1 (coordinator, validation round 1): the roster ("mrr-chars-
+   <chatId>") and active-character pointer ("mrr-active-char-<chatId>")
+   are SYNCED, not LOCAL — the design's own verify criterion ("sheet
+   edited in one browser appears in the other after reload") is
+   unreachable if the second browser can't see the chat's roster or which
+   character is active. Small, non-derivable user data, same class as
+   per-chat stamps. Named here (they're inline string literals at their
+   original call sites, not LS_ constants) so the classifier and the
+   migration scan share one spelling. */
+var MRR_CHARS_PFX = "mrr-chars-";
+var MRR_ACTIVE_CHAR_PFX = "mrr-active-char-";
+
+function mrrIsSyncedKey(key) {
+  if (typeof key !== "string") return false;
+  if (key.indexOf(LS_CHARACTER_PFX) === 0) return true;
+  if (key === LS_RULESET) return true;
+  if (key.indexOf(LS_SPELLBOOK_LB_PFX) === 0) return true;
+  if (key.indexOf(MRR_CHARS_PFX) === 0) return true;
+  if (key.indexOf(MRR_ACTIVE_CHAR_PFX) === 0) return true;
+  return false;
+}
+
+/* "Character family" = sheets + roster + active pointer — the set that
+   dominates record size and gets quarantined (rather than left to fail
+   the size guard forever) when a patch batch trips the budget. */
+function mrrIsCharacterFamilyKey(key) {
+  return key.indexOf(LS_CHARACTER_PFX) === 0
+    || key.indexOf(MRR_CHARS_PFX) === 0
+    || key.indexOf(MRR_ACTIVE_CHAR_PFX) === 0;
+}
+
+/* Single choke point for iterating the raw local-storage keyspace by
+   prefix. Keeps the "new direct localStorage call site" budget from
+   growing: the mrrp import scan (originally an inline loop here) and this
+   adapter's migration scan both route through the same two physical
+   length/key(i) reads below instead of each keeping their own. */
+function forEachLocalStorageKey(prefix, cb) {
+  var total = (typeof localStorage !== "undefined" && localStorage.length) || 0;
+  for (var i = 0; i < total; i++) {
+    var key = localStorage.key(i);
+    if (key && key.indexOf(prefix) === 0) cb(key);
+  }
+}
+
+function mrrByteLength(str) {
+  if (typeof TextEncoder !== "undefined") return new TextEncoder().encode(str).length;
+  return unescape(encodeURIComponent(str)).length; /* fallback for hosts without TextEncoder */
+}
+
+/* Quarantined keys (mrrQuarantinedKeys) are skipped when copying the cache
+   baseline — found while implementing FIX-6's retry-without-characters
+   path (round 5): a quarantined key is BY DEFINITION never actually pushed
+   again this session, but it stays in mrrServerCache (the size guard's own
+   doc comment already calls this out as "honest — the server record
+   really does hold them"). Without this exclusion, mrrBuildPatchFromCache's
+   own retry — built specifically to exclude a just-quarantined character
+   and send the small keys anyway — would immediately measure right back
+   over budget, because the projection still counted the very key it just
+   excluded from the patch. Excluding quarantined keys from the BASELINE
+   too (not just from the patch being built) is what actually lets the
+   retry succeed. */
+function mrrProjectedMergedRecord(patch) {
+  var merged = {}, k;
+  for (k in mrrServerCache) {
+    if (!Object.prototype.hasOwnProperty.call(mrrServerCache, k)) continue;
+    if (mrrQuarantinedKeys[k]) continue;
+    merged[k] = mrrServerCache[k];
+  }
+  for (k in patch) { if (Object.prototype.hasOwnProperty.call(patch, k)) merged[k] = patch[k]; }
+  return merged;
+}
+
+/* Defensive read (Corey override, round 4; tightened FIX-11, round 5): a
+   server value only counts as a valid envelope when `t` is a finite number
+   AND `v` is a string or null — lsGet must never hand a caller a non-
+   string, non-null value, so a malformed `v` (a foreign object, array,
+   number, bool) is never allowed through even inside an otherwise
+   envelope-shaped wrapper. Three outcomes: (1) a genuinely valid envelope
+   is returned as-is; (2) a bare raw STRING (no envelope wrapper at all —
+   e.g. whatever comes back raw from marinara.storage.get() before this
+   file has ever written through it, or a hand-edited server record) is
+   treated as {t: 0, v: <that string>} — the string itself is real,
+   recoverable data; (3) anything else at all (a foreign object, a number,
+   a bool, an envelope-shaped object with a non-finite `t` or a non-
+   string/non-null `v`) normalizes to {t: 0, v: null} — treated as
+   genuinely absent, so a synced key with no other footprint falls back to
+   the LS copy same as if the server had no entry for it. In normal
+   operation every in-cache value is already a real envelope (written by
+   lsSet/lsDel/migration/merge below); this defensive path exists for
+   whatever comes back raw from marinara.storage.get() the first time, or
+   if the server record is ever hand-edited/corrupted. */
+function mrrNormalizeEnvelope(raw) {
+  if (raw && typeof raw === "object" && typeof raw.t === "number" && isFinite(raw.t)
+      && (typeof raw.v === "string" || raw.v === null)) {
+    return raw;
+  }
+  if (typeof raw === "string") return { t: 0, v: raw };
+  return { t: 0, v: null };
+}
+
+/* Local-only sidecar map — see MRR_TS_MAP_KEY / "Corey override" header
+   note for why this is never itself a synced key. Always reads/writes via
+   the RAW helpers (never lsGet/lsSet) so it can never accidentally be
+   routed through the synced-key path. */
+function mrrLoadTsMap() {
+  var parsed = safeParse(lsGetRaw(MRR_TS_MAP_KEY));
+  return (parsed && typeof parsed === "object" && !Array.isArray(parsed)) ? parsed : {};
+}
+function mrrStampTsMap(key, ts) {
+  var map = mrrLoadTsMap();
+  map[key] = ts;
+  lsSetRaw(MRR_TS_MAP_KEY, JSON.stringify(map));
+  /* Finding 10 (accepted, not fixed): this is read-modify-write against a
+     single localStorage key shared by every tab. Two tabs stamping two
+     DIFFERENT keys at nearly the same instant can race each other's
+     read-modify-write and one stamp can be lost. Narrow window, mitigated
+     (not closed) by FIX-3's visibilitychange reconcile, which re-derives
+     the cache from whatever the ts-map settles to once a tab regains
+     focus. */
+}
+
+/* Core "does the LS side beat what the cache currently holds" comparison +
+   adopt. Shared by mrrHydrateMerge (full union sweep at hydrate time, marks
+   dirty so a losing server copy gets replaced/re-flushed) and
+   mrrReconcileFromOtherTabs (FIX-3, round 5: visibilitychange->visible
+   sweep, does NOT mark dirty — see its own comment for why). Returns true
+   if it adopted (cache was changed), false otherwise. */
+function mrrAdoptLsIfNewer(key, lsTs, markDirtyOnAdopt) {
+  var hasServerEntry = Object.prototype.hasOwnProperty.call(mrrServerCache, key);
+  var serverTs = hasServerEntry ? mrrNormalizeEnvelope(mrrServerCache[key]).t : null;
+  var adopt = !hasServerEntry || lsTs > serverTs;
+  if (!adopt) return false;
+  var lsRaw = lsGetRaw(key); /* current physical LS value; null if locally deleted */
+  mrrServerCache[key] = { t: lsTs, v: lsRaw }; /* ORIGINAL lsTs, never a fresh now() — preserves true edit time */
+  if (markDirtyOnAdopt) mrrMarkDirty(key);
+  return true;
+}
+
+/* Hydrate merge — replaces the old "server always wins once present"
+   precedence. Runs on EVERY hydrate (unlike mrrRunMigration, which is
+   one-time/flag-gated) — this is what makes crash recovery work every
+   session. See the "Corey override" header section for the full
+   algorithm; this is the implementation of it verbatim. */
+function mrrHydrateMerge() {
+  if (!hasServerStorage) return;
+  var tsMap = mrrLoadTsMap();
+  var candidateKeys = {}, k;
+  for (k in mrrServerCache) { if (Object.prototype.hasOwnProperty.call(mrrServerCache, k)) candidateKeys[k] = true; }
+  for (k in tsMap) { if (Object.prototype.hasOwnProperty.call(tsMap, k)) candidateKeys[k] = true; }
+  Object.keys(candidateKeys).forEach(function (key) {
+    if (!mrrIsSyncedKey(key)) return; /* defensive — both sources should only ever hold synced keys */
+    mrrAdoptLsIfNewer(key, tsMap[key] || 0, true);
+  });
+}
+
+/* FIX-3 (round-5 major — multi-tab stale cache): the in-memory cache never
+   refreshes on its own while physical localStorage (shared across tabs in
+   the same browser) is always current — a second tab could sit forever on
+   whatever it hydrated with at its own page load, even after another tab
+   saved newer data locally. On visibilitychange->visible (registered in
+   watchLifecycleSaves alongside the existing lifecycle listeners), sweep
+   every synced key present in the LS ts-map and adopt it into the cache
+   when the ts-map's timestamp is newer than what the cache currently
+   holds — reusing mrrAdoptLsIfNewer, the exact newest-wins mechanism
+   mrrHydrateMerge already uses, rather than duplicating the comparison.
+   Deliberately narrower than mrrHydrateMerge's full union sweep: only
+   ts-map keys are considered (a key this tab has never touched and that
+   only exists server-side needs no local reconcile — the cache already
+   reflects it from this tab's own hydrate).
+   markDirtyOnAdopt is FALSE here on purpose: the OTHER tab that made this
+   edit already owns pushing it server-side (its own debounced flush is
+   presumably in flight or already landed). If this tab also marked the key
+   dirty and re-pushed, it would race that tab's flush for no benefit — the
+   server patch is an unserialized read-modify-write (three await points,
+   last-writer-wins on the whole row, see COUPLINGS row 1b), so two tabs
+   patching the same key concurrently is a real hazard, not a theoretical
+   one. Adopting into THIS tab's cache (so its own reads/renders see the
+   newer value) is sufficient; re-flushing is the other tab's job. This is
+   also why finding 10 (a narrow ts-map cross-tab lost-update window,
+   documented at mrrStampTsMap) is only mitigated, not fully closed, by
+   this reconcile — it corrects the CACHE, not the race that could still
+   occasionally clobber the ts-map write itself. */
+function mrrReconcileFromOtherTabs() {
+  if (!hasServerStorage || !mrrServerCache) return;
+  var tsMap = mrrLoadTsMap();
+  /* Round-9 fix 4a: adopting a newer LS value into mrrServerCache fixes
+     what lsGet() WOULD return on a fresh read — but state.sheet/
+     state.characters/state.activeCharacterId were already loaded once
+     (at activation or the last character/chat switch) into plain JS
+     objects that don't re-read lsGet() on their own. Without this,
+     another tab's newer edit lands in the cache but the in-memory copy
+     THIS tab is actively rendering/editing stays stale — and the next
+     autosave (saveSheet, on any stepper click) writes that stale
+     in-memory copy straight back over the just-adopted newer value,
+     silently reverting the other tab's edit. Track which keys this
+     sweep actually adopted, then reload the affected in-memory state
+     through the SAME functions activation/switch already uses
+     (loadSheet/loadCharacters/loadActiveCharacterId) and re-render —
+     never a parallel ad-hoc merge of the in-memory object. */
+  var activeSheetKey = state.activeCharacterId ? characterKey(state.activeCharacterId) : null;
+  var rosterKey = state.chatId ? ("mrr-chars-" + state.chatId) : null;
+  var activeCharPtrKey = state.chatId ? ("mrr-active-char-" + state.chatId) : null;
+  var adoptedActiveSheet = false, adoptedRoster = false, adoptedActiveCharPtr = false;
+  Object.keys(tsMap).forEach(function (key) {
+    if (!mrrIsSyncedKey(key)) return;
+    var adopted = mrrAdoptLsIfNewer(key, tsMap[key] || 0, false);
+    if (!adopted) return;
+    if (activeSheetKey && key === activeSheetKey) adoptedActiveSheet = true;
+    if (rosterKey && key === rosterKey) adoptedRoster = true;
+    if (activeCharPtrKey && key === activeCharPtrKey) adoptedActiveCharPtr = true;
+  });
+  if (!adoptedActiveSheet && !adoptedRoster && !adoptedActiveCharPtr) return;
+  if (adoptedActiveCharPtr) {
+    state.activeCharacterId = loadActiveCharacterId(state.chatId, state.activeCharacterId);
+  }
+  if (adoptedRoster) {
+    state.characters = loadCharacters(state.chatId);
+  }
+  if (adoptedActiveSheet || adoptedActiveCharPtr) {
+    /* Re-derive from the (possibly just-updated) activeCharacterId — a
+       reconciled active-char pointer means the sheet we should be
+       showing may have changed entirely, not just its contents. */
+    state.sheet = loadSheet(state.chatId, state.ruleset);
+  }
+  log("mrrReconcileFromOtherTabs: reloaded in-memory state for another tab's newer edit (sheet=" + adoptedActiveSheet + " roster=" + adoptedRoster + " activeChar=" + adoptedActiveCharPtr + ")");
+  if (typeof renderSheet === "function") renderSheet();
+}
+
+/* hydrateStore(): memoized, TOTAL (never rejects). On success, caches the
+   server record in memory and runs the one-time migration. On ANY failure
+   (get() rejects, get() hangs past MRR_HYDRATE_TIMEOUT_MS — FIX-8, round-5
+   major — or a migration key permanently fails — see mrrMigrateOneKey,
+   which swallows its own failures so they never reach here), logs one
+   warning, disables server storage for the session, and resolves so
+   callers can always proceed.
+   FIX-8: a hung marinara.storage.get() (the sandbox never responds, no
+   reject/resolve either way) used to brick init() forever — hydrateStore()
+   is what init.js gates its first render on (see the bottom-of-file
+   hydrateStore().then(...) call), so nothing would ever render. Raced
+   against a timeout built from marinara.setTimeout; whichever settles
+   first wins. A late-arriving real get() response after the timeout has
+   already won is inert BY CONSTRUCTION, not by an extra flag: the
+   `.then`/`.catch` below are chained onto the Promise.race result, never
+   onto marinara.storage.get() itself, so nothing is listening to that
+   original promise once the race has already settled — there is no code
+   path anywhere that re-enables hasServerStorage after this function's
+   one-time .catch has already run (mrrHydratePromise is memoized; this
+   whole function body executes exactly once per session). */
+function hydrateStore() {
+  if (mrrHydratePromise) return mrrHydratePromise;
+  if (!hasServerStorage) {
+    mrrServerCache = {};
+    mrrHydratePromise = Promise.resolve();
+    return mrrHydratePromise;
+  }
+  var timeoutPromise = new Promise(function (resolve, reject) {
+    marinara.setTimeout(function () {
+      reject(new Error("marinara.storage.get() timed out after " + MRR_HYDRATE_TIMEOUT_MS + "ms"));
+    }, MRR_HYDRATE_TIMEOUT_MS);
+  });
+  mrrHydratePromise = Promise.race([marinara.storage.get(), timeoutPromise]).then(function (record) {
+    mrrServerCache = (record && typeof record === "object") ? record : {};
+    mrrHydrateMerge(); /* every session — crash recovery, see header note. Runs BEFORE migration so a key the merge just adopted is correctly no-clobber-skipped by migration rather than reconsidered. */
+    return mrrRunMigration();
+  }).catch(function (e) {
+    warn("marinara.storage hydrate failed — falling back to local storage for this session: " + (e && e.message ? e.message : e));
+    hasServerStorage = false;
+    mrrServerCache = {};
+  });
+  return mrrHydratePromise;
+}
+
+/* One-time migration, gated on BOTH the per-device MRR_MIGRATED_FLAG (never
+   re-run once present) and per-key no-clobber (server already has an entry,
+   including a null tombstone => "present" => skip). Copy-not-move: LS
+   values are retained. Order: characters -> roster/active-char pointers
+   (RULING 1) -> ruleset id (per-chat ruleset stamps are not an LS key, see
+   header note; nothing to do for that sub-bullet) -> prefs (none
+   classified as synced beyond ruleset id — see classification table above;
+   intentionally empty) -> spellbook caches. Per-key patches so it is
+   resumable/idempotent across sessions: a key that fails to patch is
+   logged and left for next session (does not block the other keys this
+   session); the flag is only set once every attempted key this session
+   reported success (patched, no-clobber-skipped, or deliberately
+   size-guard-skipped). Round 4 (Corey override): each migrated value is
+   now written as an envelope stamped with its mrr-ts-map entry when one
+   exists, else 0 — see mrrMigrateOneKey and the header note on why 0 is
+   correct (not a bug) for a never-locally-stamped legacy value. */
+function mrrRunMigration() {
+  if (!hasServerStorage) return Promise.resolve();
+  if (lsGetRaw(MRR_MIGRATED_FLAG)) return Promise.resolve();
+
+  var tasks = [];
+  forEachLocalStorageKey(LS_CHARACTER_PFX, function (key) { tasks.push(key); });
+  forEachLocalStorageKey(MRR_CHARS_PFX, function (key) { tasks.push(key); });
+  forEachLocalStorageKey(MRR_ACTIVE_CHAR_PFX, function (key) { tasks.push(key); });
+  if (lsGetRaw(LS_RULESET) !== null) tasks.push(LS_RULESET);
+  forEachLocalStorageKey(LS_SPELLBOOK_LB_PFX, function (key) { tasks.push(key); });
+
+  return mrrMigrateKeysSequential(tasks, 0, true).then(function (allOk) {
+    if (allOk) lsSetRaw(MRR_MIGRATED_FLAG, "1");
+  });
+}
+
+function mrrMigrateKeysSequential(keys, idx, allOk) {
+  if (idx >= keys.length) return Promise.resolve(allOk);
+  return mrrMigrateOneKey(keys[idx]).then(function (ok) {
+    return mrrMigrateKeysSequential(keys, idx + 1, allOk && ok);
+  });
+}
+
+function mrrMigrateOneKey(key) {
+  /* No-clobber: a tombstone (null) counts as present. */
+  if (Object.prototype.hasOwnProperty.call(mrrServerCache, key)) return Promise.resolve(true);
+  var raw = lsGetRaw(key);
+  if (raw === null || raw === undefined) return Promise.resolve(true);
+  var tsMap = mrrLoadTsMap();
+  var ts = (typeof tsMap[key] === "number") ? tsMap[key] : 0; /* lsTs when present, else 0 (see header note) */
+  var envelope = { t: ts, v: raw };
+  var patch = {}; patch[key] = envelope;
+  if (mrrByteLength(JSON.stringify(mrrProjectedMergedRecord(patch))) > MRR_STORAGE_SIZE_GUARD_BYTES) {
+    warn("migration: skipped \"" + key + "\" — would exceed the server-sync size budget; left local-only.");
+    if (mrrIsCharacterFamilyKey(key)) mrrQuarantinedKeys[key] = true;
+    return Promise.resolve(true); /* deliberate skip — does not block the migrated flag */
+  }
+  return marinara.storage.patch(patch).then(function () {
+    mrrServerCache[key] = envelope;
+    return true;
+  }).catch(function (e) {
+    warn("migration: failed to sync \"" + key + "\" this session (" + (e && e.message ? e.message : e) + ") — will retry next session.");
+    return false;
+  });
+}
+
+function mrrMarkDirty(key) {
+  mrrPendingPatchKeys[key] = true;
+  if (!mrrFlushTimer) {
+    mrrFlushTimer = marinara.setTimeout(function () {
+      mrrFlushTimer = null;
+      mrrFlushPendingPatch();
+    }, MRR_FLUSH_DEBOUNCE_MS);
+  }
+}
+
+/* Forces the debounced background patch immediately — called from
+   flushSave() (visibilitychange/beforeunload/pagehide already route
+   through it) and from the onCleanup disposer. */
+function mrrFlushPendingPatch() {
+  if (mrrFlushTimer) { marinara.clearTimeout(mrrFlushTimer); mrrFlushTimer = null; }
+  if (!hasServerStorage || !mrrServerCache) return;
+  var keys = Object.keys(mrrPendingPatchKeys);
+  if (!keys.length) return;
+  mrrPendingPatchKeys = {};
+  mrrPatchKeys(keys, 0);
+}
+
+function mrrBuildEnvelopePatch(keys) {
+  var patch = {};
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    /* Defensive fallback only — every key reaching here came through
+       mrrMarkDirty, which is only ever called right after the cache was
+       written, so hasOwnProperty should always be true in practice. If it
+       somehow isn't, send a freshly-stamped tombstone envelope rather than
+       a bare null (round 4: the server now always expects {t, v}). */
+    patch[k] = Object.prototype.hasOwnProperty.call(mrrServerCache, k) ? mrrServerCache[k] : { t: Date.now(), v: null };
+  }
+  return patch;
+}
+
+/* Size guard (900,000-byte soft margin under the engine's 1,000,000-byte
+   cap): JSON.stringify the PROJECTED merged record (cached record + this
+   patch) before every send — the cache already holds envelopes (round 4),
+   so this measures the real envelope record with no extra transform.
+   FIX-6 (round-5 major): over budget used to wedge the ENTIRE batch — a
+   single fat character sheet would block small keys (ruleset id,
+   spellbook cache) in the same flush from ever syncing. Now: quarantine
+   only the character-family keys (sheets, roster, active pointer — see
+   mrrIsCharacterFamilyKey) in this batch, re-build EXCLUDING them, and
+   send that narrower patch if it fits. Quarantined character envelopes
+   remaining in mrrServerCache still inflate the projection on the NEXT
+   guard check — that's left as-is (honest: the server record really does
+   hold them until something clears them), it's only THIS batch's small
+   keys that are no longer held hostage. Any key excluded from the send
+   (the quarantined character-family ones) is re-added to
+   mrrPendingPatchKeys — mrrFlushPendingPatch already cleared that set
+   before calling in here, so without this they would be silently dropped
+   forever rather than merely quarantined (quarantine still stops them
+   syncing THIS session via the mrrIsQuarantined filters elsewhere, but the
+   pending-set bookkeeping should not lie about what's still owed). */
+function mrrBuildPatchFromCache(keys) {
+  var patch = mrrBuildEnvelopePatch(keys);
+  if (mrrByteLength(JSON.stringify(mrrProjectedMergedRecord(patch))) <= MRR_STORAGE_SIZE_GUARD_BYTES) {
+    return patch;
+  }
+  var characterKeys = [], smallKeys = [];
+  keys.forEach(function (k) { (mrrIsCharacterFamilyKey(k) ? characterKeys : smallKeys).push(k); });
+  characterKeys.forEach(function (k) {
+    mrrQuarantinedKeys[k] = true;
+    mrrPendingPatchKeys[k] = true; /* excluded from this send, not dropped — see comment above */
+  });
+  mrrPanelWarn("character library exceeds server-sync budget — sheets stored locally");
+  if (!smallKeys.length) return null;
+  var retryPatch = mrrBuildEnvelopePatch(smallKeys);
+  if (mrrByteLength(JSON.stringify(mrrProjectedMergedRecord(retryPatch))) > MRR_STORAGE_SIZE_GUARD_BYTES) {
+    /* Pathological/defensive: still over budget with zero character-family
+       keys in the batch. Bail entirely rather than send a truncated,
+       silently-wrong patch; keep everything queued for a future retry. */
+    smallKeys.forEach(function (k) { mrrPendingPatchKeys[k] = true; });
+    return null;
+  }
+  return retryPatch;
+}
+
+/* Backoff-retried background patch for a batch of dirty keys. On
+   exhaustion (after MRR_RETRY_DELAYS_MS run out): a single-key batch is
+   quarantined directly; a multi-key batch is split so each key gets its
+   own independent retry-then-quarantine cycle (isolates the offender
+   instead of quarantining innocent keys alongside it). */
+function mrrPatchKeys(keys, attempt) {
+  keys = keys.filter(function (k) { return !mrrQuarantinedKeys[k]; });
+  if (!keys.length) return;
+  var patch = mrrBuildPatchFromCache(keys);
+  if (!patch) return; /* size guard already handled/warned */
+  marinara.storage.patch(patch).catch(function () {
+    if (attempt < MRR_RETRY_DELAYS_MS.length) {
+      marinara.setTimeout(function () { mrrPatchKeys(keys, attempt + 1); }, MRR_RETRY_DELAYS_MS[attempt]);
+      return;
+    }
+    if (keys.length > 1) {
+      keys.forEach(function (k) { mrrPatchOneKey(k, 0); });
+    } else {
+      mrrQuarantinedKeys[keys[0]] = true;
+      mrrPanelWarn("storage sync failed repeatedly for \"" + keys[0] + "\" — quarantined to local storage for this session");
+    }
+  });
+}
+
+function mrrPatchOneKey(key, attempt) {
+  if (mrrQuarantinedKeys[key]) return;
+  var patch = mrrBuildPatchFromCache([key]);
+  if (!patch) return;
+  marinara.storage.patch(patch).catch(function () {
+    if (attempt < MRR_RETRY_DELAYS_MS.length) {
+      marinara.setTimeout(function () { mrrPatchOneKey(key, attempt + 1); }, MRR_RETRY_DELAYS_MS[attempt]);
+    } else {
+      mrrQuarantinedKeys[key] = true;
+      mrrPanelWarn("storage sync failed repeatedly for \"" + key + "\" — quarantined to local storage for this session");
+    }
+  });
+}
+
+/* Fire-and-forget best-effort flush for the onCleanup disposer — the page
+   is unloading, so no retry/backoff, just one attempt. */
+function mrrBestEffortFlushOnCleanup() {
+  if (!hasServerStorage || !mrrServerCache) return;
+  var keys = Object.keys(mrrPendingPatchKeys).filter(function (k) { return !mrrQuarantinedKeys[k]; }); /* FIX-14: same filter mrrPatchKeys uses — don't attempt a doomed send for an already-quarantined key on the way out */
+  if (!keys.length) return;
+  mrrPendingPatchKeys = {};
+  var patch = mrrBuildPatchFromCache(keys);
+  if (patch) { try { marinara.storage.patch(patch); } catch (e) {} }
+}
+
+/* RULING 2 (coordinator, validation round 1): a visible degradation-warning
+   strip, not console-only. No pre-existing persistent "MRR panel status
+   area" was found anywhere in this codebase (the runs-poller's own
+   degradation path ~13987-area also only ever called warn(); the only
+   visible-message primitives were dialog-scoped .mrr-msg/setMsg(),
+   requiring an open dialog). Built here instead:
+     - a lazily-created div.mrr-warn-strip, mounted at the TOP of the
+       extension's real main sheet panel content area. NOTE: the ruling's
+       phrasing ("the panel root mrrP3CreatePanel creates") pointed at the
+       wrong symbol — mrrP3CreatePanel (~4676) builds the three AUXILIARY
+       floating flyouts (Intimacies/Items/Spellbook), never the main
+       sheet. The actual main sheet content root is state.mountEl, built
+       exactly once per render inside mrrP3RenderSheet (~4879, the sole
+       place that creates it — renderSheet ~6833 unconditionally
+       delegates to it). Hooked there, right after state.mountEl exists
+       and before any other content is added, so a fresh strip always
+       lands as the first child — "hook the panel-creation path once,
+       don't poll" satisfied against the correct symbol. See final report.
+     - messages queue (mrrWarnMessages) so a warning fired before the
+       sheet has ever rendered (e.g. during migration inside
+       hydrateStore(), which runs before init()) is not lost — it shows on
+       the next render automatically.
+     - live update: mrrPanelWarn also pushes straight into an
+       already-mounted strip (via mrrRenderWarnStrip) so a background
+       failure mid-session doesn't need to wait for an unrelated full
+       sheet re-render to become visible.
+     - identical-consecutive dedupe, most-recent-message + "(+N more)"
+       display, session-local × dismiss that a NEW distinct warning
+       un-dismisses.
+     - created via marinara.addElement (the file's own element-creation
+       idiom, same as every other panel element) so it lives inside
+       state.mountEl's subtree and is torn down/recreated with it exactly
+       like the rest of the sheet — no separate cleanup bookkeeping
+       needed. Styling reuses the existing --mrr-warning design token
+       (already used at ~4025 as `errEl.style.color`) with the file's own
+       oklch-alpha "soft" idiom (see --mrr-accent-soft in the embedded
+       CSS) rather than inventing a new color or a color-mix() technique
+       not used anywhere else in this file. No embed-css/CSS pipeline
+       touched — inline styles only. */
+var mrrWarnMessages = [];      /* distinct-consecutive queue, most recent last */
+var mrrWarnDismissed = false;  /* session-local; a new distinct message clears this */
+var mrrWarnStripEl = null;     /* the currently-mounted strip node, if any */
+
+function mrrRenderWarnStrip() {
+  if (mrrWarnStripEl && !mrrWarnStripEl.isConnected) mrrWarnStripEl = null; /* orphaned by a prior full re-render */
+
+  if (!mrrWarnMessages.length || mrrWarnDismissed) {
+    if (mrrWarnStripEl && mrrWarnStripEl.parentNode) mrrWarnStripEl.parentNode.removeChild(mrrWarnStripEl);
+    mrrWarnStripEl = null;
+    return;
+  }
+  if (!state.mountEl) return; /* nothing to mount into yet — stays queued for the next render */
+
+  if (!mrrWarnStripEl || !mrrWarnStripEl.parentNode) {
+    var before = state.mountEl.firstChild; /* captured BEFORE the append below so the strip can be moved to the top */
+    mrrWarnStripEl = marinara.addElement(state.mountEl, "div", { "class": "mrr-warn-strip" });
+    if (!mrrWarnStripEl) return;
+    if (before) state.mountEl.insertBefore(mrrWarnStripEl, before);
+    mrrWarnStripEl.style.display = "flex";
+    mrrWarnStripEl.style.alignItems = "center";
+    mrrWarnStripEl.style.gap = "8px";
+    mrrWarnStripEl.style.width = "100%";
+    mrrWarnStripEl.style.boxSizing = "border-box";
+    mrrWarnStripEl.style.padding = "6px 10px";
+    mrrWarnStripEl.style.marginBottom = "6px";
+    mrrWarnStripEl.style.fontSize = "12px";
+    mrrWarnStripEl.style.lineHeight = "1.3";
+    mrrWarnStripEl.style.background = "oklch(0.84 0.14 85 / 0.16)";  /* --mrr-warning L/C/H, file's own soft-alpha idiom */
+    mrrWarnStripEl.style.border = "1px solid oklch(0.84 0.14 85 / 0.4)";
+    mrrWarnStripEl.style.borderRadius = "6px";
+    mrrWarnStripEl.style.color = "var(--mrr-warning)";
+
+    var textEl = marinara.addElement(mrrWarnStripEl, "span", { "class": "mrr-warn-strip__text" });
+    if (textEl) {
+      textEl.style.flex = "1 1 auto";
+      textEl.style.minWidth = "0";
+      textEl.style.overflowWrap = "break-word";
+    }
+
+    var dismissBtn = marinara.addElement(mrrWarnStripEl, "button", {
+      "class": "mrr-warn-strip__dismiss",
+      type: "button",
+      textContent: "×",
+      title: "Dismiss"
+    });
+    if (dismissBtn) {
+      dismissBtn.style.flex = "0 0 auto";
+      dismissBtn.style.background = "transparent";
+      dismissBtn.style.border = "none";
+      dismissBtn.style.cursor = "pointer";
+      dismissBtn.style.fontSize = "14px";
+      dismissBtn.style.lineHeight = "1";
+      dismissBtn.style.padding = "0 2px";
+      dismissBtn.style.color = "inherit";
+      marinara.on(dismissBtn, "click", function () {
+        mrrWarnDismissed = true;
+        mrrRenderWarnStrip();
+      });
+    }
+  }
+
+  var textNode = mrrWarnStripEl.querySelector(".mrr-warn-strip__text");
+  if (textNode) {
+    var latest = mrrWarnMessages[mrrWarnMessages.length - 1];
+    var extra = mrrWarnMessages.length - 1;
+    textNode.textContent = latest + (extra > 0 ? " (+" + extra + " more)" : "");
+  }
+}
+
+function mrrPanelWarn(msg) {
+  warn(msg);
+  if (mrrWarnMessages[mrrWarnMessages.length - 1] !== msg) mrrWarnMessages.push(msg); /* identical-consecutive dedupe */
+  mrrWarnDismissed = false; /* a new distinct warning re-shows a dismissed strip */
+  mrrRenderWarnStrip();
+}
+
+function mrrIsQuarantined(key) { return !!mrrQuarantinedKeys[key]; }
+
+/* Public wrappers — EVERY existing call site (~66) keeps calling these
+   three names with the same signatures; server-storage awareness is
+   entirely internal. Round 4 (Corey override — SUPERSEDES the original
+   "deterministic, no timestamps" precedence): reads are served straight
+   from the cache, whose contents are decided once, at hydrate time, by
+   mrrHydrateMerge's newest-wins timestamp comparison — lsGet itself no
+   longer picks a winner, it just unwraps whichever envelope the merge
+   already settled on. Writes stamp both the ts-map (mrrStampTsMap, via
+   RAW localStorage — never a synced key) and the in-memory envelope
+   (cache stores {t, v} — see the cache-internals note above mrrServerCache)
+   with the SAME now() value, so a value and its timestamp can never
+   disagree. */
+function lsGet(key) {
+  if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key) && !mrrIsQuarantined(key)) {
+    if (Object.prototype.hasOwnProperty.call(mrrServerCache, key)) {
+      var v = mrrNormalizeEnvelope(mrrServerCache[key]).v;
+      return (v === null || v === undefined) ? null : v;
+    }
+  }
+  return lsGetRaw(key);
+}
+
+/* Round-9 fix 4b: warn once per key per session on a failed LS write —
+   repeated stepper clicks against a full quota would otherwise spam the
+   console once per click. */
+var mrrLsWriteFailWarned = Object.create(null);
+
+function lsSet(key, val) {
+  var ok = lsSetRaw(key, val); /* LS remains a current local mirror this release — never removed; always the raw string, envelopes are a server/cache-only concept */
+  /* Round-10 nit fix: namespaced by operation — a lsSet failure warning
+     for this key used to also suppress a LATER, distinct lsDel failure
+     for the SAME key (and vice versa), since both shared one un-namespaced
+     mrrLsWriteFailWarned[key] flag. */
+  if (!ok && !mrrLsWriteFailWarned["set:" + key]) {
+    mrrLsWriteFailWarned["set:" + key] = true;
+    warn("lsSet: localStorage write failed for '" + key + "' (quota exceeded or private mode?) — ts-map NOT stamped for this write");
+  }
+  if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key)) {
+    var ts = Date.now();
+    /* FIX-5 (round-5 major) + round-9 fix 4b: the ts-map stamp happens
+       REGARDLESS of quarantine (same reasoning as before — a quarantined
+       edit's LOCAL timestamp must still track its own most recent write
+       so it isn't discarded as stale at the next merge) BUT ONLY when
+       the LS write actually landed (`ok`). Stamping unconditionally, as
+       this used to, meant a quota-exceeded/private-mode write failure —
+       where the OLD value is still what's physically in localStorage —
+       got a FRESH timestamp anyway, making the stale local copy look
+       newer than the server's at the next hydrate and win the merge:
+       exactly the "quota failure becomes stale-wins data loss" bug this
+       fix closes. The server-side push (cache write + markDirty) below
+       still runs on `ok===false` — that half is independent of whether
+       the LOCAL mirror wrote successfully, and still deserves a shot at
+       reaching the server with the correct, current value. */
+    if (ok) mrrStampTsMap(key, ts);
+    if (!mrrIsQuarantined(key)) {
+      mrrServerCache[key] = { t: ts, v: val };
+      mrrMarkDirty(key);
+    }
+  }
+  return ok;
+}
+
+function lsDel(key) {
+  var ok = lsDelRaw(key);
+  if (!ok && !mrrLsWriteFailWarned["del:" + key]) {
+    mrrLsWriteFailWarned["del:" + key] = true;
+    warn("lsDel: localStorage removeItem failed for '" + key + "' — ts-map NOT stamped for this delete");
+  }
+  if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key)) {
+    var ts = Date.now();
+    if (ok) mrrStampTsMap(key, ts); /* round-9 fix 4b — see lsSet's comment; same reasoning applies to deletes */
+    if (!mrrIsQuarantined(key)) {
+      mrrServerCache[key] = { t: ts, v: null }; /* tombstone, now timestamped — a strictly-newer LS write can still recreate it later (see mrrHydrateMerge) */
+      mrrMarkDirty(key);
+    }
+  }
+}
+/* ═══════════════════════════════════════════════════════════════════════ */
 
 function validateRuleset(rs) {
   if (!rs || typeof rs !== "object") return "ruleset is not an object";
@@ -1031,11 +1832,16 @@ function updateSavedIndicator() {
 /* Defensive: if state.sheet has data, persist before any switch. The
    stepper handlers already save on each click, but this catches any path
    that might mutate state.sheet without going through a stepper (e.g.
-   bulk operations, future features). Cheap insurance. */
+   bulk operations, future features). Cheap insurance.
+   B1: this is also the existing chokepoint wired to visibilitychange
+   (hidden), beforeunload, and pagehide (see watchLifecycleSaves ~14211+
+   its own line count), so forcing the debounced background storage patch
+   here covers all three flush triggers for free — no new listeners. */
 function flushSave() {
   if (state.chatId && state.activeCharacterId && state.sheet) {
     saveSheet(state.chatId, state.sheet);
   }
+  if (hasServerStorage) mrrFlushPendingPatch();
 }
 
 /* Generate a chat-independent character id. Used both for new characters
@@ -1262,22 +2068,21 @@ function importFromRpExtension() {
 
   /* Collect names from any mrrp-chars-<chatId> rosters and sheets from
      mrrp-character-<id> keys. Scan the whole keyspace — we don't know the
-     RP extension's chat ids. */
+     RP extension's chat ids. B1: routed through the shared
+     forEachLocalStorageKey scanner (see the adapter block ~line 273) so
+     this READ side stays on physical localStorage exactly as before,
+     without adding a second raw scan of its own. */
   var names = Object.create(null);
   var sheets = Object.create(null);
-  var total = (typeof localStorage !== "undefined" && localStorage.length) || 0;
-  for (var i = 0; i < total; i++) {
-    var key = localStorage.key(i);
-    if (!key) continue;
-    if (key.indexOf(RP_LEGACY_CHARS_PFX) === 0) {
-      var roster = safeParse(lsGet(key));
-      if (Array.isArray(roster)) roster.forEach(function (c) { if (c && c.id) names[c.id] = c.name || names[c.id]; });
-    } else if (key.indexOf(RP_LEGACY_CHARACTER_PFX) === 0) {
-      var id = key.slice(RP_LEGACY_CHARACTER_PFX.length);
-      var sheet = safeParse(lsGet(key));
-      if (id && sheet) sheets[id] = sheet;
-    }
-  }
+  forEachLocalStorageKey(RP_LEGACY_CHARS_PFX, function (key) {
+    var roster = safeParse(lsGet(key));
+    if (Array.isArray(roster)) roster.forEach(function (c) { if (c && c.id) names[c.id] = c.name || names[c.id]; });
+  });
+  forEachLocalStorageKey(RP_LEGACY_CHARACTER_PFX, function (key) {
+    var id = key.slice(RP_LEGACY_CHARACTER_PFX.length);
+    var sheet = safeParse(lsGet(key));
+    if (id && sheet) sheets[id] = sheet;
+  });
 
   var ids = Object.keys(sheets);
   if (!ids.length) { window.alert("No RP-mode (mrrp-) character sheets found in this browser's storage."); return false; }
@@ -3012,6 +3817,17 @@ function safeEvalArithmetic(s) {
    statContext) and arithmetic with + - * / ( ). Anything else is rejected by
    the whitelist regex; the actual math goes through safeEvalArithmetic so
    we don't trip the page's CSP 'unsafe-eval' guard. */
+/* Round-9 fix 5g (verification, no code change needed here): audited
+   every evalFormula call site in this file (~30) — all already
+   distinguish `typeof v === "number"` (or an explicit `v != null`
+   check) from a falsy-but-legitimate `0` result; none use a bare
+   `v || fallback` that would wrongly treat a genuine 0 as failure.
+   evalFormula itself already returns `null` (never `0`) on every
+   failure path below: empty/missing formula, a substituted string that
+   fails the arithmetic-only whitelist, or a NaN/non-finite eval
+   result — a caller can always tell "evaluated to zero" apart from
+   "didn't evaluate" by checking typeof/isFinite, which every caller
+   here does. */
 function evalFormula(formula, ctx) {
   if (!formula) return null;
   var subbed = String(formula).replace(/\{([^}]+)\}/g, function (_, key) {
@@ -4551,6 +5367,12 @@ function mrrP3RenderSheet() {
   }
   if (!state.mountEl) return;
 
+  /* B1/RULING 2: state.mountEl was just (re)created — it is the ONLY
+     place the real main sheet panel content root comes into existence.
+     Re-mount the warning strip (if any queued/undismissed warnings exist)
+     as the very first child, before anything else below adds content. */
+  mrrRenderWarnStrip();
+
   /* Phase 5 step 5.5 — apply per-character density preset on render. CSS
      in RPG-Extension-GM-Mode.css branches the --mrr-density-* variables
      off this attribute. Default cozy matches prototype TWEAK_DEFAULTS. */
@@ -5506,7 +6328,7 @@ function mrrP3RenderDerivedPoolCard(parent, d) {
      / under modes use their own roll widgets and don't surface a per-
      derived roll here. */
   if (typeof d.rollFormula === "string" && d.rollFormula
-      && state.ruleset.resolution && derivedRollSupported(state.ruleset.resolution.mode)) {
+      && state.ruleset.resolution && derivedRollSupported(mrrResolveModeId(d.resolutionId).mode)) {
     var rollBtn = marinara.addElement(card, "button", {
       "class": "mrr-derived-pool-card__roll",
       textContent: "roll"
@@ -7158,7 +7980,12 @@ function renderSpecialtyRow(parent, skill, spec, idx) {
    to whatever the GM called. */
 function quickRollForSave(save) {
   if (!state.ruleset) return;
-  var mode = state.ruleset.resolution.mode;
+  /* B18: saves are never resolutionId-routable (schema scopes
+     resolutionId to skills[]/derivedStats[] only) — always force
+     primary and rebuild the widget if it was last built for some
+     other additionalMode, so the SINGLE/UNDER/STANCE prefill below
+     never lands on stale DOM from a prior skill roll. */
+  var mode = mrrPrepareDiceForResolutionId(null);
   if (mode !== MODES.SINGLE && mode !== MODES.UNDER && mode !== MODES.STANCE) return;
   /* Pre-set advantage / disadvantage from active conditions. (SINGLE only —
      UNDER and STANCE have no advantage/disadvantage concept by default.) */
@@ -7238,7 +8065,10 @@ function derivedRollSupported(mode) {
    stat context to produce the bonus, then opens the dice widget. */
 function quickRollForDerived(derived) {
   if (!state.ruleset) return;
-  var mode = state.ruleset.resolution.mode;
+  /* B18: resolve derived.resolutionId (OSE binds Open Doors/Listen/
+     Surprise to "door-checks") before dispatch, and rebuild the widget
+     if it was last built for a different mechanic. */
+  var mode = mrrPrepareDiceForResolutionId(derived && derived.resolutionId);
   if (mode !== MODES.SINGLE && mode !== MODES.UNDER && mode !== MODES.STANCE && mode !== MODES.POOL) return;
   if (!derived || typeof derived.rollFormula !== "string" || !derived.rollFormula) return;
   if (mode === MODES.POOL) {
@@ -7288,6 +8118,19 @@ function quickRollForDerived(derived) {
       var dv = evalFormula(derived.formula, ctx);
       if (typeof dv === "number" && isFinite(dv)) underTarget = Math.floor(dv);
     }
+    /* B18: derived.formula is often prose (a GM hint), not an arithmetic
+       expression — OSE's Open Doors/Listen/Surprise read "X-in-6, roll
+       1d6, success on a result <= this value...". evalFormula returns
+       null on non-arithmetic text (it fails the digits/operators-only
+       regex), leaving underTarget at its 0 default. Fall back to the
+       stat's own stored/autocalc'd value — the number actually shown on
+       the sheet — instead of silently prefilling a target of 0 for any
+       derivedStat whose formula field is descriptive text. No-op for
+       CoC/GURPS-style derivedStats whose formula DOES evaluate —
+       underTarget is already the right nonzero number by this point. */
+    if (underTarget === 0 && state.sheet.derived && typeof state.sheet.derived[derived.name] === "number") {
+      underTarget = state.sheet.derived[derived.name];
+    }
     var dBonuses = equippedBonuses(derived.name);
     showDice(true);
     state.diceContext = { derivedName: derived.name, base: { target: underTarget, bonus: dBonuses.value } };
@@ -7313,6 +8156,11 @@ function quickRollForDerived(derived) {
    and let the player edit. */
 function quickRollAttack(item) {
   if (!state.ruleset || state.ruleset.resolution.mode !== MODES.SINGLE) return;
+  /* B18: weapon attacks are never resolutionId-routable — force primary
+     and rebuild the widget if it was last built for some other
+     additionalMode, so the mod/prof/equip/dc inputs setDiceInput below
+     targets always exist. */
+  mrrPrepareDiceForResolutionId(null);
   /* Conditions imposing disadvantage on attack rolls auto-arm the widget. */
   var condMode = conditionRollMode("attack");
   if (condMode !== "normal") state.diceAdvantage = condMode;
@@ -7469,7 +8317,10 @@ function rollWeaponDamage(item) {
 }
 
 function quickRollForSkill(skill) {
-  var mode = state.ruleset.resolution.mode;
+  /* B18: resolve skill.resolutionId (OSE binds its six Thief skills to
+     "thief-skills") before dispatch, and rebuild the widget if it was
+     last built for a different mechanic. */
+  var mode = mrrPrepareDiceForResolutionId(skill && skill.resolutionId);
   /* Skill checks pick up disadvantage from Poisoned, Frightened, etc. */
   if (mode === MODES.SINGLE) {
     var condMode = conditionRollMode("skill");
@@ -7504,7 +8355,13 @@ function quickRollForSkill(skill) {
        never written in the autocalc path. */
     var ctxS = statContext();
     var modVal;
-    var skillFormula = state.ruleset.resolution && state.ruleset.resolution.skillBonusFormula;
+    /* B18: reads mrrActiveResolutionConfig() so a SINGLE-mode
+       additionalMode's own skillBonusFormula applies here instead of
+       the ruleset's primary resolution block; identical to the old
+       direct state.ruleset.resolution read when no additionalMode is
+       selected (the OSE pilot never exercises this branch — its two
+       additionalModes are both roll-under). */
+    var skillFormula = mrrActiveResolutionConfig().skillBonusFormula;
     if (skillFormula && skill.linkedAttribute) {
       var mk = skill.linkedAttribute + "_mod";
       modVal = (typeof ctxS[mk] === "number") ? ctxS[mk] : 0;
@@ -7861,7 +8718,7 @@ function renderValue(parent, derived) {
        Skipped on derived without a rollFormula because there's nothing
        to roll — Hit Points, Armor Class, Speed are values, not checks. */
     if (typeof derived.rollFormula === "string" && derived.rollFormula
-        && state.ruleset.resolution && derivedRollSupported(state.ruleset.resolution.mode)) {
+        && state.ruleset.resolution && derivedRollSupported(mrrResolveModeId(derived.resolutionId).mode)) {
       var rollD = marinara.addElement(row, "button", { textContent: "roll", "class": "mrr-row__roll" });
       if (rollD) marinara.on(rollD, "click", function (e) {
         if (e && typeof e.stopPropagation === "function") e.stopPropagation();
@@ -10577,6 +11434,127 @@ function deleteAbilityLorebookEntry(ability) {
 
 /* ─────  dice widget  ───── */
 
+/* B18 — multi-mechanic dice. `state.diceActiveModeId` names the currently
+   selected mechanic: "primary" (or unset) means the ruleset's own
+   `resolution.mode`; any other value is the `id` of a
+   `resolution.additionalModes[]` entry. `state.diceBuiltModeId` records
+   which mode the CURRENTLY MOUNTED `state.diceEl` was built for, so a
+   mode switch can detect staleness and rebuild instead of silently
+   reusing DOM for the wrong mechanic (a roll-under widget has no `mod`
+   input; setDiceInput would just no-op against it).
+
+   The dice never leave deterministic code: nothing here executes agent-
+   supplied logic. An additionalMode is only ever selected by (a) the
+   player via the mechanic-selector <select> in the widget, or (b) a
+   skill/derivedStat's own resolutionId when its roll button is clicked.
+   The agent only ever REQUESTS a mechanic by name (via the routing table
+   taught in buildSheetForPrompt/buildFieldReferenceContent) and reads the
+   resulting self-describing `[dice: mode=<id> ...]` tag. */
+
+/* Resolves the currently active resolution config. Returns the top-level
+   `resolution` object UNCHANGED (same reference) whenever no
+   additionalMode is selected — every mode-specific reader downstream
+   (res.diceFormula, res.skillFormula, etc.) behaves byte-identically to
+   pre-B18 code for primary-mode rolls and rulesets with no
+   additionalModes at all (P1 zero-regression). When an additionalMode
+   IS selected, synthesizes a plain object shaped exactly like
+   `resolution` for that mode: `mode` from the additionalMode entry, plus
+   every field in its `config` block (config carries the same per-mode
+   field set `resolution` uses for that mode, minus the `mode`
+   discriminator — see the schema's $defs comment). */
+function mrrActiveResolutionConfig() {
+  var ruleset = state.ruleset;
+  if (!ruleset || !ruleset.resolution) return {};
+  var amId = state.diceActiveModeId;
+  if (!amId || amId === "primary") return ruleset.resolution;
+  var modes = Array.isArray(ruleset.resolution.additionalModes) ? ruleset.resolution.additionalModes : [];
+  for (var i = 0; i < modes.length; i++) {
+    var am = modes[i];
+    if (am && am.id === amId) {
+      var cfg = am.config || {};
+      var merged = { mode: am.mode };
+      for (var k in cfg) {
+        if (Object.prototype.hasOwnProperty.call(cfg, k)) merged[k] = cfg[k];
+      }
+      return merged;
+    }
+  }
+  /* Unknown id (stale state, or a resolutionId the schema/validator
+     should have already caught) — fall back to primary rather than
+     silently rendering nothing. */
+  return ruleset.resolution;
+}
+
+/* Resolves a skill/derivedStat's `resolutionId` (or the forced-primary
+   case for saves/attacks, which always pass null/undefined) to
+   {id, mode}. "primary", omitted, and unrecognized ids all resolve to
+   primary — an authoring error here is a silently-safe no-op, never a
+   corrupted roll. */
+function mrrResolveModeId(resolutionId) {
+  var primaryMode = state.ruleset && state.ruleset.resolution && state.ruleset.resolution.mode;
+  if (!resolutionId || resolutionId === "primary") {
+    return { id: "primary", mode: primaryMode };
+  }
+  var modes = (state.ruleset && state.ruleset.resolution && Array.isArray(state.ruleset.resolution.additionalModes))
+    ? state.ruleset.resolution.additionalModes
+    : [];
+  for (var i = 0; i < modes.length; i++) {
+    if (modes[i] && modes[i].id === resolutionId) {
+      return { id: modes[i].id, mode: modes[i].mode };
+    }
+  }
+  return { id: "primary", mode: primaryMode };
+}
+
+/* Points state.diceActiveModeId at the resolved mechanic and forces a
+   widget rebuild when the currently-mounted widget was built for a
+   DIFFERENT mode. Called from every quickRollFor-family entry
+   point BEFORE showDice(true) so the widget that opens always matches
+   the mechanic about to be prefilled. Passing a falsy resolutionId
+   always resolves to primary (the save/attack call sites use this —
+   resolutionId routing is scoped to skills[]/derivedStats[] only). */
+function mrrPrepareDiceForResolutionId(resolutionId) {
+  var resolved = mrrResolveModeId(resolutionId);
+  state.diceActiveModeId = resolved.id;
+  if (state.diceEl && state.diceBuiltModeId !== resolved.id) {
+    if (state.diceEl.parentNode) state.diceEl.parentNode.removeChild(state.diceEl);
+    state.diceEl = null;
+  }
+  return resolved.mode;
+}
+
+/* Mechanic selector — rendered inside buildDice() only when the active
+   ruleset declares resolution.additionalModes. Idiom-matched to the
+   existing stance-toggle pattern's use of a plain labeled row (no
+   existing <select>-as-mode-picker idiom exists in the dice widget
+   itself; the many other <select> elements in the sheet use the
+   "mrr-*-select"/"mrr-item-form__select" class family, matched here as
+   "mrr-dice__mechanic-select" for visual consistency). Switching
+   mechanics nukes and rebuilds the widget so the correct per-mode
+   builder renders. */
+function buildMechanicSelector(parent, additionalModes) {
+  var row = marinara.addElement(parent, "div", { "class": "mrr-dice__mechanic-row" });
+  if (!row) return;
+  marinara.addElement(row, "label", { textContent: "Mechanic" });
+  var sel = marinara.addElement(row, "select", { "class": "mrr-dice__mechanic-select" });
+  if (!sel) return;
+  var current = state.diceActiveModeId || "primary";
+  var primaryOpt = marinara.addElement(sel, "option", { textContent: "Primary", value: "primary" });
+  if (primaryOpt && current === "primary") primaryOpt.selected = true;
+  additionalModes.forEach(function (am) {
+    if (!am || typeof am.id !== "string") return;
+    var opt = marinara.addElement(sel, "option", { textContent: am.label || am.id, value: am.id });
+    if (opt && current === am.id) opt.selected = true;
+  });
+  marinara.on(sel, "change", function () {
+    var newId = sel.value || "primary";
+    state.diceActiveModeId = newId;
+    if (state.diceEl && state.diceEl.parentNode) state.diceEl.parentNode.removeChild(state.diceEl);
+    state.diceEl = null;
+    showDice(true);
+  });
+}
+
 function buildDice() {
   if (state.diceEl) return state.diceEl;
   /* D8: a ruleset missing its `resolution` block would TypeError on
@@ -10587,6 +11565,10 @@ function buildDice() {
   }
   state.diceEl = marinara.addElement(document.body, "div", { "class": "mrr-dice" });
   if (!state.diceEl) return null;
+  /* B18 — stamp which mechanic this DOM was built for. Untouched
+     (always "primary") on rulesets with no additionalModes, since
+     nothing ever sets state.diceActiveModeId to anything else. */
+  state.diceBuiltModeId = state.diceActiveModeId || "primary";
 
   var header = marinara.addElement(state.diceEl, "div", { "class": "mrr-dice__header" });
   if (header) {
@@ -10596,7 +11578,16 @@ function buildDice() {
     makeDraggable(state.diceEl, header, "mrr-dice-pos");
   }
 
-  var mode = state.ruleset.resolution.mode;
+  /* B18 — mechanic selector, only when the ruleset declares
+     additionalModes. Absent entirely for the other 15 shipped
+     rulesets: amList is empty, buildMechanicSelector never runs, and
+     mrrActiveResolutionConfig() returns state.ruleset.resolution
+     unchanged, so `mode` below is byte-identical to pre-B18 code. */
+  var amList = Array.isArray(state.ruleset.resolution.additionalModes) ? state.ruleset.resolution.additionalModes : [];
+  if (amList.length) buildMechanicSelector(state.diceEl, amList);
+
+  var resCfg = mrrActiveResolutionConfig();
+  var mode = resCfg.mode;
   if      (mode === MODES.POOL)   buildPoolWidget();
   else if (mode === MODES.SINGLE) buildSingleRollWidget();
   else if (mode === MODES.SUM)    buildSumWidget();
@@ -10673,7 +11664,7 @@ function buildPoolWidget() {
      "Difficulty N" role and is editable per roll. JS input IDs are
      unchanged (`diff` stays for successes-required; `target` is the new
      per-die face threshold) so rollDicePool back-compat is preserved. */
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
   var defaultTarget = (typeof res.target === "number") ? res.target : 7;
   diceRow(d, "Pool",        "pool",   "5");
   diceRow(d, "Target Face", "target", String(defaultTarget));
@@ -10691,7 +11682,7 @@ function buildPoolWidget() {
    The actual rolling logic + chat-tag emission live in rollDicePoolSum. */
 function buildSumWidget() {
   var d = state.diceEl;
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
   var difficultyHint = (typeof res.difficultyHint === "number") ? res.difficultyHint : 15;
   var wd = res.wildDie || null;
   diceRow(d, "Pool (dice)", "pool",  "3");
@@ -10709,8 +11700,21 @@ function buildSumWidget() {
 }
 
 function buildD100Widget() {
-  var d = state.diceEl;
-  diceRow(d, "Skill %", "skill", "50");
+  var d   = state.diceEl;
+  var res = mrrActiveResolutionConfig(); /* B18 */
+  var oe  = res.openEnded || null;
+  if (res.direction === "high") {
+    diceRow(d, "Bonus",      "bonus", "0");   // skill + stat + item, player-entered
+    diceRow(d, "Difficulty", "diff",  "0");   // ladder modifier: +30 .. -70
+  } else {
+    diceRow(d, "Skill %",    "skill", "50");  // unchanged legacy path
+  }
+  if (oe) {
+    marinara.addElement(d, "div", { "class": "mrr-dice__hint", textContent:
+      "Open-ended: " + (oe.high ? "high ≥" + (oe.high.threshold || 96) + " adds" : "") +
+      (oe.low ? ", low ≤" + (oe.low.threshold || 5) + " subtracts" : "") +
+      ". Unmodified first roll only. Narrator adjudicates the result table." });
+  }
   diceFooter(d, "Roll d100", rollD100);
 }
 
@@ -10743,7 +11747,13 @@ function buildFateWidget() {
      criticalFailureFormula   — total >= eval(formula) => fumble (GURPS: margin <= -10) */
 function buildRollUnderWidget() {
   var d = state.diceEl;
-  var formula = (state.ruleset.resolution && state.ruleset.resolution.diceFormula) || "1d100";
+  /* B18: reads mrrActiveResolutionConfig() so an additionalModes
+     roll-under mechanic's own diceFormula (OSE: "1d100" for thief
+     skills, "1d6" for door checks) drives the label instead of the
+     ruleset's primary resolution block; identical to the old direct
+     state.ruleset.resolution read when no additionalMode is selected. */
+  var resUnder = mrrActiveResolutionConfig();
+  var formula = (resUnder && resUnder.diceFormula) || "1d100";
   diceRow(d, "Target", "target", "50");
   diceRow(d, "Bonus",  "bonus",  "0");
   diceFooter(d, "Roll " + formula, rollRollUnder);
@@ -10781,7 +11791,7 @@ function evalRollUnderFormula(formula, target, margin) {
 }
 
 function rollRollUnder() {
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
   var parsed = parseRollUnderFormula(res.diceFormula) || { count: 1, sides: 100 };
   var baseTarget = clamp(numFromInput("target", 50), 1, 9999);
   var bonus = numFromInput("bonus", 0);
@@ -10844,7 +11854,7 @@ function rollRollUnder() {
    and is sticky across rolls in the same widget session. */
 function buildStanceModalPoolWidget() {
   var d = state.diceEl;
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
   var stances = Array.isArray(res.stances) ? res.stances : [];
   var statName = res.stat || "Stat";
 
@@ -10924,7 +11934,7 @@ function buildStanceModalPoolWidget() {
       exactMatches, tier, and narrationHook (when an exact-match was rolled
       AND the ruleset declares one). */
 function rollStanceModalPool() {
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
   var stances = Array.isArray(res.stances) ? res.stances : [];
   var stanceId = state.diceStanceId || (stances[0] && stances[0].id) || "stance";
   var stance = null;
@@ -11089,13 +12099,18 @@ function rollDicePool() {
   /* Target = per-die face threshold. Read from widget input first (V20 / W20:
      varies 6-9 per check); fall back to schema's resolution.target (Exalted's
      fixed 7); fall back to canonical 7 if neither set. This is what makes
-     V20-style variable difficulty work without forcing a ruleset fork. */
-  var schemaTarget = (state.ruleset.resolution && typeof state.ruleset.resolution.target === "number") ? state.ruleset.resolution.target : 7;
+     V20-style variable difficulty work without forcing a ruleset fork.
+     B18: reads mrrActiveResolutionConfig() so an additionalModes dice-pool
+     mechanic's own target/doubles/botches parameterize this roller instead
+     of the ruleset's primary resolution block; identical to the old direct
+     state.ruleset.resolution reads when no additionalMode is selected. */
+  var resDP = mrrActiveResolutionConfig();
+  var schemaTarget = (resDP && typeof resDP.target === "number") ? resDP.target : 7;
   var target = numFromInput("target", schemaTarget);
-  var doubleFace = (state.ruleset.resolution.doubles && state.ruleset.resolution.doubles.face) || 10;
-  var doubleSucc = (state.ruleset.resolution.doubles && state.ruleset.resolution.doubles.successes) || 2;
-  var botchFace  = (state.ruleset.resolution.botches && state.ruleset.resolution.botches.onFace) || 1;
-  var botchTrigger = (state.ruleset.resolution.botches && state.ruleset.resolution.botches.trigger) || BOTCH_TRIGGER.ZERO;
+  var doubleFace = (resDP.doubles && resDP.doubles.face) || 10;
+  var doubleSucc = (resDP.doubles && resDP.doubles.successes) || 2;
+  var botchFace  = (resDP.botches && resDP.botches.onFace) || 1;
+  var botchTrigger = (resDP.botches && resDP.botches.trigger) || BOTCH_TRIGGER.ZERO;
 
   var successes = 0;
   var doubled   = 0;
@@ -11160,7 +12175,7 @@ function rollDicePoolSum() {
   var pool  = Math.max(1, numFromInput("pool", 1));
   var pips  = numFromInput("pips", 0);
   var diff  = Math.max(1, numFromInput("diff", 15));
-  var res   = state.ruleset.resolution || {};
+  var res   = mrrActiveResolutionConfig(); /* B18 */
   var dieSize = (typeof res.dieSize === "number") ? res.dieSize : 6;
   var wd    = res.wildDie || null;
   var wdOn  = !!(wd && wd.enabled);
@@ -11225,12 +12240,126 @@ function rollDicePoolSum() {
   finalizeRoll(text, kind, renderFaces);
 }
 
+/* Pad a single d100 face to the traditional two-digit percentile notation
+   (02, not 2; 100 stays 100). Matches the C1 spec's worked examples
+   (Plans/2026-08-23_rolemaster-mvp-plan.md §3.3/§3.5). */
+function padD100Face(n) {
+  return (n < 10) ? "0" + n : String(n);
+}
+
+/* Sign-prefixed integer for the bonus/diff tag fragments — always shows a
+   leading "+" for zero/positive, "-" for negative (matches every worked
+   bonus example in §3.5; the roll/total fields are NOT sign-prefixed). */
+function signedNum(n) {
+  return (n >= 0 ? "+" : "") + n;
+}
+
 function rollD100() {
-  var skill = clamp(numFromInput("skill", 50), 1, 100);
-  var face = 1 + Math.floor(Math.random() * 100);
-  var pass = face <= skill;
-  var text = "[d100: rolled " + face + " vs " + skill + " = " + (pass ? "success" : "failure") + "]";
-  finalizeRoll(text, pass ? "success" : "fail", null);
+  var res = mrrActiveResolutionConfig(); /* B18 */
+
+  if (res.direction !== "high") {
+    /* Legacy roll-under path — byte-equivalent to the pre-C1 body.
+       No shipped ruleset uses d100-percentile today (census, plan §3.1),
+       so this is provably zero-regression, but it is kept verbatim anyway. */
+    var skill = clamp(numFromInput("skill", 50), 1, 100);
+    var face = 1 + Math.floor(Math.random() * 100);
+    var pass = face <= skill;
+    var text = "[d100: rolled " + face + " vs " + skill + " = " + (pass ? "success" : "failure") + "]";
+    finalizeRoll(text, pass ? "success" : "fail", null);
+    return;
+  }
+
+  /* Roll-high d100, optionally open-ended (Plans/2026-08-23_rolemaster-mvp-plan.md §3).
+     RMSS canon: high open-ended 96-100 inclusive (adds, cascades while the new
+     face is also >= high.threshold); low open-ended 01-05 (subtracts, and —
+     asymmetrically — the chain continues only while the new face is HIGH,
+     i.e. >= high.threshold, not while it is itself low). Open-ended triggers
+     on the UNMODIFIED first die only — round-9 fix 5a: the schema's
+     `firstRollOnly: false` house-rule path (test the MODIFIED total
+     instead) was never actually implemented — setting it silently
+     disabled open-ended entirely rather than doing anything resembling
+     the documented alternate behavior. Removed from the schema/docs;
+     the roller now always behaves as the old default (true), with
+     nothing left to configure. */
+  var oe        = res.openEnded || null;
+  var highCfg   = (oe && oe.high) || null;
+  var lowCfg    = (oe && oe.low) || null;
+  var highThreshold = (highCfg && typeof highCfg.threshold === "number") ? highCfg.threshold : 96;
+  var lowThreshold  = (lowCfg && typeof lowCfg.threshold === "number") ? lowCfg.threshold : 5;
+  var lowSubtract   = !lowCfg || lowCfg.subtract !== false; /* default true */
+  var lowContinueOn = (lowCfg && lowCfg.continueOn) || "high";
+  var highCap   = (highCfg && typeof highCfg.cascadeCap === "number") ? highCfg.cascadeCap : 0;
+  var lowCap    = (lowCfg && typeof lowCfg.cascadeCap === "number") ? lowCfg.cascadeCap : 0;
+  var SAFETY_CAP = 100; /* hard bound regardless of cascadeCap — malformed-RNG defense, mirrors rollDicePoolSum */
+
+  var bonus = numFromInput("bonus", 0);
+  var diff  = numFromInput("diff", 0);
+
+  var first = 1 + Math.floor(Math.random() * 100);
+  /* Round-9 fix 5f: um= now gated by the ruleset's own openEnded.unusualFaces
+     list (no default — must be explicit) instead of firing unconditionally
+     for ANY roll-high d100 ruleset on a natural 66/100. Rolemaster declares
+     [66, 100]; a ruleset that doesn't declare unusualFaces (or declares a
+     different list) gets exactly that — never a spurious um= tag it never
+     asked for. The widget only ever surfaces the flag; it never picks a
+     table row itself. */
+  var unusualFaces = (oe && Array.isArray(oe.unusualFaces)) ? oe.unusualFaces : [];
+  var um = (unusualFaces.indexOf(first) !== -1) ? first : null;
+
+  var openHigh = !!(highCfg && first >= highThreshold);
+  var openLow  = !openHigh && !!(lowCfg && first <= lowThreshold);
+
+  var chainRolls = []; /* unsigned d100 faces rolled after the first, in order */
+  var cascades = 0;
+  var r;
+
+  if (openHigh) {
+    r = first;
+    while (r >= highThreshold) {
+      if (highCap > 0 && cascades >= highCap) break;
+      if (cascades >= SAFETY_CAP) break;
+      r = 1 + Math.floor(Math.random() * 100);
+      chainRolls.push(r);
+      cascades++;
+    }
+  } else if (openLow) {
+    /* The low chain always rerolls at least once (that IS the low-open rule),
+       then continues per lowContinueOn — RMSS default "high": keep going
+       while the newest face is >= high.threshold, NOT while it is low. */
+    while (true) {
+      if (lowCap > 0 && cascades >= lowCap) break;
+      if (cascades >= SAFETY_CAP) break;
+      r = 1 + Math.floor(Math.random() * 100);
+      chainRolls.push(r);
+      cascades++;
+      var continues = (lowContinueOn === "low") ? (r <= lowThreshold) : (r >= highThreshold);
+      if (!continues) break;
+    }
+  }
+
+  var chainSum = chainRolls.reduce(function (a, b) { return a + b; }, 0);
+  var roll = openLow ? (first + (lowSubtract ? -chainSum : chainSum)) : (first + chainSum);
+  var total = roll + bonus + diff;
+
+  var chainSign = openLow ? (lowSubtract ? "-" : "+") : "+";
+  var chainText = chainRolls.length
+    ? " chain=" + chainRolls.map(function (f) { return chainSign + padD100Face(f); }).join(",")
+    : "";
+  var diffText = diff !== 0 ? " diff=" + signedNum(diff) : "";
+  var umText = um !== null ? " um=" + um : "";
+
+  var text = "[mrr-roll: mode=d100-open first=" + padD100Face(first) + chainText +
+             " roll=" + roll + " bonus=" + signedNum(bonus) + diffText +
+             " total=" + total + umText + "]";
+
+  var renderFaces = [{
+    face: first,
+    cls: "mrr-dice__face" + ((openHigh || openLow) ? " mrr-dice__face--wild" : "")
+  }].concat(chainRolls.map(function (f) {
+    return { face: f, cls: "mrr-dice__face mrr-dice__face--double" };
+  }));
+
+  finalizeRoll(text, "narrate", renderFaces);
 }
 
 function rollPbta() {
@@ -11291,7 +12420,34 @@ function rollFate() {
   }));
 }
 
+/* B18 chokepoint — every `[dice: ...]` tag from ANY mode's roll function
+   (rollSingleRoll, rollDicePool, rollRollUnder, etc.) funnels through
+   here before it ever reaches the player. When an additionalMode is
+   active, splice `mode=<id>` in immediately after the "[dice: " prefix
+   per the design's self-describing-tag contract — one insertion point
+   instead of touching all 8 roll functions' tag-building code. Gated on
+   BOTH state.diceActiveModeId being a real (non-"primary") id AND the
+   text literally starting with "[dice: " so item-use / spell-cast /
+   narrate tags built from other finalizeRoll call sites (which use
+   different tag prefixes) are never touched — zero regression for
+   anything that isn't a mode-widget roll. Primary-mode rolls and
+   rulesets with no additionalModes never set diceActiveModeId to
+   anything but "primary"/undefined, so this is a no-op there — P1
+   zero-regression.
+   Round-9 fix 5b: also verifies amId actually resolves against the
+   CURRENT ruleset's resolution.additionalModes before injecting —
+   defense against a stale id (e.g. left over across a ruleset switch
+   that this build's reload-based paths should already prevent, but
+   init() itself documents that it "can fire multiple times"; see its
+   own reset of these two fields). A tag would otherwise carry a
+   mode=<id> the current ruleset doesn't even declare, misleading the
+   GM agent's routing table lookup. */
 function finalizeRoll(text, kind, faces) {
+  var amId = state.diceActiveModeId;
+  var amStillValid = amId && amId !== "primary" && mrrResolveModeId(amId).id === amId;
+  if (amStillValid && typeof text === "string" && text.indexOf("[dice: ") === 0) {
+    text = "[dice: mode=" + amId + " " + text.slice("[dice: ".length);
+  }
   lastRollText = text;
   showResult(text, kind, faces);
 }
@@ -11925,6 +13081,52 @@ function syncSheetToChat() {
    (character/persona/lorebook) carry narrative copy, not numbers.
    Putting the sheet inline in promptTemplate puts it where every agent
    we install reads, with no engine-side cooperation required. */
+
+/* B18 — the only AI-facing surface of multi-mechanic dice. Returns the
+   compact routing block lines (including its own header + trailing
+   blank line) teaching the GM agent which additionalModes exist, when
+   to call each by id (whenToUse), and which skills/derivedStats are
+   already bound to it via resolutionId. Returns [] (a true no-op, both
+   call sites just push an empty array) when the ruleset has no
+   additionalModes — 15 of the 16 shipped rulesets never emit this
+   block at all (P5 zero-regression for everything but the OSE pilot).
+   Shared by buildSheetForPrompt (overlay-agent prompts) and
+   buildFieldReferenceContent (the narrator-visible lorebook entry) so
+   the routing table doesn't drift between the two teaching surfaces.
+   Round-9 fix 2b (honesty): the header text below claims the
+   [dice: mode=<id> ...] tag for every entry it lists — true today
+   ONLY because the schema (round-9 fix 2a) restricts
+   resolution.additionalModes[].mode to dice-pool and roll-under, the
+   two modes actually tag-covered by finalizeRoll's "[dice: " prefix
+   guard AND parameterized by mrrActiveResolutionConfig() in both
+   their builder and roller. If more modes are ever converted (see the
+   schema's $comment for the honest per-mode audit), this text and the
+   schema's allowed-mode list must be widened together — never claim a
+   mode is routed here before it is. */
+function mrrMechanicRoutingLines() {
+  var res = state.ruleset && state.ruleset.resolution;
+  var modes = (res && Array.isArray(res.additionalModes)) ? res.additionalModes : [];
+  if (!modes.length) return [];
+  var lines = [];
+  lines.push("Dice mechanic routing (this ruleset offers more than one dice mechanic — request the right one by id; the dice widget rolls it and reports a self-describing [dice: mode=<id> ...] tag, you never roll it yourself). Only dice-pool and roll-under mechanics can appear in this list today — more modes as they're converted:");
+  modes.forEach(function (am) {
+    if (!am || typeof am.id !== "string") return;
+    var bound = [];
+    (state.ruleset.skills || []).forEach(function (sk) {
+      if (sk && sk.resolutionId === am.id && typeof sk.name === "string") bound.push(sk.name);
+    });
+    (state.ruleset.derivedStats || []).forEach(function (d) {
+      if (d && d.resolutionId === am.id && typeof d.name === "string") bound.push(d.name);
+    });
+    var line = "- " + am.id + " (" + (am.label || am.id) + ")";
+    if (typeof am.whenToUse === "string" && am.whenToUse) line += " — " + am.whenToUse;
+    if (bound.length) line += " [sheet-bound: " + bound.join(", ") + "]";
+    lines.push(line);
+  });
+  lines.push("");
+  return lines;
+}
+
 function buildSheetForPrompt() {
   if (!state.sheet || !state.ruleset) return "";
   var current = state.characters.find(function (c) { return c.id === state.activeCharacterId; });
@@ -12407,6 +13609,10 @@ function buildSheetForPrompt() {
     lines.push("");
   }
 
+  /* B18 — appended only when the ruleset declares additionalModes; a
+     true no-op (empty array) otherwise. */
+  Array.prototype.push.apply(lines, mrrMechanicRoutingLines());
+
   return lines.join("\n").trim();
 }
 
@@ -12540,7 +13746,11 @@ function buildFieldReferenceContent() {
   lines.push("  category          — \"equipment\" (lives in the on-sheet Inventory section, equippable to slot) or \"item\" (Items flyout, usable / consumable). Default: \"item\" when no slot, \"equipment\" when slot is set.");
   lines.push("");
   lines.push("Repeated inventory.add tags with the same name BUMP QUANTITY and ENRICH any blank fields on the existing item — populate fields once authoritatively on first add, omit them on subsequent qty bumps.");
-  return lines.join("\n");
+  lines.push("");
+  /* B18 — appended only when the ruleset declares additionalModes; a
+     true no-op (empty array) otherwise. */
+  Array.prototype.push.apply(lines, mrrMechanicRoutingLines());
+  return lines.join("\n").trim();
 }
 
 var FIELD_REF_TAG = "mrr-field-reference";
@@ -12768,6 +13978,7 @@ function scheduleAutoSync() {
 
 var STATE_TAG_RE = /\[mrr-state:\s+([^\]]+)\]/g;
 var STATE_KV_RE  = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+var MRR_STATE_TAG_VERSION = 1; /* [mrr-state:] grammar version — round 7, closes the B14 leftover COUPLINGS.md flagged as "not yet stamped". One constant, no behavior change; not read/enforced anywhere yet. */
 /* Per-chat processed-message-id set, persisted across reloads. Without
    persistence, every hard refresh would walk the chat DOM, replay every
    historic [mrr-state: ...] tag, and double-apply mutations to the
@@ -12776,6 +13987,33 @@ var STATE_KV_RE  = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
    changes; saved after each successful per-message apply. */
 var processedMessageIds = {};
 var processedMessageIdsChatId = null;
+
+/* FIX-2b (round-6 critical — corrects round 5's FIX-2, which was the right
+   SHAPE but wired into the wrong call site): a render-observation cache,
+   NOT persisted state. msgId -> the exact node.textContent captured at the
+   moment that message's tags were last applied (set alongside
+   processedMessageIds[key] = true in processChatMessage). Session-only,
+   in-memory, never written to localStorage — it exists purely to answer
+   "did this message's visible content actually change since we last
+   processed it," which processedMessageIds (keyed by swipe index, not by
+   content) cannot answer on its own.
+   Why this exists: processChatMessage's fast path must NOT prefix-scan
+   processedMessageIds — a composite entry ("M:0") cannot legitimately
+   suppress a fresh observation, because the CURRENT swipe is by definition
+   unknown before the fetch resolves; short-circuiting there made a swiped
+   reply's tags never apply (round-6 finding — B2's core feature was dead
+   in the live path even though round 5's harness showed green, because
+   the harness's stale hand-copy of the fast path didn't match reality).
+   The prefix scan's only legitimate homes are (a) isMessageProcessed's
+   idx-unknown branch, reached AFTER a fetch resolves with no discoverable
+   index (replay protection) and (b) the initial-sweep hide-only gate. This
+   memo is what closes finding 13b (recurring per-observation refetch)
+   WITHOUT reintroducing the fast-path regression: unchanged text on a
+   re-observation means nothing new happened (spurious mutation, e.g. an
+   unrelated sibling re-render) — skip the fetch. Changed text means a
+   swipe (or a first-ever new message) — proceed to the fetch, and let the
+   composite-exact check in isMessageProcessed decide from there. */
+var mrrProcessedTextMemo = Object.create(null);
 
 /* Shared cross-transport mutation-dedup set (per chat, in-memory). A given
    sheet mutation can now arrive via TWO transports: the narrator DOM message
@@ -12871,31 +14109,62 @@ function normalizeStateAttrs(attrs) {
 /* Apply a parsed [mrr-state:] tag list with cross-transport dedup. Returns
    the count applied. Both the narrator DOM path and the runs poller route
    through here so a tag present in BOTH sources applies exactly once. The key
-   is recorded before applying (idempotent under re-entrancy). */
-function applyStateTagsWithDedup(tags, anchorId) {
+   is recorded before applying (idempotent under re-entrancy).
+   B2-R: `journalKey` (optional, defaults to anchorId) is the msgId:idx
+   bucket applyStateMutation's journaling branches write into for the
+   duration of this call — kept SEPARATE from anchorId on purpose, since
+   the dedup anchor is plain msgId (FIX-1) while the journal needs the
+   swipe-specific composite key. Reset in a finally so a thrown mutation
+   can never leave a stale bucket key active for an unrelated later call. */
+function applyStateTagsWithDedup(tags, anchorId, journalKey) {
   if (!tags || !tags.length) return 0;
   var occ = Object.create(null);
   var applied = 0;
-  for (var i = 0; i < tags.length; i++) {
-    /* Normalize BEFORE the signature so equivalent surface forms from
-       different agents collide (see normalizeStateAttrs). */
-    var normalized = normalizeStateAttrs(tags[i].attrs);
-    for (var n = 0; n < normalized.length; n++) {
-      var sig = mutationContentSig(normalized[n]);
-      var idx = (occ[sig] = (occ[sig] || 0) + 1) - 1;
-      var key = String(anchorId) + "::" + sig + "::" + idx;
-      if (appliedMutationKeys[key]) continue; /* other transport already applied this exact mutation for this turn */
-      appliedMutationKeys[key] = true;
-      if (applyStateMutation(normalized[n])) applied++;
+  var prevJournalBucketKey = mrrCurrentJournalBucketKey;
+  mrrCurrentJournalBucketKey = journalKey || anchorId;
+  try {
+    for (var i = 0; i < tags.length; i++) {
+      /* Normalize BEFORE the signature so equivalent surface forms from
+         different agents collide (see normalizeStateAttrs). */
+      var normalized = normalizeStateAttrs(tags[i].attrs);
+      for (var n = 0; n < normalized.length; n++) {
+        var sig = mutationContentSig(normalized[n]);
+        var idx = (occ[sig] = (occ[sig] || 0) + 1) - 1;
+        var key = String(anchorId) + "::" + sig + "::" + idx;
+        if (appliedMutationKeys[key]) continue; /* other transport already applied this exact mutation for this turn */
+        appliedMutationKeys[key] = true;
+        /* Round-10 fix A: thread the EXACT dedup sig this call is applying
+           under into whatever journal entry it produces (mrrJournalMutation
+           reads mrrCurrentApplySig), save/restored exactly like
+           mrrCurrentJournalBucketKey above — a thrown mutation must not
+           leak a stale sig into an unrelated later call. This replaces the
+           old "reconstruct the sig from the journaled entry" approach in
+           mrrClearDedupKeysForBucket, which could never exactly match the
+           original tag's sig (reason=/target= participate in it, "+N" vs
+           bare "N" sign forms, set=/value=/current= vs delta=, field
+           aliases the journal only stores canonically) — capturing it here,
+           at the one point the real sig is already known, is exact. */
+        var prevApplySig = mrrCurrentApplySig;
+        mrrCurrentApplySig = sig;
+        try {
+          if (applyStateMutation(normalized[n])) applied++;
+        } finally {
+          mrrCurrentApplySig = prevApplySig;
+        }
+      }
     }
+  } finally {
+    mrrCurrentJournalBucketKey = prevJournalBucketKey;
   }
   return applied;
 }
 
 function loadProcessedMessageIds(chatId) {
-  if (!chatId) { processedMessageIds = {}; processedMessageIdsChatId = null; appliedMutationKeys = Object.create(null); return; }
+  if (!chatId) { processedMessageIds = {}; processedMessageIdsChatId = null; appliedMutationKeys = Object.create(null); mrrProcessedTextMemo = Object.create(null); mrrLoadMutationJournal(null); return; }
   if (processedMessageIdsChatId === chatId) return; /* already loaded */
   appliedMutationKeys = Object.create(null); /* new chat — clear cross-transport dedup so old-chat keys can't suppress new applies */
+  mrrProcessedTextMemo = Object.create(null); /* FIX-2b: new chat — a msgId's text memo from a DIFFERENT chat must never suppress this chat's fast path (message ids are not guaranteed unique across chats) */
+  mrrLoadMutationJournal(chatId); /* B2-R: same chat-switch chokepoint the other per-chat observation state already resets on */
   var raw = lsGet(LS_PROCESSED_MSGS_PFX + chatId);
   var parsed = raw ? safeParse(raw) : null;
   processedMessageIds = (parsed && typeof parsed === "object") ? parsed : {};
@@ -12905,6 +14174,466 @@ function loadProcessedMessageIds(chatId) {
 function saveProcessedMessageIds() {
   if (!processedMessageIdsChatId) return;
   lsSet(LS_PROCESSED_MSGS_PFX + processedMessageIdsChatId, JSON.stringify(processedMessageIds));
+}
+
+/* ─── B2-R: swipe-revert mutation journal ──────────────────────────────────
+   Design authority: Plans/2026-08-22_engine-2.4.3-upgrade-and-rolemaster-
+   plan.md § "B2-R — Swipe-revert" (Corey, 2026-08-23: "if we can do it we
+   should" — save-scumming sanctioned).
+
+   Shape (persisted per chat, LS_MUTATION_JOURNAL_PFX + chatId):
+     {
+       buckets: {
+         "<msgId>:<idx>" (or plain "<msgId>" when unresolvable): {
+           entries: [ {field,kind:"delta",delta} | {field,kind:"set",prev,next}, ... ],
+           reverted: boolean
+         }, ...
+       },
+       lastSeenIdx: { "<msgId>": <last resolved swipe index seen>, ... }
+     }
+
+   CHOKEPOINT (reported per the coder-instructions requirement to justify
+   it): entries are written from THREE specific branches inside
+   applyStateMutation — the ruleset-states label-set branch, the generic
+   numeric-field branch (resolveSheetField), and the unknown-field dotted-
+   path stash branch — NOT from one single call site. This is deliberate:
+   the plan's two declared entry shapes ({field,kind:"delta",delta} and
+   {field,kind:"set",prev,next}) only describe SCALAR numeric-or-label
+   writes, and prev/next/delta values only exist inside each branch's own
+   already-resolved local variables (current, next, canonicalLabel, etc) —
+   an outside call site (applyStateTagsWithDedup, or processChatMessage)
+   never sees the resolved field or its prior value, only the raw tag
+   attrs. The three branches all funnel through the SAME shared helper,
+   mrrJournalMutation, which is the actual single point of truth for HOW a
+   journal entry gets constructed/stored — "one chokepoint" in the sense of
+   one function, not one call site.
+   SCOPE GAP (flagged, not solved — see round-7 report): applyStateMutation
+   has several OTHER branches (conditions/inventory/backgrounds/intimacies
+   array add-remove-update, xp's compound object, attunement/investiture/
+   commitment's item-scoped multi-field writes, the typed-damage track-
+   cells path) that do not reduce to a scalar delta or prev/next set at
+   all — the plan's two shapes don't cover them, and inventing a third
+   "kind" for array/object mutations was not authorized. Swipe-revert
+   therefore only reverts/reapplies the scalar-field mutations (attributes,
+   skills, derived stats via the generic numeric path, ruleset-declared
+   states, and ad-hoc stashed fields) — NOT inventory adds, condition
+   toggles, background edits, intimacy changes, xp, attunement/investiture/
+   commitment, or typed-damage-track hits. A swipe that reverts will leave
+   those other mutation types in place exactly as point 4's "known-
+   accepted limits" already frames manual-edit skew — undone scalar fields
+   sitting alongside un-reverted array/object ones is the same class of
+   partial-consistency trade-off, just automatically triggered rather than
+   from a manual edit.
+
+   GC (point 4): NO existing per-chat localStorage cleanup lifecycle was
+   found anywhere in this file for LS_PROCESSED_MSGS_PFX / LS_PROCESSED_
+   RUNS_PFX (the same observation-class prefixes this journal sits beside)
+   — no chat-deletion listener, no uninstall sweep. Per instruction, one is
+   NOT invented here; this journal inherits the exact same characteristic
+   its siblings already have: per-chat LS keys accumulate for chats the
+   user later deletes, unbounded, until a future cleanup pass addresses
+   all three prefixes together. */
+var mrrMutationJournal = { buckets: {}, lastSeenIdx: {} };
+var mrrMutationJournalChatId = null;
+var mrrCurrentJournalBucketKey = null; /* set by applyStateTagsWithDedup for the duration of its loop; read by the three journaling branches inside applyStateMutation */
+var mrrJournalSuppressed = false;      /* true while mrrRevertBucket/mrrReapplyBucket are replaying through applyStateMutation, so the replay itself is never re-journaled (would double-journal and could recurse) */
+var mrrCurrentApplySig = null;         /* round-10 fix A: set by applyStateTagsWithDedup for the duration of one applyStateMutation call; mrrJournalMutation stamps it onto the entry it creates (if any) as entry.sig — null when a journal entry is somehow created outside that call (shouldn't happen; mrrJournalMutation already no-ops without an active bucket key, which is set by the same caller) */
+
+function mrrLoadMutationJournal(chatId) {
+  if (!chatId) { mrrMutationJournal = { buckets: {}, lastSeenIdx: {} }; mrrMutationJournalChatId = null; return; }
+  if (mrrMutationJournalChatId === chatId) return; /* already loaded */
+  var raw = lsGet(LS_MUTATION_JOURNAL_PFX + chatId);
+  var parsed = raw ? safeParse(raw) : null;
+  var journal = (parsed && typeof parsed === "object" && parsed.buckets && parsed.lastSeenIdx)
+    ? parsed
+    : { buckets: {}, lastSeenIdx: {} };
+  /* Round-9 fix 1b migration: "delta" kind is deleted as of tonight — a
+     journal bucket persisted by the prior build may still hold delta-kind
+     entries, whose clamp-loss bug is exactly what 1b fixes. No back-compat
+     shim is written for this: this is a session-fresh feature that has
+     never run live on Corey's machine (LS on his actual browser has no
+     prior journal at all), so the honest, simplest thing is to discard
+     any bucket containing even one delta-kind entry rather than attempt
+     to reinterpret pre-fix data. One summary warn, not one per bucket. */
+  var discarded = 0;
+  Object.keys(journal.buckets).forEach(function (k) {
+    var b = journal.buckets[k];
+    var hasLegacyDelta = b && Array.isArray(b.entries) && b.entries.some(function (e) { return e && e.kind === "delta"; });
+    if (hasLegacyDelta) { delete journal.buckets[k]; discarded++; }
+  });
+  if (discarded > 0) warn("mrrLoadMutationJournal: discarded " + discarded + " bucket(s) with pre-fix delta-kind entries (round-9 1b — no migration shim)");
+  mrrMutationJournal = journal;
+  mrrMutationJournalChatId = chatId;
+}
+
+/* Finding 10 (accepted, comment-only): this journal has no GC lifecycle
+   (see the module header above) and grows one bucket per swiped/edited
+   message per chat, forever, same as the processed-message/run sets it
+   sits beside — for a typical session (dozens of mutating turns per
+   chat) this is a few KB of localStorage per chat, not a practical size
+   concern, but it is genuinely unbounded across a long-lived chat's
+   lifetime. Not fixed this round, per instruction. */
+function mrrSaveMutationJournal() {
+  if (!mrrMutationJournalChatId) return;
+  var ok = lsSet(LS_MUTATION_JOURNAL_PFX + mrrMutationJournalChatId, JSON.stringify(mrrMutationJournal));
+  if (!ok) warn("mrrSaveMutationJournal: lsSet failed (quota or private mode?) — journal entry may not persist across reload");
+}
+
+/* The chokepoint helper (see header comment). No-ops when there's no
+   active bucket key (defensive — should not happen in practice, every
+   caller of applyStateTagsWithDedup sets one) or while a revert/reapply
+   replay is in progress (mrrJournalSuppressed). Appending never touches
+   an existing bucket's `reverted` flag — a runs-transport mutation landing
+   in an already-reverted bucket (edge case, see point 3's "plain buckets
+   never auto-reverted, only superseded forward") simply adds to it without
+   un-reverting; the simplest, most conservative choice for an interaction
+   the design doesn't explicitly address. */
+/* Round-9 fix 1b: "kind" is now ALWAYS "set" — the "delta" kind is
+   DELETED. Storing a signed delta (round-7 original design) lost the
+   clamp: HP at 3 with delta=-8 clamps to 0, journaling delta=-8; a
+   revert that re-applied +8 landed on 8, not the original 3. `prev`
+   (the value before this mutation) and `next` (the CLAMPED value after)
+   are both already in scope at every call site (the clamp site) — store
+   both, unconditionally, so revert is an exact prev-restore regardless
+   of whether the original write was itself a delta or an absolute set. */
+function mrrJournalMutation(field, payload) {
+  if (mrrJournalSuppressed) return;
+  var bucketKey = mrrCurrentJournalBucketKey;
+  if (!bucketKey) return;
+  var bucket = mrrMutationJournal.buckets[bucketKey];
+  if (!bucket) { bucket = { entries: [], reverted: false }; mrrMutationJournal.buckets[bucketKey] = bucket; }
+  /* Round-10 fix A: entry.sig is the EXACT dedup-gate signature the
+     originating applyStateTagsWithDedup call computed for this mutation
+     (see mrrCurrentApplySig) — used by mrrClearDedupKeysForBucket to
+     delete precisely the right appliedMutationKeys entry on revert, no
+     reconstruction. null here only if this entry somehow got created
+     outside that call (shouldn't happen — see mrrCurrentApplySig's own
+     comment); mrrClearDedupKeysForBucket treats null as nothing to clear. */
+  var entry = { field: field, kind: "set", prev: payload.prev, next: payload.next, sig: mrrCurrentApplySig || null };
+  bucket.entries.push(entry);
+  mrrSaveMutationJournal();
+}
+
+/* Builds the synthetic attrs object that re-dispatches through
+   applyStateMutation's SAME field-resolution branches (point 5 — sole-
+   writer preserved, revert/reapply IS the mutator pipeline, never a new
+   direct sheet-write path). direction "inverse" (revert) restores
+   `prev`; direction "forward" (reapply / swipe-back) restores `next`.
+   Round-9 fix 1c: a state entry's `prev` can be `null` (the state had
+   never been set before this mutation — see the states branch below).
+   Reverting that entry must CLEAR the state, not "set" it to the string
+   "null" or reject for having no valid label — dispatches the internal
+   __mrrStateClear sentinel instead (see the states branch's handling
+   and its "never parseable from tag text" comment). A state's `next` is
+   never null (only a resolved, canonical label is ever journaled as
+   next), so this path is unreachable for direction:"forward". */
+function mrrBuildReplayAttrs(entry, direction) {
+  var value = (direction === "inverse") ? entry.prev : entry.next;
+  var isState = !!resolveRulesetState(entry.field);
+  if (isState && value === null) {
+    return { field: entry.field, __mrrStateClear: true };
+  }
+  return isState ? { field: entry.field, value: value } : { field: entry.field, current: value };
+}
+
+/* bucketKey is "<msgId>:<idx>" (composite) or plain "<msgId>"
+   (unresolvable — see the journal shape comment). The cross-transport
+   dedup anchor (appliedMutationKeys, FIX-1) is ALWAYS plain msgId, never
+   the composite — so round-9 fix 1a needs the msgId portion split back
+   out. */
+function mrrAnchorFromBucketKey(bucketKey) {
+  var m = /^(.*):(\d+)$/.exec(String(bucketKey));
+  return m ? m[1] : bucketKey;
+}
+
+/* Round-9 fix 1a. Deletes every appliedMutationKeys entry matching
+   anchor + "::" + sig + "::" (ALL occIdx values for that sig — a
+   prefix scan, since a message can legitimately repeat one exact
+   mutation more than once). Safe no-op when no key matches. */
+function mrrDeleteAppliedKeysForSig(anchor, sig) {
+  var prefix = String(anchor) + "::" + sig + "::";
+  var deleted = 0;
+  for (var k in appliedMutationKeys) {
+    if (Object.prototype.hasOwnProperty.call(appliedMutationKeys, k) && k.indexOf(prefix) === 0) {
+      delete appliedMutationKeys[k];
+      deleted++;
+    }
+  }
+  return deleted;
+}
+
+/* Round-9 fix 1a (the review's headline failure): revert alone left the
+   SHEET correctly restored, but the cross-transport dedup gate
+   (appliedMutationKeys, keyed anchor::contentSig::occIdx off the RAW
+   parsed tag attrs) still remembered the reverted swipe's tag as
+   "already applied". Since the dedup anchor is plain msgId (shared
+   across every swipe of one message, FIX-1), an incoming swipe whose
+   [mrr-state:] tag is CONTENT-IDENTICAL to the one just reverted
+   (different surrounding prose, same field/delta/value) would compute
+   the SAME sig and be silently swallowed as a dupe — never re-applying,
+   never re-journaling under the new swipe's own bucket. Fix: for each
+   reverted entry, delete its matching dedup key so the NEXT
+   identical-content tag is admitted through the normal gate.
+   ROUND-10 FIX A: round 9's first attempt RECONSTRUCTED the sig from the
+   journaled entry (via mrrBuildReplayAttrs) — this could never exactly
+   match the original tag's real sig, because mutationContentSig hashes
+   the RAW parsed attrs verbatim: reason=/target= (never journaled)
+   participate in it, "+N" vs bare "N" sign forms differ, set=/value=/
+   current= vs delta= are different keys entirely, and a field ALIAS the
+   agent typed (journaled under its canonical name) produces a different
+   field= value. Round 9 papered over the delta-vs-absolute axis with a
+   second reconstructed candidate, but reason=/target=/aliases/sign-form
+   were still unhandled — genuinely exact only by coincidence.
+   The correct fix: capture the REAL sig at the one place it's already
+   known — applyStateTagsWithDedup computes it right before dispatching
+   to applyStateMutation, and now threads it through
+   (mrrCurrentApplySig) so mrrJournalMutation can stamp it onto the entry
+   it creates as entry.sig. No reconstruction, no mismatch axes: deleting
+   anchor + "::" + entry.sig + "::"-prefixed keys is exact. */
+function mrrClearDedupKeysForBucket(anchor, bucket) {
+  bucket.entries.forEach(function (entry) {
+    if (entry.sig == null) return; /* no captured sig (pre-round-10 entry, or created outside the gate) — nothing exact to clear */
+    mrrDeleteAppliedKeysForSig(anchor, entry.sig);
+  });
+}
+
+/* Revert a bucket's journaled entries: prev-restoring sets, in REVERSE
+   order (undo most-recent-first), through applyStateMutation with
+   journaling suppressed. Best-effort per entry — a field that fails to
+   re-resolve (ruleset changed, etc.) is logged, marked
+   entry.revertFailed = true (round-9 fix 1d), and skipped rather than
+   aborting the whole revert. bucket.reverted is set true ONLY when
+   EVERY entry inverted successfully this pass (fix 1d) — a partial
+   revert leaves it false, so a later swipe-back attempt on this bucket
+   (via mrrReapplyBucket) still no-ops rather than risk re-applying
+   entries that were never actually reverted. saveSheet/renderSheet are
+   batched ONCE after the loop (fix 5d) instead of once per entry —
+   finalizeMutation itself skips them while mrrJournalSuppressed is
+   true; see finalizeMutation's header comment for the full audit of
+   what it does and why the split is safe (saveSheet's own debounced
+   3-surface autosync still fires exactly once). No-op if the bucket
+   doesn't exist, has no entries, or is already reverted. */
+function mrrRevertBucket(bucketKey) {
+  var bucket = mrrMutationJournal.buckets[bucketKey];
+  if (!bucket || !bucket.entries.length || bucket.reverted) return;
+  var prevSuppressed = mrrJournalSuppressed; /* fix 5e — save/restore, match the bucket-key pattern, rather than blindly assuming false on entry/exit */
+  mrrJournalSuppressed = true;
+  var allOk = true;
+  try {
+    for (var i = bucket.entries.length - 1; i >= 0; i--) {
+      var entry = bucket.entries[i];
+      var ok = false;
+      try {
+        ok = applyStateMutation(mrrBuildReplayAttrs(entry, "inverse"));
+        if (!ok) warn("B2-R revert: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
+      } catch (e) {
+        warn("B2-R revert: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' threw on replay — skipped (" + (e && e.message ? e.message : e) + ")");
+      }
+      entry.revertFailed = !ok;
+      if (!ok) allOk = false;
+    }
+  } finally {
+    mrrJournalSuppressed = prevSuppressed;
+  }
+  bucket.reverted = allOk;
+  /* Fix 1a — clear dedup keys for EVERY entry regardless of its own
+     revert success/failure: the goal is admitting the incoming swipe's
+     tag through the gate, which matters independent of whether this
+     particular OLD entry's inverse write landed on the sheet.
+     Round-10 fix D: wrapped — an uncaught throw here would skip the
+     mrrSaveMutationJournal + batched saveSheet/renderSheet that follow,
+     silently losing the revert's own journal persistence and sheet
+     render even though the sheet-side revert loop above already
+     succeeded. Warn and continue rather than lose those. */
+  try {
+    mrrClearDedupKeysForBucket(mrrAnchorFromBucketKey(bucketKey), bucket);
+  } catch (e) {
+    warn("B2-R revert: mrrClearDedupKeysForBucket threw for bucket '" + bucketKey + "' — dedup keys may not be cleared, incoming identical-content swipes may still be blocked (" + (e && e.message ? e.message : e) + ")");
+  }
+  mrrSaveMutationJournal();
+  if (!prevSuppressed) { saveSheet(state.chatId, state.sheet); renderSheet(); }
+}
+
+/* Swipe-BACK re-apply: replays a previously-reverted bucket's entries
+   FORWARD, in their original order, through applyStateMutation with
+   journaling suppressed — deliberately bypassing applyStateTagsWithDedup's
+   plain-msgId dedup gate (point 5: identical content re-applied via the
+   dedup path would be silently swallowed, since the plain anchor was
+   already marked applied the first time this content was seen — the
+   journal is the one sanctioned way around that gate, and ONLY on an
+   explicit swipe-back). Fix 1d: entries flagged entry.revertFailed by a
+   prior (partial) revert are SKIPPED here — they were never actually
+   inverted away from `next` in the first place, so forward-replaying
+   them again would be a redundant, potentially-wrong "double apply" of
+   an entry whose true prior state this bucket doesn't actually know.
+   Given bucket.reverted is only ever true when EVERY entry succeeded
+   (fix 1d, above), no entry in a bucket that reaches this function
+   today can carry revertFailed:true — the per-entry skip is a defensive
+   guard against future changes to when entries get appended (e.g. the
+   runs-transport landing a new, unflagged entry into an
+   already-reverted bucket), not a currently-reachable branch. Clears
+   reverted:false. A no-op if the bucket doesn't exist or isn't
+   currently reverted. saveSheet/renderSheet batched once (fix 5d), same
+   pattern as mrrRevertBucket. */
+function mrrReapplyBucket(bucketKey) {
+  var bucket = mrrMutationJournal.buckets[bucketKey];
+  if (!bucket || !bucket.entries.length || !bucket.reverted) return;
+  var prevSuppressed = mrrJournalSuppressed; /* fix 5e */
+  mrrJournalSuppressed = true;
+  try {
+    for (var i = 0; i < bucket.entries.length; i++) {
+      var entry = bucket.entries[i];
+      if (entry.revertFailed) continue; /* fix 1d — excluded from reapply */
+      try {
+        if (!applyStateMutation(mrrBuildReplayAttrs(entry, "forward"))) {
+          warn("B2-R swipe-back: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
+        }
+      } catch (e) {
+        warn("B2-R swipe-back: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' threw on replay — skipped (" + (e && e.message ? e.message : e) + ")");
+      }
+    }
+  } finally {
+    mrrJournalSuppressed = prevSuppressed;
+  }
+  bucket.reverted = false;
+  mrrSaveMutationJournal();
+  if (!prevSuppressed) { saveSheet(state.chatId, state.sheet); renderSheet(); }
+}
+
+/* ─── B2: swipe-aware processed-message keying ────────────────────────────
+   A swiped assistant reply keeps the SAME data-message-id — Marinara's
+   schema stores the active variant as messages.activeSwipeIndex on the one
+   message row (alternate swipe content lives in a separate messageSwipes
+   table), it never mints a new message id per swipe (confirmed against
+   engine schema packages/server/src/db/schema/chats.ts:52, notNull default
+   0). Plain-msgId keying therefore treats every swipe of one message as
+   "the same message" and swallows swipe 1+'s [mrr-state:] tags once
+   swipe 0 has applied. Swipe indices are not present in the DOM (the
+   engine stamps only data-message-id), so they are looked up via
+   GET /chats/:chatId/messages?limit=N (COUPLINGS.md row 15) — fetched
+   ONLY when a tag-bearing candidate needs one, batched per "scan cycle"
+   via a shared in-flight promise: any candidate that asks while a fetch
+   is already in flight rides that same request/response instead of
+   issuing its own, and the map is discarded (not cached, not persisted,
+   not polled) the moment that fetch settles — the next candidate starts a
+   fresh cycle. (Design: 07-15 plan §4.2 / 08-22 plan B2.)
+
+   Keying rule (legacy-entry honor — no historical re-apply):
+     isMessageProcessed(msgId, idx) = set[msgId] || set[msgId + ":" + idx]
+   A plain msgId entry written before this upgrade keeps suppressing EVERY
+   swipe of that message (swipe 0 and any later swipe) — an accepted
+   trade-off: those are pre-upgrade historic messages, a brand-new swipe
+   appearing on one of them is vanishingly rare, and re-applying an entire
+   chat's mutation history on every legacy entry would be the worse
+   failure. New writes always use the composite key when an index was
+   discoverable this cycle; plain msgId otherwise (fetch failure, or the
+   candidate fell outside the fetched recent-window). */
+var mrrSwipeIndexFetchPromise = null; // shared per-cycle fetch; null whenever no fetch is in flight
+var mrrSwipeIndexFetchChatId = null;  // FIX-13a (round-5 minor): the chatId the in-flight fetch belongs to
+var mrrSwipeIndexWarned = false;      // console.warn once per session on fetch failure (soft degradation — not the visible warn-strip, which is reserved for storage degradation)
+
+function mrrProcessedKey(msgId, idx) {
+  return (idx === null || idx === undefined) ? msgId : (msgId + ":" + idx);
+}
+
+/* FIX-2 (round-5 critical): closes an out-of-window replay hole WITHOUT
+   collapsing swipe independence. Two distinct cases, not three cumulative
+   checks:
+     - idx KNOWN this call: legacy plain entry, OR an EXACT composite match
+       for THIS swipe. A different swipe of the same message having been
+       processed does NOT suppress this one — that's the entire point of
+       composite keying (B2). (Caught in probe P1 during round-5 testing: an
+       earlier draft of this fix ran the prefix scan unconditionally, which
+       made swipe 1 look "processed" purely because swipe 0 was — silently
+       regressing B2 back to plain-msgId-equivalent behavior. Scoping the
+       prefix scan to the idx-UNKNOWN branch only, below, is what avoids
+       that regression while still closing the replay hole.)
+     - idx UNKNOWN this call (null/undefined — swipe-index fetch failed, or
+       the candidate fell outside the fetched recent-window, see
+       fetchSwipeIndexMap): legacy plain entry, OR a prefix scan for
+       "msgId:*" — processed under ANY swipe is treated as processed,
+       period. Without this fallback, a message already applied under
+       "M:0" looked UN-processed to an idx-less caller and got re-applied,
+       replaying history. This is deliberately coarser than the idx-known
+       case — it's a degrade path, not the common case.
+   This same helper is also now the sweep gate in watchChatMessages (called
+   with idx=null there, so it takes the fallback branch) so the initial-load
+   fast path and the live-observation path share one processed check. */
+function isMessageProcessed(msgId, idx) {
+  if (processedMessageIds[msgId]) return true; /* legacy plain entry — suppresses every swipe, see trade-off above */
+  if (idx !== null && idx !== undefined) {
+    /* idx known: exact match for THIS swipe only. Finding 25 (accepted,
+       pre-existing, not fixed this round): a message still mid-stream
+       when first observed (partial [mrr-state: ...] tag text, or the
+       tag arriving in a later chunk than this observation) can be
+       marked processed against incomplete text before the full tag ever
+       renders — a dropped/partial tag on that one turn. Not new to
+       round 9; not addressed here. */
+    return !!processedMessageIds[msgId + ":" + idx];
+  }
+  var prefix = msgId + ":";
+  for (var k in processedMessageIds) {
+    if (Object.prototype.hasOwnProperty.call(processedMessageIds, k) && k.indexOf(prefix) === 0) return true;
+  }
+  return false;
+}
+
+/* Batched swipe-index lookup for the active chat. Coalesces concurrent
+   callers onto ONE GET /chats/:chatId/messages?limit=50 (recent-window —
+   tag-bearing candidates are, by construction, recent messages) through
+   the loader's attributed apiFetch wrapper. Resolves to a plain object
+   (msgId -> activeSwipeIndex) on success, or null on ANY failure (thrown/
+   rejected fetch, or a non-array response body — marinara.apiFetch never
+   checks HTTP status, so an error body arrives as a non-array) so callers
+   fall back to plain-messageId keying for that cycle. */
+function fetchSwipeIndexMap(chatId) {
+  if (mrrSwipeIndexFetchPromise) {
+    if (mrrSwipeIndexFetchChatId === chatId) return mrrSwipeIndexFetchPromise;
+    /* FIX-13a (round-5 minor): the in-flight fetch belongs to a DIFFERENT
+       chat (the chat switched mid-cycle) — reusing it would hand this
+       caller another chat's swipe-index map. Smaller diff than queuing a
+       second fetch behind the first: treat the mismatched caller exactly
+       like a failed fetch — resolveSwipeIndexForMessage already falls
+       back to plain-msgId keying on a null map, which is the correct,
+       already-supported degrade path here too. */
+    return Promise.resolve(null);
+  }
+  mrrSwipeIndexFetchChatId = chatId;
+  mrrSwipeIndexFetchPromise = apiFetch("/chats/" + encodeURIComponent(chatId) + "/messages?limit=50")
+    .then(function (rows) {
+      if (!Array.isArray(rows)) return null;
+      var map = Object.create(null);
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        if (r && typeof r.id === "string" && typeof r.activeSwipeIndex === "number") {
+          map[r.id] = r.activeSwipeIndex;
+        }
+      }
+      return map;
+    })
+    .catch(function (e) {
+      if (!mrrSwipeIndexWarned) {
+        mrrSwipeIndexWarned = true;
+        warn("swipe-index fetch failed (" + (e && e.message ? e.message : e) + ") — falling back to plain-messageId keying");
+      }
+      return null;
+    })
+    .then(function (result) {
+      mrrSwipeIndexFetchPromise = null; /* cycle over — next candidate starts a fresh fetch; never cached beyond this */
+      mrrSwipeIndexFetchChatId = null;
+      return result;
+    });
+  return mrrSwipeIndexFetchPromise;
+}
+
+/* Resolves to a swipe index (number) for msgId, or null when not
+   discoverable this cycle (fetch failed, or msgId fell outside the
+   fetched recent-window) — callers treat null as "use plain msgId". */
+function resolveSwipeIndexForMessage(chatId, msgId) {
+  return fetchSwipeIndexMap(chatId).then(function (map) {
+    if (!map || !Object.prototype.hasOwnProperty.call(map, msgId)) return null;
+    return map[msgId];
+  });
 }
 
 function parseStateAttrs(attrStr) {
@@ -13147,21 +14876,42 @@ function resolveSheetField(sheet, field) {
    persist sheet -> re-render UI -> push to in-memory log -> show toast.
    Keeps the data write, the visual update, and the user-visible
    confirmation co-located in one place so they cannot drift. */
+/* finalizeMutation's four duties (audited for round-9 fix 5d): (1)
+   saveSheet — persists the sheet AND, as a side effect of saveSheet
+   itself, schedules the existing 1.5s-debounced 3-surface autosync
+   (chat customTrackerFields / overlay-agent prompts / field-reference
+   lorebook — see scheduleAutoSync); (2) renderSheet — redraws the DOM;
+   (3) state.mutationLog append (a rolling 20-entry log, no reader found
+   elsewhere in this file beyond capping its own length — display TBD/
+   future use); (4) showMutationToast — the player-visible "X changed by
+   N" notification. No direct agent-prompt-sync call lives in this
+   function; it happens transitively via saveSheet's scheduleAutoSync.
+   During a revert/reapply replay (mrrJournalSuppressed), (1) and (2)
+   are skipped HERE — mrrRevertBucket/mrrReapplyBucket batch ONE
+   saveSheet + ONE renderSheet after the whole bucket loop instead of
+   once per entry, and that single saveSheet call still schedules the
+   autosync exactly once, coalesced. (3) and (4) are skipped entirely
+   (not batched) during replay — a revert/reapply is bookkeeping, not a
+   new player-visible mutation event; logging/toasting N replayed
+   entries as N fresh notifications the player didn't just cause would
+   be confusing UI noise. */
 function finalizeMutation(attrs) {
-  saveSheet(state.chatId, state.sheet);
-  renderSheet();
-  if (!Array.isArray(state.mutationLog)) state.mutationLog = [];
-  state.mutationLog.push({
-    timestamp: Date.now(),
-    field: attrs.field,
-    delta: attrs.delta,
-    add: attrs.add,
-    remove: attrs.remove,
-    qty: attrs.qty,
-    reason: attrs.reason
-  });
-  if (state.mutationLog.length > 20) state.mutationLog.shift();
-  showMutationToast(attrs);
+  if (!mrrJournalSuppressed) {
+    saveSheet(state.chatId, state.sheet);
+    renderSheet();
+    if (!Array.isArray(state.mutationLog)) state.mutationLog = [];
+    state.mutationLog.push({
+      timestamp: Date.now(),
+      field: attrs.field,
+      delta: attrs.delta,
+      add: attrs.add,
+      remove: attrs.remove,
+      qty: attrs.qty,
+      reason: attrs.reason
+    });
+    if (state.mutationLog.length > 20) state.mutationLog.shift();
+    showMutationToast(attrs);
+  }
   return true;
 }
 
@@ -13675,6 +15425,21 @@ function applyStateMutation(attrs) {
      model can self-correct on the next turn's context. */
   var stateDef = resolveRulesetState(field);
   if (stateDef) {
+    /* Round-9 fix 1c: internal-only sentinel used exclusively by
+       mrrBuildReplayAttrs("inverse") when reverting a bucket's
+       FIRST-EVER journaled entry for this state (prev:null — the state
+       had never been set before that mutation). Reverting must CLEAR
+       the state, not "set" it to some label. This can NEVER be produced
+       from tag text: parseStateAttrs (STATE_KV_RE) only ever assigns
+       STRING capture-group values (or undefined) to attrs — even a tag
+       author who literally typed __mrrStateClear="true" would produce
+       the STRING "true", which fails this strict `=== true` boolean
+       check. Sole-writer preserved: this still dispatches through
+       applyStateMutation, never a parallel direct sheet-write path. */
+    if (attrs.__mrrStateClear === true) {
+      if (sheet.states && typeof sheet.states === "object") delete sheet.states[stateDef.name];
+      return finalizeMutation(attrs);
+    }
     var rawStateVal = (attrs.value != null) ? attrs.value
                     : (attrs.set   != null) ? attrs.set
                     : attrs.current;
@@ -13693,7 +15458,9 @@ function applyStateMutation(attrs) {
       return false;
     }
     if (!sheet.states || typeof sheet.states !== "object") sheet.states = {};
+    var prevStateLabel = (sheet.states[stateDef.name] !== undefined) ? sheet.states[stateDef.name] : null;
     sheet.states[stateDef.name] = canonicalLabel;
+    mrrJournalMutation(stateDef.name, { prev: prevStateLabel, next: canonicalLabel }); /* B2-R: label-valued "set" — see plan point 1 ("value=/states/label sets") */
     return finalizeMutation(attrs);
   }
 
@@ -13793,7 +15560,24 @@ function applyStateMutation(attrs) {
     var max = resolvedFieldMax(resolved.map, resolved.key);
     var next = hasAbsolute ? absoluteValue : (current + delta);
     if (typeof max === "number") next = Math.min(max, next);
-    bucket[resolved.key] = Math.max(0, next);
+    var finalNext = Math.max(0, next);
+    bucket[resolved.key] = finalNext;
+    /* B2-R: journal against resolved.key (the CANONICAL, alias-resolved
+       name), not the raw possibly-aliased `field` — a revert/reapply
+       reconstructs a synthetic attrs and re-dispatches through
+       applyStateMutation, and the canonical name is guaranteed to
+       exact-match resolveSheetField's first pass on that replay.
+       Round-9 fix 1b: ALWAYS journal the absolute prev/next pair,
+       regardless of whether this write arrived as delta= or an
+       absolute form — `current` and `finalNext` are both already in
+       scope here at the clamp site. The old delta-kind journal entry
+       (round 7) recorded the ORIGINAL signed delta and re-derived a
+       fresh clamp on revert, which LOST information whenever the
+       original write itself clamped: HP at 3 with delta=-8 clamps to
+       finalNext=0; a delta-kind revert re-applied +8 against the LIVE
+       (already-0) value and landed on 8, not the original 3. prev/next
+       are exact, unconditionally — revert is now a plain prev-restore. */
+    mrrJournalMutation(resolved.key, { prev: current, next: finalNext });
     return finalizeMutation(attrs);
   }
   /* Unknown field — stash on the sheet root as a generic numeric so
@@ -13813,7 +15597,14 @@ function applyStateMutation(attrs) {
   }
   var leaf = pathParts[pathParts.length - 1];
   var rootCurrent = (typeof node[leaf] === "number") ? node[leaf] : 0;
-  node[leaf] = hasAbsolute ? Math.max(0, absoluteValue) : Math.max(0, rootCurrent + delta);
+  var stashFinal = hasAbsolute ? Math.max(0, absoluteValue) : Math.max(0, rootCurrent + delta);
+  node[leaf] = stashFinal;
+  /* B2-R: journal against the full dotted-path `field` string — replay
+     re-runs the SAME stash-path resolution (resolveSheetField fails first,
+     falls through to here), so the path string round-trips correctly.
+     Round-9 fix 1b: unconditional absolute prev/next, same reasoning as
+     the resolved-field branch above (clamp-loss fix). */
+  mrrJournalMutation(field, { prev: rootCurrent, next: stashFinal });
   return finalizeMutation(attrs);
 }
 
@@ -13842,16 +15633,134 @@ function processChatMessage(node) {
   var text = node.textContent || "";
   if (text.indexOf("[mrr-state:") === -1) return;
 
-  if (!processedMessageIds[msgId]) {
-    var tags = parseStateTags(text);
-    /* Route through the shared cross-transport dedup keyed by this message id.
-       The outer processedMessageIds gate still governs whole-message
-       reprocessing (unchanged); the helper additionally lets the runs poller
-       skip any tag the narrator already applied for this same turn. */
-    var applied = applyStateTagsWithDedup(tags, msgId);
-    processedMessageIds[msgId] = true;
-    saveProcessedMessageIds();
-    log("state-mutator: applied " + applied + "/" + tags.length + " mutation(s) from message " + msgId);
+  /* FIX-2b (round-6 critical, corrects round 5's FIX-2 wiring — see
+     mrrProcessedTextMemo's declaration for the full contract): the fast
+     path checks ONLY the legacy plain-msgId entry — NOT
+     isMessageProcessed's prefix scan. A composite entry ("M:0") cannot
+     legitimately gate the fetch, because the CURRENT swipe is unknown
+     before the fetch resolves; short-circuiting on "any swipe was ever
+     processed" made a freshly-swiped reply's tags never apply — B2's core
+     feature, dead in the live path. The memo closes the reopened
+     performance hole (finding 13b) on its own terms: unchanged text on a
+     re-observation means nothing new happened (skip); changed text means
+     a swipe or a first-ever message (proceed to the fetch — the
+     composite-exact check inside isMessageProcessed decides from there,
+     once idx is known). */
+  if (!processedMessageIds[msgId] && mrrProcessedTextMemo[msgId] !== text) {
+    var scanChatId = state.chatId;
+    resolveSwipeIndexForMessage(scanChatId, msgId).then(function (idx) {
+      if (state.chatId !== scanChatId) return; /* chat switched mid-fetch — stale, ignore */
+
+      /* B2-R (round 7) — swipe-change detection, BEFORE the dedup gate.
+         Only meaningful when idx actually resolved to a number AND we have
+         a prior lastSeenIdx for this msgId to compare against; an
+         unresolvable idx (fetch failure / out-of-window) can never be
+         "changed from" anything, so it falls straight through unchanged.
+         ALWAYS revert the bucket we're leaving (whichever was last active,
+         priorIdx) before deciding what happens to the bucket we're
+         arriving at — this is what makes an A->B->A round-trip restore A
+         EXACTLY. An earlier draft only reverted the OLD bucket on a
+         forward swipe and skipped straight to mrrReapplyBucket on a
+         swipe-back, which left the bucket being swiped AWAY FROM
+         (B) still active underneath A's reapplied entries — caught by the
+         session probe harness's (scratchpad-only, not in this repo) A->B->A
+         round-trip probe, which computed the wrong restored value until
+         this was fixed. */
+      if (idx !== null && idx !== undefined) {
+        var priorIdx = mrrMutationJournal.lastSeenIdx[msgId];
+        if (priorIdx !== undefined && priorIdx !== idx) {
+          var oldBucketKey = mrrProcessedKey(msgId, priorIdx);
+          var oldBucket = mrrMutationJournal.buckets[oldBucketKey];
+          if (oldBucket && oldBucket.entries.length && !oldBucket.reverted) {
+            mrrRevertBucket(oldBucketKey);
+            log("state-mutator: swipe change on " + msgId + " (" + priorIdx + " -> " + idx + ") reverted bucket " + oldBucketKey);
+          }
+
+          var newBucketKey = mrrProcessedKey(msgId, idx);
+          var newBucket = mrrMutationJournal.buckets[newBucketKey];
+          if (newBucket && newBucket.reverted) {
+            /* Swipe-BACK to a previously-journaled (and since-reverted)
+               swipe: re-apply from ITS journal, bypassing the dedup gate
+               entirely (point 5 — plain-anchor dedup would silently
+               swallow identical content re-applied through the normal
+               path, since the anchor was already marked applied the first
+               time). processedMessageIds already carries this bucket's key
+               true from its original apply — that flag is deliberately
+               NEVER cleared, so the dedup-gated normal path below could
+               never re-admit it on its own; this is the ONLY sanctioned
+               way back in. */
+            mrrReapplyBucket(newBucketKey);
+            mrrMutationJournal.lastSeenIdx[msgId] = idx;
+            mrrSaveMutationJournal();
+            processedMessageIds[newBucketKey] = true;
+            mrrProcessedTextMemo[msgId] = text;
+            saveProcessedMessageIds();
+            log("state-mutator: swipe-back re-applied bucket " + newBucketKey + " from journal");
+            return; /* hideStateTagsInElement already ran synchronously below, before this async callback started */
+          }
+          /* Otherwise: forward swipe to a genuinely new (or never-yet-
+             reverted) index — fall through to the normal apply path below,
+             which journals the new swipe's tags fresh under newBucketKey. */
+        }
+        mrrMutationJournal.lastSeenIdx[msgId] = idx;
+        mrrSaveMutationJournal();
+      }
+
+      if (isMessageProcessed(msgId, idx)) {
+        /* Round-9 fix 5c: stamp the memo here too, not just after a fresh
+           apply below — without this, a message whose composite entry was
+           already marked processed by some OTHER path (e.g. swipe-back's
+           own memo-stamp on a DIFFERENT swipe index) keeps missing the
+           fast-path memo check on every future re-observation of THIS
+           text, re-triggering the swipe-index fetch every single time
+           instead of short-circuiting like a freshly-applied message
+           would. Harmless no-op when the memo was already correct.
+           Round-10 fix B (new bug introduced by 5c): ONLY when idx is
+           genuinely known. When idx is null/undefined (fetch failure or
+           out-of-window), isMessageProcessed falls to its prefix-scan
+           fallback, which returns true whenever ANY swipe of this msgId
+           was EVER processed — even though THIS swipe's tags (this exact
+           text) were never actually applied. Stamping the memo there
+           would permanently block recovery: every future re-observation
+           of that same never-applied text would short-circuit at the
+           fast-path gate above instead of retrying the fetch, which is
+           the only thing that can ever resolve idx and let the real
+           composite-key check run. Pre-5c, an unresolvable observation
+           always retried; 5c's unconditional stamp silently broke that. */
+        if (idx !== null && idx !== undefined) mrrProcessedTextMemo[msgId] = text;
+        return; /* composite entry already applied (re-entrant observation) */
+      }
+      var tags = parseStateTags(text);
+      var key = mrrProcessedKey(msgId, idx);
+      /* FIX-1 (round-5 critical): the cross-transport dedup ANCHOR passed to
+         applyStateTagsWithDedup is the PLAIN msgId, not the composite key —
+         extractRunAnchor (runs poller) only ever returns plain msgId (it has
+         no swipe-index concept), so passing the composite key here broke the
+         documented invariant "a tag present in BOTH sources applies exactly
+         once": narrator and poller anchors stopped matching and identical
+         tags applied TWICE. Restored: both transports anchor on plain msgId
+         again. The composite key is used ONLY for the processedMessageIds
+         entry below (whole-message+swipe reprocessing gate) — that part of
+         B2's swipe-awareness is unaffected.
+         Accepted consequence of sharing one plain-msgId anchor across
+         swipes: identical-content tags on two different swipes of the same
+         message now dedup to a single apply (protective — was already true
+         pre-B2). Different-content tags on different swipes still each
+         apply (stacking both swipes' mutations) for any field OUTSIDE
+         B2-R's scalar-field journal (round 7) — conditions, inventory,
+         backgrounds, intimacies, xp, attunement/investiture/commitment,
+         and typed-damage-track hits are not reverted on a swipe change, so
+         they keep stacking exactly as before. Scalar fields (attributes,
+         skills, derived stats, ruleset states) no longer stack: the swipe-
+         change detection above reverts the old swipe's journaled entries
+         first. Still a known open design question for the un-covered
+         mutation types; not solved here. */
+      var applied = applyStateTagsWithDedup(tags, msgId, key);
+      processedMessageIds[key] = true;
+      mrrProcessedTextMemo[msgId] = text; /* FIX-2b: record what content this msgId was processed against, so a spurious re-observation with the SAME text short-circuits at the fast path without a fetch */
+      saveProcessedMessageIds();
+      log("state-mutator: applied " + applied + "/" + tags.length + " mutation(s) from message " + key);
+    });
   }
   /* Visual hiding runs every observation — Marinara may re-render the
      message and unwrap our spans; we re-wrap on next mutation. */
@@ -13934,17 +15843,48 @@ function extractRunId(row) {
 function extractRunAnchor(row, fallbackId) {
   /* The turn anchor must equal the narrator's data-message-id for cross-
      transport dedup to collide. Confirmed at the dump stage. Fall back to a
-     run-unique id so a missing messageId can't collide across unrelated runs. */
+     run-unique id so a missing messageId can't collide across unrelated runs.
+     Finding 14 (accepted, comment+warn only — not fixed this round): a row
+     with no discoverable messageId degrades to this synthetic per-run
+     anchor, which can never collide with the narrator-path anchor for the
+     same turn (no cross-transport dedup) and never resolves to a
+     swipe-aware journal bucket (always plain-bucket, never
+     auto-reverted). Warn per occurrence so this degradation is visible
+     rather than silent. */
   var mid = row && (row.messageId || row.message_id || (row.message && row.message.id));
-  return mid || ("run:" + fallbackId);
+  if (mid) return mid;
+  warn("runs-poller: run " + fallbackId + " has no messageId — anchoring to a synthetic per-run id (no cross-transport dedup, no swipe-aware journal bucket for this mutation)");
+  return "run:" + fallbackId;
 }
 
 function pollCustomAgentRuns(chatId) {
   if (MRR_RUNS_POLLER_MODE === "off") return;
   if (!chatId || runsPollInFlight) return;
   runsPollInFlight = true;
+  /* Round-9 fix 7: captured now, checked after the async swipe-index
+     fetch below — mirrors processChatMessage's own
+     `if (state.chatId !== scanChatId) return;` stale-chat guard, which
+     this poller was missing entirely. Without it, switching chats
+     mid-fetch let the eventual apply still write mutations against
+     whatever chat happened to be active when the promise resolved,
+     not the chat this poll cycle actually started against. */
+  var pollChatId = chatId;
   loadProcessedRunIds(chatId);
   apiFetch("/agents/runs/" + encodeURIComponent(chatId) + "/custom?limit=50").then(function (rows) {
+    /* Round-10 fix C: the stale-chat guard previously only existed at the
+       SECOND hop (fetchSwipeIndexMap's .then, below) — but a chat switch
+       during THIS FIRST apiFetch was already unguarded and had a real,
+       distinct failure mode: the baseline-seeding branch a few lines down
+       would seed chat A's run ids into chat B's now-active processedRunIds
+       set (loadProcessedRunIds(chatId) above already loaded/created B's
+       set before this callback fires, since chatId was captured
+       synchronously) and mark B's runsBaselineExists true for a chat that
+       was never actually baselined — B's first REAL poll would then see
+       every one of its own pre-existing runs as "new" and replay its
+       entire history in one sweep. Duplicated here (not hoisted out) so
+       each hop independently guards against a switch that happened during
+       ITS OWN async gap. */
+    if (state.chatId !== pollChatId) return;
     /* marinara.apiFetch does not check status (returns res.json() always), so
        a 404/error body arrives as a non-array — degrade silently. */
     if (!Array.isArray(rows)) return;
@@ -13970,19 +15910,73 @@ function pollCustomAgentRuns(chatId) {
       return;
     }
     var total = 0, applied = 0, sawNew = false;
+    var tagBearingRows = []; /* B2-R (point 3): collected first so the swipe-index map is fetched ONCE, only if actually needed */
     for (var i = 0; i < rows.length; i++) {
       var runId = extractRunId(rows[i]);
       if (runId != null && processedRunIds[runId]) continue;
       var text = extractRunText(rows[i]);
       var tags = text ? parseStateTags(text) : [];
       if (tags.length) {
-        applied += applyStateTagsWithDedup(tags, extractRunAnchor(rows[i], runId));
-        total += tags.length;
+        /* Round-9 fix 7: a TAG-BEARING row's processedRunIds flag is set
+           ONLY after its applyStateTagsWithDedup call actually returns,
+           inside the loop below — NOT here. Marking it processed before
+           the mutation applies meant a chat-switch mid-fetch, or a throw
+           during apply, permanently lost that mutation: the row would
+           never be reconsidered on a future poll, yet nothing had
+           actually landed on any sheet. */
+        tagBearingRows.push({ row: rows[i], runId: runId, tags: tags });
+      } else if (runId != null) {
+        processedRunIds[runId] = true; /* nothing to apply — no async gap, safe to mark immediately */
+        sawNew = true;
       }
-      if (runId != null) { processedRunIds[runId] = true; sawNew = true; }
     }
-    if (sawNew) saveProcessedRunIds();
-    if (total) log("runs-poller: applied " + applied + "/" + total + " mutation(s) from custom-agent runs");
+    function finishRunsPoll() {
+      if (sawNew) saveProcessedRunIds();
+      if (total) log("runs-poller: applied " + applied + "/" + total + " mutation(s) from custom-agent runs");
+    }
+    if (!tagBearingRows.length) { finishRunsPoll(); return; }
+    /* B2-R (point 3): a run's mutations journal under the messageId:
+       swipeIndex ACTIVE at apply time, resolved via the SAME
+       fetchSwipeIndexMap the narrator path uses (coalesces onto one
+       in-flight request if the narrator side is already fetching) —
+       plain-anchor bucket when unresolvable (no messageId on the row, or
+       the message fell outside the fetched recent-window). Per the plan:
+       plain buckets are never auto-reverted by the narrator's swipe-
+       change detection, only superseded forward. */
+    return fetchSwipeIndexMap(chatId).then(function (swipeMap) {
+      if (state.chatId !== pollChatId) return; /* round-9 fix 7 — chat switched during the async fetch; stale, do not apply against the wrong chat */
+      try {
+        for (var r = 0; r < tagBearingRows.length; r++) {
+          var entry = tagBearingRows[r];
+          var anchor = extractRunAnchor(entry.row, entry.runId);
+          var mid = entry.row && (entry.row.messageId || entry.row.message_id || (entry.row.message && entry.row.message.id));
+          /* Finding 7c (accepted, comment-only — journal-key drift): this
+             journalKey is resolved from swipeMap, fetched once at the
+             START of this batch. If the active swipe index for `mid`
+             changes AGAIN mid-batch (a second swipe landing between the
+             fetch and this row's apply), this row journals under the
+             now-stale index rather than the very latest one. The window
+             is one batch's worth of synchronous loop iteration
+             (milliseconds) and self-corrects on the next poll cycle's
+             fresh fetch — not fixed this round. */
+          var journalKey = (mid && swipeMap && Object.prototype.hasOwnProperty.call(swipeMap, mid))
+            ? mrrProcessedKey(mid, swipeMap[mid])
+            : anchor; /* unresolvable — plain bucket */
+          total += entry.tags.length;
+          try {
+            applied += applyStateTagsWithDedup(entry.tags, anchor, journalKey);
+            if (entry.runId != null) { processedRunIds[entry.runId] = true; sawNew = true; }
+          } catch (e) {
+            /* Round-9 fix 7: a throw on ONE row warns honestly and does
+               NOT mark that row processed (so it's retried next poll) —
+               and does NOT abort the rest of the batch. */
+            warn("runs-poller: row for anchor '" + anchor + "' threw while applying — not marked processed, will retry next poll (" + (e && e.message ? e.message : e) + ")");
+          }
+        }
+      } finally {
+        finishRunsPoll(); /* fix 7: batch bookkeeping (save + summary log) survives one bad row regardless */
+      }
+    });
   }).catch(function (e) {
     warn("runs-poller: /agents/runs fetch failed (" + (e && e.message ? e.message : e) + ") — degrading; narrator path unaffected");
   }).then(function () { runsPollInFlight = false; }, function () { runsPollInFlight = false; });
@@ -14056,7 +16050,7 @@ function watchChatMessages() {
   for (var x = 0; x < existing.length; x++) {
     var el = existing[x];
     var mid = el.getAttribute("data-message-id");
-    if (mid && processedMessageIds[mid]) {
+    if (mid && isMessageProcessed(mid, null)) { /* FIX-2: shared helper — plain, composite-exact (n/a, idx null), and prefix-scan checks */
       hideStateTagsInElement(el);
     } else {
       schedule(el);
@@ -14086,6 +16080,20 @@ function init() {
     return;
   }
   state.ruleset = rs;
+  /* Round-9 fix 5b: reset B18 mechanic-selection state whenever the active
+     ruleset (re)loads. Every observed ruleset-switch path in this file
+     goes through a full `window.location.reload()` (see the three
+     RELOAD_DELAY_MS call sites), which already re-executes this whole
+     module fresh and would naturally leave these undefined — but init()'s
+     own comment above says it "can fire multiple times across a Marinara
+     session (chat switches, route changes)", implying the engine may
+     re-invoke this script without a hard reload in some path this file
+     doesn't otherwise document. Explicit reset here costs nothing and
+     closes that gap defensively either way: a stale additionalMode
+     selection from a PRIOR ruleset must never survive into a new one
+     (the id may not even exist in the new ruleset's additionalModes). */
+  state.diceActiveModeId = "primary";
+  state.diceBuiltModeId = null;
   /* Seed the library with the currently active ruleset on first run after
      the library feature ships, so users who already had a ruleset configured
      see it in the Library list immediately. */
@@ -14207,10 +16215,17 @@ function watchRouteChanges() {
 /* Browser lifecycle: persist on tab hide and page unload. visibilitychange
    fires reliably on tab switch / minimize / mobile-background; beforeunload
    covers full reloads and tab closes. Both call flushSave directly because
-   the user may not have nudged a stepper since their last edit. */
+   the user may not have nudged a stepper since their last edit.
+   FIX-3 (round 5): the SAME visibilitychange listener also reconciles the
+   in-memory storage cache from any newer values another tab wrote to LS
+   while this tab was hidden — see mrrReconcileFromOtherTabs. */
 function watchLifecycleSaves() {
   marinara.on(document, "visibilitychange", function () {
-    if (document.visibilityState === "hidden") flushSave();
+    if (document.visibilityState === "hidden") {
+      flushSave();
+    } else if (document.visibilityState === "visible") {
+      if (hasServerStorage) mrrReconcileFromOtherTabs();
+    }
   });
   marinara.on(window, "beforeunload", flushSave);
   marinara.on(window, "pagehide",     flushSave);
@@ -14697,4 +16712,29 @@ mrr_resourceRenderers["exalted-health-track"] = function (resource, parent, ctx)
   mrrP3RenderDerivedTrack(parent, synthDerived);
 };
 
-init();
+/* B1: no top-level await anywhere in this file — hydrateStore() is async
+   but init() itself stays fully synchronous once called. onCleanup is
+   registered SYNCHRONOUSLY and FIRST, before any async gap, so a
+   disable-during-hydrate still runs cleanup correctly. No pre-existing
+   top-level marinara.onCleanup registration was found to unify with —
+   the only other onCleanup call sites are the compat shim's own internal
+   node/listener teardown (~line 229, scoped to the shim's IIFE closure)
+   and watchChatMessages' observer teardown (registered only once init()
+   itself runs) — neither conflicts with this one. See final report. */
+var mrrDisposed = false;
+var mrrInitStarted = false;
+
+marinara.onCleanup(function () {
+  mrrDisposed = true;
+  mrrBestEffortFlushOnCleanup();
+});
+
+function mrrInitOnce() {
+  if (mrrInitStarted) return;
+  mrrInitStarted = true;
+  init();
+}
+
+hydrateStore().then(function () {
+  if (!mrrDisposed) mrrInitOnce();
+});
