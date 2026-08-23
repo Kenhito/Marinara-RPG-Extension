@@ -402,7 +402,7 @@ The `hit-dice` resource's count is wired to `{Level}` — so as the player level
 
 ## Canonical agent pool (GM-mode bundle contract)
 
-Every GM-mode ruleset bundle ships the following agent layout, all `enabled:true`, auto-installed by the extension at bundle install. GM-mode has no per-agent toggle UI in Marinara's Settings, so the bundle IS the install — users do not pick and choose.
+Every GM-mode ruleset bundle ships the following agent layout, installed by the extension at bundle install. **Installing is not activating:** on Marinara 2.4.3+, GM-mode custom agents behave exactly like RP-mode ones — the user must **enable them per game at load time, after the game launches** (Settings → Agents or the game's agent selection), and must **attach the ruleset's lorebook to the game** (at setup or after launch) or the agents have no rules context and fail to work correctly. Document both steps in any user-facing install text.
 
 ### Universal pool (every ruleset)
 
@@ -425,17 +425,11 @@ Some rulesets ship additional **`parallel`-phase** agents that track system-spec
 
 ### Per-turn cost
 
-A standard ruleset (no parallel overlays) fires **2 pre-gen calls** (combat-overseer + context-fuser) + **1 post-proc call** (state-mutator) per turn. Rulesets with parallel overlays add those calls outside the critical path (parallel phase doesn't increase latency to the next narration; the overlay's output is appended after the scene resolves). The `pre-input-transformer` when present adds one more pre-gen call.
+A standard ruleset (no parallel overlays) fires **3 pre-generation calls** per turn — combat-overseer, context-fuser, and state-mutator (all three are `pre_generation` context injectors; the state-mutator's *effects* land when the extension's runs-endpoint poller reads its emitted `[mrr-state:]` tags). Rulesets with parallel overlays add those calls outside the critical path (parallel phase doesn't block the next narration on providers that allow concurrent calls — on a 1-call-at-a-time provider every agent serializes, so count matters; see the plan's agent-budget item). The `pre-input-transformer` when present adds one more pre-gen call. The main Ruleset Helper (`gmAgent`) is a further pre-gen call on top of the sub-agents.
 
-### Migration from v0.4.x installs
+### Upgrading from any pre-2.4.3-era install
 
-Users on v0.4.x had a different set of sub-agents (`combat-adjudicator`, `npc-bookkeeper`, `lore-query`, `state-reminder`, `state-mutator`). Those legacy four are no longer shipped in this repo or in any bundle as of 2026-05-22. The migration path is:
-
-1. In Marinara, **uninstall the ruleset** (drops the lorebook, main GM agent, and any sub-agents installed from the old bundle).
-2. **Reinstall the current `bundle.json`** for that ruleset. The new bundle's `mrrAgentRole` idempotency keying handles the install cleanly — there is no manual cleanup to do.
-3. Any orphaned legacy sub-agents (`MRR: <ruleset> — combat-adjudicator` and so on) that survived the uninstall can be removed directly through Marinara's stock agent UI; they will not be re-created by the new bundle since the new build pipeline does not emit them.
-
-There is no in-place upgrade for v0.4.x → current; the uninstall/reinstall is mandatory.
+**There is no migration.** Engine 2.4.3 is a clean break: Marinara deleted its old extension system entirely (v2.3.4) and rebuilt it (v2.4.0+), and every earlier release of this extension cannot load on a current engine. Uninstall whatever ruleset artifacts an old install left behind (Marinara's stock Settings → Agents and Lorebooks UIs can remove any strays), install the current extension package through **Settings → Addons → External Extensions**, and import the current `bundle.json` fresh. The bundle's `mrrAgentRole` idempotency keying makes re-installs clean; nothing from an older install is read, needed, or re-created.
 
 ### Per-ruleset overrides still apply
 

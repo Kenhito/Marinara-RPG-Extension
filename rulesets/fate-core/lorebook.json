@@ -30,7 +30,7 @@
         "fudge dice",
         "fudge"
       ],
-      "content": "Fate dice are six-sided dice with two faces showing +, two showing -, and two showing 0. A roll of 4dF produces a result from -4 to +4 with a strong bell-curve toward 0. The character's skill rating is added: rolled total = sum of 4dF + skill. The total is then compared to a target on the Fate ladder. Each die contributes to the narration \u2014 a clutch roll of (+,+,+,0) at total +3 is dramatically different from a (0,0,0,+3) flat result, even though the total is the same."
+      "content": "Fate dice are six-sided dice with two faces showing +, two showing -, and two showing 0. A roll of 4dF produces a result from -4 to +4 with a strong bell-curve toward 0. The character's skill rating is added: rolled total = sum of 4dF + skill. The total is then compared to a target on the Fate ladder. Each die contributes to the narration — a clutch roll of (+,+,+,0) at total +3 is dramatically different from a (0,0,0,+3) flat result, even though the total is the same."
     },
     {
       "id": "rules-ladder",
@@ -92,7 +92,7 @@
         "wounded",
         "concede"
       ],
-      "content": "Consequences absorb damage by carving lasting narrative cost. Mild Consequence absorbs 2 shifts and adds an aspect such as 'Black Eye' (recovers end-of-scene with action). Moderate Consequence absorbs 4 shifts as 'Cracked Ribs' (recovers next session). Severe Consequence absorbs 6 shifts as 'Promised Revenge' or 'Lost the Eye' (recovers end of arc). Each consequence aspect can be invoked or compelled by anyone. When a character cannot absorb a hit, they are taken out and the attacker dictates outcome \u2014 OR the player can Concede the conflict instead, gaining 1 Fate Point per consequence and keeping narrative control of their exit."
+      "content": "Consequences absorb damage by carving lasting narrative cost. Mild Consequence absorbs 2 shifts and adds an aspect such as 'Black Eye' (recovers end-of-scene with action). Moderate Consequence absorbs 4 shifts as 'Cracked Ribs' (recovers next session). Severe Consequence absorbs 6 shifts as 'Promised Revenge' or 'Lost the Eye' (recovers end of arc). Each consequence aspect can be invoked or compelled by anyone. When a character cannot absorb a hit, they are taken out and the attacker dictates outcome — OR the player can Concede the conflict instead, gaining 1 Fate Point per consequence and keeping narrative control of their exit."
     },
     {
       "id": "rules-invoking",
@@ -102,7 +102,7 @@
         "+2",
         "reroll"
       ],
-      "content": "Invoking an aspect: spend 1 Fate Point and declare which aspect you're invoking and how it applies. Choose +2 to your roll OR reroll all four Fate dice (declare BEFORE seeing results in either case). The aspect must be plausibly relevant \u2014 the GM is the arbiter, not the gatekeeper. Free invocations from Create-an-Advantage successes or Boosts work the same way but cost no Fate Points (they're consumed on use)."
+      "content": "Invoking an aspect: spend 1 Fate Point and declare which aspect you're invoking and how it applies. Choose +2 to your roll OR reroll all four Fate dice (declare BEFORE seeing results in either case). The aspect must be plausibly relevant — the GM is the arbiter, not the gatekeeper. Free invocations from Create-an-Advantage successes or Boosts work the same way but cost no Fate Points (they're consumed on use)."
     },
     {
       "id": "rules-compels",
@@ -152,26 +152,21 @@
       "content": "When a player fails a roll on something dramatically important, the GM can offer 'success at a serious cost' instead of a flat fail: the player succeeds at the action they described, but takes a stress hit, accepts a consequence, gives up something they wanted, or introduces a complication. The player can refuse the cost and accept the failure instead. Use this to keep the story moving forward; a flat fail at the climax stalls the table."
     },
     {
-      "name": "Optional Sub-Agents \u2014 what they do and how to enable",
-      "content": "The Marinara-RPG ruleset bundle ships five OPTIONAL pre-generation sub-agents that focus the main narration model on specific tasks. They are installed DISABLED by default \u2014 flip them on individually in Marinara's Settings \u2192 Agents panel. Each adds one model call per turn while enabled, so enable only what your campaign needs.\n\nThe five sub-agents:\n\n1. **state-mutator** \u2014 Instructs the narration model to emit hidden `[mrr-state: ...]` tags inside narration when the story changes a character's HP, conditions, or inventory. The extension parses these tags, applies the change to the floating sheet, and shows a confirmation toast. Without this enabled, you have to mutate the sheet by hand. Enable when: you want narration to drive the sheet automatically.\n\n2. **state-reminder** \u2014 Surfaces a short bulleted list of current player character state (HP, conditions, equipped gear, tracked resources) at the top of every turn so the narration model stays mechanically honest between messages. Enable when: long sessions or complex sheets, the model is forgetting your stats.\n\n3. **combat-adjudicator** \u2014 Wakes up only when combat is active. Restates initiative, action economy, attack/damage formulas, and conditions in the active ruleset's terms before each turn. Outputs nothing (literally \"No combat active.\") in social or ambient scenes. Enable when: you run heavy-mechanics combat encounters.\n\n4. **lore-query** \u2014 Wakes up only when the latest user message is a rules question (e.g., \"How does grappling work?\", \"What's the DC for picking a lock?\"). Answers from the installed lorebook + system RAW. Outputs nothing (\"No rules query.\") otherwise. Enable when: you frequently ask the model rules questions mid-RP.\n\n5. **npc-bookkeeper** \u2014 Tracks active and recently-engaged NPC HP, conditions, tactical state, and telegraphed intentions across turns. Outputs nothing (\"No NPCs to track.\") when no NPCs are in scene. Enable when: combat or social scenes with multiple named NPCs you want continuity on.\n\nHow to enable: Marinara \u2192 Settings \u2192 Agents \u2192 find the agent (named like \"MRR: <System> \u2014 <Role>\" ) \u2192 toggle on. The agent persists across chats; toggle off any time.",
+      "name": "Sub-Agents — what they do and how to enable them",
+      "content": "Besides the main Ruleset Helper, the bundle installs a small consolidated pool of sub-agents. IMPORTANT: installing the bundle does NOT activate them — like all custom agents on Marinara 2.4.3+, they must be ENABLED FOR EACH GAME at load time, after the game launches (Marinara -> Settings -> Agents, or the game's agent selection). The ruleset's lorebook must ALSO be attached to the game (during game setup or after launch) — without it the agents have no ruleset rules to follow and will not work correctly.\n\nThe pool: combat-overseer (one pre-generation agent covering combat-math framing AND NPC roster tracking). context-fuser (one pre-generation agent covering rules-question answers AND current player-state reminders). state-mutator (the ONLY agent that changes the character sheet — it emits hidden [mrr-state: ...] tags the extension applies; covers stress boxes, consequences, Fate Points, aspects).\n\nEach enabled agent costs one extra model call per turn; on a provider that allows only one call at a time, every agent call runs one after another — enable only what your table needs. Enable state-mutator if you want narration to drive the sheet automatically; it is the sole writer, and with it off, sheet changes are manual.",
       "keys": [
         "sub-agent",
-        "sub agents",
-        "subagent",
-        "additional agent",
-        "additionalagent",
+        "sub agent",
+        "sub-agents",
+        "agents",
         "state-mutator",
         "state mutator",
-        "state-reminder",
-        "state reminder",
-        "combat-adjudicator",
-        "combat adjudicator",
-        "lore-query",
-        "lore query",
-        "npc-bookkeeper",
-        "npc bookkeeper",
+        "combat-overseer",
+        "combat overseer",
+        "context-fuser",
+        "context fuser",
         "enable agent",
-        "Settings \u2192 Agents",
+        "disable agent",
         "agent toggle"
       ],
       "position": 1,

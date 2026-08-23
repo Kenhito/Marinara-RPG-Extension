@@ -21,14 +21,14 @@ Each ruleset folder has its own step-by-step `INSTALL.md`. This page is the orie
 
    **Every subsequent update re-requires this approval step** — any edit to the extension's code or CSS invalidates the prior hash.
 
-2. **Pick a ruleset and activate it**
-   Click the **Ruleset** button. Either paste a `ruleset.json` blob into the textarea, or paste a raw URL (e.g. a GitHub `raw.githubusercontent.com` link to one of the rulesets in this repo) and click **Fetch URL**. Click **Save and reload**. The page reloads with the ruleset active.
+2. **Import a ruleset bundle**
+   Click the **Ruleset** button. Use **Choose file…** to pick the ruleset's `bundle.json` (or **Fetch URL** with a raw GitHub link to one). Click **Save and reload**. This one import installs the ruleset (sheet + dice widget), the lorebook, the main GM agent, and the sub-agents — bundles are data, so no extension re-approval is triggered. The page reloads with the ruleset active.
 
-3. **Install the GM agent prompt for the same ruleset**
-   In **Settings -> Agents -> Create Custom Agent**, paste the agent's prompt template from that ruleset's `gm-agent.md`. Set phase = `pre_generation`, result type = `context_injection`. Enable the agent.
+3. **Attach the lorebook to your game**
+   When you create/launch your game (or after it launches), attach the ruleset's lorebook to it — the bundle installed the lorebook, but each game must have it attached. **This is required:** without it the agents have no ruleset rules to follow and will not work correctly.
 
-4. **Install the lorebook for the same ruleset**
-   In **Lorebooks**, import that ruleset's `lorebook.json`. Attach it to your Game Mode chat (per-character or per-chat).
+4. **Enable the agents for your game**
+   On Marinara 2.4.3+ the MRR agents behave like any custom agents: installed by the bundle, but enabled per game — **after the game launches, not mid-generation**. Go to **Settings -> Agents** (or the game's agent selection), find the agents named like `MRR: <System> — <Role>`, and enable the ones your table wants. A good minimal set: **Ruleset Helper + State Mutator** (the State Mutator is what makes narration update the character sheet). Each enabled agent costs one model call per turn.
 
 That's all four pieces. The per-ruleset INSTALL files (`rulesets/dnd5e/INSTALL.md`, `rulesets/exalted3e/INSTALL.md`) walk through this in detail with sanity-check rolls.
 

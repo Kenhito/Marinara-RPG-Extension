@@ -2,13 +2,23 @@
 
 Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara-Engine)'s Game Mode. Run a D10 dice-pool game (Exalted 3e), a d20 game (D&D 5e), a 4dF narrative game (Fate Core), or **author your own ruleset for any tabletop RPG** — without forking Marinara, without writing TypeScript, without waiting for upstream feature requests.
 
+> **⚠️ BREAKING — this release requires Marinara Engine 2.4.3+, and all previous releases are broken on it.**
+> Marinara removed its old extension system in v2.3.4 and rebuilt it in v2.4.0. Every earlier release of this extension (v0.5.0 and older zips, and any paste-into-fields install) **cannot load on a current engine**, and this release **cannot load on engines older than 2.4.3**. There is no in-place upgrade: remove any old install, then install this version fresh — four steps:
+>
+> 1. Set `ENABLE_EXTERNAL_EXTENSIONS=true` in your Marinara Engine host's `.env`.
+> 2. In Marinara: **Settings → Advanced → Danger Zone → Allow third-party extension imports** (toggle on).
+> 3. **Settings → Addons → External Extensions → Import** → pick `Marinara-RPG-Extension.extension.zip` from the release.
+> 4. The import arrives disabled — open it, inspect, and click **Review and Run** to approve and enable it. (Every future update repeats this approval step; that's the engine's trust model, not a bug.)
+>
+> Full walkthrough with screenshots and troubleshooting: [`docs/INSTALL.md`](docs/INSTALL.md).
+
 ## Quick start (5 minutes)
 
 The fastest path: grab the self-contained release at [`releases/1.0.0/`](releases/1.0.0/) and follow [`releases/1.0.0/INSTALL-GUIDE.md`](releases/1.0.0/INSTALL-GUIDE.md). It includes:
 
-- **The framework JS** to paste into Marinara's Extensions panel
-- **Two complete reference rulesets** (D&D 5e and Exalted 3e) with bundle + agents pre-built, ready to paste
-- **Seven AI-feedable build documents** so you can have ChatGPT, Claude.ai, or any chat AI author a ruleset for any other system (GURPS, Cyberpunk RED, Vampire, Mörk Borg — anything)
+- **The importable extension package** (`Marinara-RPG-Extension.extension.zip`) for Marinara's External Extensions import
+- **Two complete reference rulesets** (D&D 5e and Exalted 3e) with bundle + agents pre-built, ready to import
+- **AI-feedable build documents** so you can have ChatGPT, Claude.ai, or any chat AI author a ruleset for any other system (GURPS, Cyberpunk RED, Vampire, Mörk Borg — anything)
 - **Step-by-step install + build guides** in plain language for non-technical users
 
 If you just want to play D&D or Exalted, install the extension and import the ruleset bundle and you're on your way. Other systems are being added as requested and you can submit a PR to add one you've created to the repo.
@@ -23,10 +33,11 @@ The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps
 
 ## What's new in v1.0.0
 
-- **One extension, both modes.** The GM-mode and RP-mode extensions are consolidated into this single extension (the `mrr-` namespace). Marinara 2.0 made custom agents mode-agnostic, so one install works in both Game Mode and Roleplay Mode. The RP-mode extension is retired.
-- **Marinara 2.0.1 compliance.** Verified against the 2.0.x extension contract — `marinara` runtime API, size limits (CSS ≤ 256 KiB, JS ≤ 1 MiB), `parametersSchema` shape, leak-free teardown.
-- **Folder / manifest install.** Ships in the 2.0+ folder/manifest format (`Extensions/<name>/manifest.json` + a `marinara-extensions.json` envelope); the single-file `.js` import still works as a fallback.
-- **Character migration.** Imports both `mrr-` and legacy `mrrp-` character bundles, plus a direct "import from the installed RP-mode extension" path; always saves `mrr-`.
+- **Marinara 2.4.3 compliance — live-tested.** The engine deleted its old extension system (v2.3.4) and rebuilt it (v2.4.0+); this release runs in the new **Full-page External Extension** lane via a compat layer, with the engine's CSRF requirements handled and the whole install + play loop smoke-tested on a live 2.4.3 engine: sheet, dice widget, and the full state-mutation chain (numeric stats, damage tracks, label-valued states) in both Game Mode and Roleplay Mode. **Engines older than 2.4.3 are not supported.**
+- **One extension, one platform, both modes.** The GM-mode and RP-mode extensions are consolidated into this single extension (the `mrr-` namespace); one install works in both Game Mode and Roleplay Mode. The RP-mode extension is retired, and previous releases of BOTH extensions are broken on current engines (see the notice at the top).
+- **State mutations ride a reliable transport.** Agent-emitted `[mrr-state:]` changes are now read from the engine's persisted custom-agent runs (with cross-transport dedup and first-activation baseline seeding), so sheet write-back works even though agent output never reaches the chat DOM on current engines.
+- **Zip / folder / manifest install.** Ships in the engine's canonical package format (`Extensions/<name>/manifest.json` + a `marinara-extensions.json` envelope). **Do not import the loose `.js` file on 2.4.3+** — it silently installs as a sandboxed Worker where the extension cannot run.
+- **Character import.** Imports both `mrr-` and legacy `mrrp-` character bundles; always saves `mrr-`. (Legacy-import paths remain in code but are untested against 2.4.3 — treat this release as a fresh start.)
 - **Agent manager.** Manage / import / dedupe overlay agents from the Ruleset dialog (`mrr-agents`, accepts legacy `mrrp-agents` on read).
 - **Reputation tags are free-form.** The old 50-character action cap is gone in Marinara 2.0+; ruleset prompts no longer carry the obsolete workaround.
 - **State-tag fix.** Six rulesets (CoC 7e, Stewpot, GURPS Lite, Trophy Dark, Pathfinder 2e, Lasers & Feelings) emitted legacy `mrrp-state`/`mrrp-roll` tags the loader couldn't parse — their state changes now apply correctly.
@@ -122,7 +133,9 @@ After import the extension arrives **disabled and unapproved** — open it, insp
 - **Fetch URL** — paste a raw GitHub URL like `https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/exalted3e/bundle.json` into the URL field, then click **Fetch URL**. To get a raw URL for any file on GitHub, open the file's page on github.com and click the **Raw** button at the top-right of the file viewer — that URL is what you paste here. Best when you'd rather not keep the extracted zip around.
 - **Paste JSON** — open `rulesets/<system>/bundle.json` in any text editor (Notepad, TextEdit, VS Code), copy its entire contents, and paste into the textarea below the URL field. Best for one-off bundles you've received over chat or email.
 
-**Step 5 — Save and reload.** Click **Save and reload**. The extension validates the bundle, then auto-installs the lorebook and the GM agent into your Marinara server (via `POST /api/agents` and `/api/lorebooks`) and caches the ruleset locally to drive the character sheet and dice widget. The page reloads; you're done.
+**Step 5 — Save and reload.** Click **Save and reload**. The extension validates the bundle, then installs the lorebook and the agents into your Marinara server (via `POST /api/agents` and `/api/lorebooks`) and caches the ruleset locally to drive the character sheet and dice widget. The page reloads.
+
+**Step 6 — Launch your game, attach the lorebook, enable the agents.** Installing is not activating: on Marinara 2.4.3+ the MRR agents behave like any custom agents — after you create/launch your game, **attach the ruleset's lorebook to the game** (at setup or after launch; without it the agents have no rules to follow) and **enable the MRR agents for that game** (Settings → Agents, agents named like `MRR: <System> — <Role>`, enabled after the game launches — not mid-generation). A good minimal set is the Ruleset Helper + State Mutator; each enabled agent costs one model call per turn.
 
 > **If Fetch URL fails,** your Marinara server may be blocking outbound fetches — use **Choose file…** or paste the JSON instead. **If Save and reload errors,** check the browser console (F12 → Console) for the specific message; the most common cause is an old extension version not seeing a recent bundle field, which the v0.3 release does not have.
 
@@ -240,8 +253,8 @@ Hard requirements your AI's output MUST hit:
 - **`gmAgent.promptTemplate` ≥ 50 characters** (schema minimum). Realistically aim for 800+ words covering: system identity, dice mechanic, skill list, derived stats, dice-tag format, what to emit each turn.
 - **Integer `position` 0 | 1 | 2** on every lorebook entry (not strings like `"before_an"` — that was the v0.2 footgun, fixed in v0.3).
 - **`schema: "mrr-bundle"`** discriminator literal.
-- **For Game-Mode chats specifically:** keep the 50-character reputation tag action-string cap workaround paragraph in your `gmAgent.promptTemplate` — Marinara validates `[reputation: …]` action strings at 50 chars and silently fails longer ones.
-- **Sub-agents install enabled by default in GM-mode.** GM-mode has no per-agent toggle UI in Marinara Settings, so bundles ship every `additionalAgents[]` item with `"enabled": true` — the bundle IS the install. Migration from v0.4.x legacy installs (which shipped `combat-adjudicator` / `npc-bookkeeper` / `lore-query` / `state-reminder` as disabled-by-default) requires uninstalling the ruleset and reinstalling the current bundle; the legacy four no longer exist in this repo.
+- **Reputation tags are free-form in Marinara 2.0+.** Do NOT add a length-cap workaround paragraph to `gmAgent.promptTemplate` — the old 50-character `[reputation: …]` action cap is gone.
+- **Sub-agents are installed by the bundle, enabled by the user per game.** On Marinara 2.4.3+ the MRR agents behave like any custom agents: after the game launches, enable the ones the table wants (Settings → Agents) and attach the ruleset's lorebook to the game — without the lorebook the agents have no rules context. There is no migration from any pre-2.4.3-era install; remove old artifacts and install fresh.
 - **Character cards:** if you ship one, use the V2 spec (`spec: "chara_card_v2"`, `spec_version: "2.0"`, `data` envelope).
 
 Run `node tools/validate-bundle.mjs rulesets/your-system/bundle.json` after the AI hands back the result to catch shape errors. The validator emits `path/expected/got/hint` records — paste any errors back to the AI for a corrected bundle.
