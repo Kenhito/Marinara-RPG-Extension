@@ -97,7 +97,7 @@ rulesets/your-system/
 ├── INSTALL.md
 └── agents/
     ├── state-mutator.md           (only if your system needed this override)
-    └── combat-adjudicator.md       (etc.)
+    └── combat-overseer.md          (etc. — overrides of the shared pool, or a per-system parallel tracker)
 ```
 
 Save those files into a clone of the [Marinara-RPG-Extension](https://github.com/Kenhito/Marinara-RPG-Extension) repo (or a fork of it). Then run the build tools:
@@ -109,13 +109,14 @@ node tools/build-bundle.mjs rulesets/your-system/
 node tools/build-agents.mjs rulesets/your-system/
 ```
 
-Three artifacts get produced:
+Two artifacts matter for install:
 
-- `rulesets/your-system/bundle.json` — paste into Marinara's Ruleset dialog
-- `rulesets/your-system/agents.json` — import via Marinara's Import Agents dialog
-- The framework JS at `extension/RPG-Extension-GM-Mode.js` — paste into Marinara's Extensions panel (one-time, system-independent — same JS works for every ruleset)
+- `rulesets/your-system/bundle.json` — import via the extension's Ruleset dialog (**Choose file…**). This one file installs the sheet config, lorebook, GM agent, and sub-agents.
+- The extension package `Marinara-RPG-Extension.extension.zip` — imported ONCE via Marinara's **Settings → Addons → External Extensions** (system-independent — the same install serves every ruleset; requires engine 2.4.3+ with the import gates enabled).
 
-Then follow `INSTALL-GUIDE.md` to load them into Marinara.
+(`agents.json` is also produced for toolchain parity; GM-mode users don't need it — the bundle carries the agents.)
+
+Then follow `INSTALL-GUIDE.md` to load them into Marinara — including the per-game steps: attach the lorebook to your game and enable the agents after launch.
 
 ## Option B — Manual authoring (no AI)
 

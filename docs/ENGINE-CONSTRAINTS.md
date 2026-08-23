@@ -56,9 +56,9 @@ The engine's `PlayerStats.attributes` type is hard-coded to `{ str, dex, con, in
 
 **Practical effect:** if you switch browsers or clear `localStorage`, you lose the sheet unless you've synced to chat fields recently. Hit the Sync button after every significant sheet update — a sane habit anyway, since the GM agent benefits from seeing current values.
 
-### Lorebook + agent prompt are paste-only
+### Lorebook attachment + agent enablement are per-game manual steps
 
-There's no marketplace for lorebooks or agents in Marinara as of v1.5.5. Each install requires manual paste of the agent prompt and import of the lorebook JSON. The per-ruleset `INSTALL.md` walks through it; ~5 minutes per ruleset.
+There's no marketplace for lorebooks or agents in Marinara. The ruleset bundle installs the lorebook and agents in one import, but each game must have the lorebook manually attached and the agents manually enabled after launch (they behave like any custom agents on 2.4.3+). The per-ruleset `INSTALL.md` walks through it; ~5 minutes per ruleset.
 
 ### Dice widget doesn't auto-fill from sheet
 
