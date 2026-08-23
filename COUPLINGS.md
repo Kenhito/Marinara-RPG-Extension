@@ -2,7 +2,7 @@
 
 Every place MRR touches a Marinara Engine surface outside the documented, versioned public API. Class A = documented 2.4.3 API · B = REST route · C = engine internal (undocumented, could shift on any engine release). Every Class-C row needs a feature probe, a graceful fallback, and a visible degradation warning in the MRR panel status area.
 
-**The Coupling Law (non-negotiable):** any commit that adds/removes/changes an engine touchpoint updates this file in the same commit. See `AGENTS.md` §8.5 and `Plans/2026-08-22_engine-2.4.3-upgrade-and-rolemaster-plan.md` §1.3/§3.
+**The Coupling Law (non-negotiable):** any commit that adds/removes/changes an engine touchpoint updates this file in the same commit. See `AGENTS.md` §8.5.
 
 Rows marked `PENDING — live probe` were seeded from the plan's design/static analysis this session (agent-executed, no live engine access) and need a follow-up live probe on Corey's running engine (plan §4.A0.3–A0.5) before they can be marked confirmed.
 
