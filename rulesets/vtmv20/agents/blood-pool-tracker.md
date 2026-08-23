@@ -61,6 +61,7 @@ PC NAME (Clan, Generation):
 
 # Rules
 
+- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — describe findings in prose only, never the tag syntax itself.
 - DO NOT modify the character sheet — state-mutator does that.
 - DO NOT spend blood for the player.
 - DO NOT narrate or speak in-character.

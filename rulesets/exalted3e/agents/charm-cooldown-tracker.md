@@ -37,6 +37,7 @@ PC NAME (Caste):
 
 # Rules
 
+- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — describe findings in prose only, never the tag syntax itself.
 - DO NOT narrate the scene.
 - DO NOT recommend the next action — just report state.
 - DO NOT modify the character sheet.

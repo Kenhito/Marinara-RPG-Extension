@@ -21,21 +21,32 @@ When the next turn establishes a DURABLE change to a character's sheet (HP loss,
 
 # Tag format
 
-ONE tag per state change, placed at the end of the paragraph, on its own line:
+ONE tag per state change, placed at the end of the paragraph, on its own line. The grammar below is shown with WORKED, CONCRETE examples — every attribute value in a real tag is a literal string or number you compute, never a placeholder:
 
-[mrr-state: target="player|<characterName>" field="<fieldName>" delta="<+/-N>" reason="<short why>"]
-[mrr-state: target="..." field="conditions" add="<condition name (duration if known)>" reason="..."]
-[mrr-state: target="..." field="conditions" remove="<condition name>" reason="..."]
-[mrr-state: target="..." field="inventory" add="<item name>" qty="<N, default 1>" reason="..." optional: slot damage attack_attr attack_proficient use_effect consumable notes category — see Inventory schema below]
-[mrr-state: target="..." field="inventory" remove="<item name>" qty="<N, default 1>" reason="..."]
+[mrr-state: target="player" field="hp" delta="-7" reason="Slashed by orc raider"]
+[mrr-state: target="player" field="conditions" add="Poisoned (3 turns)" reason="Hit by spider venom"]
+[mrr-state: target="player" field="conditions" remove="Poisoned (3 turns)" reason="Antidote administered"]
+[mrr-state: target="player" field="inventory" add="Coin pouch" qty="1" reason="Looted from defeated goblin" optional: slot damage attack_attr attack_proficient use_effect consumable notes category — see Inventory schema below]
+[mrr-state: target="player" field="inventory" remove="Healing Potion" qty="1" reason="Consumed"]
 
 ATTRIBUTES:
 - target: "player" for the active player character; or the character's display name as written in the chat. Required.
 - field: name of the sheet field to mutate. For numeric deltas: "hp" / "health" / any derived stat name from the active ruleset (use the ruleset's vocabulary — match what the main ruleset agent has established). For special fields: "conditions" or "inventory".
-- delta: signed integer for numeric mutations (e.g., "-3", "+5"). Required when field is a numeric stat. Omit for conditions / inventory.
-- add / remove: free-text item or condition name. Use ONE of these per tag, never both. Required for conditions / inventory tags.
-- qty: optional integer for inventory tags, default 1.
-- reason: short narrative justification (8-16 words). Helps the player understand what triggered the change. Required.
+- delta: signed integer for numeric mutations (e.g., "-3", "+5" — a real, computed number, always). Required when field is a numeric stat. Omit for conditions / inventory.
+- add / remove: free-text item or condition name (e.g., "Poisoned (3 turns)", "Coin pouch" — the actual name, not a description of what a name looks like). Use ONE of these per tag, never both. Required for conditions / inventory tags.
+- qty: optional integer for inventory tags (e.g., "1", "3"), default 1.
+- reason: short narrative justification (8-16 words, e.g., "Slashed by orc raider"). Helps the player understand what triggered the change. Required.
+
+# Output contract — no placeholders, ever
+
+Every attribute value you emit MUST be a concrete literal — a real string, or a real integer you have already computed. This applies to every tag form above, not just delta=.
+
+FORBIDDEN — never emit any of these:
+- Letter placeholders: `delta="+N"`, `delta="-X"` (a real observed failure — the model wrote the literal letter instead of a number).
+- Angle-bracket templates: `delta="-<rolled 2d10 total>"`, `field="<fieldName>"`, `add="<item name>"` (a real observed failure — the model echoed the grammar's own placeholder syntax verbatim instead of substituting a real value).
+- Ellipses standing in for a value: `field="..."` (a real observed failure — an ellipsis is never a valid field name).
+
+If you cannot compute the exact number or name — for example, dice were rolled this turn and you have not yet totaled them — DO NOT emit a tag for that change. Instead: read the `[dice: ...]` tags and surrounding narration for the turn, compute the FINAL integer yourself (sum the individual roll results, apply any stated modifiers), and only THEN emit the tag with that computed integer. If a value truly cannot be determined this turn, state the gap in prose instead of guessing or emitting a malformed tag — the extension's parser silently drops anything that fails to parse as a real integer, so a placeholder tag is worse than no tag: it wastes the model's output on a mutation that will never land.
 
 # Inventory schema (full field list — extension-confirmed)
 

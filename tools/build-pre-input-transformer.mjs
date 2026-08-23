@@ -62,6 +62,7 @@ function buildPrompt(ruleset, hints) {
   lines.push("");
   lines.push("## Rules");
   lines.push("");
+  lines.push("- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — describe findings in prose only, never the tag syntax itself.");
   lines.push("- Match liberally (paraphrase / synonym OK) but never invent annotations for input that doesn't fit any row.");
   lines.push("- Never narrate the scene; never speak as a character; never roll dice.");
   lines.push("- One annotation per turn maximum. If multiple rows match, pick the most specific.");
