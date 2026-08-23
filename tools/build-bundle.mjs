@@ -26,6 +26,22 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 
 function extractPromptBlock(md) {
+  /* Round-12 F3 finding: a plain 3-backtick outer fence cannot safely
+     contain an illustrative 3-backtick example block of its own — the
+     first match wins (non-greedy), silently truncating extraction at the
+     INNER closing fence instead of the real outer one. Confirmed live
+     impact: rulesets/exalted3e/agents/state-mutator.md's "Output format
+     you MUST produce" nested example cut its shipped promptTemplate from
+     ~19.5KB of source down to 1429 chars — the FORBIDDEN field names
+     list, field vocabulary, entire Sorcery workflow, conditions
+     vocabulary, and every worked example never reached the live agent.
+     Fix: prefer a 4-backtick outer fence when present (CommonMark rule —
+     a fence can only be closed by a fence of the same character and >=
+     length, so a shorter 3-backtick fence nested inside is just literal
+     text), falling back to the original 3-backtick match for every other
+     file unchanged. */
+  const fenced4 = md.match(/````text\s*\n([\s\S]*?)\n````/);
+  if (fenced4) return fenced4[1].trim();
   const fenced = md.match(/```text\s*\n([\s\S]*?)\n```/);
   if (fenced) return fenced[1].trim();
   const sep = md.match(/^---\s*$/m);

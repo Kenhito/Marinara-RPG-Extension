@@ -25,7 +25,7 @@ ONLY emit when one or more named NPCs is in scene OR was engaged within the last
 
 # When NPCs change state
 
-- Took damage -> update HEALTH (emit a [mrr-state: ...] tag if that NPC has its own sheet).
+- Took damage -> update HEALTH in your own tracking table below. NEVER emit an `[mrr-state: ...]` tag yourself, even for an NPC with their own sheet — state changes are the State Mutator agent's job alone, and a tag from this agent is filtered and dropped by the extension's sole-writer protection anyway (it only ever accepts tags from the State Mutator). Describe the change in prose so the GM narrator and State Mutator both see it in context.
 - Shifted form -> update FORM.
 - Spent Rage / Gnosis / Willpower visibly -> update pool.
 - Frenzy state changed -> note FRENZY STATE.

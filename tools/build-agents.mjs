@@ -27,6 +27,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 
 function extractPromptBlock(md) {
+  /* Round-12 F3 finding — kept in sync with build-bundle.mjs's copy (see
+     its comment for the full postmortem): prefer a 4-backtick outer
+     fence when present, so a prompt can safely nest an illustrative
+     3-backtick example block without truncating extraction at the
+     INNER close instead of the real outer one. */
+  const fenced4 = md.match(/````text\s*\n([\s\S]*?)\n````/);
+  if (fenced4) return fenced4[1].trim();
   const fenced = md.match(/```text\s*\n([\s\S]*?)\n```/);
   if (fenced) return fenced[1].trim();
   const sep = md.match(/^---\s*$/m);
