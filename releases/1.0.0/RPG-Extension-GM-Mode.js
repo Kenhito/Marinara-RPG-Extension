@@ -14227,6 +14227,47 @@ function scheduleAutoSync() {
 var STATE_TAG_RE = /\[mrr-state:\s+([^\]]+)\]/g;
 var STATE_KV_RE  = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 var MRR_STATE_TAG_VERSION = 1; /* [mrr-state:] grammar version — round 7, closes the B14 leftover COUPLINGS.md flagged as "not yet stamped". One constant, no behavior change; not read/enforced anywhere yet. */
+/* Round-17 TASK 1 (live evidence: "swipe-detect: msgId=__streaming__ skipped
+   — no tags, no buckets"): the engine stamps a PLACEHOLDER data-message-id
+   on the in-flight streaming message element — a synthetic client-only
+   Message object that does not exist in the DB, rendered ONLY so the UI has
+   something to paint while tokens arrive; the REAL id lands only once the
+   assistant message is committed and the component re-renders/remounts
+   with the DB row. Confirmed against ~/Marinara-Engine client source (both
+   values are literal, hardcoded, and there are exactly two — no others
+   found via a full-package grep of `id: "__`):
+     - "__streaming__" — RP mode, ChatRoleplaySurface.tsx:384 (the surface
+       both round-16/17 retest sessions ran in).
+     - "__conversation_live_stream__" — the separate "conversation" chat
+       mode, ConversationView.tsx:903 (a DIFFERENT surface from RP mode,
+       not yet seen live by us, but included defensively — see below).
+   BOTH surfaces render through components that stamp the exact same
+   `mari-message-assistant` class and `data-message-id={message.id}`
+   attribute our selectors match on (ChatMessage.tsx:3038/3146/3744 for RP
+   mode; ConversationMessage.tsx:1091/1094/1102 for conversation mode) — so
+   both placeholders are genuinely DOM-reachable by our existing code, not
+   just the one actually observed live. Game mode's GameSurface.tsx renders
+   its own message list entirely separately (no ChatMessage/ConversationMessage
+   usage found there at all) — no placeholder-id risk on that surface, and
+   still untouched this round per the round-16 correction (RP mode only).
+   Server-side confirmed NOT at risk: every `agentsStore.saveRun(...)` call
+   site in the engine's routes (`generate.routes.ts`, `game.routes.ts`,
+   `retry-agents-route.ts`) passes a real DB-backed messageId (a persisted
+   user/assistant message's actual id) — never one of these literals — so
+   `pollCustomAgentRuns`' runs-transport `messageId` field can never carry a
+   placeholder; this is a DOM-only concern, confined to the DOM/narrator path
+   (`schedule`/`processChatMessage`/the initial-sweep loop below).
+   mrrIsPlaceholderMessageId gates ALL THREE DOM consumption points before
+   any memo/processed/journal/transition state is ever touched for one of
+   these ids: schedule() (earliest possible point — skips even the
+   debounce-scheduling churn), processChatMessage() itself (defense in
+   depth, per the round-17 brief's "and anything else consuming
+   data-message-id"), and the initial-sweep loop (extension load racing an
+   in-progress generation — an edge case, but free to close). */
+var MRR_PLACEHOLDER_MESSAGE_IDS = { "__streaming__": true, "__conversation_live_stream__": true };
+function mrrIsPlaceholderMessageId(msgId) {
+  return !!msgId && MRR_PLACEHOLDER_MESSAGE_IDS[msgId] === true;
+}
 /* Per-chat processed-message-id set, persisted across reloads. Without
    persistence, every hard refresh would walk the chat DOM, replay every
    historic [mrr-state: ...] tag, and double-apply mutations to the
@@ -14497,13 +14538,33 @@ var mrrJournalSuppressed = false;      /* true while mrrRevertBucket/mrrReapplyB
 var mrrCurrentApplySig = null;         /* round-10 fix A: set by applyStateTagsWithDedup for the duration of one applyStateMutation call; mrrJournalMutation stamps it onto the entry it creates (if any) as entry.sig — null when a journal entry is somehow created outside that call (shouldn't happen; mrrJournalMutation already no-ops without an active bucket key, which is set by the same caller) */
 
 function mrrLoadMutationJournal(chatId) {
-  if (!chatId) { mrrMutationJournal = { buckets: {}, lastSeenIdx: {} }; mrrMutationJournalChatId = null; return; }
+  /* Round-17 TASK 2(c): captured BEFORE either branch below replaces
+     mrrMutationJournal — the exact "was there something in memory that's
+     about to disappear" snapshot the loud wipe-warn (below) needs. */
+  var outgoingChatId = mrrMutationJournalChatId;
+  var outgoingBucketCount = (mrrMutationJournal && mrrMutationJournal.buckets) ? Object.keys(mrrMutationJournal.buckets).length : 0;
+  if (!chatId) {
+    if (outgoingBucketCount > 0) {
+      warn("mrrLoadMutationJournal: WIPE — resetting to no chat (null), but the outgoing in-memory journal for chatId=" + outgoingChatId + " had " + outgoingBucketCount + " bucket(s). If those were never saved (check for a prior 'journal: saved' line for this chatId), they are gone.");
+    }
+    mrrMutationJournal = { buckets: {}, lastSeenIdx: {} }; mrrMutationJournalChatId = null; return;
+  }
   if (mrrMutationJournalChatId === chatId) return; /* already loaded */
   var raw = lsGet(LS_MUTATION_JOURNAL_PFX + chatId);
   var parsed = raw ? safeParse(raw) : null;
   var journal = (parsed && typeof parsed === "object" && parsed.buckets && parsed.lastSeenIdx)
     ? parsed
     : { buckets: {}, lastSeenIdx: {} };
+  /* Round-17 TASK 2(c) (the requested instrumentation, verbatim ask: "when
+     the loaded persisted journal is EMPTY but the in-memory one being
+     replaced had buckets, warn loudly with both counts + chatIds — that is
+     the exact wipe moment if the lifecycle theory is right"). Fires
+     BEFORE the delta-kind migration prune below (that prune only ever
+     REMOVES from the just-loaded journal, never adds — irrelevant to
+     whether the incoming journal started genuinely empty). */
+  if (Object.keys(journal.buckets).length === 0 && outgoingBucketCount > 0) {
+    warn("mrrLoadMutationJournal: WIPE — loading chatId=" + chatId + " (0 buckets from disk) is about to REPLACE the outgoing in-memory journal for chatId=" + outgoingChatId + ", which had " + outgoingBucketCount + " bucket(s). If those belonged to " + outgoingChatId + " and were never saved under its own key, they are gone as of this call.");
+  }
   /* Round-9 fix 1b migration: "delta" kind is deleted as of tonight — a
      journal bucket persisted by the prior build may still hold delta-kind
      entries, whose clamp-loss bug is exactly what 1b fixes. No back-compat
@@ -14541,8 +14602,23 @@ function mrrSaveMutationJournal() {
     warn("mrrSaveMutationJournal: called with no chatId loaded — journal write discarded (in-memory bucket may still exist but will not survive the next load)");
     return;
   }
-  var ok = lsSet(LS_MUTATION_JOURNAL_PFX + mrrMutationJournalChatId, JSON.stringify(mrrMutationJournal));
-  if (!ok) warn("mrrSaveMutationJournal: lsSet failed (quota or private mode?) — journal entry may not persist across reload");
+  var lsKey = LS_MUTATION_JOURNAL_PFX + mrrMutationJournalChatId;
+  var ok = lsSet(lsKey, JSON.stringify(mrrMutationJournal));
+  if (!ok) {
+    warn("mrrSaveMutationJournal: lsSet failed (quota or private mode?) — journal entry may not persist across reload");
+    return;
+  }
+  /* Round-17 TASK 2(a): one line per successful save, naming the exact key
+     written and the bucket count at that instant — the requested
+     instrumentation so the NEXT live log makes the evaporation moment
+     undeniable one way or the other: if a save here names the RIGHT
+     chatId's key with the expected bucket count, and the very next
+     swipe-detect line (jChat=/jBuckets=) reports a DIFFERENT chatId or a
+     lower bucket count with no mrrLoadMutationJournal wipe-warn in
+     between, the mechanism is neither the save path nor the documented
+     load-replaces-journal path — something else entirely, narrowed by
+     elimination. */
+  log("journal: saved " + Object.keys(mrrMutationJournal.buckets).length + " bucket(s) → " + lsKey);
 }
 
 /* The chokepoint helper (see header comment). No-ops when there's no
@@ -16191,6 +16267,16 @@ function processChatMessage(node, isChildListOrigin) {
   if (!node || !node.getAttribute) return;
   var msgId = node.getAttribute("data-message-id");
   if (!msgId) return;
+  /* Round-17 TASK 1: the engine's placeholder streaming-message id (see
+     mrrIsPlaceholderMessageId's own header comment for the full engine
+     trace). This element is transient and shares its id with every OTHER
+     in-flight message on this surface — touching ANY memo/processed/
+     journal/transition state under this key would corrupt/collide across
+     unrelated messages. Bail before even the tag-bearing check below. The
+     real message (a distinct, stable id) re-renders once the assistant
+     reply commits, and reaches this function normally on its own next
+     observation. */
+  if (mrrIsPlaceholderMessageId(msgId)) return;
   /* Only assistant messages emit state tags. User messages and narrator
      messages can be skipped entirely. */
   if (!node.classList || !node.classList.contains("mari-message-assistant")) return;
@@ -16267,6 +16353,36 @@ function processChatMessage(node, isChildListOrigin) {
     resolveSwipeIndexForMessage(scanChatId, msgId).then(function (idx) {
       if (state.chatId !== scanChatId) return; /* chat switched mid-fetch — stale, ignore */
 
+      /* Round-17 TASK 2 structural fix: round 16 gave pollCustomAgentRuns
+         an unconditional loadProcessedMessageIds(chatId) call at its top,
+         closing a startup-race window where the journal could be journaled
+         into before ever being scoped to the active chat — but this DOM/
+         narrator apply path never received the same protection. The
+         `state.chatId !== scanChatId` guard above only proves the ACTIVE
+         CHAT hasn't changed since this fetch started; it says nothing
+         about whether mrrMutationJournal has actually been loaded/scoped
+         for scanChatId yet (e.g. if watchChatMessages' own init-time load
+         raced a still-null state.chatId — see pollCustomAgentRuns' header
+         comment for the full mechanism, identical shape here). Idempotent/
+         cheap when already loaded (the vast majority of calls); a genuine
+         correcting load only in the race window. Applying the same fix
+         symmetrically to both apply paths, per the round-17 brief. */
+      loadProcessedMessageIds(scanChatId);
+
+      /* Round-17 TASK 2(b): unconditional REAL scan for logging only — the
+         gating `hasBuckets` above is short-circuited to `false` whenever
+         isTagBearing is true (by design, see the gate's own comment: the
+         cheap scan only runs for the subset that already failed the free
+         tag-substring check), which makes a tag-bearing message's log line
+         ALWAYS read "buckets=false" regardless of whether a bucket
+         genuinely exists or not — ambiguous, not decisive. hasBucketsForLog
+         is the actual ground truth in both cases; jChat/jBuckets expose the
+         journal's own current scope + total bucket count so the next live
+         log can directly confirm whether the journal was (mis)scoped to a
+         different chat, or empty, at the exact moment this observation
+         resolved — the requested "make the next log decisive" instrumentation. */
+      var hasBucketsForLog = isTagBearing ? mrrJournalHasBucketsFor(msgId) : hasBuckets;
+      var jBucketCount = (mrrMutationJournal && mrrMutationJournal.buckets) ? Object.keys(mrrMutationJournal.buckets).length : 0;
       /* Round-14 Task A: cheap, permanent diagnostic — fires every time
          this callback actually runs (proving the observer→schedule→
          processChatMessage→resolveSwipeIndexForMessage chain reached
@@ -16275,8 +16391,10 @@ function processChatMessage(node, isChildListOrigin) {
          only (tag-less) path active, and what swipe index actually
          resolved (null means the recent-window fetch missed it —
          round-10 FIX-B territory, transition intentionally no-ops on a
-         null idx). */
-      log("swipe-detect: msgId=" + msgId + " buckets=" + hasBuckets + " idx=" + idx);
+         null idx). Round-17: buckets= now uses hasBucketsForLog (real
+         scan, not the short-circuited gate value); jChat/jBuckets added. */
+      log("swipe-detect: msgId=" + msgId + " buckets=" + hasBucketsForLog + " idx=" + idx +
+          " jChat=" + mrrMutationJournalChatId + " jBuckets=" + jBucketCount);
 
       /* Round-12 F2: swipe-change detection now routes through the ONE
          shared transition owner, mrrHandleSwipeTransition — BEFORE the
@@ -16747,6 +16865,24 @@ function pollCustomAgentRuns(chatId) {
       var swipeMap = hopResults[0];
       var mutatorConfigId = hopResults[1];
       if (state.chatId !== pollChatId) return; /* round-9 fix 7 — chat switched during the async fetch; stale, do not apply against the wrong chat */
+      /* Round-17 TASK 2(d): explicit verify-before-write, per the brief's
+         exact prescription ("journal writes must verify
+         mrrMutationJournalChatId === the chatId the apply belongs to...
+         on mismatch, load the right journal first or warn-and-skip").
+         Static analysis (see the round-17 report) could not construct a
+         live sequence where this actually fires GIVEN the current code —
+         mrrMutationJournalChatId only ever changes via loadProcessedMessageIds,
+         which is only ever called with state.chatId's own current value, so
+         if the guard above just confirmed state.chatId === pollChatId, the
+         journal should already be correctly scoped. Left in as a loud,
+         self-healing backstop: if this warn EVER fires live, it directly
+         disproves that proof and pinpoints the exact divergence the static
+         audit missed — self-heals via loadProcessedMessageIds rather than
+         silently applying into a possibly-wrong-scoped journal. */
+      if (mrrMutationJournalChatId !== pollChatId) {
+        warn("pollCustomAgentRuns: journal scope mismatch at apply time — mrrMutationJournalChatId=" + mrrMutationJournalChatId + " but this poll belongs to pollChatId=" + pollChatId + ". Reloading before applying (this should not be reachable — if you see this warn, the round-17 static proof was wrong).");
+        loadProcessedMessageIds(pollChatId);
+      }
       try {
         for (var r = 0; r < tagBearingRows.length; r++) {
           var entry = tagBearingRows[r];
@@ -16877,6 +17013,14 @@ function watchChatMessages() {
     if (!msgEl || !msgEl.getAttribute) return;
     var msgId = msgEl.getAttribute("data-message-id");
     if (!msgId) return;
+    /* Round-17 TASK 1: earliest possible bail — a placeholder id (see
+       mrrIsPlaceholderMessageId) would otherwise churn pendingOrigin/
+       pendingTokens on every streamed token (characterData fires
+       constantly on the live element) and eventually reach
+       processChatMessage, which now also gates it independently. Skipping
+       here avoids the debounce-scheduling churn entirely, not just the
+       downstream state-touching. */
+    if (mrrIsPlaceholderMessageId(msgId)) return;
     pendingOrigin[msgId] = !!pendingOrigin[msgId] || !!isChildListOrigin;
     var myToken = ++nextToken;
     pendingTokens[msgId] = myToken;
@@ -16961,6 +17105,12 @@ function watchChatMessages() {
   for (var x = 0; x < existing.length; x++) {
     var el = existing[x];
     var mid = el.getAttribute("data-message-id");
+    /* Round-17 TASK 1: extension load racing an in-progress generation is
+       an edge case (the placeholder element already present at sweep
+       time), but free to close — skip before even the isMessageProcessed
+       READ below, not just the write side schedule()/processChatMessage
+       already gate on their own. */
+    if (mrrIsPlaceholderMessageId(mid)) continue;
     if (mid && isMessageProcessed(mid, null)) { /* FIX-2: shared helper — plain, composite-exact (n/a, idx null), and prefix-scan checks */
       hideStateTagsInElement(el);
     } else {
