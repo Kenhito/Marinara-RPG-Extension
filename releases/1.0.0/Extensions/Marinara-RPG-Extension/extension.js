@@ -14263,6 +14263,15 @@ var processedMessageIdsChatId = null;
    composite-exact check in isMessageProcessed decide from there. */
 var mrrProcessedTextMemo = Object.create(null);
 
+/* Round-16 BUG-3: warn-once-PER-msgId-per-session tracker for
+   processChatMessage's "no tags, no buckets" early return — see that
+   call site's own comment. Session-only (never persisted, never
+   cleared on chat switch) since it's purely a debugging aid, not
+   correctness-bearing state — a msgId repeating across a chat switch
+   (extremely unlikely, ids aren't reused) would just skip a harmless
+   duplicate log line. */
+var mrrSkippedDiagnosticWarned = Object.create(null);
+
 /* Shared cross-transport mutation-dedup set (per chat, in-memory). A given
    sheet mutation can now arrive via TWO transports: the narrator DOM message
    (processChatMessage) and the custom-agent runs endpoint (pollCustomAgentRuns).
@@ -14522,7 +14531,16 @@ function mrrLoadMutationJournal(chatId) {
    concern, but it is genuinely unbounded across a long-lived chat's
    lifetime. Not fixed this round, per instruction. */
 function mrrSaveMutationJournal() {
-  if (!mrrMutationJournalChatId) return;
+  /* Round-16 BUG-1: this used to be a SILENT no-op — the exact mechanism
+     that let a poller-created bucket vanish before ever reaching disk
+     (see pollCustomAgentRuns' own header comment for the full lifecycle
+     trace). Anything that calls mrrJournalMutation before a real
+     per-chat load has happened lands here with mrrMutationJournalChatId
+     still falsy; warning makes that moment visible instead of invisible. */
+  if (!mrrMutationJournalChatId) {
+    warn("mrrSaveMutationJournal: called with no chatId loaded — journal write discarded (in-memory bucket may still exist but will not survive the next load)");
+    return;
+  }
   var ok = lsSet(LS_MUTATION_JOURNAL_PFX + mrrMutationJournalChatId, JSON.stringify(mrrMutationJournal));
   if (!ok) warn("mrrSaveMutationJournal: lsSet failed (quota or private mode?) — journal entry may not persist across reload");
 }
@@ -14547,7 +14565,15 @@ function mrrSaveMutationJournal() {
 function mrrJournalMutation(field, payload) {
   if (mrrJournalSuppressed) return;
   var bucketKey = mrrCurrentJournalBucketKey;
-  if (!bucketKey) return;
+  /* Round-16: a null bucketKey here means a mutation applied outside
+     applyStateTagsWithDedup's normal loop (which always sets one) —
+     "should not happen in practice" per the comment above, but silent
+     was exactly how BUG-1-class holes stayed invisible; warn once it's
+     actually observed rather than dropping the entry with zero trace. */
+  if (!bucketKey) {
+    warn("mrrJournalMutation: fired with no active bucket key — mutation for field '" + field + "' was NOT journaled (swipe-revert will not see it)");
+    return;
+  }
   var bucket = mrrMutationJournal.buckets[bucketKey];
   if (!bucket) { bucket = { entries: [], reverted: false }; mrrMutationJournal.buckets[bucketKey] = bucket; }
   /* Round-10 fix A: entry.sig is the EXACT dedup-gate signature the
@@ -16187,7 +16213,26 @@ function processChatMessage(node, isChildListOrigin) {
      bucket-prefix scan (mrrJournalHasBucketsFor) only runs for the
      subset that already failed the free tag-substring check. */
   var hasBuckets = !isTagBearing && mrrJournalHasBucketsFor(msgId);
-  if (!isTagBearing && !hasBuckets) return;
+  if (!isTagBearing && !hasBuckets) {
+    /* Round-16 BUG-3 (verified downstream of BUG-1, not a separate bug —
+       see mrrJournalHasBucketsFor's caller comment): this early return is
+       exactly why a tag-less message whose runs-transport bucket has
+       gone missing (the BUG-1 journal-lifecycle hole) produced ZERO
+       swipe-detect log lines — the function bails BEFORE ever reaching
+       resolveSwipeIndexForMessage / the diagnostic log below, so the
+       silence was itself invisible. The main swipe-detect log stays
+       exactly where it is (moving it above this gate would fire on
+       every user-message/narrator-chrome observation across the whole
+       page — too chatty, per design). This is a SEPARATE, cheap,
+       one-line-per-msgId-per-session diagnostic instead, so a future
+       "why is this message never detected" is self-explaining in the
+       console rather than silent. */
+    if (!mrrSkippedDiagnosticWarned[msgId]) {
+      mrrSkippedDiagnosticWarned[msgId] = true;
+      log("swipe-detect: msgId=" + msgId + " skipped — no tags, no buckets");
+    }
+    return;
+  }
 
   /* FIX-2b (round-6 critical, corrects round 5's FIX-2 wiring — see
      mrrProcessedTextMemo's declaration for the full contract): the fast
@@ -16593,6 +16638,36 @@ function pollCustomAgentRuns(chatId) {
      whatever chat happened to be active when the promise resolved,
      not the chat this poll cycle actually started against. */
   var pollChatId = chatId;
+  /* Round-16 BUG-1 fix (the verified journal-lifecycle hole): the ONLY
+     place that ever loads/scopes mrrMutationJournal to a chatId is
+     loadProcessedMessageIds (which mrrLoadMutationJournal has no other
+     call site than) — and until this round, NOTHING guaranteed it had
+     run for THIS chatId before this poller proceeded to journal
+     mutations. Concretely reachable at startup: state.chatId can be
+     null very briefly while Marinara's own app is still initializing
+     (watchChatMessages' loadProcessedMessageIds(state.chatId) call, made
+     with that null, sets mrrMutationJournalChatId to null too); if
+     pollCustomAgentRuns fires with a NOW-valid chatId before
+     watchRouteChanges' next tick detects "chatId changed" and re-loads
+     for real, mrrJournalMutation still succeeds (mrrCurrentJournalBucketKey
+     is set independently by applyStateTagsWithDedup, with no chatId
+     awareness at all) and pushes a real bucket into the in-memory
+     mrrMutationJournal — but mrrSaveMutationJournal silently no-ops
+     while mrrMutationJournalChatId is falsy, so that bucket NEVER
+     persists. The instant watchRouteChanges' chat-change detection then
+     runs loadProcessedMessageIds for the real chatId, mrrLoadMutationJournal
+     sees mrrMutationJournalChatId (still null) !== chatId, so it treats
+     this as a genuine fresh load and REPLACES mrrMutationJournal with
+     whatever's on disk (nothing, since the save never happened) —
+     silently wiping the bucket the poller just created. Same class of
+     hole applies to any other path that could reach mrrJournalMutation
+     before a real per-chat load has happened. Fix: unconditionally
+     ensure the journal (and the sibling processed-message/dedup state)
+     is loaded for THIS chatId before anything else in this poll cycle —
+     idempotent/cheap when already loaded (loadProcessedMessageIds's own
+     guard short-circuits), a real (correct) load the first time this
+     chatId is ever seen by the poller. */
+  loadProcessedMessageIds(chatId);
   loadProcessedRunIds(chatId);
   apiFetch("/agents/runs/" + encodeURIComponent(chatId) + "/custom?limit=50").then(function (rows) {
     /* Round-10 fix C: the stale-chat guard previously only existed at the
