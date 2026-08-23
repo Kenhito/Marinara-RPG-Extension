@@ -16,36 +16,53 @@ the Gauntlet, Gifts, and Rites.
 
 ## Quick install (recommended)
 
+Requires **Marinara Engine 2.4.3+**.
+
 ### 1. Install the framework extension (once per Marinara install)
 
-Marinara Engine: **Settings → Extensions → Add Extension** (file upload,
-not pasted text).
+MRR loads through Marinara's **External Extensions** import lane. Two
+gates must be on first:
 
-- **Import** `extension/RPG-Extension-GM-Mode.js` from this repo. CSS is
-  embedded — no separate stylesheet.
-- Enable it. A **Ruleset** button appears in the chat header.
+- `ENABLE_EXTERNAL_EXTENSIONS=true` in the engine host's `.env`
+  (restart the engine after).
+- **Settings → Advanced → Danger Zone → Allow third-party extension
+  imports** — toggle on.
+
+Then go to **Settings → Addons → External Extensions → Import** and
+import `Marinara-RPG-Extension.extension.zip` from `releases/<version>/`.
+**Never import the loose `.js` file by itself** — on 2.4.3+ it silently
+installs as a sandboxed Worker extension and does nothing. The import
+arrives disabled and unapproved: open it and click **Review and Run** to
+approve and enable it. A **Ruleset** button appears in the chat header.
+
+> **Old installs:** anything pre-2.4.3 (pasted JS, v0.5.0 and earlier)
+> can't be upgraded — remove the leftovers and install fresh.
 
 ### 2. Install the W20 bundle
 
-Click the **Ruleset** button. Load the bundle one of three ways:
+Click the **Ruleset** button. Load the bundle one of two ways:
 
 - **Choose file:** pick `rulesets/w20/bundle.json` from disk → **Save and reload**.
 - **Fetch URL:** the raw GitHub URL of `rulesets/w20/bundle.json`.
-- **Paste:** copy the contents of `bundle.json` into the textarea → **Save and reload**.
 
-The installer creates the lorebook ("Werewolf 20 Reference"), activates
-the ruleset, and reloads.
+This one import installs the ruleset, the lorebook ("Werewolf 20
+Reference"), the main **Werewolf 20 Ruleset Helper** agent, and the
+sub-agents, then reloads with the ruleset active.
 
-### 3. Install the agents
+### 3. Attach the lorebook and enable the agents (per game)
 
-Open the extension's **Import Agents** dialog and import
-`rulesets/w20/agents.json`. It installs the main **Werewolf 20 Ruleset
-Helper** (enabled) plus five focused sub-agents (state-mutator,
-state-reminder, combat-adjudicator, lore-query, npc-bookkeeper) that are
-**disabled by default**. Enable any you want in **Settings → Agents** —
-each enabled agent costs one extra model call per turn. Enable
-*state-reminder* and *state-mutator* first if you want the floating
-sheet to stay in sync.
+Installing is not activating. After you create/launch your game:
+
+1. **Attach the W20 lorebook to the game** (at setup or after launch).
+   Required — without it the agents have no rules context and will not
+   work correctly.
+2. **Enable the MRR agents for this ruleset** — after the game launches,
+   not mid-generation: **Settings → Agents** → find the agents named
+   like `MRR: Werewolf 20 — <Role>` → enable the ones your table wants.
+   A good minimal set: the **Ruleset Helper** plus the **State Mutator**
+   (the agent that keeps the floating sheet in sync). Each enabled agent
+   costs one extra model call per turn — on a provider that allows only
+   one call at a time they run one after another.
 
 ## First-character setup
 
@@ -140,16 +157,9 @@ In a fresh chat with the ruleset active:
 
 ## Updating / removing
 
-Re-install is idempotent (Choose file / fetch / paste again; the
+Re-install is idempotent (Choose file or fetch the URL again; the
 installer PATCHes the managed lorebook and agents rather than
-duplicating). Use the Ruleset dialog's **Uninstall server data** to
-remove the lorebook, and the Agents dialog to remove the agents.
-
-## Manual install (source-of-truth path)
-
-1. **Settings → Extensions** — import `extension/RPG-Extension-GM-Mode.js`.
-2. **Ruleset button** — load `rulesets/w20/ruleset.json`.
-3. **Lorebooks → Import** — import `rulesets/w20/lorebook.json`.
-4. **Agents → Import Agents** — import `rulesets/w20/agents.json`.
-
-The bundle path automates steps 2–4 from one file.
+duplicating). The extension itself updates by re-importing the
+`.extension.zip` and re-approving via **Review and Run**. Use the
+Ruleset dialog's **Uninstall server data** to remove the lorebook and
+agents created by this install.

@@ -4,26 +4,36 @@ One-page space-adventure RPG written by John Harper as a tribute to the Doublecl
 
 ## Quick install (recommended)
 
-**One file import + one bundle install.** Skip step 1 if the framework extension is already installed.
+**One extension import + one bundle install.** Requires **Marinara Engine 2.4.3+**. Skip step 1 if the framework extension is already installed.
 
 ### 1. Install the framework extension (once per Marinara install)
 
-In Marinara Engine: **Settings → Extensions → Add Extension** — Marinara's Extensions screen accepts file uploads, not pasted text.
+MRR loads through Marinara's **External Extensions** import lane. Two gates must be on first:
 
-- **Import** the framework extension `.js` file from this repo's `extension/` directory. The CSS is embedded — there is no separate stylesheet to upload.
-- Enable.
+- `ENABLE_EXTERNAL_EXTENSIONS=true` in the engine host's `.env` (restart the engine after).
+- **Settings → Advanced → Danger Zone → Allow third-party extension imports** — toggle on.
+
+Then go to **Settings → Addons → External Extensions → Import** and import `Marinara-RPG-Extension.extension.zip` from `releases/<version>/`. **Never import the loose `.js` file by itself** — on 2.4.3+ it silently installs as a sandboxed Worker extension and does nothing. The import arrives disabled and unapproved: open it and click **Review and Run** to approve and enable it.
 
 A **Ruleset** button appears in the chat header.
 
+> **Old installs:** anything pre-2.4.3 (pasted JS, v0.5.0 and earlier) can't be upgraded — remove the leftovers and install fresh.
+
 ### 2. Install the Lasers & Feelings bundle
 
-Click the **Ruleset** button. The dialog has three ways to load a bundle:
+Click the **Ruleset** button. The dialog has two ways to load a bundle:
 
 - **Option A — Choose file:** click **Choose file…** and pick `rulesets/lasers-and-feelings/bundle.json` from disk. Click **Save and reload**.
 - **Option B — Fetch URL:** point at this repo's raw `rulesets/lasers-and-feelings/bundle.json` on GitHub.
-- **Option C — Paste:** copy the contents of `bundle.json` into the textarea, click **Save and reload**.
 
-The installer creates the lorebook (11 entries — mechanics, Consortium, Raptor, Something, helping/prepared/expert), the custom agent ("Lasers & Feelings"), and activates the ruleset. The page reloads.
+This one import installs the ruleset, the lorebook (11 entries — mechanics, Consortium, Raptor, Something, helping/prepared/expert), the main GM agent, and the sub-agents. Bundles are data — no extension re-approval is triggered. The page reloads with the ruleset active.
+
+### 3. Attach the lorebook and enable the agents (per game)
+
+Installing is not activating. After you create/launch your game:
+
+1. **Attach the L&F lorebook to the game** (at setup or after launch). Required — without it the agents have no rules context and will not work correctly.
+2. **Enable the MRR agents for the game** — after it launches, not mid-generation: **Settings → Agents** → find the agents named like `MRR: Lasers & Feelings — <Role>` → enable the ones your table wants. A good minimal set: **Ruleset Helper + State Mutator**. Each enabled agent costs one model call per turn — on a provider that allows only one call at a time they run one after another.
 
 ## How it plays at the table — `stance-modal-pool`
 
@@ -69,4 +79,4 @@ In a fresh Game Mode chat:
 
 ## Updating / removing
 
-Bundle update flow is the same as install — Choose file again, fetch the URL again, or paste the new `bundle.json`. The installer detects the existing managed agent/lorebook by tag/setting and PATCHes rather than duplicating. **Uninstall server data** in the Ruleset dialog removes the lorebook and GM agent created here.
+Bundle update flow is the same as install — Choose file again or fetch the URL again with the new `bundle.json`. The installer detects the existing managed agents/lorebook by tag/setting and PATCHes rather than duplicating. The extension itself updates by re-importing the `.extension.zip` and re-approving via **Review and Run**. **Uninstall server data** in the Ruleset dialog removes the lorebook and agents created here.

@@ -2,32 +2,56 @@
 
 ## Quick install (recommended)
 
-**One file import + one bundle install.** Skip step 1 if the framework extension is already installed.
+**One extension import + one bundle install.** Requires **Marinara Engine 2.4.3+**. Skip step 1 if the framework extension is already installed.
 
 ### 1. Install the framework extension (once per Marinara install)
 
-In Marinara Engine: **Settings → Extensions → Add Extension** — Marinara's
-Extensions screen accepts file uploads, not pasted text.
+MRR loads through Marinara's **External Extensions** import lane. Two gates must be on first:
 
-- **Import** the file `extension/RPG-Extension-GM-Mode.js` from this repo. The
-  CSS is embedded — there is no separate stylesheet to upload.
-- Name: `Marinara-RPG-Extension`. Description: anything.
-- Enable.
+- `ENABLE_EXTERNAL_EXTENSIONS=true` in the engine host's `.env` (restart the engine after).
+- **Settings → Advanced → Danger Zone → Allow third-party extension imports** — toggle on.
+
+Then go to **Settings → Addons → External Extensions → Import** and import
+`Marinara-RPG-Extension.extension.zip` from `releases/<version>/`.
+
+- **Never import the loose `RPG-Extension-GM-Mode.js` by itself** — on 2.4.3+ a
+  loose-`.js` import silently installs as a sandboxed Worker extension with no
+  page access; it "succeeds" and then does nothing. Always use the zip.
+- The import arrives **disabled and unapproved**. Open it and click
+  **Review and Run** to approve its code hash and enable it.
 
 A **Ruleset** button appears in the chat header.
 
+> **Old installs:** anything pre-2.4.3 (pasted JS, v0.5.0 and earlier) can't be
+> upgraded — remove the leftovers and install fresh.
+
 ### 2. Install the Exalted 3e bundle
 
-Click the **Ruleset** button. The dialog has three ways to load a bundle:
+Click the **Ruleset** button. The dialog has two ways to load a bundle:
 
 - **Option A — Choose file:** click **Choose file…** and pick
   `rulesets/exalted3e/bundle.json` from disk. Click **Save and reload**.
 - **Option B — Fetch URL:**
   `https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/exalted3e/bundle.json`
-- **Option C — Paste:** copy the contents of `bundle.json` into the
-  textarea, click **Save and reload**.
 
-The installer creates the lorebook ("MRR: Exalted 3e Charms & Conditions") with 19 entries, the custom GM agent ("MRR: Exalted 3rd Edition Ruleset Override"), and activates the ruleset. The page reloads.
+This one import installs the ruleset (sheet + dice widget), the lorebook ("MRR: Exalted 3e Charms & Conditions") with 19 entries, the main GM agent, and the sub-agents. Bundles are data — no extension re-approval is triggered. The page reloads with the ruleset active.
+
+### 3. Attach the lorebook and enable the agents (per game)
+
+Installing is not activating. After you create/launch your game:
+
+1. **Attach the ruleset's lorebook to the game** (at setup or after launch).
+   This is required — without it the agents have no rules context and will not
+   work correctly.
+2. **Enable the MRR agents for the game** — after it launches, not
+   mid-generation: **Settings → Agents** → find the agents named like
+   `MRR: Exalted 3e — <Role>` → enable the ones your table wants. A good
+   minimal set: **Ruleset Helper + State Mutator** (the State Mutator is the
+   one agent that writes to the sheet). Exalted also ships two parallel
+   trackers — the **anima-banner monitor** and the **charm-cooldown
+   tracker** — worth enabling for Essence-heavy games. Each enabled agent
+   costs one model call per turn — on a provider that allows only one call at
+   a time they run one after another.
 
 ## Sanity check
 
@@ -40,7 +64,7 @@ In a fresh Game Mode chat:
 
 ## Updating
 
-Bundle update flow is the same as install — Choose file again, fetch the URL again, or paste the new `bundle.json`. The installer detects the existing managed agent/lorebook by tag/setting and PATCHes rather than duplicating.
+Bundle update flow is the same as install — Choose file again or fetch the URL again with the new `bundle.json`. The installer detects the existing managed agents/lorebook by tag/setting and PATCHes rather than duplicating. The extension itself updates by re-importing the `.extension.zip` and re-approving via **Review and Run**.
 
 ## Equipment & bonuses (v1.1.0+)
 
@@ -54,15 +78,4 @@ The exalted3e ruleset does not pre-declare `equipmentSlots` — pick whatever sl
 
 ## Removing
 
-Open the Ruleset dialog and click **Uninstall server data** to remove the lorebook and GM agent created by this install. Click **Clear** to wipe the local ruleset cache.
-
-## Manual install (legacy / source-of-truth path)
-
-The four-file flow still works:
-
-1. **Settings → Extensions** — import `extension/RPG-Extension-GM-Mode.js` (CSS embedded).
-2. **Ruleset button** — Choose file / fetch URL / paste `rulesets/exalted3e/ruleset.json`.
-3. **Settings → Agents → Create Custom Agent** — copy the prompt block from `rulesets/exalted3e/gm-agent.md` (Phase: pre_generation, Result type: context_injection).
-4. **Lorebooks → Import** — import `rulesets/exalted3e/lorebook.json`.
-
-The bundle path automates all four steps from one file import.
+Open the Ruleset dialog and click **Uninstall server data** to remove the lorebook and agents created by this install. Click **Clear** to wipe the local ruleset cache. Optionally remove the extension from **Settings → Addons → External Extensions**.

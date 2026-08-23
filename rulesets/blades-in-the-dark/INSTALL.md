@@ -4,26 +4,37 @@ Blades in the Dark is John Harper's Forged in the Dark heist game. This bundle s
 
 ## Quick install (recommended)
 
-**One file import + one bundle install.** Skip step 1 if the framework extension is already installed.
+**One extension import + one bundle install.** Requires **Marinara Engine 2.4.3+**. Skip step 1 if the framework extension is already installed.
 
 ### 1. Install the framework extension (once per Marinara install)
 
-In Marinara Engine: **Settings → Extensions → Add Extension** — accepts file upload.
+MRR loads through Marinara's **External Extensions** import lane. Two gates must be on first:
 
-- Import `extension/RPG-Extension-GM-Mode.js` from this repo.
-- Name: `Marinara-RPG-Extension`. Enable.
+- `ENABLE_EXTERNAL_EXTENSIONS=true` in the engine host's `.env` (restart the engine after).
+- **Settings → Advanced → Danger Zone → Allow third-party extension imports** — toggle on.
+
+Then go to **Settings → Addons → External Extensions → Import** and import `Marinara-RPG-Extension.extension.zip` from `releases/<version>/`. **Never import the loose `.js` file by itself** — on 2.4.3+ it silently installs as a sandboxed Worker extension and does nothing. The import arrives disabled and unapproved: open it and click **Review and Run** to approve and enable it.
 
 A **Ruleset** button appears in the chat header.
 
+> **Old installs:** anything pre-2.4.3 (pasted JS, v0.5.0 and earlier) can't be upgraded — remove the leftovers and install fresh.
+
 ### 2. Install the Blades in the Dark bundle
 
-Click **Ruleset** → paste `rulesets/blades-in-the-dark/bundle.json` into the dialog → **Save and reload**.
+Click **Ruleset** → **Choose file…** and pick `rulesets/blades-in-the-dark/bundle.json` (or **Fetch URL** with its raw GitHub link) → **Save and reload**.
 
 The bundle auto-installs:
 - The Blades ruleset (Insight / Prowess / Resolve as Action categories, 12 Actions as skills, Position+Effect resolution).
 - The Blades lorebook (~14 entries covering the action roll, Position, Effect, Stress/Trauma, Resistance, Harm levels, Playbooks, Score→Downtime loop, Load+Flashback, Crew+Heat, Ghosts/Occult, XP/advancement, Vice/Overindulgence).
 - A custom tool that returns the canonical Blades reference on demand.
-- A pre-input transformer agent (DISABLED by default — opt in via Settings → Agents) that recognizes attack, sneak, push, devil's bargain, resist, and indulge phrases.
+- The main GM agent and the sub-agents, including a pre-input transformer that recognizes attack, sneak, push, devil's bargain, resist, and indulge phrases.
+
+### 3. Attach the lorebook and enable the agents (per game)
+
+Installing is not activating. After you create/launch your game:
+
+1. **Attach the Blades lorebook to the game** (at setup or after launch). Required — without it the agents have no rules context and will not work correctly.
+2. **Enable the MRR agents for the game** — after it launches, not mid-generation: **Settings → Agents** → find the agents named like `MRR: Blades in the Dark — <Role>` → enable the ones your table wants. A good minimal set: **Ruleset Helper + State Mutator**. Each enabled agent costs one model call per turn — on a provider that allows only one call at a time they run one after another.
 
 ## What the dice widget does (and doesn't do)
 
