@@ -14313,6 +14313,23 @@ var mrrProcessedTextMemo = Object.create(null);
    duplicate log line. */
 var mrrSkippedDiagnosticWarned = Object.create(null);
 
+/* Round-18 TASK 2 (orphaned-bucket diagnostic): retest-7's D&D log showed
+   a journal that saved 6 buckets under the CORRECT chat key while EVERY
+   observed DOM message logged "skipped — no tags, no buckets" — i.e. the
+   buckets existed, but under message ids that no DOM message carries
+   ("orphaned buckets"). The per-msgId skip line alone can never make that
+   self-evident: it reports what the DOM has, never what the JOURNAL has,
+   so the two sets are never printed side by side.
+   These two counters let processChatMessage detect exactly that shape —
+   N observations, ALL of them skips, while the journal holds buckets —
+   and emit ONE line naming the journal's own bucket anchors against the
+   live DOM's message ids. Session-only, diagnostic-only, never persisted
+   and never consulted by any correctness path. */
+var mrrSkipObservationCount = 0;    /* observations that took the "no tags, no buckets" early return */
+var mrrNonSkipObservationCount = 0; /* observations that got PAST it (tag-bearing or bucket-bearing) */
+var mrrOrphanDiagLogged = false;    /* the once-per-session latch for the line below */
+var MRR_ORPHAN_DIAG_MIN_SKIPS = 3;  /* don't fire off a single stray observation */
+
 /* Shared cross-transport mutation-dedup set (per chat, in-memory). A given
    sheet mutation can now arrive via TWO transports: the narrator DOM message
    (processChatMessage) and the custom-agent runs endpoint (pollCustomAgentRuns).
@@ -14934,6 +14951,180 @@ var mrrSwipeIndexFetchPromise = null; // shared per-cycle fetch; null whenever n
 var mrrSwipeIndexFetchChatId = null;  // FIX-13a (round-5 minor): the chatId the in-flight fetch belongs to
 var mrrSwipeIndexWarned = false;      // console.warn once per session on fetch failure (soft degradation — not the visible warn-strip, which is reserved for storage degradation)
 
+/* ─── Round-18 BUG-2: the run-anchor map (THE orphaned-bucket fix) ───────
+   ENGINE GROUND TRUTH (traced at ~/Marinara-Engine HEAD 2.4.4-dev, and
+   independently re-read line by line — this is the fact seventeen rounds
+   of debugging were missing):
+
+     `agentsStore.saveRun`'s `messageId` is NOT uniformly the assistant
+     message. It is bound PER AGENT PHASE, and the split is phase-vs-phase,
+     NOT roleplay-vs-game (no chatMode guard exists on any of these):
+
+       · custom PRE_GENERATION agents   → generate.routes.ts:5197-5215
+           const latestUserMessageForPreGenRun = [...allChatMessages]
+             .reverse().find((m) => m.role === "user");
+           messageId: preGenRunMessageId          ← the triggering USER turn
+       · custom parallel/post_processing → generate.routes.ts:8414/:8442/:8486
+           const messageId = (lastSavedMsg as any)?.id ?? "";   ← the ASSISTANT reply
+       · custom lorebook read-behind    → generate.routes.ts:4858-4862, :8276
+           a deliberately HISTORICAL (much older) message id
+
+   Every MRR ruleset installs its State Mutator as `phase: "pre_generation"`
+   — all sixteen bundle.json files, verified by grep. So EVERY mutator run
+   this poller reads is stamped with the USER message's id.
+
+   What that did to us: the poller journaled its buckets under
+   "<userMsgId>:<idx>". processChatMessage bails on any node lacking the
+   `mari-message-assistant` class long before the bucket check, so a
+   user-turn-keyed bucket is invisible to swipe detection — it can never be
+   reverted, and it never even produced a "skipped" diagnostic line. This is
+   exactly retest-7's D&D shape (journal saves 6 healthy buckets under the
+   correct chat key, while every observed DOM message reports
+   "skipped — no tags, no buckets"). EX3 looked healthy only because its
+   NARRATOR emits inline [mrr-state:] tags, so its DOM path produced
+   correctly-keyed buckets that masked the equally-orphaned poller ones.
+   COUPLINGS row 2's "messageId == narrator data-message-id" line was a
+   dump-stage eyeball that never actually held for a pre_generation agent —
+   corrected there this round.
+
+   THE MAPPING RULE (role-driven, not phase-guessing — so it stays correct
+   if the engine ever moves which phase anchors where):
+     · run.messageId resolves to a VISIBLE assistant message → use it as-is
+       (already the DOM-visible anchor; the post_processing case).
+     · run.messageId resolves to anything else (user/narrator/system, or a
+       HIDDEN assistant) → use the nearest FOLLOWING visible assistant
+       message. This is the engine's own convention for pre-generation runs:
+       generate.routes.ts:7896-7900 anchors built-in director pre-gen runs to
+       "the first saved assistant message from this turn", with that exact
+       reasoning in its comment. We apply it to custom pre-gen runs, which
+       the engine simply forgot to.
+     · unresolvable → see mrrResolveRunDomAnchor's four documented outcomes.
+
+   "Visible" matters: generate.routes.ts:7182-7197 can create an assistant
+   row with extra.hiddenFromUser=true (the command-only anchor), and
+   ChatRoleplaySurface.tsx:2231 does `if (isMessageHiddenFromUser(msg))
+   return null` — it is never rendered, carries no data-message-id, and
+   would orphan a bucket just as thoroughly as a user turn does. Skipped.
+
+   Both maps are rebuilt by the SAME GET /chats/:id/messages fetch
+   fetchSwipeIndexMap already makes (no extra request, same coalescing,
+   same recent-window), and are scoped to the chat that fetch belonged to. */
+var mrrMsgAnchorMap = null;     // msgId -> DOM-visible assistant anchor id, or null when none follows
+var mrrMsgAnchorLastId = null;  // the last message id in the fetched window (used to tell "still generating" from "no reply at all")
+var mrrMsgAnchorChatId = null;  // the chatId the two above belong to; null whenever they are unusable
+var mrrRunAnchorDeferrals = Object.create(null); // runId -> how many polls it has been deferred waiting for the assistant reply
+var mrrRunAnchorFallbackWarned = false;          // warn-once when a run degrades to the legacy raw-messageId anchor
+var mrrMsgAnchorRoleWarned = false;              // warn-once when the messages response carries no `role` field at all
+/* ~5 minutes at ROUTE_POLL_MS=1500. A run deferred past this is applied
+   under the legacy raw anchor rather than dropped: an orphaned bucket still
+   APPLIES its mutation correctly (only swipe-revert is lost), whereas
+   deferring forever would silently lose the mutation entirely — strictly
+   the worse failure. */
+var MRR_RUN_ANCHOR_MAX_DEFERRALS = 200;
+
+/* Rebuilds mrrMsgAnchorMap/mrrMsgAnchorLastId from a /chats/:id/messages
+   response. Split out from fetchSwipeIndexMap purely so it is directly
+   probe-addressable. `rows` is the raw array; ordering is normalized here
+   rather than trusted, because listMessages (ORDER BY createdAt, id) and
+   listMessagesPaginated take different code paths server-side — `rowid`
+   (chats.storage.ts:1227, a 1-based ABSOLUTE position, consistent across
+   both) is the primary sort key, createdAt the fallback, original index the
+   final tiebreak so the sort is always total and always stable. */
+function mrrBuildMsgAnchorMap(rows, chatId) {
+  var ordered = [];
+  var sawRole = false;
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    if (r && typeof r.id === "string") {
+      ordered.push({ row: r, i: i });
+      if (typeof r.role === "string") sawRole = true;
+    }
+  }
+  /* Defensive degrade, deliberately NOT a deferral: the whole remap is
+     built on `role` (db/schema/chats.ts:49). If not one row carries it —
+     an engine that renamed/dropped the field, or a shape we don't
+     recognize — we cannot tell an assistant from a user turn, and
+     guessing would defer every run for MRR_RUN_ANCHOR_MAX_DEFERRALS
+     polls before finally applying anyway. Mark the map unusable so
+     mrrResolveRunDomAnchor answers "window" and the poller keeps exactly
+     its pre-round-18 plain-anchor behavior — the same posture every other
+     degrade in this file takes (fetch failure ⇒ plain-msgId keying). */
+  if (!sawRole && ordered.length) {
+    mrrMsgAnchorMap = null;
+    mrrMsgAnchorLastId = null;
+    mrrMsgAnchorChatId = null;
+    if (!mrrMsgAnchorRoleWarned) {
+      mrrMsgAnchorRoleWarned = true;
+      warn("runs-poller: /chats/:id/messages returned no `role` field on any row — cannot re-anchor pre-generation runs to their assistant reply; falling back to raw-messageId anchoring (swipe-revert unavailable for the poller transport)");
+    }
+    return;
+  }
+  ordered.sort(function (a, b) {
+    var ar = a.row.rowid, br = b.row.rowid;
+    if (typeof ar === "number" && typeof br === "number" && ar !== br) return ar - br;
+    var ac = a.row.createdAt, bc = b.row.createdAt;
+    if (typeof ac === "string" && typeof bc === "string" && ac !== bc) return ac < bc ? -1 : 1;
+    return a.i - b.i;
+  });
+  var map = Object.create(null);
+  var nextAssistant = null;
+  /* One reverse pass: at each message, `nextAssistant` already holds the
+     nearest VISIBLE assistant strictly AFTER it. A visible assistant maps
+     to itself; everything else maps forward. */
+  for (var j = ordered.length - 1; j >= 0; j--) {
+    var m = ordered[j].row;
+    var visibleAssistant = (m.role === "assistant") && !mrrIsHiddenFromUser(m);
+    map[m.id] = visibleAssistant ? m.id : nextAssistant;
+    if (visibleAssistant) nextAssistant = m.id;
+  }
+  mrrMsgAnchorMap = map;
+  mrrMsgAnchorLastId = ordered.length ? ordered[ordered.length - 1].row.id : null;
+  mrrMsgAnchorChatId = chatId;
+}
+
+/* extra is a JSON STRING on the wire (db/schema/chats.ts:54). Only
+   hiddenFromUser gates rendering for an assistant message — the rest of
+   isMessageHiddenFromUser's logic (chat-message-visibility.ts:14-19) is
+   user-role-only and irrelevant here. Unparseable extra ⇒ treat as
+   visible: guessing "hidden" would skip a real anchor. */
+function mrrIsHiddenFromUser(row) {
+  if (!row) return false;
+  var extra = row.extra;
+  if (typeof extra === "string") extra = safeParse(extra);
+  return !!(extra && typeof extra === "object" && extra.hiddenFromUser === true);
+}
+
+/* Resolve a run's engine-stamped messageId to the DOM-visible assistant
+   message its mutations should anchor to. Four outcomes, each deliberate:
+
+     {status:"resolved", anchor}  — map it and go.
+     {status:"window"}            — mid fell outside the fetched recent
+                                    window (or the map is unusable this
+                                    cycle). Nothing will ever resolve it;
+                                    caller keeps the pre-round-18 plain
+                                    anchor. Unchanged legacy degrade.
+     {status:"defer"}             — mid IS the newest message in the chat and
+                                    has no assistant reply yet. Expected and
+                                    NORMAL for a pre_generation run: the
+                                    engine persists it (generate.routes.ts
+                                    :5205) strictly BEFORE the assistant row
+                                    is created (:7354). Caller must leave the
+                                    run UNPROCESSED and retry next poll.
+     {status:"none"}              — mid has later messages after it but no
+                                    visible assistant among them: this turn
+                                    produced no rendered reply, so no correct
+                                    anchor exists. Caller degrades to the
+                                    legacy plain anchor immediately rather
+                                    than deferring for five minutes on
+                                    something that will never arrive. */
+function mrrResolveRunDomAnchor(chatId, mid) {
+  if (!mid || !mrrMsgAnchorMap || mrrMsgAnchorChatId !== chatId) return { status: "window" };
+  if (!Object.prototype.hasOwnProperty.call(mrrMsgAnchorMap, mid)) return { status: "window" };
+  var anchor = mrrMsgAnchorMap[mid];
+  if (anchor) return { status: "resolved", anchor: anchor };
+  return { status: (mid === mrrMsgAnchorLastId) ? "defer" : "none" };
+}
+
 function mrrProcessedKey(msgId, idx) {
   return (idx === null || idx === undefined) ? msgId : (msgId + ":" + idx);
 }
@@ -14957,6 +15148,55 @@ function mrrJournalHasBucketsFor(msgId) {
     if (b && Array.isArray(b.entries) && b.entries.length) return true;
   }
   return false;
+}
+
+/* Round-18 TASK 2: the orphaned-bucket line. Fires AT MOST ONCE per
+   session, and only in the exact shape retest-7 exhibited — every
+   observation so far was a "no tags, no buckets" skip
+   (mrrNonSkipObservationCount === 0), there have been at least
+   MRR_ORPHAN_DIAG_MIN_SKIPS of them, and the journal nonetheless holds
+   buckets. In that state the journal and the DOM disagree about what
+   message ids exist, and the ONE fact needed to read the next live log
+   conclusively is those two id sets printed side by side.
+   The DOM side is read LIVE (document.querySelectorAll) rather than
+   accumulated, so it is ground truth at the moment of the log rather
+   than a partial record of what happened to be observed — the initial
+   sweep's already-processed branch, for instance, re-wraps messages
+   without ever calling processChatMessage, so an accumulated set would
+   under-report and manufacture false "orphans".
+   Each rendered id is suffixed (a) for an assistant message, (o)
+   otherwise (user/narrator chrome) — so a bucket anchored to a USER
+   turn's id shows up as "matched, but (o)", which is a completely
+   different diagnosis from "matched nothing at all". */
+function mrrMaybeLogOrphanedBuckets() {
+  if (mrrOrphanDiagLogged) return;
+  if (mrrNonSkipObservationCount > 0) return;
+  if (mrrSkipObservationCount < MRR_ORPHAN_DIAG_MIN_SKIPS) return;
+  if (!mrrMutationJournal || !mrrMutationJournal.buckets) return;
+  var bucketKeys = Object.keys(mrrMutationJournal.buckets);
+  if (!bucketKeys.length) return;
+  var domIds = Object.create(null);
+  var domList = [];
+  try {
+    var els = document.querySelectorAll("[data-message-id]");
+    for (var e = 0; e < els.length; e++) {
+      var id = els[e].getAttribute("data-message-id");
+      if (!id || domIds[id]) continue;
+      var isAssistant = !!(els[e].classList && els[e].classList.contains("mari-message-assistant"));
+      domIds[id] = true;
+      domList.push(id + (isAssistant ? "(a)" : "(o)"));
+    }
+  } catch (err) { /* no DOM / detached — the journal half of the line is still worth printing */ }
+  var unmatched = [];
+  for (var b = 0; b < bucketKeys.length; b++) {
+    var anchor = mrrAnchorFromBucketKey(bucketKeys[b]);
+    if (!domIds[anchor] && unmatched.indexOf(bucketKeys[b]) === -1) unmatched.push(bucketKeys[b]);
+  }
+  if (!unmatched.length) return; /* every bucket DOES have a rendered message — not the orphan shape */
+  mrrOrphanDiagLogged = true;
+  log("journal keys with no DOM match: [" + unmatched.join(", ") + "] after " +
+      mrrSkipObservationCount + " skipped observation(s), 0 non-skipped; DOM message ids present: [" +
+      domList.join(", ") + "]");
 }
 
 /* T2c (round 11): compute the content-sig set for an incoming (new-swipe)
@@ -15132,7 +15372,15 @@ function fetchSwipeIndexMap(chatId) {
   mrrSwipeIndexFetchChatId = chatId;
   mrrSwipeIndexFetchPromise = apiFetch("/chats/" + encodeURIComponent(chatId) + "/messages?limit=50")
     .then(function (rows) {
-      if (!Array.isArray(rows)) return null;
+      if (!Array.isArray(rows)) { mrrMsgAnchorMap = null; mrrMsgAnchorChatId = null; mrrMsgAnchorLastId = null; return null; }
+      /* Round-18 BUG-2: the run-anchor map rides along on this SAME
+         response — same request, same coalescing, same recent window. Kept
+         as a module-scoped side effect rather than folded into the resolved
+         value on purpose: this function's resolved shape (msgId -> idx) is
+         consumed by both transports and by the existing probe suite, and
+         widening it would churn every one of those call sites for no
+         behavioral gain. */
+      mrrBuildMsgAnchorMap(rows, chatId);
       var map = Object.create(null);
       for (var i = 0; i < rows.length; i++) {
         var r = rows[i];
@@ -15143,6 +15391,7 @@ function fetchSwipeIndexMap(chatId) {
       return map;
     })
     .catch(function (e) {
+      mrrMsgAnchorMap = null; mrrMsgAnchorChatId = null; mrrMsgAnchorLastId = null; /* round-18: never let a failed fetch leave a stale anchor map readable */
       if (!mrrSwipeIndexWarned) {
         mrrSwipeIndexWarned = true;
         warn("swipe-index fetch failed (" + (e && e.message ? e.message : e) + ") — falling back to plain-messageId keying");
@@ -16315,10 +16564,18 @@ function processChatMessage(node, isChildListOrigin) {
        console rather than silent. */
     if (!mrrSkippedDiagnosticWarned[msgId]) {
       mrrSkippedDiagnosticWarned[msgId] = true;
+      mrrSkipObservationCount++;
       log("swipe-detect: msgId=" + msgId + " skipped — no tags, no buckets");
+      /* Round-18 TASK 2: counted per DISTINCT msgId (inside the
+         warn-once gate on purpose) so a single message re-observed
+         hundreds of times mid-stream can't reach the threshold on its
+         own — "N observations all skipped" has to mean N different
+         messages, which is what retest-7's D&D log actually showed. */
+      mrrMaybeLogOrphanedBuckets();
     }
     return;
   }
+  mrrNonSkipObservationCount++; /* round-18 TASK 2: got past the gate — this session is NOT in the all-skips shape */
 
   /* FIX-2b (round-6 critical, corrects round 5's FIX-2 wiring — see
      mrrProcessedTextMemo's declaration for the full contract): the fast
@@ -16903,8 +17160,56 @@ function pollCustomAgentRuns(chatId) {
             if (entry.runId != null) { processedRunIds[entry.runId] = true; sawNew = true; }
             continue;
           }
-          var anchor = extractRunAnchor(entry.row, entry.runId);
-          var mid = entry.row && (entry.row.messageId || entry.row.message_id || (entry.row.message && entry.row.message.id));
+          var rawAnchor = extractRunAnchor(entry.row, entry.runId);
+          var rawMid = entry.row && (entry.row.messageId || entry.row.message_id || (entry.row.message && entry.row.message.id));
+          /* ─── Round-18 BUG-2: RE-ANCHOR to the DOM-visible assistant ───
+             The engine stamps a pre_generation run with the triggering USER
+             message's id (generate.routes.ts:5197-5215) — see
+             mrrBuildMsgAnchorMap's header for the full engine trace and why
+             every MRR mutator run is that case. Left un-remapped, every
+             bucket this poller writes is keyed to a message
+             processChatMessage can never look at, so swipe-revert is
+             structurally impossible for the poller transport.
+
+             BOTH the journal key AND the cross-transport dedup anchor move
+             together, and that is not a stylistic choice — two independent
+             invariants each force it:
+               (1) Cross-transport dedup (applyStateTagsWithDedup's contract,
+                   FIX-1): the DOM path anchors on the assistant message's
+                   data-message-id. "A tag present in BOTH sources applies
+                   exactly once" holds only if this transport passes the SAME
+                   id. Under the un-remapped raw mid it silently did not —
+                   the two transports have been anchoring different turns at
+                   each other this whole time, so an inline narrator tag and
+                   the mutator's own copy of it double-applied.
+               (2) mrrRevertBucket derives the dedup anchor to clear from the
+                   BUCKET KEY (`mrrClearDedupKeysForBucket(
+                   mrrAnchorFromBucketKey(bucketKey), ...)`). If the key's
+                   anchor portion and the dedup anchor ever disagree, revert
+                   silently fails to clear appliedMutationKeys and the
+                   swipe-back reapply is swallowed by the dedup gate. The two
+                   are required to be the same string by construction.
+             Hence one resolved value feeding both. */
+          var anchorResolution = mrrResolveRunDomAnchor(pollChatId, rawMid);
+          if (anchorResolution.status === "defer") {
+            /* The assistant reply does not exist YET (pre_generation runs are
+               persisted before it is created). Leave the run UNPROCESSED so
+               the next poll retries it once the reply lands — deliberately
+               NOT marked processed and NOT counted into total/applied. */
+            var deferrals = (mrrRunAnchorDeferrals[entry.runId] = (mrrRunAnchorDeferrals[entry.runId] || 0) + 1);
+            if (deferrals <= MRR_RUN_ANCHOR_MAX_DEFERRALS) continue;
+            /* Backstop only (see MRR_RUN_ANCHOR_MAX_DEFERRALS): apply under
+               the legacy raw anchor rather than lose the mutation. */
+            if (!mrrRunAnchorFallbackWarned) {
+              mrrRunAnchorFallbackWarned = true;
+              warn("runs-poller: run " + entry.runId + " waited " + deferrals + " polls for an assistant reply to anchor to and never got one — applying under the raw messageId '" + rawMid + "' (mutation lands, but this bucket cannot be swipe-reverted)");
+            }
+          } else if (anchorResolution.status === "none" && !mrrRunAnchorFallbackWarned) {
+            mrrRunAnchorFallbackWarned = true;
+            warn("runs-poller: run " + entry.runId + " anchors to message '" + rawMid + "', which has later messages but no visible assistant reply among them — applying under the raw messageId (mutation lands, but this bucket cannot be swipe-reverted)");
+          }
+          var anchor = (anchorResolution.status === "resolved") ? anchorResolution.anchor : rawAnchor;
+          var mid = (anchorResolution.status === "resolved") ? anchorResolution.anchor : rawMid;
           /* Finding 7c (accepted, comment-only — journal-key drift): this
              journalKey is resolved from swipeMap, fetched once at the
              START of this batch. If the active swipe index for `mid`
@@ -16917,6 +17222,19 @@ function pollCustomAgentRuns(chatId) {
           var journalKey = (mid && swipeMap && Object.prototype.hasOwnProperty.call(swipeMap, mid))
             ? mrrProcessedKey(mid, swipeMap[mid])
             : anchor; /* unresolvable — plain bucket */
+          /* Round-18 TASK 2: one line per APPLIED run (not per poll) —
+             the run id, the messageId the engine stamped on it, and the
+             journal bucket key that messageId resolved to. Retest-7's
+             D&D log could show "applied 2/2" and a healthy 6-bucket
+             save while every DOM message reported "no buckets", with no
+             way to tell WHICH ids the buckets were filed under. This
+             line names them at the moment they're chosen, so a
+             mid-vs-DOM mismatch is readable directly off the console
+             instead of inferred. Logged before the apply so a throwing
+             row still testifies to the key it was about to use. */
+          log("runs-poller: run " + entry.runId + " mid=" + rawMid +
+              (mid === rawMid ? "" : " → anchor=" + mid) +
+              " (" + anchorResolution.status + ") journalKey=" + journalKey);
           /* Round-12 F2 (supersedes round 11's bare lastSeenIdx stamp
              here, absorbed into the shared owner): the poller now calls
              mrrHandleSwipeTransition itself, BEFORE this row's apply —
