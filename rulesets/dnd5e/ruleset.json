@@ -439,8 +439,7 @@
       "id": "hit-points",
       "label": "HP",
       "type": "bar",
-      "max": 8,
-      "current": 8,
+      "stateName": "Hit Points",
       "color": "bad",
       "quickButtons": [
         {

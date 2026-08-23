@@ -1766,6 +1766,98 @@ function characterKey(characterId) {
   return LS_CHARACTER_PFX + characterId;
 }
 
+/* ─── Round-13 T5-b: version-stamped sheet migration ───────────────────────
+   mergeSheet's per-field whitelist can only copy a value within the SAME
+   top-level bucket, matched by name (`if (name in base[k])`). It has no
+   way to see a value that used to live under a DIFFERENT key or bucket
+   entirely before a ruleset schema change — two git-proven live data-loss
+   events (T4+T5 investigation, Plans/2026-08-22 plan §10): D&D's "Level"
+   moved attributes[] -> derivedStats[] at a1c21ef (orphaning
+   sheet.attributes.Level on any sheet saved before that move), and
+   Exalted's motes/willpower resources gained a `stateName` binding at
+   ec51408 (orphaning sheet.resources[id].current on any sheet saved
+   before that binding existed, since the stateName-only merge path never
+   reads .resources[id].current at all). Neither is fixable by the
+   generic per-bucket whitelist — they need an explicit, one-time,
+   cross-bucket copy. That copy is `mrrMigrateSheet`, gated by an explicit
+   integer version stamp so it runs AT MOST ONCE per sheet, in-memory,
+   directly on the RAW PARSED sheet BEFORE mergeSheet(blankSheet(...),
+   parsed) — the migrated value then flows through the normal per-field
+   merge like any other field, and the very next saveSheet call persists
+   the migrated shape (with the stamp) so it's never touched again. */
+var MRR_SHEET_SCHEMA_VERSION = 2;
+
+function mrrMigrateSheet(parsed, ruleset) {
+  if (!parsed || typeof parsed !== "object" || !ruleset) return parsed;
+
+  /* M1 (git-proven, a1c21ef, dnd5e): Level moved attributes[] ->
+     derivedStats[]. A pre-move sheet still carries sheet.attributes.Level
+     — silently dropped by mergeSheet's name-gated attributes loop once
+     the ruleset no longer declares a "Level" attribute. Copy the
+     orphaned value into sheet.derived.Level, but ONLY when the current
+     ruleset actually declares a Level derived stat (this migration is
+     dnd5e-shaped by nature — a ruleset that never had this move has
+     nothing to migrate) AND there is no existing NON-DEFAULT
+     derived.Level already on the sheet (a real value written under the
+     current schema — e.g. by a prior run of this same migration, or by
+     actual play — must never be clobbered by a stale attributes.Level). */
+  var hasLevelAttr = Array.isArray(ruleset.attributes) && ruleset.attributes.some(function (a) { return a && a.name === "Level"; });
+  var levelDerivedDef = (Array.isArray(ruleset.derivedStats) ? ruleset.derivedStats : []).filter(function (d) { return d && d.name === "Level"; })[0];
+  if (!hasLevelAttr && levelDerivedDef &&
+      parsed.attributes && typeof parsed.attributes === "object" && typeof parsed.attributes.Level === "number") {
+    var levelDefault = (typeof levelDerivedDef["default"] === "number") ? levelDerivedDef["default"] : 0;
+    var hasExistingDerivedLevel = parsed.derived && typeof parsed.derived === "object" &&
+      typeof parsed.derived.Level === "number" && parsed.derived.Level !== levelDefault;
+    if (!hasExistingDerivedLevel) {
+      if (!parsed.derived || typeof parsed.derived !== "object") parsed.derived = {};
+      parsed.derived.Level = parsed.attributes.Level;
+    }
+  }
+
+  /* M2 (git-proven, ec51408, exalted3e — written GENERICALLY here, not
+     exalted-specific; it is the class fix for ANY stateName-bound
+     resource on ANY ruleset): a resource that gained a `stateName`
+     binding after a sheet was saved leaves its value orphaned in
+     sheet.resources[id].current forever — the stateName-only merge path
+     (mergeSheet's `derived` whitelist, fed by blankSheet's Phase-6 seed)
+     never reads .resources[id].current, only .derived[stateName]. For
+     every resource the CURRENT ruleset declares with a stateName: if the
+     parsed sheet has a numeric .resources[id].current AND has no
+     .derived[stateName] of its own yet, copy the orphaned value across. */
+  if (Array.isArray(ruleset.resources) && parsed.resources && typeof parsed.resources === "object") {
+    ruleset.resources.forEach(function (r) {
+      if (!r || typeof r.stateName !== "string" || !r.stateName) return;
+      var stored = parsed.resources[r.id];
+      if (!stored || typeof stored !== "object" || typeof stored.current !== "number") return;
+      var derivedHasIt = parsed.derived && typeof parsed.derived === "object" &&
+        Object.prototype.hasOwnProperty.call(parsed.derived, r.stateName) &&
+        typeof parsed.derived[r.stateName] === "number";
+      if (!derivedHasIt) {
+        if (!parsed.derived || typeof parsed.derived !== "object") parsed.derived = {};
+        parsed.derived[r.stateName] = stored.current;
+      }
+    });
+  }
+
+  parsed._schemaVersion = MRR_SHEET_SCHEMA_VERSION;
+  return parsed;
+}
+
+/* Version gate: runs mrrMigrateSheet AT MOST ONCE, only for a sheet whose
+   stamp is missing or older than current — an already-migrated sheet
+   (stamp === MRR_SHEET_SCHEMA_VERSION) is returned untouched, so a
+   legitimately-changed post-migration value (e.g. the player has since
+   played under the current schema and derived.Level or derived[stateName]
+   now reflects real, newer play) is never re-clobbered by re-running the
+   migration's cross-bucket copy against stale attributes/resources data
+   that may still be sitting on the sheet. */
+function mrrMigrateIfNeeded(parsed, ruleset) {
+  if (!parsed || typeof parsed !== "object") return parsed;
+  var stamp = parsed._schemaVersion;
+  if (typeof stamp === "number" && stamp >= MRR_SHEET_SCHEMA_VERSION) return parsed;
+  return mrrMigrateSheet(parsed, ruleset);
+}
+
 function loadSheet(chatId, ruleset) {
   if (!state.activeCharacterId) {
     log("loadSheet -> blank: no activeCharacterId");
@@ -1778,7 +1870,7 @@ function loadSheet(chatId, ruleset) {
     var parsed = safeParse(raw);
     if (parsed) {
       log("loadSheet hydrated key=" + key + " bytes=" + raw.length);
-      return mergeSheet(blankSheet(ruleset), parsed);
+      return mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(parsed, ruleset));
     }
     warn("loadSheet -> blank: parse failed for " + key);
   }
@@ -1793,12 +1885,69 @@ function loadSheet(chatId, ruleset) {
       lsSet(key, legacyRaw);
       log("loadSheet auto-migrated " + legacyKey + " -> " + key + " bytes=" + legacyRaw.length);
       var legacyParsed = safeParse(legacyRaw);
-      if (legacyParsed) return mergeSheet(blankSheet(ruleset), legacyParsed);
+      if (legacyParsed) return mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(legacyParsed, ruleset));
       warn("loadSheet: migrated bytes but parse failed for " + legacyKey);
     }
   }
   log("loadSheet -> blank: no data for " + key);
   return blankSheet(ruleset);
+}
+
+/* Structural recursive deep-equal — no library dependency, ES5-safe (a
+   plain function, not new syntax; used only for POJO/array/primitive
+   trees like a character sheet, never for anything with cycles or
+   exotic types). Round-13 T5-d's saveSheet guard needs a REAL deep-equal
+   rather than a JSON.stringify comparison specifically because key
+   INSERTION ORDER can legitimately differ between a freshly-built
+   blankSheet() and a sheet that has been through mergeSheet/migration —
+   two structurally-identical objects with keys in a different order
+   stringify to different strings, which would make the guard's
+   "is this genuinely blank" check unreliable (false negatives that let
+   the exact hazard this guard exists to catch slip through). */
+function mrrDeepEqual(a, b) {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (typeof a !== "object" || typeof b !== "object") return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a)) {
+    if (a.length !== b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!mrrDeepEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  var aKeys = Object.keys(a);
+  var bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  for (var k = 0; k < aKeys.length; k++) {
+    var key = aKeys[k];
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+    if (!mrrDeepEqual(a[key], b[key])) return false;
+  }
+  return true;
+}
+
+/* Warn-once-per-key tracking for the T5-d saveSheet guard below — a
+   session pathologically stuck re-attempting the same blank-over-good
+   write (e.g. a persistently broken load path) should not spam the
+   console/warn-strip once per debounced save. */
+var mrrSaveSheetGuardWarned = Object.create(null);
+
+/* True when `sheet` (minus the _schemaVersion stamp, which blankSheet()
+   never sets) is structurally identical to a freshly-built blank sheet
+   for the given ruleset — i.e. carries no player-authored substance at
+   all. Chosen definition: a genuine deep-equal to blankSheet(ruleset),
+   per the T5-d spec's primary option — NOT the cheaper proxy (a raw
+   emptiness/field-count heuristic) — because blankSheet() is cheap to
+   construct (iterates the ruleset's own attribute/skill/derived lists,
+   no I/O) and a real structural comparison is unambiguous where a
+   proxy could both over- and under-fire depending on which fields it
+   happened to check. */
+function mrrIsPristineBlankSheet(sheet, ruleset) {
+  if (!sheet || typeof sheet !== "object" || !ruleset) return false;
+  var candidate = Object.assign({}, sheet);
+  delete candidate._schemaVersion;
+  return mrrDeepEqual(candidate, blankSheet(ruleset));
 }
 
 function saveSheet(chatId, sheet) {
@@ -1807,6 +1956,37 @@ function saveSheet(chatId, sheet) {
   if (!state.activeCharacterId) { warn("saveSheet skipped: no activeCharacterId"); return; }
   if (!sheet) { warn("saveSheet skipped: no sheet object"); return; }
   var key = characterKey(state.activeCharacterId);
+  /* Round-13 T5-d: conservative destructive-write guard, targeting the
+     hypothesis flagged in the T4+T5 investigation — a failed or partial
+     load path can leave state.sheet as a freshly-built blankSheet(),
+     and the very next autosave/debounced saveSheet call would silently
+     replace good, real player data with nothing. Deliberately narrow in
+     BOTH directions: only refuses when (a) the CURRENT in-memory sheet
+     is genuinely pristine-blank for the active ruleset AND (b) the
+     STORED value at this key parses and is itself NOT pristine-blank
+     (has real substance to lose). blank-over-blank and good-over-(any)
+     both proceed normally — this only ever blocks the one destructive
+     combination. Runs before the _schemaVersion stamp below so the
+     blank-check compares the sheet's true content, not a stamp that
+     would otherwise always differ. */
+  if (state.ruleset && mrrIsPristineBlankSheet(sheet, state.ruleset)) {
+    var existingRaw = lsGet(key);
+    if (existingRaw) {
+      var existingParsed = safeParse(existingRaw);
+      if (existingParsed && !mrrIsPristineBlankSheet(existingParsed, state.ruleset)) {
+        if (!mrrSaveSheetGuardWarned[key]) {
+          mrrSaveSheetGuardWarned[key] = true;
+          warn("saveSheet: refusing to overwrite substantive stored sheet with a blank one — load may have failed (key=" + key + ")");
+        }
+        return;
+      }
+    }
+  }
+  /* Round-13 T5-b: stamp the current schema version on EVERY save, not
+     just sheets that went through mrrMigrateSheet — a brand-new sheet
+     built fresh from blankSheet() is already current-shape and needs the
+     stamp too, so a FUTURE migration knows not to re-run against it. */
+  sheet._schemaVersion = MRR_SHEET_SCHEMA_VERSION;
   var payload = JSON.stringify(sheet);
   var ok = lsSet(key, payload);
   if (!ok) { warn("saveSheet: lsSet failed for " + key + " (quota or private mode?)"); return; }
@@ -3050,14 +3230,31 @@ function mergeSheet(base, override) {
   }
   /* Conditions array — D&D/PF2e-style condition names (poisoned, blessed,
      etc.). Used by every system that tracks status conditions. Array of
-     short strings. */
+     non-empty strings.
+     Round-13 T5-a (D3 dedup, 07-03 audit union spec): this field had TWO
+     whitelist blocks — this one originally capped entries at <64 chars,
+     the other (now removed, see git history) accepted any non-empty
+     string. Kept the WIDER acceptance (no length cap) per the union
+     spec — the cap was arbitrary and had no basis in any ruleset's
+     schema; a longer condition name (e.g. an agent-authored duration
+     suffix) should not be silently dropped on reload. */
   if (Array.isArray(override.conditions)) {
     base.conditions = override.conditions.filter(function (c) {
-      return typeof c === "string" && c.length > 0 && c.length < 64;
+      return typeof c === "string" && c;
     });
   }
   /* PF2e/d20 ability category scores — per-category rating (e.g. cantrips:0,
-     1st-level:3). Shape: { <categoryId>: number }. */
+     1st-level:3). Shape: { <categoryId>: number }.
+     Round-13 T5-a (D3 dedup, 07-03 audit union spec): this field had TWO
+     whitelist blocks — this one floors at 0 with no ceiling, the other
+     (now removed, see git history) additionally clamped to a max of 10.
+     Kept the NO-CEILING behavior per the union spec — the 10-cap was
+     V20-disciplines-shaped (1-10 dot rating) and silently corrupted any
+     OTHER ruleset's category score that legitimately exceeds 10 (e.g. a
+     PF2e spell-slot count at higher levels) on every reload — a live,
+     git-confirmed data-loss bug (07-03 audit + round-13 T4+T5
+     investigation). Floor-at-0 stays; there is no valid negative score
+     in any current ruleset's category-score usage. */
   if (override.abilityCategoryScores && typeof override.abilityCategoryScores === "object" && !Array.isArray(override.abilityCategoryScores)) {
     base.abilityCategoryScores = {};
     Object.keys(override.abilityCategoryScores).forEach(function (catId) {
@@ -3068,7 +3265,10 @@ function mergeSheet(base, override) {
     });
   }
   /* User-added custom ability categories (player-defined buckets beyond
-     ruleset.abilities.categories). Array of {id, label} entries. */
+     ruleset.abilities.categories). Array of {id, label} entries.
+     Round-13 T5-a (D3 dedup, 07-03 audit union spec): this field had TWO
+     whitelist blocks with byte-for-byte identical validation logic (see
+     git history) — trivial collapse, no behavior change. */
   if (Array.isArray(override.customAbilityCategories)) {
     base.customAbilityCategories = override.customAbilityCategories
       .filter(function (cat) {
@@ -3081,7 +3281,16 @@ function mergeSheet(base, override) {
   /* Typed-damage track cells. Used by Exalted Health Track, V20 Health
      Track, any track with damage-type stacking. Shape: { <trackName>: [cell, ...] }.
      Each cell is either a string (legacy single-type) or an object with
-     `type` (one of declared damage type IDs) or null for unmarked. */
+     `type` (one of declared damage type IDs) or null for unmarked.
+     Round-13 T5-a (D3 dedup, 07-03 audit union spec): this field had TWO
+     whitelist blocks — this one preserves object-shaped cells (filter,
+     keeping null / string / object as-is), the other (now removed, see
+     git history) REBUILT the array via `(typeof v === "string" && v) ?
+     v : null`, which silently converts every object-shaped cell to
+     null — a live, git-confirmed data-loss bug: typed-damage-tag cells
+     (Phase-4 per-cell damage model) are wiped to null on EVERY reload,
+     contradicting this very block's own documented shape. Kept the
+     object-preserving filter. */
   if (override.trackCells && typeof override.trackCells === "object" && !Array.isArray(override.trackCells)) {
     base.trackCells = {};
     Object.keys(override.trackCells).forEach(function (trackName) {
@@ -3090,17 +3299,6 @@ function mergeSheet(base, override) {
         base.trackCells[trackName] = cells.filter(function (c) {
           return c === null || typeof c === "string" || (c && typeof c === "object");
         });
-      }
-    });
-  }
-  /* Per-section collapse state. { <sectionId>: boolean } — true means
-     collapsed. Persistence keeps the user's UI configuration across
-     reload (closed Spellbook stays closed). */
-  if (override.sectionCollapse && typeof override.sectionCollapse === "object" && !Array.isArray(override.sectionCollapse)) {
-    base.sectionCollapse = {};
-    Object.keys(override.sectionCollapse).forEach(function (sid) {
-      if (typeof override.sectionCollapse[sid] === "boolean") {
-        base.sectionCollapse[sid] = override.sectionCollapse[sid];
       }
     });
   }
@@ -3151,46 +3349,16 @@ function mergeSheet(base, override) {
   if (typeof override.investedCount === "number" && isFinite(override.investedCount)) {
     base.investedCount = Math.max(0, Math.floor(override.investedCount));
   }
-  /* Phase 4 — conditions persistence. Active D&D-style condition list
-     (Blinded, Restrained, etc.) — without this, every reload clears
-     the user's active conditions. */
-  if (Array.isArray(override.conditions)) {
-    base.conditions = override.conditions.filter(function (c) {
-      return typeof c === "string" && c;
-    });
-  }
-  /* Phase 4 — per-cell damage track persistence. */
-  if (override.trackCells && typeof override.trackCells === "object" && !Array.isArray(override.trackCells)) {
-    base.trackCells = {};
-    Object.keys(override.trackCells).forEach(function (name) {
-      var arr = override.trackCells[name];
-      if (!Array.isArray(arr)) return;
-      base.trackCells[name] = arr.map(function (v) {
-        return (typeof v === "string" && v) ? v : null;
-      });
-    });
-  }
-  /* Phase 5 — V20 disciplines plumbing. Per-category score (1-10
-     rating per discipline) and user-added custom categories (bloodline
-     disciplines like Daimoinon). Both keyed by category id so they
-     survive ruleset switches gracefully. */
-  if (override.abilityCategoryScores && typeof override.abilityCategoryScores === "object"
-      && !Array.isArray(override.abilityCategoryScores)) {
-    base.abilityCategoryScores = {};
-    Object.keys(override.abilityCategoryScores).forEach(function (catId) {
-      var v = override.abilityCategoryScores[catId];
-      if (typeof v === "number" && isFinite(v)) {
-        base.abilityCategoryScores[catId] = Math.max(0, Math.min(10, Math.floor(v)));
-      }
-    });
-  }
-  if (Array.isArray(override.customAbilityCategories)) {
-    base.customAbilityCategories = override.customAbilityCategories.filter(function (c) {
-      return c && typeof c === "object" && typeof c.id === "string" && typeof c.label === "string";
-    }).map(function (c) {
-      return { id: c.id, label: c.label };
-    });
-  }
+  /* Round-13 T5-a (D3 dedup, 07-03 audit union spec): conditions,
+     trackCells, abilityCategoryScores, and customAbilityCategories each
+     had a SECOND whitelist block here (Phase 4/5 additions) that
+     silently overwrote the earlier, canonical block above with
+     divergent — in two cases regressive — validation. Removed; each
+     field now has exactly one block, positioned above with the union of
+     validation intent (see each block's own comment for the specific
+     git-confirmed bug this closes: trackCells and abilityCategoryScores
+     were live data-loss bugs, conditions and customAbilityCategories
+     were dead code with no live consequence). */
   return base;
 }
 
@@ -5559,6 +5727,42 @@ var mrr_resourceRenderers = {};
 
 function mrrResolveResourceMax(resource, ctx) {
   if (!resource) return 0;
+  /* Round-13 T5-c finding: this function did NOT previously special-case
+     stateName at all — it always resolved `max` from the resource's own
+     declared field (number or formula), completely independent of
+     whether `current` was stateName-bound. Only `mrrGetResourceCurrent`
+     (above) had stateName awareness, for `current` alone. That meant a
+     stateName-bound resource with no `max` of its own (the shape T5-c
+     wants for dnd5e's hit-points, to unify with the derived "Hit
+     Points" bar, which has no maxFormula either) would silently resolve
+     to max=0 — so the sharing has to be wired explicitly here, it does
+     NOT happen automatically.
+     Now mirrors mrrP3ComputeBarMax's exact fallback chain (the derived-
+     bar renderer, ~line 6556) for a stateName-bound resource: the user-
+     editable state.sheet.derivedMax[stateName] wins first (the SAME key
+     the derived bar's own max-override UI writes to — this is what
+     makes "the resources window and the derived bar share ONE home"
+     true for max, not just current), then the resource's own declared
+     max (number/formula, unchanged behavior for any resource that still
+     declares one), then — only if neither exists — the same
+     never-show-a-nonsensical-0-max fallback the derived bar uses:
+     Math.max(DEFAULT_BAR_MAX, current). Resources with no stateName are
+     completely unaffected — original behavior preserved exactly. */
+  if (typeof resource.stateName === "string" && resource.stateName) {
+    if (state.sheet && state.sheet.derivedMax &&
+        typeof state.sheet.derivedMax[resource.stateName] === "number" &&
+        state.sheet.derivedMax[resource.stateName] > 0) {
+      return state.sheet.derivedMax[resource.stateName];
+    }
+    if (typeof resource.max === "number") return resource.max;
+    if (typeof resource.max === "string" && resource.max) {
+      var vState = evalFormula(resource.max, ctx);
+      if (typeof vState === "number" && isFinite(vState)) return Math.max(0, Math.floor(vState));
+    }
+    var currentState = (state.sheet && state.sheet.derived && typeof state.sheet.derived[resource.stateName] === "number")
+      ? state.sheet.derived[resource.stateName] : 0;
+    return Math.max(DEFAULT_BAR_MAX, currentState);
+  }
   if (typeof resource.max === "number") return resource.max;
   if (typeof resource.max === "string" && resource.max) {
     var v = evalFormula(resource.max, ctx);
