@@ -74,7 +74,7 @@ If both sections are inactive (no combat AND no NPCs), output exactly: "No comba
 - NPCs participate meaningfully in scenes.
 - The player wants the narration mechanically honest AND wants NPC state preserved between turns.
 
-This is the **recommended replacement** for separately enabling `combat-adjudicator` + `npc-bookkeeper`. One AI call instead of two; same surface coverage.
+One agent, one AI call, covering both combat surfaces (encounter math + NPC roster).
 
 Skip for purely narrative-only / no-combat campaigns with no recurring NPCs.
 
@@ -88,4 +88,4 @@ Skip for purely narrative-only / no-combat campaigns with no recurring NPCs.
 
 ## Token-savings note
 
-Enabling `combat-overseer` ALONE versus `combat-adjudicator` + `npc-bookkeeper` cuts per-turn cost by roughly one AI call's worth of overhead (~2000-4000 tokens per turn, depending on chat history length). Over a 100-turn session: ~200k-400k tokens saved.
+Handling both combat surfaces in one agent saves roughly one AI call's worth of overhead (~2000-4000 tokens) per turn versus splitting them.

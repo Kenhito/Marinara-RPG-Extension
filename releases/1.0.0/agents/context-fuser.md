@@ -90,7 +90,7 @@ If both sections are inactive (no rules query AND no meaningful state), output e
 - The party has accumulated injuries / conditions / spell-durations that matter between turns.
 - Inventory or charges / consumables matter.
 
-This is the **recommended replacement** for separately enabling `lore-query` + `state-reminder`. One AI call instead of two.
+One agent, one AI call, covering both context-injection workloads (rules reference + state reminder).
 
 Skip for highly-experienced groups doing pure narrative flow with no mechanical state.
 
@@ -103,4 +103,4 @@ Skip for highly-experienced groups doing pure narrative flow with no mechanical 
 
 ## Token-savings note
 
-Enabling `context-fuser` ALONE versus `lore-query` + `state-reminder` cuts per-turn cost by roughly one AI call's worth of overhead (~2000-4000 tokens per turn). Combined with `combat-overseer`, the user goes from 5 per-turn agents to 3 — a 40% reduction in per-turn agent calls.
+Handling both context-injection workloads in one agent saves roughly one AI call's worth of overhead (~2000-4000 tokens) per turn versus splitting them.

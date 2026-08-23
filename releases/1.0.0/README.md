@@ -201,7 +201,7 @@ Open **`AUTHORING-PROMPT.md`**, copy it whole into a chat with a frontier model 
 | `docs/ADDING-RULESETS.md` | Full walkthrough using Fate Core as a worked example. |
 | `docs/AUTHORING.md` | Bundle anatomy, eight-step authoring process, common pitfalls. |
 | `docs/ENGINE-CONSTRAINTS.md` | Honest list of what the overlay can and cannot do (combat-modal stays d20-shaped, server-side encounter routes hardcoded, 50-char reputation action cap). |
-| `agents/*.md` | The five optional sub-agent prompt sources (state-mutator, state-reminder, combat-adjudicator, lore-query, npc-bookkeeper). |
+| `agents/*.md` | The shared sub-agent prompt sources (combat-overseer, context-fuser, state-mutator). Per-system parallel trackers live in each ruleset's own `agents/` directory. |
 | One reference bundle (`rulesets/dnd5e/bundle.json` for d20, `exalted3e` for dice pool, `fate-core` for fate ladder, `pathfinder2e` for d20 with the three-action economy) | Concrete example of every field populated correctly. |
 
 Hard requirements your AI's output MUST hit:
