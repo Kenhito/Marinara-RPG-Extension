@@ -398,6 +398,7 @@ var MRR_TS_MAP_KEY = "mrr-ts-map"; /* local-only sidecar: {<syncedKey>: <epoch m
 var MRR_STORAGE_SIZE_GUARD_BYTES = 900000;
 var MRR_FLUSH_DEBOUNCE_MS = 1000;
 var MRR_RETRY_DELAYS_MS = [2000, 8000, 30000];
+var MRR_HYDRATE_TIMEOUT_MS = 8000; /* FIX-8: a hung marinara.storage.get() must not brick init() forever */
 
 var mrrServerCache = null;          /* becomes {} once hydrated. Cache internals choice (round 4): stores ENVELOPES {t, v} per key, mirroring the wire format exactly — hasOwnProperty(key) => "server has an entry" (v === null => tombstone). Chosen over a parallel raw-value/ts-object split because mrrProjectedMergedRecord/mrrBuildPatchFromCache already need to measure the envelope record; with envelopes in the cache those two functions need ZERO shape-specific changes. */
 var mrrHydratePromise = null;       /* memoized hydrateStore() promise */
@@ -454,24 +455,55 @@ function mrrByteLength(str) {
   return unescape(encodeURIComponent(str)).length; /* fallback for hosts without TextEncoder */
 }
 
+/* Quarantined keys (mrrQuarantinedKeys) are skipped when copying the cache
+   baseline — found while implementing FIX-6's retry-without-characters
+   path (round 5): a quarantined key is BY DEFINITION never actually pushed
+   again this session, but it stays in mrrServerCache (the size guard's own
+   doc comment already calls this out as "honest — the server record
+   really does hold them"). Without this exclusion, mrrBuildPatchFromCache's
+   own retry — built specifically to exclude a just-quarantined character
+   and send the small keys anyway — would immediately measure right back
+   over budget, because the projection still counted the very key it just
+   excluded from the patch. Excluding quarantined keys from the BASELINE
+   too (not just from the patch being built) is what actually lets the
+   retry succeed. */
 function mrrProjectedMergedRecord(patch) {
   var merged = {}, k;
-  for (k in mrrServerCache) { if (Object.prototype.hasOwnProperty.call(mrrServerCache, k)) merged[k] = mrrServerCache[k]; }
+  for (k in mrrServerCache) {
+    if (!Object.prototype.hasOwnProperty.call(mrrServerCache, k)) continue;
+    if (mrrQuarantinedKeys[k]) continue;
+    merged[k] = mrrServerCache[k];
+  }
   for (k in patch) { if (Object.prototype.hasOwnProperty.call(patch, k)) merged[k] = patch[k]; }
   return merged;
 }
 
-/* Defensive read (Corey override, round 4): a server value that isn't
-   shaped like an envelope (not an object with a numeric `t`) — including
-   a genuinely absent/undefined value — is treated as {t: 0, v: <that raw
-   value>}, degrading instead of throwing. In normal operation every
-   in-cache value is already a real envelope (written by lsSet/lsDel/
-   migration/merge below); this only actually fires for whatever comes
-   back raw from marinara.storage.get() before this file has ever written
-   through it, or if the server record is ever hand-edited. */
+/* Defensive read (Corey override, round 4; tightened FIX-11, round 5): a
+   server value only counts as a valid envelope when `t` is a finite number
+   AND `v` is a string or null — lsGet must never hand a caller a non-
+   string, non-null value, so a malformed `v` (a foreign object, array,
+   number, bool) is never allowed through even inside an otherwise
+   envelope-shaped wrapper. Three outcomes: (1) a genuinely valid envelope
+   is returned as-is; (2) a bare raw STRING (no envelope wrapper at all —
+   e.g. whatever comes back raw from marinara.storage.get() before this
+   file has ever written through it, or a hand-edited server record) is
+   treated as {t: 0, v: <that string>} — the string itself is real,
+   recoverable data; (3) anything else at all (a foreign object, a number,
+   a bool, an envelope-shaped object with a non-finite `t` or a non-
+   string/non-null `v`) normalizes to {t: 0, v: null} — treated as
+   genuinely absent, so a synced key with no other footprint falls back to
+   the LS copy same as if the server had no entry for it. In normal
+   operation every in-cache value is already a real envelope (written by
+   lsSet/lsDel/migration/merge below); this defensive path exists for
+   whatever comes back raw from marinara.storage.get() the first time, or
+   if the server record is ever hand-edited/corrupted. */
 function mrrNormalizeEnvelope(raw) {
-  if (raw && typeof raw === "object" && typeof raw.t === "number") return raw;
-  return { t: 0, v: raw };
+  if (raw && typeof raw === "object" && typeof raw.t === "number" && isFinite(raw.t)
+      && (typeof raw.v === "string" || raw.v === null)) {
+    return raw;
+  }
+  if (typeof raw === "string") return { t: 0, v: raw };
+  return { t: 0, v: null };
 }
 
 /* Local-only sidecar map — see MRR_TS_MAP_KEY / "Corey override" header
@@ -486,6 +518,30 @@ function mrrStampTsMap(key, ts) {
   var map = mrrLoadTsMap();
   map[key] = ts;
   lsSetRaw(MRR_TS_MAP_KEY, JSON.stringify(map));
+  /* Finding 10 (accepted, not fixed): this is read-modify-write against a
+     single localStorage key shared by every tab. Two tabs stamping two
+     DIFFERENT keys at nearly the same instant can race each other's
+     read-modify-write and one stamp can be lost. Narrow window, mitigated
+     (not closed) by FIX-3's visibilitychange reconcile, which re-derives
+     the cache from whatever the ts-map settles to once a tab regains
+     focus. */
+}
+
+/* Core "does the LS side beat what the cache currently holds" comparison +
+   adopt. Shared by mrrHydrateMerge (full union sweep at hydrate time, marks
+   dirty so a losing server copy gets replaced/re-flushed) and
+   mrrReconcileFromOtherTabs (FIX-3, round 5: visibilitychange->visible
+   sweep, does NOT mark dirty — see its own comment for why). Returns true
+   if it adopted (cache was changed), false otherwise. */
+function mrrAdoptLsIfNewer(key, lsTs, markDirtyOnAdopt) {
+  var hasServerEntry = Object.prototype.hasOwnProperty.call(mrrServerCache, key);
+  var serverTs = hasServerEntry ? mrrNormalizeEnvelope(mrrServerCache[key]).t : null;
+  var adopt = !hasServerEntry || lsTs > serverTs;
+  if (!adopt) return false;
+  var lsRaw = lsGetRaw(key); /* current physical LS value; null if locally deleted */
+  mrrServerCache[key] = { t: lsTs, v: lsRaw }; /* ORIGINAL lsTs, never a fresh now() — preserves true edit time */
+  if (markDirtyOnAdopt) mrrMarkDirty(key);
+  return true;
 }
 
 /* Hydrate merge — replaces the old "server always wins once present"
@@ -501,23 +557,66 @@ function mrrHydrateMerge() {
   for (k in tsMap) { if (Object.prototype.hasOwnProperty.call(tsMap, k)) candidateKeys[k] = true; }
   Object.keys(candidateKeys).forEach(function (key) {
     if (!mrrIsSyncedKey(key)) return; /* defensive — both sources should only ever hold synced keys */
-    var hasServerEntry = Object.prototype.hasOwnProperty.call(mrrServerCache, key);
-    var serverTs = hasServerEntry ? mrrNormalizeEnvelope(mrrServerCache[key]).t : null;
-    var lsTs = tsMap[key] || 0;
-    var adoptLs = !hasServerEntry || lsTs > serverTs;
-    if (!adoptLs) return; /* server envelope wins as-is — already in mrrServerCache from the fetch */
-    var lsRaw = lsGetRaw(key); /* current physical LS value; null if locally deleted */
-    mrrServerCache[key] = { t: lsTs, v: lsRaw }; /* ORIGINAL lsTs, never a fresh now() — preserves true edit time */
-    mrrMarkDirty(key);
+    mrrAdoptLsIfNewer(key, tsMap[key] || 0, true);
+  });
+}
+
+/* FIX-3 (round-5 major — multi-tab stale cache): the in-memory cache never
+   refreshes on its own while physical localStorage (shared across tabs in
+   the same browser) is always current — a second tab could sit forever on
+   whatever it hydrated with at its own page load, even after another tab
+   saved newer data locally. On visibilitychange->visible (registered in
+   watchLifecycleSaves alongside the existing lifecycle listeners), sweep
+   every synced key present in the LS ts-map and adopt it into the cache
+   when the ts-map's timestamp is newer than what the cache currently
+   holds — reusing mrrAdoptLsIfNewer, the exact newest-wins mechanism
+   mrrHydrateMerge already uses, rather than duplicating the comparison.
+   Deliberately narrower than mrrHydrateMerge's full union sweep: only
+   ts-map keys are considered (a key this tab has never touched and that
+   only exists server-side needs no local reconcile — the cache already
+   reflects it from this tab's own hydrate).
+   markDirtyOnAdopt is FALSE here on purpose: the OTHER tab that made this
+   edit already owns pushing it server-side (its own debounced flush is
+   presumably in flight or already landed). If this tab also marked the key
+   dirty and re-pushed, it would race that tab's flush for no benefit — the
+   server patch is an unserialized read-modify-write (three await points,
+   last-writer-wins on the whole row, see COUPLINGS row 1b), so two tabs
+   patching the same key concurrently is a real hazard, not a theoretical
+   one. Adopting into THIS tab's cache (so its own reads/renders see the
+   newer value) is sufficient; re-flushing is the other tab's job. This is
+   also why finding 10 (a narrow ts-map cross-tab lost-update window,
+   documented at mrrStampTsMap) is only mitigated, not fully closed, by
+   this reconcile — it corrects the CACHE, not the race that could still
+   occasionally clobber the ts-map write itself. */
+function mrrReconcileFromOtherTabs() {
+  if (!hasServerStorage || !mrrServerCache) return;
+  var tsMap = mrrLoadTsMap();
+  Object.keys(tsMap).forEach(function (key) {
+    if (!mrrIsSyncedKey(key)) return;
+    mrrAdoptLsIfNewer(key, tsMap[key] || 0, false);
   });
 }
 
 /* hydrateStore(): memoized, TOTAL (never rejects). On success, caches the
    server record in memory and runs the one-time migration. On ANY failure
-   (get() rejects, or a migration key permanently fails — see
-   mrrMigrateOneKey, which swallows its own failures so they never reach
-   here), logs one warning, disables server storage for the session, and
-   resolves so callers can always proceed. */
+   (get() rejects, get() hangs past MRR_HYDRATE_TIMEOUT_MS — FIX-8, round-5
+   major — or a migration key permanently fails — see mrrMigrateOneKey,
+   which swallows its own failures so they never reach here), logs one
+   warning, disables server storage for the session, and resolves so
+   callers can always proceed.
+   FIX-8: a hung marinara.storage.get() (the sandbox never responds, no
+   reject/resolve either way) used to brick init() forever — hydrateStore()
+   is what init.js gates its first render on (see the bottom-of-file
+   hydrateStore().then(...) call), so nothing would ever render. Raced
+   against a timeout built from marinara.setTimeout; whichever settles
+   first wins. A late-arriving real get() response after the timeout has
+   already won is inert BY CONSTRUCTION, not by an extra flag: the
+   `.then`/`.catch` below are chained onto the Promise.race result, never
+   onto marinara.storage.get() itself, so nothing is listening to that
+   original promise once the race has already settled — there is no code
+   path anywhere that re-enables hasServerStorage after this function's
+   one-time .catch has already run (mrrHydratePromise is memoized; this
+   whole function body executes exactly once per session). */
 function hydrateStore() {
   if (mrrHydratePromise) return mrrHydratePromise;
   if (!hasServerStorage) {
@@ -525,7 +624,12 @@ function hydrateStore() {
     mrrHydratePromise = Promise.resolve();
     return mrrHydratePromise;
   }
-  mrrHydratePromise = marinara.storage.get().then(function (record) {
+  var timeoutPromise = new Promise(function (resolve, reject) {
+    marinara.setTimeout(function () {
+      reject(new Error("marinara.storage.get() timed out after " + MRR_HYDRATE_TIMEOUT_MS + "ms"));
+    }, MRR_HYDRATE_TIMEOUT_MS);
+  });
+  mrrHydratePromise = Promise.race([marinara.storage.get(), timeoutPromise]).then(function (record) {
     mrrServerCache = (record && typeof record === "object") ? record : {};
     mrrHydrateMerge(); /* every session — crash recovery, see header note. Runs BEFORE migration so a key the merge just adopted is correctly no-clobber-skipped by migration rather than reconsidered. */
     return mrrRunMigration();
@@ -621,16 +725,7 @@ function mrrFlushPendingPatch() {
   mrrPatchKeys(keys, 0);
 }
 
-/* Size guard (900,000-byte soft margin under the engine's 1,000,000-byte
-   cap): JSON.stringify the PROJECTED merged record (cached record + this
-   patch) before every send — the cache already holds envelopes (round 4),
-   so this measures the real envelope record with no extra transform.
-   Over budget: any character-family keys (sheets, roster, active pointer
-   — see mrrIsCharacterFamilyKey) in this batch are quarantined to
-   LS-only for the session (character sheets are the dominant contributor
-   to record size), one panel warning fires, and null is returned so the
-   caller sends nothing. */
-function mrrBuildPatchFromCache(keys) {
+function mrrBuildEnvelopePatch(keys) {
   var patch = {};
   for (var i = 0; i < keys.length; i++) {
     var k = keys[i];
@@ -641,12 +736,51 @@ function mrrBuildPatchFromCache(keys) {
        a bare null (round 4: the server now always expects {t, v}). */
     patch[k] = Object.prototype.hasOwnProperty.call(mrrServerCache, k) ? mrrServerCache[k] : { t: Date.now(), v: null };
   }
-  if (mrrByteLength(JSON.stringify(mrrProjectedMergedRecord(patch))) > MRR_STORAGE_SIZE_GUARD_BYTES) {
-    keys.forEach(function (k) { if (mrrIsCharacterFamilyKey(k)) mrrQuarantinedKeys[k] = true; });
-    mrrPanelWarn("character library exceeds server-sync budget — sheets stored locally");
+  return patch;
+}
+
+/* Size guard (900,000-byte soft margin under the engine's 1,000,000-byte
+   cap): JSON.stringify the PROJECTED merged record (cached record + this
+   patch) before every send — the cache already holds envelopes (round 4),
+   so this measures the real envelope record with no extra transform.
+   FIX-6 (round-5 major): over budget used to wedge the ENTIRE batch — a
+   single fat character sheet would block small keys (ruleset id,
+   spellbook cache) in the same flush from ever syncing. Now: quarantine
+   only the character-family keys (sheets, roster, active pointer — see
+   mrrIsCharacterFamilyKey) in this batch, re-build EXCLUDING them, and
+   send that narrower patch if it fits. Quarantined character envelopes
+   remaining in mrrServerCache still inflate the projection on the NEXT
+   guard check — that's left as-is (honest: the server record really does
+   hold them until something clears them), it's only THIS batch's small
+   keys that are no longer held hostage. Any key excluded from the send
+   (the quarantined character-family ones) is re-added to
+   mrrPendingPatchKeys — mrrFlushPendingPatch already cleared that set
+   before calling in here, so without this they would be silently dropped
+   forever rather than merely quarantined (quarantine still stops them
+   syncing THIS session via the mrrIsQuarantined filters elsewhere, but the
+   pending-set bookkeeping should not lie about what's still owed). */
+function mrrBuildPatchFromCache(keys) {
+  var patch = mrrBuildEnvelopePatch(keys);
+  if (mrrByteLength(JSON.stringify(mrrProjectedMergedRecord(patch))) <= MRR_STORAGE_SIZE_GUARD_BYTES) {
+    return patch;
+  }
+  var characterKeys = [], smallKeys = [];
+  keys.forEach(function (k) { (mrrIsCharacterFamilyKey(k) ? characterKeys : smallKeys).push(k); });
+  characterKeys.forEach(function (k) {
+    mrrQuarantinedKeys[k] = true;
+    mrrPendingPatchKeys[k] = true; /* excluded from this send, not dropped — see comment above */
+  });
+  mrrPanelWarn("character library exceeds server-sync budget — sheets stored locally");
+  if (!smallKeys.length) return null;
+  var retryPatch = mrrBuildEnvelopePatch(smallKeys);
+  if (mrrByteLength(JSON.stringify(mrrProjectedMergedRecord(retryPatch))) > MRR_STORAGE_SIZE_GUARD_BYTES) {
+    /* Pathological/defensive: still over budget with zero character-family
+       keys in the batch. Bail entirely rather than send a truncated,
+       silently-wrong patch; keep everything queued for a future retry. */
+    smallKeys.forEach(function (k) { mrrPendingPatchKeys[k] = true; });
     return null;
   }
-  return patch;
+  return retryPatch;
 }
 
 /* Backoff-retried background patch for a batch of dirty keys. On
@@ -691,7 +825,7 @@ function mrrPatchOneKey(key, attempt) {
    is unloading, so no retry/backoff, just one attempt. */
 function mrrBestEffortFlushOnCleanup() {
   if (!hasServerStorage || !mrrServerCache) return;
-  var keys = Object.keys(mrrPendingPatchKeys);
+  var keys = Object.keys(mrrPendingPatchKeys).filter(function (k) { return !mrrQuarantinedKeys[k]; }); /* FIX-14: same filter mrrPatchKeys uses — don't attempt a doomed send for an already-quarantined key on the way out */
   if (!keys.length) return;
   mrrPendingPatchKeys = {};
   var patch = mrrBuildPatchFromCache(keys);
@@ -840,22 +974,36 @@ function lsGet(key) {
 
 function lsSet(key, val) {
   var ok = lsSetRaw(key, val); /* LS remains a current local mirror this release — never removed; always the raw string, envelopes are a server/cache-only concept */
-  if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key) && !mrrIsQuarantined(key)) {
+  if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key)) {
     var ts = Date.now();
+    /* FIX-5 (round-5 major): the ts-map stamp happens REGARDLESS of
+       quarantine — LS was just written above unconditionally, so its
+       timestamp must always be current. If the stamp were skipped while
+       quarantined, an edit made during quarantine would leave a STALE
+       ts-map entry behind; at the next hydrate, mrrHydrateMerge compares
+       that stale lsTs against the (also stale, pre-quarantine) server
+       envelope and could conclude they're not newer, silently discarding
+       the quarantined edit forever. Only the actual sync attempt (cache
+       write + markDirty) stays gated on quarantine — a quarantined key
+       still shouldn't try to push server-side this session. */
     mrrStampTsMap(key, ts);
-    mrrServerCache[key] = { t: ts, v: val };
-    mrrMarkDirty(key);
+    if (!mrrIsQuarantined(key)) {
+      mrrServerCache[key] = { t: ts, v: val };
+      mrrMarkDirty(key);
+    }
   }
   return ok;
 }
 
 function lsDel(key) {
   lsDelRaw(key);
-  if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key) && !mrrIsQuarantined(key)) {
+  if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key)) {
     var ts = Date.now();
-    mrrStampTsMap(key, ts);
-    mrrServerCache[key] = { t: ts, v: null }; /* tombstone, now timestamped — a strictly-newer LS write can still recreate it later (see mrrHydrateMerge) */
-    mrrMarkDirty(key);
+    mrrStampTsMap(key, ts); /* FIX-5 — see lsSet's comment; same reasoning applies to deletes */
+    if (!mrrIsQuarantined(key)) {
+      mrrServerCache[key] = { t: ts, v: null }; /* tombstone, now timestamped — a strictly-newer LS write can still recreate it later (see mrrHydrateMerge) */
+      mrrMarkDirty(key);
+    }
   }
 }
 /* ═══════════════════════════════════════════════════════════════════════ */
@@ -13372,6 +13520,33 @@ var STATE_KV_RE  = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 var processedMessageIds = {};
 var processedMessageIdsChatId = null;
 
+/* FIX-2b (round-6 critical — corrects round 5's FIX-2, which was the right
+   SHAPE but wired into the wrong call site): a render-observation cache,
+   NOT persisted state. msgId -> the exact node.textContent captured at the
+   moment that message's tags were last applied (set alongside
+   processedMessageIds[key] = true in processChatMessage). Session-only,
+   in-memory, never written to localStorage — it exists purely to answer
+   "did this message's visible content actually change since we last
+   processed it," which processedMessageIds (keyed by swipe index, not by
+   content) cannot answer on its own.
+   Why this exists: processChatMessage's fast path must NOT prefix-scan
+   processedMessageIds — a composite entry ("M:0") cannot legitimately
+   suppress a fresh observation, because the CURRENT swipe is by definition
+   unknown before the fetch resolves; short-circuiting there made a swiped
+   reply's tags never apply (round-6 finding — B2's core feature was dead
+   in the live path even though round 5's harness showed green, because
+   the harness's stale hand-copy of the fast path didn't match reality).
+   The prefix scan's only legitimate homes are (a) isMessageProcessed's
+   idx-unknown branch, reached AFTER a fetch resolves with no discoverable
+   index (replay protection) and (b) the initial-sweep hide-only gate. This
+   memo is what closes finding 13b (recurring per-observation refetch)
+   WITHOUT reintroducing the fast-path regression: unchanged text on a
+   re-observation means nothing new happened (spurious mutation, e.g. an
+   unrelated sibling re-render) — skip the fetch. Changed text means a
+   swipe (or a first-ever new message) — proceed to the fetch, and let the
+   composite-exact check in isMessageProcessed decide from there. */
+var mrrProcessedTextMemo = Object.create(null);
+
 /* Shared cross-transport mutation-dedup set (per chat, in-memory). A given
    sheet mutation can now arrive via TWO transports: the narrator DOM message
    (processChatMessage) and the custom-agent runs endpoint (pollCustomAgentRuns).
@@ -13488,9 +13663,10 @@ function applyStateTagsWithDedup(tags, anchorId) {
 }
 
 function loadProcessedMessageIds(chatId) {
-  if (!chatId) { processedMessageIds = {}; processedMessageIdsChatId = null; appliedMutationKeys = Object.create(null); return; }
+  if (!chatId) { processedMessageIds = {}; processedMessageIdsChatId = null; appliedMutationKeys = Object.create(null); mrrProcessedTextMemo = Object.create(null); return; }
   if (processedMessageIdsChatId === chatId) return; /* already loaded */
   appliedMutationKeys = Object.create(null); /* new chat — clear cross-transport dedup so old-chat keys can't suppress new applies */
+  mrrProcessedTextMemo = Object.create(null); /* FIX-2b: new chat — a msgId's text memo from a DIFFERENT chat must never suppress this chat's fast path (message ids are not guaranteed unique across chats) */
   var raw = lsGet(LS_PROCESSED_MSGS_PFX + chatId);
   var parsed = raw ? safeParse(raw) : null;
   processedMessageIds = (parsed && typeof parsed === "object") ? parsed : {};
@@ -13531,16 +13707,46 @@ function saveProcessedMessageIds() {
    discoverable this cycle; plain msgId otherwise (fetch failure, or the
    candidate fell outside the fetched recent-window). */
 var mrrSwipeIndexFetchPromise = null; // shared per-cycle fetch; null whenever no fetch is in flight
+var mrrSwipeIndexFetchChatId = null;  // FIX-13a (round-5 minor): the chatId the in-flight fetch belongs to
 var mrrSwipeIndexWarned = false;      // console.warn once per session on fetch failure (soft degradation — not the visible warn-strip, which is reserved for storage degradation)
 
 function mrrProcessedKey(msgId, idx) {
   return (idx === null || idx === undefined) ? msgId : (msgId + ":" + idx);
 }
 
+/* FIX-2 (round-5 critical): closes an out-of-window replay hole WITHOUT
+   collapsing swipe independence. Two distinct cases, not three cumulative
+   checks:
+     - idx KNOWN this call: legacy plain entry, OR an EXACT composite match
+       for THIS swipe. A different swipe of the same message having been
+       processed does NOT suppress this one — that's the entire point of
+       composite keying (B2). (Caught in probe P1 during round-5 testing: an
+       earlier draft of this fix ran the prefix scan unconditionally, which
+       made swipe 1 look "processed" purely because swipe 0 was — silently
+       regressing B2 back to plain-msgId-equivalent behavior. Scoping the
+       prefix scan to the idx-UNKNOWN branch only, below, is what avoids
+       that regression while still closing the replay hole.)
+     - idx UNKNOWN this call (null/undefined — swipe-index fetch failed, or
+       the candidate fell outside the fetched recent-window, see
+       fetchSwipeIndexMap): legacy plain entry, OR a prefix scan for
+       "msgId:*" — processed under ANY swipe is treated as processed,
+       period. Without this fallback, a message already applied under
+       "M:0" looked UN-processed to an idx-less caller and got re-applied,
+       replaying history. This is deliberately coarser than the idx-known
+       case — it's a degrade path, not the common case.
+   This same helper is also now the sweep gate in watchChatMessages (called
+   with idx=null there, so it takes the fallback branch) so the initial-load
+   fast path and the live-observation path share one processed check. */
 function isMessageProcessed(msgId, idx) {
   if (processedMessageIds[msgId]) return true; /* legacy plain entry — suppresses every swipe, see trade-off above */
-  if (idx === null || idx === undefined) return false;
-  return !!processedMessageIds[msgId + ":" + idx];
+  if (idx !== null && idx !== undefined) {
+    return !!processedMessageIds[msgId + ":" + idx]; /* idx known: exact match for THIS swipe only */
+  }
+  var prefix = msgId + ":";
+  for (var k in processedMessageIds) {
+    if (Object.prototype.hasOwnProperty.call(processedMessageIds, k) && k.indexOf(prefix) === 0) return true;
+  }
+  return false;
 }
 
 /* Batched swipe-index lookup for the active chat. Coalesces concurrent
@@ -13552,7 +13758,18 @@ function isMessageProcessed(msgId, idx) {
    checks HTTP status, so an error body arrives as a non-array) so callers
    fall back to plain-messageId keying for that cycle. */
 function fetchSwipeIndexMap(chatId) {
-  if (mrrSwipeIndexFetchPromise) return mrrSwipeIndexFetchPromise;
+  if (mrrSwipeIndexFetchPromise) {
+    if (mrrSwipeIndexFetchChatId === chatId) return mrrSwipeIndexFetchPromise;
+    /* FIX-13a (round-5 minor): the in-flight fetch belongs to a DIFFERENT
+       chat (the chat switched mid-cycle) — reusing it would hand this
+       caller another chat's swipe-index map. Smaller diff than queuing a
+       second fetch behind the first: treat the mismatched caller exactly
+       like a failed fetch — resolveSwipeIndexForMessage already falls
+       back to plain-msgId keying on a null map, which is the correct,
+       already-supported degrade path here too. */
+    return Promise.resolve(null);
+  }
+  mrrSwipeIndexFetchChatId = chatId;
   mrrSwipeIndexFetchPromise = apiFetch("/chats/" + encodeURIComponent(chatId) + "/messages?limit=50")
     .then(function (rows) {
       if (!Array.isArray(rows)) return null;
@@ -13574,6 +13791,7 @@ function fetchSwipeIndexMap(chatId) {
     })
     .then(function (result) {
       mrrSwipeIndexFetchPromise = null; /* cycle over — next candidate starts a fresh fetch; never cached beyond this */
+      mrrSwipeIndexFetchChatId = null;
       return result;
     });
   return mrrSwipeIndexFetchPromise;
@@ -14524,27 +14742,45 @@ function processChatMessage(node) {
   var text = node.textContent || "";
   if (text.indexOf("[mrr-state:") === -1) return;
 
-  /* Fast path: a legacy plain-msgId entry already suppresses every swipe of
-     this message (isMessageProcessed's trade-off) — skip the swipe-index
-     fetch entirely when it already applies, so the batched lookup only
-     ever fires for candidates that genuinely need it. */
-  if (!isMessageProcessed(msgId, null)) {
+  /* FIX-2b (round-6 critical, corrects round 5's FIX-2 wiring — see
+     mrrProcessedTextMemo's declaration for the full contract): the fast
+     path checks ONLY the legacy plain-msgId entry — NOT
+     isMessageProcessed's prefix scan. A composite entry ("M:0") cannot
+     legitimately gate the fetch, because the CURRENT swipe is unknown
+     before the fetch resolves; short-circuiting on "any swipe was ever
+     processed" made a freshly-swiped reply's tags never apply — B2's core
+     feature, dead in the live path. The memo closes the reopened
+     performance hole (finding 13b) on its own terms: unchanged text on a
+     re-observation means nothing new happened (skip); changed text means
+     a swipe or a first-ever message (proceed to the fetch — the
+     composite-exact check inside isMessageProcessed decides from there,
+     once idx is known). */
+  if (!processedMessageIds[msgId] && mrrProcessedTextMemo[msgId] !== text) {
     var scanChatId = state.chatId;
     resolveSwipeIndexForMessage(scanChatId, msgId).then(function (idx) {
       if (state.chatId !== scanChatId) return; /* chat switched mid-fetch — stale, ignore */
       if (isMessageProcessed(msgId, idx)) return; /* composite entry already applied (re-entrant observation) */
       var tags = parseStateTags(text);
       var key = mrrProcessedKey(msgId, idx);
-      /* Route through the shared cross-transport dedup keyed by this
-         message+swipe. The outer processedMessageIds gate still governs
-         whole-message(+swipe) reprocessing; the helper additionally lets
-         the runs poller skip any tag the narrator already applied for this
-         same turn. Even if two observations of the same message+swipe race
-         each other past the isMessageProcessed check above (e.g. a new DOM
-         mutation re-schedules while a prior fetch is still in flight), the
-         inner dedup below still applies each mutation exactly once. */
-      var applied = applyStateTagsWithDedup(tags, key);
+      /* FIX-1 (round-5 critical): the cross-transport dedup ANCHOR passed to
+         applyStateTagsWithDedup is the PLAIN msgId, not the composite key —
+         extractRunAnchor (runs poller) only ever returns plain msgId (it has
+         no swipe-index concept), so passing the composite key here broke the
+         documented invariant "a tag present in BOTH sources applies exactly
+         once": narrator and poller anchors stopped matching and identical
+         tags applied TWICE. Restored: both transports anchor on plain msgId
+         again. The composite key is used ONLY for the processedMessageIds
+         entry below (whole-message+swipe reprocessing gate) — that part of
+         B2's swipe-awareness is unaffected.
+         Accepted consequence of sharing one plain-msgId anchor across
+         swipes: identical-content tags on two different swipes of the same
+         message now dedup to a single apply (protective — was already true
+         pre-B2). Different-content tags on different swipes still each
+         apply (stacking both swipes' mutations) — a known open design
+         question logged for Corey; not solved here. */
+      var applied = applyStateTagsWithDedup(tags, msgId);
       processedMessageIds[key] = true;
+      mrrProcessedTextMemo[msgId] = text; /* FIX-2b: record what content this msgId was processed against, so a spurious re-observation with the SAME text short-circuits at the fast path without a fetch */
       saveProcessedMessageIds();
       log("state-mutator: applied " + applied + "/" + tags.length + " mutation(s) from message " + key);
     });
@@ -14752,7 +14988,7 @@ function watchChatMessages() {
   for (var x = 0; x < existing.length; x++) {
     var el = existing[x];
     var mid = el.getAttribute("data-message-id");
-    if (mid && processedMessageIds[mid]) {
+    if (mid && isMessageProcessed(mid, null)) { /* FIX-2: shared helper — plain, composite-exact (n/a, idx null), and prefix-scan checks */
       hideStateTagsInElement(el);
     } else {
       schedule(el);
@@ -14903,10 +15139,17 @@ function watchRouteChanges() {
 /* Browser lifecycle: persist on tab hide and page unload. visibilitychange
    fires reliably on tab switch / minimize / mobile-background; beforeunload
    covers full reloads and tab closes. Both call flushSave directly because
-   the user may not have nudged a stepper since their last edit. */
+   the user may not have nudged a stepper since their last edit.
+   FIX-3 (round 5): the SAME visibilitychange listener also reconciles the
+   in-memory storage cache from any newer values another tab wrote to LS
+   while this tab was hidden — see mrrReconcileFromOtherTabs. */
 function watchLifecycleSaves() {
   marinara.on(document, "visibilitychange", function () {
-    if (document.visibilityState === "hidden") flushSave();
+    if (document.visibilityState === "hidden") {
+      flushSave();
+    } else if (document.visibilityState === "visible") {
+      if (hasServerStorage) mrrReconcileFromOtherTabs();
+    }
   });
   marinara.on(window, "beforeunload", flushSave);
   marinara.on(window, "pagehide",     flushSave);
