@@ -295,6 +295,62 @@ function lsDelRaw(key) { try { localStorage.removeItem(key); } catch (e) {} }
    Storage layout: ONE record, ONE TOP-LEVEL KEY PER LS KEY, mirroring
    today's localStorage key strings exactly. Never a nested sub-object.
 
+   TIMESTAMPED ENVELOPES + NEWEST-WINS MERGE (Corey override, 2026-08-22,
+   coordinator validation round 4 — SUPERSEDES the original "deterministic,
+   no timestamps" precedence below wherever the two conflict): crash
+   recovery must never resurrect older character data. Every synced-key
+   VALUE stored server-side is now an envelope {"t": <epoch ms>, "v": <raw
+   string value>}; a tombstone is {"t": <epoch ms>, "v": null} — deletions
+   are timestamped too. Defensive read: a server value that is present but
+   NOT shaped like an envelope (not an object with a numeric `t`) is
+   treated as {t: 0, v: <that raw value>} — degrade, don't crash (see
+   mrrNormalizeEnvelope). There was no legacy unwrapped server data to
+   migrate — B1 had never been pushed or live-imported when this landed —
+   so the write/read paths change outright, no back-compat shim needed.
+
+   localStorage stays untouched — every LS value is still the raw string it
+   is today (zero compat risk for the ~66 existing call sites). The LS-side
+   timestamp for a synced key lives in ONE local-only sidecar map,
+   MRR_TS_MAP_KEY = "mrr-ts-map" (a JSON object {<syncedKey>: <epoch ms>}),
+   written via lsSetRaw every time lsSet/lsDel touches a synced key. This
+   sidecar is deliberately NOT itself a synced key (NOT in mrrIsSyncedKey):
+   it is per-browser device state, not portable user data — if it were
+   synced, the engine's SHALLOW patch merge would let one browser's
+   ts-map (keyed by chatId/characterId) silently whole-map-clobber every
+   other browser's independently-touched keys the next time either side
+   flushed, corrupting the very mechanism meant to prevent data loss.
+
+   Hydrate merge (mrrHydrateMerge, replaces the old "server always wins
+   once present" precedence): runs on EVERY hydrate, not gated by the
+   one-time migration flag — this is what makes crash recovery work every
+   session, not just on first activation. For every synced key found in
+   EITHER store (the just-fetched server record, or the local ts-map):
+   serverTs = the envelope's `t` (0 if malformed, and effectively "lower
+   than anything" if the server has no entry for the key at all — that
+   case unconditionally adopts the LS side, same outcome migration already
+   gave a never-before-synced key); lsTs = tsMap[key] || 0 (an LS value
+   with no ts-map entry is legacy/unstamped = 0, which is exactly the old
+   server-wins behavior preserved as the degenerate case). If lsTs is
+   STRICTLY greater than serverTs: adopt the current LS value into the
+   cache and mark it dirty so it re-flushes — with its ORIGINAL lsTs as
+   the envelope's `t`, never a fresh now() (preserves true edit time, so a
+   third browser comparing later still sees the real history). Otherwise
+   the server envelope wins as-is, including tombstones: a newer server
+   tombstone keeps a key deleted even if an older LS copy still physically
+   exists (LS is intentionally left alone — see "localStorage stays
+   untouched" above; lsGet already resolves to the cache first for synced
+   keys, so the stale LS bytes are just inert until the next lsSet); a
+   strictly-newer LS value beats an older server tombstone (recreate
+   survives). mrrRunMigration (the one-time, flag-gated scan for
+   never-before-touched LS-only keys — still necessary because it is the
+   only mechanism that discovers a key by raw-scanning localStorage
+   rather than by already having a ts-map/server footprint) now stamps
+   each migrated value with its ts-map entry when one exists, else 0 —
+   0 is correct here, not a bug: it means any future real edit on any
+   device will always outrank an unstamped migrated value. now() source
+   is plain Date.now(); clock skew across one user's browsers is accepted
+   (no monotonic counter — decided).
+
    Key classification (allowlist — everything else stays LOCAL, i.e. the
    original localStorage-only behavior is preserved unchanged):
      SYNCED:
@@ -323,6 +379,9 @@ function lsDelRaw(key) { try { localStorage.removeItem(key); } catch (e) {} }
          source only, never the modern home for sheet data.
        - MRR_MIGRATED_FLAG "mrr-migrated-v1" — must be per-device by
          definition (the migration gate itself).
+       - MRR_TS_MAP_KEY "mrr-ts-map" — per-device by definition (see the
+         "Corey override" section above for why syncing it would corrupt
+         the merge it exists to drive).
        - RP_LEGACY_* ("mrrp-*") — read-only, owned by the retired RP
          extension, never written from here.
        - "marinara-active-chat-id" — the ENGINE's own key, not ours.
@@ -335,11 +394,12 @@ function lsDelRaw(key) { try { localStorage.removeItem(key); } catch (e) {} }
 var hasServerStorage = !!(marinara && marinara.storage && typeof marinara.storage.get === "function");
 
 var MRR_MIGRATED_FLAG = "mrr-migrated-v1";
+var MRR_TS_MAP_KEY = "mrr-ts-map"; /* local-only sidecar: {<syncedKey>: <epoch ms>} — see "Corey override" header note. NOT a synced key. */
 var MRR_STORAGE_SIZE_GUARD_BYTES = 900000;
 var MRR_FLUSH_DEBOUNCE_MS = 1000;
 var MRR_RETRY_DELAYS_MS = [2000, 8000, 30000];
 
-var mrrServerCache = null;          /* becomes {} once hydrated; hasOwnProperty(key) => "server has an entry" (null value = tombstone) */
+var mrrServerCache = null;          /* becomes {} once hydrated. Cache internals choice (round 4): stores ENVELOPES {t, v} per key, mirroring the wire format exactly — hasOwnProperty(key) => "server has an entry" (v === null => tombstone). Chosen over a parallel raw-value/ts-object split because mrrProjectedMergedRecord/mrrBuildPatchFromCache already need to measure the envelope record; with envelopes in the cache those two functions need ZERO shape-specific changes. */
 var mrrHydratePromise = null;       /* memoized hydrateStore() promise */
 var mrrPendingPatchKeys = {};       /* keys mutated since the last flush */
 var mrrFlushTimer = null;
@@ -401,6 +461,57 @@ function mrrProjectedMergedRecord(patch) {
   return merged;
 }
 
+/* Defensive read (Corey override, round 4): a server value that isn't
+   shaped like an envelope (not an object with a numeric `t`) — including
+   a genuinely absent/undefined value — is treated as {t: 0, v: <that raw
+   value>}, degrading instead of throwing. In normal operation every
+   in-cache value is already a real envelope (written by lsSet/lsDel/
+   migration/merge below); this only actually fires for whatever comes
+   back raw from marinara.storage.get() before this file has ever written
+   through it, or if the server record is ever hand-edited. */
+function mrrNormalizeEnvelope(raw) {
+  if (raw && typeof raw === "object" && typeof raw.t === "number") return raw;
+  return { t: 0, v: raw };
+}
+
+/* Local-only sidecar map — see MRR_TS_MAP_KEY / "Corey override" header
+   note for why this is never itself a synced key. Always reads/writes via
+   the RAW helpers (never lsGet/lsSet) so it can never accidentally be
+   routed through the synced-key path. */
+function mrrLoadTsMap() {
+  var parsed = safeParse(lsGetRaw(MRR_TS_MAP_KEY));
+  return (parsed && typeof parsed === "object" && !Array.isArray(parsed)) ? parsed : {};
+}
+function mrrStampTsMap(key, ts) {
+  var map = mrrLoadTsMap();
+  map[key] = ts;
+  lsSetRaw(MRR_TS_MAP_KEY, JSON.stringify(map));
+}
+
+/* Hydrate merge — replaces the old "server always wins once present"
+   precedence. Runs on EVERY hydrate (unlike mrrRunMigration, which is
+   one-time/flag-gated) — this is what makes crash recovery work every
+   session. See the "Corey override" header section for the full
+   algorithm; this is the implementation of it verbatim. */
+function mrrHydrateMerge() {
+  if (!hasServerStorage) return;
+  var tsMap = mrrLoadTsMap();
+  var candidateKeys = {}, k;
+  for (k in mrrServerCache) { if (Object.prototype.hasOwnProperty.call(mrrServerCache, k)) candidateKeys[k] = true; }
+  for (k in tsMap) { if (Object.prototype.hasOwnProperty.call(tsMap, k)) candidateKeys[k] = true; }
+  Object.keys(candidateKeys).forEach(function (key) {
+    if (!mrrIsSyncedKey(key)) return; /* defensive — both sources should only ever hold synced keys */
+    var hasServerEntry = Object.prototype.hasOwnProperty.call(mrrServerCache, key);
+    var serverTs = hasServerEntry ? mrrNormalizeEnvelope(mrrServerCache[key]).t : null;
+    var lsTs = tsMap[key] || 0;
+    var adoptLs = !hasServerEntry || lsTs > serverTs;
+    if (!adoptLs) return; /* server envelope wins as-is — already in mrrServerCache from the fetch */
+    var lsRaw = lsGetRaw(key); /* current physical LS value; null if locally deleted */
+    mrrServerCache[key] = { t: lsTs, v: lsRaw }; /* ORIGINAL lsTs, never a fresh now() — preserves true edit time */
+    mrrMarkDirty(key);
+  });
+}
+
 /* hydrateStore(): memoized, TOTAL (never rejects). On success, caches the
    server record in memory and runs the one-time migration. On ANY failure
    (get() rejects, or a migration key permanently fails — see
@@ -416,6 +527,7 @@ function hydrateStore() {
   }
   mrrHydratePromise = marinara.storage.get().then(function (record) {
     mrrServerCache = (record && typeof record === "object") ? record : {};
+    mrrHydrateMerge(); /* every session — crash recovery, see header note. Runs BEFORE migration so a key the merge just adopted is correctly no-clobber-skipped by migration rather than reconsidered. */
     return mrrRunMigration();
   }).catch(function (e) {
     warn("marinara.storage hydrate failed — falling back to local storage for this session: " + (e && e.message ? e.message : e));
@@ -437,7 +549,10 @@ function hydrateStore() {
    logged and left for next session (does not block the other keys this
    session); the flag is only set once every attempted key this session
    reported success (patched, no-clobber-skipped, or deliberately
-   size-guard-skipped). */
+   size-guard-skipped). Round 4 (Corey override): each migrated value is
+   now written as an envelope stamped with its mrr-ts-map entry when one
+   exists, else 0 — see mrrMigrateOneKey and the header note on why 0 is
+   correct (not a bug) for a never-locally-stamped legacy value. */
 function mrrRunMigration() {
   if (!hasServerStorage) return Promise.resolve();
   if (lsGetRaw(MRR_MIGRATED_FLAG)) return Promise.resolve();
@@ -466,14 +581,17 @@ function mrrMigrateOneKey(key) {
   if (Object.prototype.hasOwnProperty.call(mrrServerCache, key)) return Promise.resolve(true);
   var raw = lsGetRaw(key);
   if (raw === null || raw === undefined) return Promise.resolve(true);
-  var patch = {}; patch[key] = raw;
+  var tsMap = mrrLoadTsMap();
+  var ts = (typeof tsMap[key] === "number") ? tsMap[key] : 0; /* lsTs when present, else 0 (see header note) */
+  var envelope = { t: ts, v: raw };
+  var patch = {}; patch[key] = envelope;
   if (mrrByteLength(JSON.stringify(mrrProjectedMergedRecord(patch))) > MRR_STORAGE_SIZE_GUARD_BYTES) {
     warn("migration: skipped \"" + key + "\" — would exceed the server-sync size budget; left local-only.");
     if (mrrIsCharacterFamilyKey(key)) mrrQuarantinedKeys[key] = true;
     return Promise.resolve(true); /* deliberate skip — does not block the migrated flag */
   }
   return marinara.storage.patch(patch).then(function () {
-    mrrServerCache[key] = raw;
+    mrrServerCache[key] = envelope;
     return true;
   }).catch(function (e) {
     warn("migration: failed to sync \"" + key + "\" this session (" + (e && e.message ? e.message : e) + ") — will retry next session.");
@@ -505,16 +623,23 @@ function mrrFlushPendingPatch() {
 
 /* Size guard (900,000-byte soft margin under the engine's 1,000,000-byte
    cap): JSON.stringify the PROJECTED merged record (cached record + this
-   patch) before every send. Over budget: any character-family keys
-   (sheets, roster, active pointer — see mrrIsCharacterFamilyKey) in this
-   batch are quarantined to LS-only for the session (character sheets are
-   the dominant contributor to record size), one panel warning fires, and
-   null is returned so the caller sends nothing. */
+   patch) before every send — the cache already holds envelopes (round 4),
+   so this measures the real envelope record with no extra transform.
+   Over budget: any character-family keys (sheets, roster, active pointer
+   — see mrrIsCharacterFamilyKey) in this batch are quarantined to
+   LS-only for the session (character sheets are the dominant contributor
+   to record size), one panel warning fires, and null is returned so the
+   caller sends nothing. */
 function mrrBuildPatchFromCache(keys) {
   var patch = {};
   for (var i = 0; i < keys.length; i++) {
     var k = keys[i];
-    patch[k] = Object.prototype.hasOwnProperty.call(mrrServerCache, k) ? mrrServerCache[k] : null;
+    /* Defensive fallback only — every key reaching here came through
+       mrrMarkDirty, which is only ever called right after the cache was
+       written, so hasOwnProperty should always be true in practice. If it
+       somehow isn't, send a freshly-stamped tombstone envelope rather than
+       a bare null (round 4: the server now always expects {t, v}). */
+    patch[k] = Object.prototype.hasOwnProperty.call(mrrServerCache, k) ? mrrServerCache[k] : { t: Date.now(), v: null };
   }
   if (mrrByteLength(JSON.stringify(mrrProjectedMergedRecord(patch))) > MRR_STORAGE_SIZE_GUARD_BYTES) {
     keys.forEach(function (k) { if (mrrIsCharacterFamilyKey(k)) mrrQuarantinedKeys[k] = true; });
@@ -693,14 +818,20 @@ function mrrIsQuarantined(key) { return !!mrrQuarantinedKeys[key]; }
 
 /* Public wrappers — EVERY existing call site (~66) keeps calling these
    three names with the same signatures; server-storage awareness is
-   entirely internal. Precedence (deterministic, no timestamps): a key is
-   read from LS only when the server record has no entry for it (a null
-   tombstone counts as an entry); once a key exists server-side, its LS
-   copy is never read again. */
+   entirely internal. Round 4 (Corey override — SUPERSEDES the original
+   "deterministic, no timestamps" precedence): reads are served straight
+   from the cache, whose contents are decided once, at hydrate time, by
+   mrrHydrateMerge's newest-wins timestamp comparison — lsGet itself no
+   longer picks a winner, it just unwraps whichever envelope the merge
+   already settled on. Writes stamp both the ts-map (mrrStampTsMap, via
+   RAW localStorage — never a synced key) and the in-memory envelope
+   (cache stores {t, v} — see the cache-internals note above mrrServerCache)
+   with the SAME now() value, so a value and its timestamp can never
+   disagree. */
 function lsGet(key) {
   if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key) && !mrrIsQuarantined(key)) {
     if (Object.prototype.hasOwnProperty.call(mrrServerCache, key)) {
-      var v = mrrServerCache[key];
+      var v = mrrNormalizeEnvelope(mrrServerCache[key]).v;
       return (v === null || v === undefined) ? null : v;
     }
   }
@@ -708,9 +839,11 @@ function lsGet(key) {
 }
 
 function lsSet(key, val) {
-  var ok = lsSetRaw(key, val); /* LS remains a current local mirror this release — never removed */
+  var ok = lsSetRaw(key, val); /* LS remains a current local mirror this release — never removed; always the raw string, envelopes are a server/cache-only concept */
   if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key) && !mrrIsQuarantined(key)) {
-    mrrServerCache[key] = val;
+    var ts = Date.now();
+    mrrStampTsMap(key, ts);
+    mrrServerCache[key] = { t: ts, v: val };
     mrrMarkDirty(key);
   }
   return ok;
@@ -719,7 +852,9 @@ function lsSet(key, val) {
 function lsDel(key) {
   lsDelRaw(key);
   if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key) && !mrrIsQuarantined(key)) {
-    mrrServerCache[key] = null; /* tombstone — never resurrected by a later LS read or migration */
+    var ts = Date.now();
+    mrrStampTsMap(key, ts);
+    mrrServerCache[key] = { t: ts, v: null }; /* tombstone, now timestamped — a strictly-newer LS write can still recreate it later (see mrrHydrateMerge) */
     mrrMarkDirty(key);
   }
 }
