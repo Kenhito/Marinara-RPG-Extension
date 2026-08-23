@@ -25,6 +25,41 @@ If you just want to play D&D or Exalted, install the extension and import the ru
 
 If you want a system the framework doesn't ship, see [`releases/1.0.0/BUILD-YOUR-OWN-RULESET.md`](releases/1.0.0/BUILD-YOUR-OWN-RULESET.md) — options for AI-assisted or manual authoring.
 
+## Available rulesets (grab-and-go)
+
+Every ruleset ships as a single `bundle.json`, right here on GitHub — no build step, no downloads beyond the one file. With the extension installed, each is one import away:
+
+| System | Dice | Bundle |
+|--------|------|--------|
+| Blades in the Dark | d6 pool | [`rulesets/blades-in-the-dark/bundle.json`](rulesets/blades-in-the-dark/bundle.json) |
+| Call of Cthulhu 7th Edition | d100 | [`rulesets/coc7e/bundle.json`](rulesets/coc7e/bundle.json) |
+| Dungeons & Dragons 5th Edition | d20 | [`rulesets/dnd5e/bundle.json`](rulesets/dnd5e/bundle.json) |
+| Exalted 3rd Edition | d10 pool | [`rulesets/exalted3e/bundle.json`](rulesets/exalted3e/bundle.json) |
+| Exalted Versus World of Darkness | d10 pool | [`rulesets/exwod/bundle.json`](rulesets/exwod/bundle.json) |
+| Fate Core | 4dF | [`rulesets/fate-core/bundle.json`](rulesets/fate-core/bundle.json) |
+| Genesys | d6 | [`rulesets/genesys/bundle.json`](rulesets/genesys/bundle.json) |
+| GURPS Lite | 3d6 | [`rulesets/gurps-lite/bundle.json`](rulesets/gurps-lite/bundle.json) |
+| Lasers & Feelings | d6 | [`rulesets/lasers-and-feelings/bundle.json`](rulesets/lasers-and-feelings/bundle.json) |
+| Pathfinder 2nd Edition | d20 | [`rulesets/pathfinder2e/bundle.json`](rulesets/pathfinder2e/bundle.json) |
+| The Stewpot | d6 | [`rulesets/stewpot/bundle.json`](rulesets/stewpot/bundle.json) |
+| Trophy Dark | d6 | [`rulesets/trophy-dark/bundle.json`](rulesets/trophy-dark/bundle.json) |
+| Vampire: The Masquerade 20th Anniversary | d10 pool | [`rulesets/vtmv20/bundle.json`](rulesets/vtmv20/bundle.json) |
+| Werewolf: The Apocalypse 20th Anniversary | d10 pool | [`rulesets/w20/bundle.json`](rulesets/w20/bundle.json) |
+
+**Three ways to get one into Marinara** (extension installed first — see the notice above):
+
+1. **Fetch URL — no download needed.** In the extension's **Ruleset** dialog, paste the bundle's raw GitHub URL and click **Fetch URL**, then **Save and reload**. The pattern is:
+
+   ```
+   https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/<id>/bundle.json
+   ```
+
+   e.g. `.../main/rulesets/exalted3e/bundle.json`. (If your Marinara server blocks outbound fetches, use one of the other two ways.)
+2. **Download from GitHub.** Click the bundle link in the table above, then the **Raw** button (top-right of the file view), then save the page (Ctrl+S / Cmd+S) as a `.json` file. In the **Ruleset** dialog use **Choose file…** to pick it, then **Save and reload**.
+3. **From the release folder.** Every bundle is also in [`releases/1.0.0/install-files/`](releases/1.0.0/install-files/) as `<id>-bundle.json` — if you downloaded the release, they're already on your disk.
+
+After the import: attach the ruleset's lorebook to your game and enable the MRR agents after the game launches (Step 6 below) — importing installs, but each game activates its own.
+
 ## What this is
 
 Marinara Engine ships a Game Mode where an AI Game Master runs the table. By default the engine's GM is biased toward d20 / D&D-style mechanics: six attributes (STR/DEX/CON/INT/WIS/CHA), single-roll resolution, DC ladder. This repo adds a thin overlay that lets you swap the GM's mechanical brain (and the player-facing character sheet) for a different RPG system entirely.
