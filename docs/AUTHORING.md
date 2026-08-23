@@ -18,7 +18,7 @@ rulesets/your-system/
 
 ## Step 1 — choose a resolution mode
 
-The schema's `resolution.mode` enum has **nine** modes. The four first-class modes documented here cover the most common cases; the other five (added across Phases 5, 6, and the 2026-05 OpenD6-build-remediation round) are documented in **[`docs/AUTHORING-PHASE-6.md`](AUTHORING-PHASE-6.md)** section 1. That same section also covers `resolution.additionalModes[]` (B18) — a ruleset is no longer limited to one mode; a game that genuinely mixes mechanics (a d20 combat game with a percentile skill subsystem, say) can declare named alternates and bind specific skills/derived stats to them via `resolutionId`.
+The schema's `resolution.mode` enum has **nine** modes. The four first-class modes documented here cover the most common cases; the other five (added across Phases 5, 6, and the 2026-05 OpenD6-build-remediation round) are documented in **[`docs/AUTHORING-PHASE-6.md`](AUTHORING-PHASE-6.md)** section 1. That same section also covers `resolution.additionalModes[]` (B18, restricted round 9) — a ruleset is no longer limited to one mode FOR `dice-pool`/`roll-under` mechanics specifically (the only two modes wired so far); a game that mixes a primary mode with one of those two (a d20 combat game with a percentile roll-under skill subsystem, say) can declare named alternates and bind specific skills/derived stats to them via `resolutionId`.
 
 | Mode | Used by | Required sub-fields | Documented in |
 |------|---------|---------------------|---------------|

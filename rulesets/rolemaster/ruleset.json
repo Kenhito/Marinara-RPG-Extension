@@ -14,7 +14,7 @@
     "openEnded": {
       "high": { "threshold": 96, "cascadeCap": 0 },
       "low": { "threshold": 5, "subtract": true, "continueOn": "high", "cascadeCap": 0 },
-      "firstRollOnly": true
+      "unusualFaces": [66, 100]
     }
   },
   "difficulties": {

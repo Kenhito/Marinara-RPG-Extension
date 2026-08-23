@@ -211,10 +211,10 @@
                     }
                   }
                 },
-                "firstRollOnly": {
-                  "type": "boolean",
-                  "default": true,
-                  "description": "Open-ended triggers on the UNMODIFIED first die only (RMSS canon). When false, the modified total is tested — a house-rule shape some tables use."
+                "unusualFaces": {
+                  "type": "array",
+                  "items": { "type": "integer", "minimum": 1, "maximum": 100 },
+                  "description": "Round-9 fix 5f. Optional list of UNMODIFIED-first-roll face values that flag an `um=<face>` tag on the roll — e.g. Rolemaster's [66, 100] (unusual event / unusual success table rows). No default: absent or empty means the roller never emits `um=`, closing the round-9 finding that every roll-high d100 ruleset got a spurious um= flag on ANY natural 66 or 100 whether or not that ruleset's rules actually assign meaning to those faces. The widget only ever surfaces the flag — it never picks a table row itself."
                 }
               }
             },
@@ -1301,33 +1301,13 @@
   "$defs": {
     "additionalModesArray": {
       "type": "array",
-      "$comment": "B18 (2026-08-23) — multi-mechanic dice. `resolution` has NO $defs/definitions section of its own: all nine mode configs are inlined directly in the `resolution.oneOf` array above (each branch requires 'mode' as a const alongside its mode-specific fields, additionalProperties:false). Restructuring that already-shipped, validator-tested block into $ref form to avoid duplication was judged out of scope for a same-night, zero-regression build (16 rulesets validate against it today). Per the design doc's explicit fallback, the nine `resolutionConfig*` defs below are an HONEST, DELIBERATE DUPLICATION of each mode's field set (properties + required, MINUS the `mode` const itself, which additionalModes entries carry as a sibling property instead) — kept in sync BY HAND with the corresponding `resolution.oneOf` branch above. If a mode's fields change, update both places. The `additionalMode*` defs (also below) are NOT duplicated content — they are thin wrappers that $ref one resolutionConfig body each and are referenced once from `additionalModesArray`.",
-      "description": "B18 — named, self-contained alternate resolution mechanics a ruleset offers alongside its primary `resolution.mode` (e.g. OSE keeps d20 attacks as primary while thief skills and door checks route through their own roll-under configs). Each entry's `config` carries the same per-mode field set `resolution` itself uses for that `mode`, minus the `mode` discriminator (already present as this entry's sibling `mode` property). `skills[].resolutionId` / `derivedStats[].resolutionId` bind a sheet roll button to an entry by `id`; the dice widget's mechanic selector lists `label` for each; `whenToUse` (optional) is auto-taught to the GM agent's prompt as routing guidance.",
+      "$comment": "B18 (2026-08-23), RESTRICTED round 9 (finding 5/6/17 — honesty fix). Only TWO of the nine resolution modes are wired here: `dice-pool` and `roll-under`. A mode qualifies only when it is BOTH (a) tag-covered — its roller's chat tag literally starts with the exact string \"[dice: \" that finalizeRoll's mode=<id> injection guards on — AND (b) actually parameterized by mrrActiveResolutionConfig() in BOTH its build*Widget AND roll* functions, not just claimed. Verified against the live loader, not assumed: `single-roll` (rollSingleRoll) and `2d6-stat`/`fate-ladder` (rollPbta/rollFate) are neither tag-covered in the right format nor config-converted. `d100-percentile`, `dice-pool-sum`, and `stance-modal-pool` ARE config-converted but tag under \"[d100: \"/\"[mrr-roll: \" — NOT \"[dice: \" — so even if wired as an additionalMode, their rolls would silently never carry a mode=<id> tag; round 8 claimed all nine were eligible, which was wrong. `narrative-handled` has no roller at all. Convert-or-restrict: this round restricts to the honest set rather than converting more rollers. `resolution` itself still has no $defs/definitions section (all nine mode configs stay inlined in `resolution.oneOf` above, unchanged) — the two `resolutionConfig*` bodies below remain an HONEST, DELIBERATE DUPLICATION of their `resolution.oneOf` counterpart's field set, kept in sync BY HAND.",
+      "description": "B18 — named, self-contained alternate resolution mechanics a ruleset offers alongside its primary `resolution.mode`, RESTRICTED to `dice-pool` and `roll-under` (the two modes whose tag format and widget code actually honor an additionalMode selection — see $comment). OSE (`rulesets/ose/`) is the shipped pilot: primary `single-roll` (d20, unaffected) plus two `roll-under` additionalModes. Each entry's `config` carries the same per-mode field set `resolution` itself uses for that `mode`, minus the `mode` discriminator (already present as this entry's sibling `mode` property). `skills[].resolutionId` / `derivedStats[].resolutionId` bind a sheet roll button to an entry by `id`; the dice widget's mechanic selector lists `label` for each; `whenToUse` (optional) is auto-taught to the GM agent's prompt as routing guidance.",
       "items": {
         "oneOf": [
-          { "$ref": "#/$defs/additionalModeSingleRoll" },
           { "$ref": "#/$defs/additionalModeDicePool" },
-          { "$ref": "#/$defs/additionalModeD100Percentile" },
-          { "$ref": "#/$defs/additionalMode2d6Stat" },
-          { "$ref": "#/$defs/additionalModeRollUnder" },
-          { "$ref": "#/$defs/additionalModeFateLadder" },
-          { "$ref": "#/$defs/additionalModeStanceModalPool" },
-          { "$ref": "#/$defs/additionalModeDicePoolSum" },
-          { "$ref": "#/$defs/additionalModeNarrativeHandled" }
+          { "$ref": "#/$defs/additionalModeRollUnder" }
         ]
-      }
-    },
-
-    "additionalModeSingleRoll": {
-      "type": "object",
-      "required": ["id", "label", "mode", "config"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$", "description": "Stable slug identifier. Referenced by skills[].resolutionId / derivedStats[].resolutionId and echoed verbatim in dice chat tags (`[dice: mode=<id> ...]`). Uniqueness across additionalModes[] is enforced by tools/validate-ruleset.mjs (not expressible as a JSON Schema constraint on sibling array items)." },
-        "label": { "type": "string", "minLength": 1, "description": "Display label for the mechanic selector in the dice widget and the agent routing table." },
-        "mode": { "const": "single-roll" },
-        "config": { "$ref": "#/$defs/resolutionConfigSingleRoll" },
-        "whenToUse": { "type": "string", "description": "Optional one-line guidance auto-taught into the GM agent's prompt (only emitted when additionalModes is non-empty) describing when the agent should request this mechanic by id." }
       }
     },
     "additionalModeDicePool": {
@@ -1342,30 +1322,6 @@
         "whenToUse": { "type": "string" }
       }
     },
-    "additionalModeD100Percentile": {
-      "type": "object",
-      "required": ["id", "label", "mode", "config"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
-        "label": { "type": "string", "minLength": 1 },
-        "mode": { "const": "d100-percentile" },
-        "config": { "$ref": "#/$defs/resolutionConfigD100Percentile" },
-        "whenToUse": { "type": "string" }
-      }
-    },
-    "additionalMode2d6Stat": {
-      "type": "object",
-      "required": ["id", "label", "mode", "config"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
-        "label": { "type": "string", "minLength": 1 },
-        "mode": { "const": "2d6-stat" },
-        "config": { "$ref": "#/$defs/resolutionConfig2d6Stat" },
-        "whenToUse": { "type": "string" }
-      }
-    },
     "additionalModeRollUnder": {
       "type": "object",
       "required": ["id", "label", "mode", "config"],
@@ -1376,78 +1332,6 @@
         "mode": { "const": "roll-under" },
         "config": { "$ref": "#/$defs/resolutionConfigRollUnder" },
         "whenToUse": { "type": "string" }
-      }
-    },
-    "additionalModeFateLadder": {
-      "type": "object",
-      "required": ["id", "label", "mode", "config"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
-        "label": { "type": "string", "minLength": 1 },
-        "mode": { "const": "fate-ladder" },
-        "config": { "$ref": "#/$defs/resolutionConfigFateLadder" },
-        "whenToUse": { "type": "string" }
-      }
-    },
-    "additionalModeStanceModalPool": {
-      "type": "object",
-      "required": ["id", "label", "mode", "config"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
-        "label": { "type": "string", "minLength": 1 },
-        "mode": { "const": "stance-modal-pool" },
-        "config": { "$ref": "#/$defs/resolutionConfigStanceModalPool" },
-        "whenToUse": { "type": "string" }
-      }
-    },
-    "additionalModeDicePoolSum": {
-      "type": "object",
-      "required": ["id", "label", "mode", "config"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
-        "label": { "type": "string", "minLength": 1 },
-        "mode": { "const": "dice-pool-sum" },
-        "config": { "$ref": "#/$defs/resolutionConfigDicePoolSum" },
-        "whenToUse": { "type": "string" }
-      }
-    },
-    "additionalModeNarrativeHandled": {
-      "type": "object",
-      "required": ["id", "label", "mode", "config"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
-        "label": { "type": "string", "minLength": 1 },
-        "mode": { "const": "narrative-handled" },
-        "config": { "$ref": "#/$defs/resolutionConfigNarrativeHandled" },
-        "whenToUse": { "type": "string" }
-      }
-    },
-
-    "resolutionConfigSingleRoll": {
-      "type": "object",
-      "required": ["modifierFormula"],
-      "additionalProperties": false,
-      "properties": {
-        "modifierFormula": {
-          "type": "string",
-          "description": "Plain-language formula the GM applies (e.g. \"1d20 + ability_mod + proficiency_bonus\")."
-        },
-        "skillBonusFormula": {
-          "type": "string",
-          "description": "Optional auto-calculated skill (and save) bonus formula for d20-style systems. When set, the sheet replaces the per-skill stepper with the computed bonus. Tokens: {linkedAttribute_mod} (the skill's linked attribute modifier), {tierBonus} (the active proficiency tier's rollBonusFormula evaluated), and any {StatName}. D&D 5e: \"{linkedAttribute_mod} + {tierBonus}\". PF2e: \"{Level} + {linkedAttribute_mod} + {tierBonus}\"."
-        },
-        "spellSaveDcFormula": {
-          "type": "string",
-          "description": "Optional spell save DC formula for d20-style systems. When set, the sheet's Cast button computes the DC and posts it in the [mrr-cast: dc=...] chat tag so the GM agent resolves saves. Token: {spellcastingAttribute_mod} resolves to the casting spell's declared attribute modifier. When omitted, the cast tag posts without a DC and the agent picks one by rule context — the core extension knows no system's DC convention by default. Examples: D&D 5e \"8 + {Proficiency Bonus} + {spellcastingAttribute_mod}\"; PF2e \"10 + {Level} + {spellcastingAttribute_mod}\"."
-        },
-        "attackProficiencyFormula": {
-          "type": "string",
-          "description": "Optional formula for the proficiency contribution to weapon attack rolls when an item is marked attackProficient. When set, the sheet's `atk` button evaluates this formula and pre-fills the dice widget's Proficiency input. When omitted, attacks contribute zero proficiency and the player can type a value manually. The core extension knows no system's proficiency convention by default. Examples: D&D 5e \"{Proficiency Bonus}\"; PF2e (trained tier) \"{Level} + 2\"."
-        }
       }
     },
     "resolutionConfigDicePool": {
@@ -1490,110 +1374,6 @@
         }
       }
     },
-    "resolutionConfigD100Percentile": {
-      "type": "object",
-      "required": ["skillFormula"],
-      "additionalProperties": false,
-      "properties": {
-        "skillFormula": {
-          "type": "string",
-          "description": "Plain-language formula (e.g. \"Roll 1d100 under skill_value\")."
-        },
-        "direction": {
-          "type": "string",
-          "enum": ["under", "high"],
-          "default": "under",
-          "description": "Comparison direction. 'under' (default, back-compatible): success when the roll is at or under the target. 'high': success when roll + bonus meets or beats the target; the widget reports a total rather than a pass/fail against a percentile cap. Rolemaster and other roll-high d100 systems use 'high'."
-        },
-        "bonusFormula": {
-          "type": "string",
-          "description": "Plain-language description of what the player adds to a 'high' roll (e.g. 'skill bonus + stat bonus + item bonus'). Descriptive only — the widget takes the bonus as a numeric input; it does not parse this string."
-        },
-        "openEnded": {
-          "type": "object",
-          "additionalProperties": false,
-          "description": "Open-ended (exploding, and optionally imploding) d100. Absent = feature off. Mirrors the dice-pool-sum wildDie explode pattern.",
-          "properties": {
-            "high": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "threshold": {
-                  "type": "integer",
-                  "minimum": 2,
-                  "maximum": 100,
-                  "default": 96,
-                  "description": "Roll at or above this face re-rolls and ADDS. RMSS: 96 (inclusive of 100)."
-                },
-                "cascadeCap": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "default": 0,
-                  "description": "Max chained re-rolls. 0 = uncapped. Mirrors wildDie.explodeCap."
-                }
-              }
-            },
-            "low": {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "threshold": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 99,
-                  "default": 5,
-                  "description": "Roll at or below this face triggers the low chain. RMSS: 5."
-                },
-                "subtract": {
-                  "type": "boolean",
-                  "default": true,
-                  "description": "Whether the low chain subtracts from the first roll."
-                },
-                "continueOn": {
-                  "type": "string",
-                  "enum": ["high", "low"],
-                  "default": "high",
-                  "description": "Which follow-up faces extend the low chain. RMSS is asymmetric: the low chain continues while each new roll is at or above openEnded.high.threshold, NOT while it is low. 'low' is provided for systems that mirror the high rule."
-                },
-                "cascadeCap": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "default": 0
-                }
-              }
-            },
-            "firstRollOnly": {
-              "type": "boolean",
-              "default": true,
-              "description": "Open-ended triggers on the UNMODIFIED first die only (RMSS canon). When false, the modified total is tested — a house-rule shape some tables use."
-            }
-          }
-        }
-      }
-    },
-    "resolutionConfig2d6Stat": {
-      "type": "object",
-      "required": ["modifierFormula", "bands"],
-      "additionalProperties": false,
-      "properties": {
-        "modifierFormula": { "type": "string" },
-        "bands": {
-          "type": "array",
-          "minItems": 2,
-          "items": {
-            "type": "object",
-            "required": ["min", "label"],
-            "additionalProperties": false,
-            "properties": {
-              "min": { "type": "integer" },
-              "max": { "type": "integer" },
-              "label": { "type": "string" },
-              "description": { "type": "string" }
-            }
-          }
-        }
-      }
-    },
     "resolutionConfigRollUnder": {
       "type": "object",
       "required": ["diceFormula"],
@@ -1620,238 +1400,6 @@
         "criticalFailureFormula": {
           "type": "string",
           "description": "Optional formula alternative to criticalFailureThreshold. Evaluated against the resolved target; when the rolled total is >= the evaluated number the result is flagged as a fumble. Token {target} resolves to the effective target value, {margin} resolves to (target - total). Used by GURPS where fumble depends on margin. When neither this field nor criticalFailureThreshold is set, no fumble band applies."
-        }
-      }
-    },
-    "resolutionConfigFateLadder": {
-      "type": "object",
-      "required": ["modifierFormula", "ladder", "successWithStyle"],
-      "additionalProperties": false,
-      "properties": {
-        "modifierFormula": {
-          "type": "string",
-          "description": "Plain-language formula for the +modifier (e.g. \"Skill rating\" or \"Approach rating\"). The roll is always 4dF + this modifier."
-        },
-        "ladder": {
-          "type": "array",
-          "minItems": 5,
-          "description": "Fate ladder mapping integer ratings to verbal labels (Mediocre 0, Average 1, ... Legendary 8). Used as display data for the GM agent's narration vocabulary and the sheet renderer; the dice math operates on raw integers.",
-          "items": {
-            "type": "object",
-            "required": ["label", "value"],
-            "additionalProperties": false,
-            "properties": {
-              "label": { "type": "string", "minLength": 1 },
-              "value": { "type": "integer" }
-            }
-          }
-        },
-        "successWithStyle": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "The minimum positive margin (rolled total - target) that counts as 'success with style' (Fate Core: 3)."
-        }
-      }
-    },
-    "resolutionConfigStanceModalPool": {
-      "type": "object",
-      "required": ["diceType", "poolFormula", "stat", "stances", "outcomeTiers"],
-      "additionalProperties": false,
-      "properties": {
-        "diceType": {
-          "type": "string",
-          "enum": ["d4", "d6", "d8", "d10", "d12", "d20"],
-          "description": "Face count of each pool die (Lasers & Feelings uses d6). Each die is compared independently to stat; successes are counted per the active stance's direction."
-        },
-        "poolFormula": {
-          "type": "string",
-          "description": "Plain-language formula for pool size (e.g. \"1 + (prepared ? 1 : 0) + (expert ? 1 : 0) + assistance\"). The dice widget uses this string as the Pool input's label; the player types the resolved integer pool size each roll."
-        },
-        "stat": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Name of the single character attribute that serves as the per-die threshold (L&F: \"Number\")."
-        },
-        "stances": {
-          "type": "array",
-          "minItems": 2,
-          "maxItems": 2,
-          "description": "Exactly two stance options. Each declares the success direction relative to stat. One stance must use direction=under and the other direction=over — the schema enforces this pairing via `allOf` + `contains`/`minContains` so two same-direction stances fail validation rather than relying on the dice widget's soft-failure check.",
-          "allOf": [
-            {
-              "contains": {
-                "type": "object",
-                "required": ["direction"],
-                "properties": { "direction": { "const": "under" } }
-              },
-              "minContains": 1,
-              "maxContains": 1
-            },
-            {
-              "contains": {
-                "type": "object",
-                "required": ["direction"],
-                "properties": { "direction": { "const": "over" } }
-              },
-              "minContains": 1,
-              "maxContains": 1
-            }
-          ],
-          "items": {
-            "type": "object",
-            "required": ["id", "label", "direction"],
-            "additionalProperties": false,
-            "properties": {
-              "id": {
-                "type": "string",
-                "pattern": "^[a-z][a-z0-9-]{1,31}$",
-                "description": "Stable identifier (kebab-case). Used in chat tags (e.g. stance=lasers)."
-              },
-              "label": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Display label rendered on the stance toggle (e.g. \"LASERS\", \"FEELINGS\")."
-              },
-              "direction": {
-                "type": "string",
-                "enum": ["under", "over"],
-                "description": "Strict comparison: \"under\" means face<stat counts as a success; \"over\" means face>stat counts as a success. Equality is handled separately by exactMatch."
-              },
-              "description": {
-                "type": "string",
-                "description": "Optional in-fiction guidance shown in tooltip / GM agent prompt."
-              }
-            }
-          }
-        },
-        "exactMatch": {
-          "type": "object",
-          "required": ["name", "countsAsSuccess"],
-          "additionalProperties": false,
-          "description": "Optional rule for dice that roll exactly equal to stat. With strict under/over comparisons on stances, exact-match dice never count via the stance direction — this block controls whether they also count as successes plus any narration hook.",
-          "properties": {
-            "name": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Display name for the exact-match outcome (L&F: \"LASER FEELINGS\")."
-            },
-            "countsAsSuccess": {
-              "type": "boolean",
-              "description": "When true, each exact-match die adds 1 to the success total. L&F: true."
-            },
-            "effect": {
-              "type": "string",
-              "description": "Plain-language description of the in-fiction effect (L&F: \"Ask the GM a question and they answer honestly\")."
-            },
-            "narrationHook": {
-              "type": "string",
-              "pattern": "^[a-z][a-z0-9_]*$",
-              "description": "Token the GM agent matches against in the chat tag (e.g. \"laser_feelings\") to know it owes a special beat."
-            }
-          }
-        },
-        "outcomeTiers": {
-          "type": "array",
-          "minItems": 2,
-          "description": "Ordered tiers from worst to best. Each tier is reached when total successes >= minSuccesses; if maxSuccesses is set, the tier is bounded above too (otherwise it is the open-ended top tier). The dice widget walks the array and picks the LAST tier whose minSuccesses <= total successes.",
-          "items": {
-            "type": "object",
-            "required": ["minSuccesses", "label"],
-            "additionalProperties": false,
-            "properties": {
-              "minSuccesses": {
-                "type": "integer",
-                "minimum": 0,
-                "description": "Inclusive lower bound of total successes for this tier."
-              },
-              "maxSuccesses": {
-                "type": "integer",
-                "minimum": 0,
-                "description": "Optional inclusive upper bound. Omit on the open-ended top tier."
-              },
-              "label": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Short outcome label (L&F: miss / barely / good / critical)."
-              },
-              "narration": {
-                "type": "string",
-                "description": "Default narration the GM agent can riff on for this tier."
-              }
-            }
-          }
-        }
-      }
-    },
-    "resolutionConfigDicePoolSum": {
-      "type": "object",
-      "required": ["poolFormula", "difficultyHint"],
-      "additionalProperties": false,
-      "properties": {
-        "poolFormula": {
-          "type": "string",
-          "description": "Plain-language formula for pool size in DICE (e.g. \"Attribute + Skill\" for OpenD6, where attribute and skill values are stored as integer dice counts). The dice widget rolls this many `dieSize`-siders, sums their face values, adds the resolved pips (see `pipsField`), and compares to the difficulty entered at roll time. Sister mode to `dice-pool`: dice-pool counts dice meeting a per-die target (Storyteller systems); dice-pool-sum totals face values vs a difficulty number (D6 family — OpenD6, WEG Star Wars, Mini Six, D6 System SRD, MEGS)."
-        },
-        "dieSize": {
-          "type": "integer",
-          "enum": [4, 6, 8, 10, 12],
-          "default": 6,
-          "description": "Face count of each pool die. D6-family systems: 6. Documented enum keeps the dice-widget parser tight."
-        },
-        "pipsField": {
-          "type": "string",
-          "description": "Optional name of the sheet field that carries +pips (the +P in OpenD6's NDX+P notation, where pips are 1/3-of-a-die granularity). The widget adds this resolved integer to the rolled sum before comparing to difficulty. Pair with each attribute/skill's `pipGranularity` block (added in v0.4.2). When omitted, no flat-pip bonus is added."
-        },
-        "difficultyHint": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "Recommended default difficulty number the dice widget shows as the difficulty input's placeholder. Player or GM types a different number per roll. OpenD6 Adventure: 15 (Easy 10, Difficult 20, Heroic 30). v0.4.2 limits this to a static integer; opposed-roll formulas deferred to a later release."
-        },
-        "wildDie": {
-          "type": "object",
-          "required": ["enabled"],
-          "additionalProperties": false,
-          "description": "Optional Wild Die mechanic — one die in every pool gets special handling. D6-family canon (OpenD6, WEG Star Wars, Mini Six): explodeFace=6 cascades upward; critFailFace=1 surfaces a critFail flag when the total fell short of difficulty. The widget rolls the Wild Die separately and reports its face + explode chain + critFail flag in the roll result. The narrator resolves the in-fiction effect of a critFail (OpenD6: 'subtract highest other die OR add complication' — GM-fiat). Don't read this as auto-resolution: widget surfaces a flag, narrator picks the consequence.",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "description": "Master switch. When false, no Wild Die is designated and the rolled pool is a plain sum."
-            },
-            "explodeFace": {
-              "type": "integer",
-              "minimum": 2,
-              "default": 6,
-              "description": "Face value that triggers an explode (re-roll, add the new face to the total; cascades while the new face also matches). Typically equal to `dieSize`."
-            },
-            "critFailFace": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1,
-              "description": "Face value that signals a potential critical failure. The widget reports `critFail: true` in the roll result when the Wild Die landed on this face AND the rolled total fell short of difficulty. Narrator resolves."
-            },
-            "explodeCap": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0,
-              "description": "Maximum chained explosions. 0 means uncapped (canon OpenD6). Set to N to cap at N chained explodes — useful for sanity-bounded pathological streaks."
-            }
-          }
-        }
-      }
-    },
-    "resolutionConfigNarrativeHandled": {
-      "type": "object",
-      "required": ["description"],
-      "additionalProperties": false,
-      "properties": {
-        "description": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Plain-language description of how the system resolves checks (e.g. 'Roll the GM-chosen formula; the narrator adjudicates outcomes from prose.'). The dice widget skips automatic resolution and surfaces a generic manual NdX widget the player can drive. Use this mode as a lossy-but-functional path for any system whose dice math doesn't fit the typed resolution modes — the schema validates, the widget runs, the narrator does the math."
-        },
-        "noticeText": {
-          "type": "string",
-          "description": "Optional banner text shown above the manual NdX widget (e.g. 'This ruleset uses narrative resolution — see the gm-agent prompt for adjudication rules.'). Defaults to a generic notice when omitted."
         }
       }
     }

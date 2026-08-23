@@ -8,7 +8,7 @@
 
 ## ⚠️ Before you start — does the schema even support your dice mechanic?
 
-The schema supports the **nine resolution modes listed in section 1 below**. They cover the vast majority of shipping tabletop systems: d20, dice pools, percentile, PbtA, Fate, roll-under, stance-modal pools, OpenD6-family sum-and-compare, and prose-resolved (no dice). A ruleset is no longer limited to ONE mode — `resolution.additionalModes[]` (§1, "multi-mechanic dice") lets you mix and match any of the nine for a system that genuinely uses more than one (a d20 combat game with a percentile skill subsystem, say). The nine-mode ceiling below is still real — it's a ceiling per MECHANIC, not per ruleset.
+The schema supports the **nine resolution modes listed in section 1 below**. They cover the vast majority of shipping tabletop systems: d20, dice pools, percentile, PbtA, Fate, roll-under, stance-modal pools, OpenD6-family sum-and-compare, and prose-resolved (no dice). A ruleset is no longer limited to ONE mode — `resolution.additionalModes[]` (§1, "multi-mechanic dice") lets you add a second mechanic alongside your primary one, but **only `dice-pool` and `roll-under` are wired as additionalModes today** (round 9 — restricted to the modes the widget/tag machinery actually honors; see that subsection for why). A system that needs a THIRD kind of mechanic, or needs one of the other seven modes as its secondary, isn't supported yet — ask Kenhito rather than fake it. The nine-mode ceiling below is still real regardless — it's a ceiling per MECHANIC, not per ruleset.
 
 **If your system's dice mechanic isn't one of the nine — don't author it.** Ask Kenhito to add it first. Post in the **Marinara Extension community thread** (linked from the project README; if you can't find the thread, open an issue at the project's GitHub repo) and describe:
 
@@ -103,7 +103,7 @@ By default `d100-percentile` is roll-under (see `docs/AUTHORING.md`): the widget
   "openEnded": {
     "high": { "threshold": 96, "cascadeCap": 0 },   // roll >= threshold re-rolls and ADDS; 0 = uncapped
     "low":  { "threshold": 5, "subtract": true, "continueOn": "high", "cascadeCap": 0 },
-    "firstRollOnly": true                            // trigger on the UNMODIFIED first die only (RMSS canon)
+    "unusualFaces": [66, 100]                        // optional — see below
   }
 }
 ```
@@ -113,9 +113,11 @@ By default `d100-percentile` is roll-under (see `docs/AUTHORING.md`): the widget
 - **`high`** — a roll at or above `threshold` re-rolls and adds to the total, cascading while each new roll is also `>= threshold`. RMSS: 96 (inclusive of 100).
 - **`low`** — a roll at or below `threshold` re-rolls and subtracts (`subtract: true`, the default). RMSS's low chain is **asymmetric**: `continueOn: "high"` (the default) means the low chain keeps extending only while each new roll is `>= high.threshold`, NOT while it is itself low. Set `continueOn: "low"` for a symmetric house rule instead.
 - **`cascadeCap`** (on `high` and `low` independently) — maximum chained re-rolls; `0` = uncapped. Same semantics as `wildDie.explodeCap` (§1 above). A hard `SAFETY_CAP` of 100 chained re-rolls applies regardless, as malformed-RNG defense.
-- **`firstRollOnly`** (default `true`) — open-ended triggers on the raw first die only. The widget does not currently implement the `false` (modified-total-triggers) house-rule path beyond accepting the field; author it as `true` unless you have confirmed the alternate behavior with the extension's maintainer.
+- **`unusualFaces`** (optional array of integers, no default — round 9): UNMODIFIED-first-roll face values that flag `um=<face>` on the tag (Rolemaster/RMSS: `[66, 100]`, its unusual-event/unusual-success table rows). Omit it (or leave it empty) for a roll-high d100 system that has no such table — you'll get no `um=` flags at all, which is the honest default; a round-8/round-9-earlier build fired `um=66`/`um=100` unconditionally for ANY roll-high d100 ruleset regardless of whether that system's rules assign anything to those faces, which was fixed.
 
-The dice tag reports the whole chain, e.g. `[mrr-roll: mode=d100-open first=97 chain=+88 roll=185 bonus=+62 diff=-20 total=227]`. It carries no band label — mapping the total to a result band (Failure/Success/etc.) is the GM agent's job, not the widget's. Two faces are also flagged unconditionally whenever `direction: "high"` is set, independent of whether `openEnded` triggered: a natural (unmodified first-roll) `66` or `100` appends `um=66` / `um=100` to the tag, for the GM to optionally treat as a Rolemaster-style unusual-event/unusual-success table row — this is a fixed convention of the roll-high d100 tag family, not a configurable field.
+Open-ended cascading always triggers on the UNMODIFIED first die only (RMSS canon) — there is no configurable alternate ("test the modified total instead") house-rule path; an earlier draft of this schema exposed a `firstRollOnly` field for it, but the widget never actually implemented the `false` behavior (it silently disabled open-ended entirely instead), so the field was removed rather than continue documenting something that didn't work.
+
+The dice tag reports the whole chain, e.g. `[mrr-roll: mode=d100-open first=97 chain=+88 roll=185 bonus=+62 diff=-20 total=227]`. It carries no band label — mapping the total to a result band (Failure/Success/etc.) is the GM agent's job, not the widget's.
 
 ### `narrative-handled` shape
 
@@ -129,9 +131,9 @@ The dice tag reports the whole chain, e.g. `[mrr-roll: mode=d100-open first=97 c
 
 The widget renders the `noticeText` as informational copy. No dice are rolled. Use sparingly — narrative-handled mode is for systems whose canonical resolution is "the GM decides" (Trophy Dark dark dice, certain freeform scenes). If a system has dice that the schema doesn't yet model, do NOT use `narrative-handled` as an escape valve — that lies about how the system plays. Ask Kenhito to add the mode (see the callout at the top of this doc).
 
-### `resolution.additionalModes[]` — multi-mechanic dice (B18)
+### `resolution.additionalModes[]` — multi-mechanic dice (B18, restricted round 9)
 
-A ruleset used to be locked to exactly ONE dice-resolution mode. A game that rolls a d20 for combat but a percentile roll-under for something else had no automation path for the second mechanic — it had to live in prose plus a lorebook entry telling the GM and player how to call for it by hand. **That limit is lifted.** `resolution` gains an optional sibling array:
+A ruleset used to be locked to exactly ONE dice-resolution mode. A game that rolls a d20 for combat but a percentile roll-under for something else had no automation path for the second mechanic — it had to live in prose plus a lorebook entry telling the GM and player how to call for it by hand. **That limit is partially lifted — for two modes.** `resolution` gains an optional sibling array:
 
 ```jsonc
 "resolution": {
@@ -141,7 +143,7 @@ A ruleset used to be locked to exactly ONE dice-resolution mode. A game that rol
     {
       "id": "thief-skills",              // stable slug — referenced by resolutionId below AND echoed in the dice tag
       "label": "Thief Skills (d100 roll-under)",   // shown in the dice widget's mechanic selector
-      "mode": "roll-under",              // any of the nine modes — same enum as the top-level resolution.mode
+      "mode": "roll-under",              // ONLY "dice-pool" or "roll-under" — see the restriction note below, NOT any of the nine
       "config": {                        // the SAME per-mode field set `resolution` uses for this mode, minus `mode` itself
         "diceFormula": "1d100"
       },
@@ -158,15 +160,17 @@ A ruleset used to be locked to exactly ONE dice-resolution mode. A game that rol
 }
 ```
 
+**Restriction (round 9 — an honesty fix, not a new limitation): `mode` can ONLY be `dice-pool` or `roll-under`.** Round 8 shipped the schema accepting all nine modes here, but only these two are actually wired end to end — their roller tags the chat output starting with the literal `"[dice: "` prefix the `mode=<id>` injection depends on, AND their builder/roller genuinely read the additionalMode's own `config` (not the primary `resolution` block). The other seven (`single-roll`, `d100-percentile`, `2d6-stat`, `fate-ladder`, `stance-modal-pool`, `dice-pool-sum`, `narrative-handled`) fail one or both of those checks today — some tag under `"[d100: "`/`"[mrr-roll: "` instead, `single-roll`/`2d6-stat`/`fate-ladder` aren't config-aware at all, and `narrative-handled` has no roller. The schema now rejects any other `mode` value here — don't try to route a Fate or PbtA subsystem through `additionalModes` yet; ask Kenhito, same as any unsupported mechanic.
+
 Rules of the road:
 
-- **`config` mirrors the primary `resolution` object's shape for that `mode`, minus the `mode` field itself** (already given as the sibling `mode` property). A `roll-under` additionalMode's `config` takes exactly the fields `resolution.mode: "roll-under"` would (`diceFormula`, optional `skillBonusFormula`/`criticalSuccessFormula`/`criticalFailureThreshold`/`criticalFailureFormula`) — same rules, same doc section above, just nested one level deeper.
+- **`config` mirrors the primary `resolution` object's shape for that `mode` (dice-pool or roll-under only), minus the `mode` field itself** (already given as the sibling `mode` property). A `roll-under` additionalMode's `config` takes exactly the fields `resolution.mode: "roll-under"` would (`diceFormula`, optional `skillBonusFormula`/`criticalSuccessFormula`/`criticalFailureThreshold`/`criticalFailureFormula`) — same rules, same doc section above, just nested one level deeper. A `dice-pool` additionalMode's `config` takes `poolFormula`/`target`/`doubles`/`botches`, same as the top-level dice-pool shape.
 - **`id` uniqueness** across `additionalModes[]` is enforced by `npm run validate-rulesets` (not expressible as a pure JSON Schema constraint) — pick distinct slugs.
 - **Binding a skill or derived stat to a mechanic:** add `resolutionId: "<additionalModes id>"` (or the literal `"primary"`, equivalent to omitting it) to a `skills[]` or `derivedStats[]` item. Its roll button pre-selects that mechanic in the dice widget instead of the primary mode. `resolutionId` values are also cross-checked by `npm run validate-rulesets` against the declared `additionalModes` ids.
 - **`whenToUse`** (optional, one line) is auto-taught into the GM agent's prompt — a compact routing table (id, label, `whenToUse`, and which skills/derivedStats are bound) appears ONLY when `additionalModes` is non-empty. Write it as guidance for WHEN the agent should request this mechanic by name, not how the dice work — the widget already knows the math.
 - **Self-describing tags:** any roll made under a non-primary mechanic tags its chat output `[dice: mode=<id> ...]` immediately after `[dice: `. The dice never leave deterministic code — the agent only ever requests a mechanic by id and reads the resulting tag; it never rolls anything itself.
 - **The dice widget** gains a manual mechanic selector (a `<select>` above the roll inputs) whenever `additionalModes` is non-empty, so the player can also switch mechanics by hand, independent of any skill's `resolutionId`.
-- **Still a real limit:** a mechanic that doesn't reduce to one of the nine typed `resolution` modes (a genuine non-dice subsystem, a card draw, a diceless resource spend) still has no automation path — it's still prose + a lorebook entry, exactly as before. `additionalModes` only removes the "exactly one MODE" ceiling; it doesn't add a tenth kind of mode.
+- **Still a real limit:** a mechanic that doesn't reduce to `dice-pool` or `roll-under` today has no `additionalModes` automation path — it's still prose + a lorebook entry, exactly as before B18. More modes land here as they're converted (see the schema's `$comment` on `$defs.additionalModesArray` for the honest per-mode audit) — never assume a mode works here just because it's one of the nine `resolution.mode` values.
 - **Shipped example:** `rulesets/ose/ruleset.json` — primary `single-roll` (d20 attack/save math) plus `thief-skills` and `door-checks`, both `roll-under`, bound to the six Thief skills and the Open Doors/Listen/Surprise derived stats respectively. See its `lorebook.json`'s "Dice Mechanic Routing" entry for the player/GM-facing writeup.
 
 ---

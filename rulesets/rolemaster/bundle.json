@@ -34,7 +34,10 @@
           "continueOn": "high",
           "cascadeCap": 0
         },
-        "firstRollOnly": true
+        "unusualFaces": [
+          66,
+          100
+        ]
       }
     },
     "difficulties": {

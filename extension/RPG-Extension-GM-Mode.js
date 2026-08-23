@@ -277,7 +277,10 @@ function safeParse(text) {
    site in the file (~66) keeps calling lsGet/lsSet/lsDel unchanged. */
 function lsGetRaw(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
 function lsSetRaw(key, val) { try { localStorage.setItem(key, val); return true; } catch (e) { return false; } }
-function lsDelRaw(key) { try { localStorage.removeItem(key); } catch (e) {} }
+/* Round-9 fix 4b: now returns a boolean (was fire-and-forget) so lsDel can
+   gate its ts-map stamp on the removal having actually happened, same as
+   lsSet already gates on lsSetRaw's return. */
+function lsDelRaw(key) { try { localStorage.removeItem(key); return true; } catch (e) { return false; } }
 
 /* ═══════════════════════════════════════════════════════════════════════
    B1 — server-backed character/pref state via marinara.storage
@@ -598,10 +601,47 @@ function mrrHydrateMerge() {
 function mrrReconcileFromOtherTabs() {
   if (!hasServerStorage || !mrrServerCache) return;
   var tsMap = mrrLoadTsMap();
+  /* Round-9 fix 4a: adopting a newer LS value into mrrServerCache fixes
+     what lsGet() WOULD return on a fresh read — but state.sheet/
+     state.characters/state.activeCharacterId were already loaded once
+     (at activation or the last character/chat switch) into plain JS
+     objects that don't re-read lsGet() on their own. Without this,
+     another tab's newer edit lands in the cache but the in-memory copy
+     THIS tab is actively rendering/editing stays stale — and the next
+     autosave (saveSheet, on any stepper click) writes that stale
+     in-memory copy straight back over the just-adopted newer value,
+     silently reverting the other tab's edit. Track which keys this
+     sweep actually adopted, then reload the affected in-memory state
+     through the SAME functions activation/switch already uses
+     (loadSheet/loadCharacters/loadActiveCharacterId) and re-render —
+     never a parallel ad-hoc merge of the in-memory object. */
+  var activeSheetKey = state.activeCharacterId ? characterKey(state.activeCharacterId) : null;
+  var rosterKey = state.chatId ? ("mrr-chars-" + state.chatId) : null;
+  var activeCharPtrKey = state.chatId ? ("mrr-active-char-" + state.chatId) : null;
+  var adoptedActiveSheet = false, adoptedRoster = false, adoptedActiveCharPtr = false;
   Object.keys(tsMap).forEach(function (key) {
     if (!mrrIsSyncedKey(key)) return;
-    mrrAdoptLsIfNewer(key, tsMap[key] || 0, false);
+    var adopted = mrrAdoptLsIfNewer(key, tsMap[key] || 0, false);
+    if (!adopted) return;
+    if (activeSheetKey && key === activeSheetKey) adoptedActiveSheet = true;
+    if (rosterKey && key === rosterKey) adoptedRoster = true;
+    if (activeCharPtrKey && key === activeCharPtrKey) adoptedActiveCharPtr = true;
   });
+  if (!adoptedActiveSheet && !adoptedRoster && !adoptedActiveCharPtr) return;
+  if (adoptedActiveCharPtr) {
+    state.activeCharacterId = loadActiveCharacterId(state.chatId, state.activeCharacterId);
+  }
+  if (adoptedRoster) {
+    state.characters = loadCharacters(state.chatId);
+  }
+  if (adoptedActiveSheet || adoptedActiveCharPtr) {
+    /* Re-derive from the (possibly just-updated) activeCharacterId — a
+       reconciled active-char pointer means the sheet we should be
+       showing may have changed entirely, not just its contents. */
+    state.sheet = loadSheet(state.chatId, state.ruleset);
+  }
+  log("mrrReconcileFromOtherTabs: reloaded in-memory state for another tab's newer edit (sheet=" + adoptedActiveSheet + " roster=" + adoptedRoster + " activeChar=" + adoptedActiveCharPtr + ")");
+  if (typeof renderSheet === "function") renderSheet();
 }
 
 /* hydrateStore(): memoized, TOTAL (never rejects). On success, caches the
@@ -979,21 +1019,34 @@ function lsGet(key) {
   return lsGetRaw(key);
 }
 
+/* Round-9 fix 4b: warn once per key per session on a failed LS write —
+   repeated stepper clicks against a full quota would otherwise spam the
+   console once per click. */
+var mrrLsWriteFailWarned = Object.create(null);
+
 function lsSet(key, val) {
   var ok = lsSetRaw(key, val); /* LS remains a current local mirror this release — never removed; always the raw string, envelopes are a server/cache-only concept */
+  if (!ok && !mrrLsWriteFailWarned[key]) {
+    mrrLsWriteFailWarned[key] = true;
+    warn("lsSet: localStorage write failed for '" + key + "' (quota exceeded or private mode?) — ts-map NOT stamped for this write");
+  }
   if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key)) {
     var ts = Date.now();
-    /* FIX-5 (round-5 major): the ts-map stamp happens REGARDLESS of
-       quarantine — LS was just written above unconditionally, so its
-       timestamp must always be current. If the stamp were skipped while
-       quarantined, an edit made during quarantine would leave a STALE
-       ts-map entry behind; at the next hydrate, mrrHydrateMerge compares
-       that stale lsTs against the (also stale, pre-quarantine) server
-       envelope and could conclude they're not newer, silently discarding
-       the quarantined edit forever. Only the actual sync attempt (cache
-       write + markDirty) stays gated on quarantine — a quarantined key
-       still shouldn't try to push server-side this session. */
-    mrrStampTsMap(key, ts);
+    /* FIX-5 (round-5 major) + round-9 fix 4b: the ts-map stamp happens
+       REGARDLESS of quarantine (same reasoning as before — a quarantined
+       edit's LOCAL timestamp must still track its own most recent write
+       so it isn't discarded as stale at the next merge) BUT ONLY when
+       the LS write actually landed (`ok`). Stamping unconditionally, as
+       this used to, meant a quota-exceeded/private-mode write failure —
+       where the OLD value is still what's physically in localStorage —
+       got a FRESH timestamp anyway, making the stale local copy look
+       newer than the server's at the next hydrate and win the merge:
+       exactly the "quota failure becomes stale-wins data loss" bug this
+       fix closes. The server-side push (cache write + markDirty) below
+       still runs on `ok===false` — that half is independent of whether
+       the LOCAL mirror wrote successfully, and still deserves a shot at
+       reaching the server with the correct, current value. */
+    if (ok) mrrStampTsMap(key, ts);
     if (!mrrIsQuarantined(key)) {
       mrrServerCache[key] = { t: ts, v: val };
       mrrMarkDirty(key);
@@ -1003,10 +1056,14 @@ function lsSet(key, val) {
 }
 
 function lsDel(key) {
-  lsDelRaw(key);
+  var ok = lsDelRaw(key);
+  if (!ok && !mrrLsWriteFailWarned[key]) {
+    mrrLsWriteFailWarned[key] = true;
+    warn("lsDel: localStorage removeItem failed for '" + key + "' — ts-map NOT stamped for this delete");
+  }
   if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key)) {
     var ts = Date.now();
-    mrrStampTsMap(key, ts); /* FIX-5 — see lsSet's comment; same reasoning applies to deletes */
+    if (ok) mrrStampTsMap(key, ts); /* round-9 fix 4b — see lsSet's comment; same reasoning applies to deletes */
     if (!mrrIsQuarantined(key)) {
       mrrServerCache[key] = { t: ts, v: null }; /* tombstone, now timestamped — a strictly-newer LS write can still recreate it later (see mrrHydrateMerge) */
       mrrMarkDirty(key);
@@ -3756,6 +3813,17 @@ function safeEvalArithmetic(s) {
    statContext) and arithmetic with + - * / ( ). Anything else is rejected by
    the whitelist regex; the actual math goes through safeEvalArithmetic so
    we don't trip the page's CSP 'unsafe-eval' guard. */
+/* Round-9 fix 5g (verification, no code change needed here): audited
+   every evalFormula call site in this file (~30) — all already
+   distinguish `typeof v === "number"` (or an explicit `v != null`
+   check) from a falsy-but-legitimate `0` result; none use a bare
+   `v || fallback` that would wrongly treat a genuine 0 as failure.
+   evalFormula itself already returns `null` (never `0`) on every
+   failure path below: empty/missing formula, a substituted string that
+   fails the arithmetic-only whitelist, or a NaN/non-finite eval
+   result — a caller can always tell "evaluated to zero" apart from
+   "didn't evaluate" by checking typeof/isFinite, which every caller
+   here does. */
 function evalFormula(formula, ctx) {
   if (!formula) return null;
   var subbed = String(formula).replace(/\{([^}]+)\}/g, function (_, key) {
@@ -12202,11 +12270,16 @@ function rollD100() {
      face is also >= high.threshold); low open-ended 01-05 (subtracts, and —
      asymmetrically — the chain continues only while the new face is HIGH,
      i.e. >= high.threshold, not while it is itself low). Open-ended triggers
-     on the UNMODIFIED first die only when firstRollOnly (default true). */
+     on the UNMODIFIED first die only — round-9 fix 5a: the schema's
+     `firstRollOnly: false` house-rule path (test the MODIFIED total
+     instead) was never actually implemented — setting it silently
+     disabled open-ended entirely rather than doing anything resembling
+     the documented alternate behavior. Removed from the schema/docs;
+     the roller now always behaves as the old default (true), with
+     nothing left to configure. */
   var oe        = res.openEnded || null;
   var highCfg   = (oe && oe.high) || null;
   var lowCfg    = (oe && oe.low) || null;
-  var firstRollOnly = !oe || oe.firstRollOnly !== false; /* default true */
   var highThreshold = (highCfg && typeof highCfg.threshold === "number") ? highCfg.threshold : 96;
   var lowThreshold  = (lowCfg && typeof lowCfg.threshold === "number") ? lowCfg.threshold : 5;
   var lowSubtract   = !lowCfg || lowCfg.subtract !== false; /* default true */
@@ -12219,10 +12292,18 @@ function rollD100() {
   var diff  = numFromInput("diff", 0);
 
   var first = 1 + Math.floor(Math.random() * 100);
-  var um = (first === 66 || first === 100) ? first : null;
+  /* Round-9 fix 5f: um= now gated by the ruleset's own openEnded.unusualFaces
+     list (no default — must be explicit) instead of firing unconditionally
+     for ANY roll-high d100 ruleset on a natural 66/100. Rolemaster declares
+     [66, 100]; a ruleset that doesn't declare unusualFaces (or declares a
+     different list) gets exactly that — never a spurious um= tag it never
+     asked for. The widget only ever surfaces the flag; it never picks a
+     table row itself. */
+  var unusualFaces = (oe && Array.isArray(oe.unusualFaces)) ? oe.unusualFaces : [];
+  var um = (unusualFaces.indexOf(first) !== -1) ? first : null;
 
-  var openHigh = !!(highCfg && firstRollOnly && first >= highThreshold);
-  var openLow  = !openHigh && !!(lowCfg && firstRollOnly && first <= lowThreshold);
+  var openHigh = !!(highCfg && first >= highThreshold);
+  var openLow  = !openHigh && !!(lowCfg && first <= lowThreshold);
 
   var chainRolls = []; /* unsigned d100 faces rolled after the first, in order */
   var cascades = 0;
@@ -12348,10 +12429,19 @@ function rollFate() {
    anything that isn't a mode-widget roll. Primary-mode rolls and
    rulesets with no additionalModes never set diceActiveModeId to
    anything but "primary"/undefined, so this is a no-op there — P1
-   zero-regression. */
+   zero-regression.
+   Round-9 fix 5b: also verifies amId actually resolves against the
+   CURRENT ruleset's resolution.additionalModes before injecting —
+   defense against a stale id (e.g. left over across a ruleset switch
+   that this build's reload-based paths should already prevent, but
+   init() itself documents that it "can fire multiple times"; see its
+   own reset of these two fields). A tag would otherwise carry a
+   mode=<id> the current ruleset doesn't even declare, misleading the
+   GM agent's routing table lookup. */
 function finalizeRoll(text, kind, faces) {
   var amId = state.diceActiveModeId;
-  if (amId && amId !== "primary" && typeof text === "string" && text.indexOf("[dice: ") === 0) {
+  var amStillValid = amId && amId !== "primary" && mrrResolveModeId(amId).id === amId;
+  if (amStillValid && typeof text === "string" && text.indexOf("[dice: ") === 0) {
     text = "[dice: mode=" + amId + " " + text.slice("[dice: ".length);
   }
   lastRollText = text;
@@ -12998,13 +13088,23 @@ function syncSheetToChat() {
    block at all (P5 zero-regression for everything but the OSE pilot).
    Shared by buildSheetForPrompt (overlay-agent prompts) and
    buildFieldReferenceContent (the narrator-visible lorebook entry) so
-   the routing table doesn't drift between the two teaching surfaces. */
+   the routing table doesn't drift between the two teaching surfaces.
+   Round-9 fix 2b (honesty): the header text below claims the
+   [dice: mode=<id> ...] tag for every entry it lists — true today
+   ONLY because the schema (round-9 fix 2a) restricts
+   resolution.additionalModes[].mode to dice-pool and roll-under, the
+   two modes actually tag-covered by finalizeRoll's "[dice: " prefix
+   guard AND parameterized by mrrActiveResolutionConfig() in both
+   their builder and roller. If more modes are ever converted (see the
+   schema's $comment for the honest per-mode audit), this text and the
+   schema's allowed-mode list must be widened together — never claim a
+   mode is routed here before it is. */
 function mrrMechanicRoutingLines() {
   var res = state.ruleset && state.ruleset.resolution;
   var modes = (res && Array.isArray(res.additionalModes)) ? res.additionalModes : [];
   if (!modes.length) return [];
   var lines = [];
-  lines.push("Dice mechanic routing (this ruleset offers more than one dice mechanic — request the right one by id; the dice widget rolls it and reports a self-describing [dice: mode=<id> ...] tag, you never roll it yourself):");
+  lines.push("Dice mechanic routing (this ruleset offers more than one dice mechanic — request the right one by id; the dice widget rolls it and reports a self-describing [dice: mode=<id> ...] tag, you never roll it yourself). Only dice-pool and roll-under mechanics can appear in this list today — more modes as they're converted:");
   modes.forEach(function (am) {
     if (!am || typeof am.id !== "string") return;
     var bound = [];
@@ -14122,15 +14222,39 @@ function mrrLoadMutationJournal(chatId) {
   if (mrrMutationJournalChatId === chatId) return; /* already loaded */
   var raw = lsGet(LS_MUTATION_JOURNAL_PFX + chatId);
   var parsed = raw ? safeParse(raw) : null;
-  mrrMutationJournal = (parsed && typeof parsed === "object" && parsed.buckets && parsed.lastSeenIdx)
+  var journal = (parsed && typeof parsed === "object" && parsed.buckets && parsed.lastSeenIdx)
     ? parsed
     : { buckets: {}, lastSeenIdx: {} };
+  /* Round-9 fix 1b migration: "delta" kind is deleted as of tonight — a
+     journal bucket persisted by the prior build may still hold delta-kind
+     entries, whose clamp-loss bug is exactly what 1b fixes. No back-compat
+     shim is written for this: this is a session-fresh feature that has
+     never run live on Corey's machine (LS on his actual browser has no
+     prior journal at all), so the honest, simplest thing is to discard
+     any bucket containing even one delta-kind entry rather than attempt
+     to reinterpret pre-fix data. One summary warn, not one per bucket. */
+  var discarded = 0;
+  Object.keys(journal.buckets).forEach(function (k) {
+    var b = journal.buckets[k];
+    var hasLegacyDelta = b && Array.isArray(b.entries) && b.entries.some(function (e) { return e && e.kind === "delta"; });
+    if (hasLegacyDelta) { delete journal.buckets[k]; discarded++; }
+  });
+  if (discarded > 0) warn("mrrLoadMutationJournal: discarded " + discarded + " bucket(s) with pre-fix delta-kind entries (round-9 1b — no migration shim)");
+  mrrMutationJournal = journal;
   mrrMutationJournalChatId = chatId;
 }
 
+/* Finding 10 (accepted, comment-only): this journal has no GC lifecycle
+   (see the module header above) and grows one bucket per swiped/edited
+   message per chat, forever, same as the processed-message/run sets it
+   sits beside — for a typical session (dozens of mutating turns per
+   chat) this is a few KB of localStorage per chat, not a practical size
+   concern, but it is genuinely unbounded across a long-lived chat's
+   lifetime. Not fixed this round, per instruction. */
 function mrrSaveMutationJournal() {
   if (!mrrMutationJournalChatId) return;
-  lsSet(LS_MUTATION_JOURNAL_PFX + mrrMutationJournalChatId, JSON.stringify(mrrMutationJournal));
+  var ok = lsSet(LS_MUTATION_JOURNAL_PFX + mrrMutationJournalChatId, JSON.stringify(mrrMutationJournal));
+  if (!ok) warn("mrrSaveMutationJournal: lsSet failed (quota or private mode?) — journal entry may not persist across reload");
 }
 
 /* The chokepoint helper (see header comment). No-ops when there's no
@@ -14142,15 +14266,21 @@ function mrrSaveMutationJournal() {
    never auto-reverted, only superseded forward") simply adds to it without
    un-reverting; the simplest, most conservative choice for an interaction
    the design doesn't explicitly address. */
+/* Round-9 fix 1b: "kind" is now ALWAYS "set" — the "delta" kind is
+   DELETED. Storing a signed delta (round-7 original design) lost the
+   clamp: HP at 3 with delta=-8 clamps to 0, journaling delta=-8; a
+   revert that re-applied +8 landed on 8, not the original 3. `prev`
+   (the value before this mutation) and `next` (the CLAMPED value after)
+   are both already in scope at every call site (the clamp site) — store
+   both, unconditionally, so revert is an exact prev-restore regardless
+   of whether the original write was itself a delta or an absolute set. */
 function mrrJournalMutation(field, kind, payload) {
   if (mrrJournalSuppressed) return;
   var bucketKey = mrrCurrentJournalBucketKey;
   if (!bucketKey) return;
   var bucket = mrrMutationJournal.buckets[bucketKey];
   if (!bucket) { bucket = { entries: [], reverted: false }; mrrMutationJournal.buckets[bucketKey] = bucket; }
-  var entry = { field: field, kind: kind };
-  if (kind === "delta") entry.delta = payload.delta;
-  else { entry.prev = payload.prev; entry.next = payload.next; }
+  var entry = { field: field, kind: "set", prev: payload.prev, next: payload.next };
   bucket.entries.push(entry);
   mrrSaveMutationJournal();
 }
@@ -14158,45 +14288,144 @@ function mrrJournalMutation(field, kind, payload) {
 /* Builds the synthetic attrs object that re-dispatches through
    applyStateMutation's SAME field-resolution branches (point 5 — sole-
    writer preserved, revert/reapply IS the mutator pipeline, never a new
-   direct sheet-write path). direction "inverse" (revert) negates deltas
-   and restores `prev`; direction "forward" (reapply / swipe-back) replays
-   the entry exactly as it was originally applied. */
+   direct sheet-write path). direction "inverse" (revert) restores
+   `prev`; direction "forward" (reapply / swipe-back) restores `next`.
+   Round-9 fix 1c: a state entry's `prev` can be `null` (the state had
+   never been set before this mutation — see the states branch below).
+   Reverting that entry must CLEAR the state, not "set" it to the string
+   "null" or reject for having no valid label — dispatches the internal
+   __mrrStateClear sentinel instead (see the states branch's handling
+   and its "never parseable from tag text" comment). A state's `next` is
+   never null (only a resolved, canonical label is ever journaled as
+   next), so this path is unreachable for direction:"forward". */
 function mrrBuildReplayAttrs(entry, direction) {
-  if (entry.kind === "set") {
-    var value = (direction === "inverse") ? entry.prev : entry.next;
-    return resolveRulesetState(entry.field) ? { field: entry.field, value: value } : { field: entry.field, current: value };
+  var value = (direction === "inverse") ? entry.prev : entry.next;
+  var isState = !!resolveRulesetState(entry.field);
+  if (isState && value === null) {
+    return { field: entry.field, __mrrStateClear: true };
   }
-  var delta = (direction === "inverse") ? -entry.delta : entry.delta;
-  return { field: entry.field, delta: delta };
+  return isState ? { field: entry.field, value: value } : { field: entry.field, current: value };
 }
 
-/* Revert a bucket's journaled entries: inverse deltas / prev-restoring
-   sets, in REVERSE order (undo most-recent-first), through
-   applyStateMutation with journaling suppressed. Marks reverted:true. A
-   no-op if the bucket doesn't exist, has no entries, or is already
-   reverted. Best-effort per entry — a field that fails to re-resolve
-   (ruleset changed, etc.) is logged and skipped rather than aborting the
-   whole revert. */
+/* bucketKey is "<msgId>:<idx>" (composite) or plain "<msgId>"
+   (unresolvable — see the journal shape comment). The cross-transport
+   dedup anchor (appliedMutationKeys, FIX-1) is ALWAYS plain msgId, never
+   the composite — so round-9 fix 1a needs the msgId portion split back
+   out. */
+function mrrAnchorFromBucketKey(bucketKey) {
+  var m = /^(.*):(\d+)$/.exec(String(bucketKey));
+  return m ? m[1] : bucketKey;
+}
+
+/* Round-9 fix 1a. Deletes every appliedMutationKeys entry matching
+   anchor + "::" + sig + "::" (ALL occIdx values for that sig — a
+   prefix scan, since a message can legitimately repeat one exact
+   mutation more than once). Safe no-op when no key matches. */
+function mrrDeleteAppliedKeysForSig(anchor, sig) {
+  var prefix = String(anchor) + "::" + sig + "::";
+  var deleted = 0;
+  for (var k in appliedMutationKeys) {
+    if (Object.prototype.hasOwnProperty.call(appliedMutationKeys, k) && k.indexOf(prefix) === 0) {
+      delete appliedMutationKeys[k];
+      deleted++;
+    }
+  }
+  return deleted;
+}
+
+/* Round-9 fix 1a (the review's headline failure): revert alone left the
+   SHEET correctly restored, but the cross-transport dedup gate
+   (appliedMutationKeys, keyed anchor::contentSig::occIdx off the RAW
+   parsed tag attrs) still remembered the reverted swipe's tag as
+   "already applied". Since the dedup anchor is plain msgId (shared
+   across every swipe of one message, FIX-1), an incoming swipe whose
+   [mrr-state:] tag is CONTENT-IDENTICAL to the one just reverted
+   (different surrounding prose, same field/delta/value) would compute
+   the SAME sig and be silently swallowed as a dupe — never re-applying,
+   never re-journaling under the new swipe's own bucket. Fix: for each
+   reverted entry, reconstruct its forward-direction attrs and delete
+   any matching dedup key so the NEXT identical-content tag is admitted
+   through the normal gate.
+   HONEST CAVEAT (found while building this, reported per instruction):
+   mrrBuildReplayAttrs("forward") reconstructs an ABSOLUTE form
+   ({field, current: next}) — correct for genuinely re-APPLYING an
+   entry to the sheet (mrrReapplyBucket), but the ORIGINAL tag that
+   produced this entry may have used delta="N" instead, which computes
+   a DIFFERENT contentSig ("delta=N|field=X" vs "current=<next>|
+   field=X"). Journal storage (fix 1b) only keeps absolute prev/next,
+   not which surface form the original tag used, so the absolute
+   reconstruction alone would silently miss deleting the blocking key
+   for a delta-authored tag — exactly the headline scenario. Also
+   deletes a SECOND candidate sig built from the algebraically
+   equivalent delta (next - prev) for non-state numeric fields, which
+   exactly matches the original tag's sig whenever the original write
+   wasn't itself clamped (current + delta === next, the common case;
+   the field-reference teaching offers delta= as the primary numeric
+   form). Both candidates run through the SAME normalizeStateAttrs +
+   mutationContentSig pipeline the gate itself uses; deleting a
+   candidate whose key doesn't exist is a harmless no-op. */
+function mrrClearDedupKeysForBucket(anchor, bucket) {
+  bucket.entries.forEach(function (entry) {
+    var fwd = mrrBuildReplayAttrs(entry, "forward");
+    normalizeStateAttrs(fwd).forEach(function (na) {
+      mrrDeleteAppliedKeysForSig(anchor, mutationContentSig(na));
+    });
+    var isState = !!resolveRulesetState(entry.field);
+    if (!isState && typeof entry.prev === "number" && typeof entry.next === "number") {
+      var deltaCandidate = { field: entry.field, delta: String(entry.next - entry.prev) };
+      normalizeStateAttrs(deltaCandidate).forEach(function (na) {
+        mrrDeleteAppliedKeysForSig(anchor, mutationContentSig(na));
+      });
+    }
+  });
+}
+
+/* Revert a bucket's journaled entries: prev-restoring sets, in REVERSE
+   order (undo most-recent-first), through applyStateMutation with
+   journaling suppressed. Best-effort per entry — a field that fails to
+   re-resolve (ruleset changed, etc.) is logged, marked
+   entry.revertFailed = true (round-9 fix 1d), and skipped rather than
+   aborting the whole revert. bucket.reverted is set true ONLY when
+   EVERY entry inverted successfully this pass (fix 1d) — a partial
+   revert leaves it false, so a later swipe-back attempt on this bucket
+   (via mrrReapplyBucket) still no-ops rather than risk re-applying
+   entries that were never actually reverted. saveSheet/renderSheet are
+   batched ONCE after the loop (fix 5d) instead of once per entry —
+   finalizeMutation itself skips them while mrrJournalSuppressed is
+   true; see finalizeMutation's header comment for the full audit of
+   what it does and why the split is safe (saveSheet's own debounced
+   3-surface autosync still fires exactly once). No-op if the bucket
+   doesn't exist, has no entries, or is already reverted. */
 function mrrRevertBucket(bucketKey) {
   var bucket = mrrMutationJournal.buckets[bucketKey];
   if (!bucket || !bucket.entries.length || bucket.reverted) return;
+  var prevSuppressed = mrrJournalSuppressed; /* fix 5e — save/restore, match the bucket-key pattern, rather than blindly assuming false on entry/exit */
   mrrJournalSuppressed = true;
+  var allOk = true;
   try {
     for (var i = bucket.entries.length - 1; i >= 0; i--) {
       var entry = bucket.entries[i];
+      var ok = false;
       try {
-        if (!applyStateMutation(mrrBuildReplayAttrs(entry, "inverse"))) {
-          warn("B2-R revert: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
-        }
+        ok = applyStateMutation(mrrBuildReplayAttrs(entry, "inverse"));
+        if (!ok) warn("B2-R revert: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
       } catch (e) {
         warn("B2-R revert: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' threw on replay — skipped (" + (e && e.message ? e.message : e) + ")");
       }
+      entry.revertFailed = !ok;
+      if (!ok) allOk = false;
     }
   } finally {
-    mrrJournalSuppressed = false;
+    mrrJournalSuppressed = prevSuppressed;
   }
-  bucket.reverted = true;
+  bucket.reverted = allOk;
+  /* Fix 1a — clear dedup keys for EVERY entry regardless of its own
+     revert success/failure: the goal is admitting the incoming swipe's
+     tag through the gate, which matters independent of whether this
+     particular OLD entry's inverse write landed on the sheet. */
+  mrrClearDedupKeysForBucket(mrrAnchorFromBucketKey(bucketKey), bucket);
   mrrSaveMutationJournal();
+  if (!prevSuppressed) { saveSheet(state.chatId, state.sheet); renderSheet(); }
 }
 
 /* Swipe-BACK re-apply: replays a previously-reverted bucket's entries
@@ -14206,15 +14435,29 @@ function mrrRevertBucket(bucketKey) {
    dedup path would be silently swallowed, since the plain anchor was
    already marked applied the first time this content was seen — the
    journal is the one sanctioned way around that gate, and ONLY on an
-   explicit swipe-back). Clears reverted:false. A no-op if the bucket
-   doesn't exist or isn't currently reverted. */
+   explicit swipe-back). Fix 1d: entries flagged entry.revertFailed by a
+   prior (partial) revert are SKIPPED here — they were never actually
+   inverted away from `next` in the first place, so forward-replaying
+   them again would be a redundant, potentially-wrong "double apply" of
+   an entry whose true prior state this bucket doesn't actually know.
+   Given bucket.reverted is only ever true when EVERY entry succeeded
+   (fix 1d, above), no entry in a bucket that reaches this function
+   today can carry revertFailed:true — the per-entry skip is a defensive
+   guard against future changes to when entries get appended (e.g. the
+   runs-transport landing a new, unflagged entry into an
+   already-reverted bucket), not a currently-reachable branch. Clears
+   reverted:false. A no-op if the bucket doesn't exist or isn't
+   currently reverted. saveSheet/renderSheet batched once (fix 5d), same
+   pattern as mrrRevertBucket. */
 function mrrReapplyBucket(bucketKey) {
   var bucket = mrrMutationJournal.buckets[bucketKey];
   if (!bucket || !bucket.entries.length || !bucket.reverted) return;
+  var prevSuppressed = mrrJournalSuppressed; /* fix 5e */
   mrrJournalSuppressed = true;
   try {
     for (var i = 0; i < bucket.entries.length; i++) {
       var entry = bucket.entries[i];
+      if (entry.revertFailed) continue; /* fix 1d — excluded from reapply */
       try {
         if (!applyStateMutation(mrrBuildReplayAttrs(entry, "forward"))) {
           warn("B2-R swipe-back: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
@@ -14224,10 +14467,11 @@ function mrrReapplyBucket(bucketKey) {
       }
     }
   } finally {
-    mrrJournalSuppressed = false;
+    mrrJournalSuppressed = prevSuppressed;
   }
   bucket.reverted = false;
   mrrSaveMutationJournal();
+  if (!prevSuppressed) { saveSheet(state.chatId, state.sheet); renderSheet(); }
 }
 
 /* ─── B2: swipe-aware processed-message keying ────────────────────────────
@@ -14292,7 +14536,14 @@ function mrrProcessedKey(msgId, idx) {
 function isMessageProcessed(msgId, idx) {
   if (processedMessageIds[msgId]) return true; /* legacy plain entry — suppresses every swipe, see trade-off above */
   if (idx !== null && idx !== undefined) {
-    return !!processedMessageIds[msgId + ":" + idx]; /* idx known: exact match for THIS swipe only */
+    /* idx known: exact match for THIS swipe only. Finding 25 (accepted,
+       pre-existing, not fixed this round): a message still mid-stream
+       when first observed (partial [mrr-state: ...] tag text, or the
+       tag arriving in a later chunk than this observation) can be
+       marked processed against incomplete text before the full tag ever
+       renders — a dropped/partial tag on that one turn. Not new to
+       round 9; not addressed here. */
+    return !!processedMessageIds[msgId + ":" + idx];
   }
   var prefix = msgId + ":";
   for (var k in processedMessageIds) {
@@ -14599,21 +14850,42 @@ function resolveSheetField(sheet, field) {
    persist sheet -> re-render UI -> push to in-memory log -> show toast.
    Keeps the data write, the visual update, and the user-visible
    confirmation co-located in one place so they cannot drift. */
+/* finalizeMutation's four duties (audited for round-9 fix 5d): (1)
+   saveSheet — persists the sheet AND, as a side effect of saveSheet
+   itself, schedules the existing 1.5s-debounced 3-surface autosync
+   (chat customTrackerFields / overlay-agent prompts / field-reference
+   lorebook — see scheduleAutoSync); (2) renderSheet — redraws the DOM;
+   (3) state.mutationLog append (a rolling 20-entry log, no reader found
+   elsewhere in this file beyond capping its own length — display TBD/
+   future use); (4) showMutationToast — the player-visible "X changed by
+   N" notification. No direct agent-prompt-sync call lives in this
+   function; it happens transitively via saveSheet's scheduleAutoSync.
+   During a revert/reapply replay (mrrJournalSuppressed), (1) and (2)
+   are skipped HERE — mrrRevertBucket/mrrReapplyBucket batch ONE
+   saveSheet + ONE renderSheet after the whole bucket loop instead of
+   once per entry, and that single saveSheet call still schedules the
+   autosync exactly once, coalesced. (3) and (4) are skipped entirely
+   (not batched) during replay — a revert/reapply is bookkeeping, not a
+   new player-visible mutation event; logging/toasting N replayed
+   entries as N fresh notifications the player didn't just cause would
+   be confusing UI noise. */
 function finalizeMutation(attrs) {
-  saveSheet(state.chatId, state.sheet);
-  renderSheet();
-  if (!Array.isArray(state.mutationLog)) state.mutationLog = [];
-  state.mutationLog.push({
-    timestamp: Date.now(),
-    field: attrs.field,
-    delta: attrs.delta,
-    add: attrs.add,
-    remove: attrs.remove,
-    qty: attrs.qty,
-    reason: attrs.reason
-  });
-  if (state.mutationLog.length > 20) state.mutationLog.shift();
-  showMutationToast(attrs);
+  if (!mrrJournalSuppressed) {
+    saveSheet(state.chatId, state.sheet);
+    renderSheet();
+    if (!Array.isArray(state.mutationLog)) state.mutationLog = [];
+    state.mutationLog.push({
+      timestamp: Date.now(),
+      field: attrs.field,
+      delta: attrs.delta,
+      add: attrs.add,
+      remove: attrs.remove,
+      qty: attrs.qty,
+      reason: attrs.reason
+    });
+    if (state.mutationLog.length > 20) state.mutationLog.shift();
+    showMutationToast(attrs);
+  }
   return true;
 }
 
@@ -15127,6 +15399,21 @@ function applyStateMutation(attrs) {
      model can self-correct on the next turn's context. */
   var stateDef = resolveRulesetState(field);
   if (stateDef) {
+    /* Round-9 fix 1c: internal-only sentinel used exclusively by
+       mrrBuildReplayAttrs("inverse") when reverting a bucket's
+       FIRST-EVER journaled entry for this state (prev:null — the state
+       had never been set before that mutation). Reverting must CLEAR
+       the state, not "set" it to some label. This can NEVER be produced
+       from tag text: parseStateAttrs (STATE_KV_RE) only ever assigns
+       STRING capture-group values (or undefined) to attrs — even a tag
+       author who literally typed __mrrStateClear="true" would produce
+       the STRING "true", which fails this strict `=== true` boolean
+       check. Sole-writer preserved: this still dispatches through
+       applyStateMutation, never a parallel direct sheet-write path. */
+    if (attrs.__mrrStateClear === true) {
+      if (sheet.states && typeof sheet.states === "object") delete sheet.states[stateDef.name];
+      return finalizeMutation(attrs);
+    }
     var rawStateVal = (attrs.value != null) ? attrs.value
                     : (attrs.set   != null) ? attrs.set
                     : attrs.current;
@@ -15253,15 +15540,18 @@ function applyStateMutation(attrs) {
        name), not the raw possibly-aliased `field` — a revert/reapply
        reconstructs a synthetic attrs and re-dispatches through
        applyStateMutation, and the canonical name is guaranteed to
-       exact-match resolveSheetField's first pass on that replay. Delta
-       entries record the ORIGINAL signed delta (not the clamped effective
-       change) so a revert re-derives its own clamp from live sheet state
-       via the same code path, rather than trusting a stale clamped number. */
-    if (hasAbsolute) {
-      mrrJournalMutation(resolved.key, "set", { prev: current, next: finalNext });
-    } else {
-      mrrJournalMutation(resolved.key, "delta", { delta: delta });
-    }
+       exact-match resolveSheetField's first pass on that replay.
+       Round-9 fix 1b: ALWAYS journal the absolute prev/next pair,
+       regardless of whether this write arrived as delta= or an
+       absolute form — `current` and `finalNext` are both already in
+       scope here at the clamp site. The old delta-kind journal entry
+       (round 7) recorded the ORIGINAL signed delta and re-derived a
+       fresh clamp on revert, which LOST information whenever the
+       original write itself clamped: HP at 3 with delta=-8 clamps to
+       finalNext=0; a delta-kind revert re-applied +8 against the LIVE
+       (already-0) value and landed on 8, not the original 3. prev/next
+       are exact, unconditionally — revert is now a plain prev-restore. */
+    mrrJournalMutation(resolved.key, "set", { prev: current, next: finalNext });
     return finalizeMutation(attrs);
   }
   /* Unknown field — stash on the sheet root as a generic numeric so
@@ -15285,12 +15575,10 @@ function applyStateMutation(attrs) {
   node[leaf] = stashFinal;
   /* B2-R: journal against the full dotted-path `field` string — replay
      re-runs the SAME stash-path resolution (resolveSheetField fails first,
-     falls through to here), so the path string round-trips correctly. */
-  if (hasAbsolute) {
-    mrrJournalMutation(field, "set", { prev: rootCurrent, next: stashFinal });
-  } else {
-    mrrJournalMutation(field, "delta", { delta: delta });
-  }
+     falls through to here), so the path string round-trips correctly.
+     Round-9 fix 1b: unconditional absolute prev/next, same reasoning as
+     the resolved-field branch above (clamp-loss fix). */
+  mrrJournalMutation(field, "set", { prev: rootCurrent, next: stashFinal });
   return finalizeMutation(attrs);
 }
 
@@ -15349,8 +15637,9 @@ function processChatMessage(node) {
          forward swipe and skipped straight to mrrReapplyBucket on a
          swipe-back, which left the bucket being swiped AWAY FROM
          (B) still active underneath A's reapplied entries — caught by the
-         b2r-revert-probes.mjs A->B->A round-trip probe, which computed the
-         wrong restored value until this was fixed. */
+         session probe harness's (scratchpad-only, not in this repo) A->B->A
+         round-trip probe, which computed the wrong restored value until
+         this was fixed. */
       if (idx !== null && idx !== undefined) {
         var priorIdx = mrrMutationJournal.lastSeenIdx[msgId];
         if (priorIdx !== undefined && priorIdx !== idx) {
@@ -15391,7 +15680,18 @@ function processChatMessage(node) {
         mrrSaveMutationJournal();
       }
 
-      if (isMessageProcessed(msgId, idx)) return; /* composite entry already applied (re-entrant observation) */
+      if (isMessageProcessed(msgId, idx)) {
+        /* Round-9 fix 5c: stamp the memo here too, not just after a fresh
+           apply below — without this, a message whose composite entry was
+           already marked processed by some OTHER path (e.g. swipe-back's
+           own memo-stamp on a DIFFERENT swipe index) keeps missing the
+           fast-path memo check on every future re-observation of THIS
+           text, re-triggering the swipe-index fetch every single time
+           instead of short-circuiting like a freshly-applied message
+           would. Harmless no-op when the memo was already correct. */
+        mrrProcessedTextMemo[msgId] = text;
+        return; /* composite entry already applied (re-entrant observation) */
+      }
       var tags = parseStateTags(text);
       var key = mrrProcessedKey(msgId, idx);
       /* FIX-1 (round-5 critical): the cross-transport dedup ANCHOR passed to
@@ -15505,15 +15805,32 @@ function extractRunId(row) {
 function extractRunAnchor(row, fallbackId) {
   /* The turn anchor must equal the narrator's data-message-id for cross-
      transport dedup to collide. Confirmed at the dump stage. Fall back to a
-     run-unique id so a missing messageId can't collide across unrelated runs. */
+     run-unique id so a missing messageId can't collide across unrelated runs.
+     Finding 14 (accepted, comment+warn only — not fixed this round): a row
+     with no discoverable messageId degrades to this synthetic per-run
+     anchor, which can never collide with the narrator-path anchor for the
+     same turn (no cross-transport dedup) and never resolves to a
+     swipe-aware journal bucket (always plain-bucket, never
+     auto-reverted). Warn per occurrence so this degradation is visible
+     rather than silent. */
   var mid = row && (row.messageId || row.message_id || (row.message && row.message.id));
-  return mid || ("run:" + fallbackId);
+  if (mid) return mid;
+  warn("runs-poller: run " + fallbackId + " has no messageId — anchoring to a synthetic per-run id (no cross-transport dedup, no swipe-aware journal bucket for this mutation)");
+  return "run:" + fallbackId;
 }
 
 function pollCustomAgentRuns(chatId) {
   if (MRR_RUNS_POLLER_MODE === "off") return;
   if (!chatId || runsPollInFlight) return;
   runsPollInFlight = true;
+  /* Round-9 fix 7: captured now, checked after the async swipe-index
+     fetch below — mirrors processChatMessage's own
+     `if (state.chatId !== scanChatId) return;` stale-chat guard, which
+     this poller was missing entirely. Without it, switching chats
+     mid-fetch let the eventual apply still write mutations against
+     whatever chat happened to be active when the promise resolved,
+     not the chat this poll cycle actually started against. */
+  var pollChatId = chatId;
   loadProcessedRunIds(chatId);
   apiFetch("/agents/runs/" + encodeURIComponent(chatId) + "/custom?limit=50").then(function (rows) {
     /* marinara.apiFetch does not check status (returns res.json() always), so
@@ -15547,8 +15864,19 @@ function pollCustomAgentRuns(chatId) {
       if (runId != null && processedRunIds[runId]) continue;
       var text = extractRunText(rows[i]);
       var tags = text ? parseStateTags(text) : [];
-      if (tags.length) tagBearingRows.push({ row: rows[i], runId: runId, tags: tags });
-      if (runId != null) { processedRunIds[runId] = true; sawNew = true; }
+      if (tags.length) {
+        /* Round-9 fix 7: a TAG-BEARING row's processedRunIds flag is set
+           ONLY after its applyStateTagsWithDedup call actually returns,
+           inside the loop below — NOT here. Marking it processed before
+           the mutation applies meant a chat-switch mid-fetch, or a throw
+           during apply, permanently lost that mutation: the row would
+           never be reconsidered on a future poll, yet nothing had
+           actually landed on any sheet. */
+        tagBearingRows.push({ row: rows[i], runId: runId, tags: tags });
+      } else if (runId != null) {
+        processedRunIds[runId] = true; /* nothing to apply — no async gap, safe to mark immediately */
+        sawNew = true;
+      }
     }
     function finishRunsPoll() {
       if (sawNew) saveProcessedRunIds();
@@ -15564,17 +15892,38 @@ function pollCustomAgentRuns(chatId) {
        plain buckets are never auto-reverted by the narrator's swipe-
        change detection, only superseded forward. */
     return fetchSwipeIndexMap(chatId).then(function (swipeMap) {
-      for (var r = 0; r < tagBearingRows.length; r++) {
-        var entry = tagBearingRows[r];
-        var anchor = extractRunAnchor(entry.row, entry.runId);
-        var mid = entry.row && (entry.row.messageId || entry.row.message_id || (entry.row.message && entry.row.message.id));
-        var journalKey = (mid && swipeMap && Object.prototype.hasOwnProperty.call(swipeMap, mid))
-          ? mrrProcessedKey(mid, swipeMap[mid])
-          : anchor; /* unresolvable — plain bucket */
-        applied += applyStateTagsWithDedup(entry.tags, anchor, journalKey);
-        total += entry.tags.length;
+      if (state.chatId !== pollChatId) return; /* round-9 fix 7 — chat switched during the async fetch; stale, do not apply against the wrong chat */
+      try {
+        for (var r = 0; r < tagBearingRows.length; r++) {
+          var entry = tagBearingRows[r];
+          var anchor = extractRunAnchor(entry.row, entry.runId);
+          var mid = entry.row && (entry.row.messageId || entry.row.message_id || (entry.row.message && entry.row.message.id));
+          /* Finding 7c (accepted, comment-only — journal-key drift): this
+             journalKey is resolved from swipeMap, fetched once at the
+             START of this batch. If the active swipe index for `mid`
+             changes AGAIN mid-batch (a second swipe landing between the
+             fetch and this row's apply), this row journals under the
+             now-stale index rather than the very latest one. The window
+             is one batch's worth of synchronous loop iteration
+             (milliseconds) and self-corrects on the next poll cycle's
+             fresh fetch — not fixed this round. */
+          var journalKey = (mid && swipeMap && Object.prototype.hasOwnProperty.call(swipeMap, mid))
+            ? mrrProcessedKey(mid, swipeMap[mid])
+            : anchor; /* unresolvable — plain bucket */
+          total += entry.tags.length;
+          try {
+            applied += applyStateTagsWithDedup(entry.tags, anchor, journalKey);
+            if (entry.runId != null) { processedRunIds[entry.runId] = true; sawNew = true; }
+          } catch (e) {
+            /* Round-9 fix 7: a throw on ONE row warns honestly and does
+               NOT mark that row processed (so it's retried next poll) —
+               and does NOT abort the rest of the batch. */
+            warn("runs-poller: row for anchor '" + anchor + "' threw while applying — not marked processed, will retry next poll (" + (e && e.message ? e.message : e) + ")");
+          }
+        }
+      } finally {
+        finishRunsPoll(); /* fix 7: batch bookkeeping (save + summary log) survives one bad row regardless */
       }
-      finishRunsPoll();
     });
   }).catch(function (e) {
     warn("runs-poller: /agents/runs fetch failed (" + (e && e.message ? e.message : e) + ") — degrading; narrator path unaffected");
@@ -15679,6 +16028,20 @@ function init() {
     return;
   }
   state.ruleset = rs;
+  /* Round-9 fix 5b: reset B18 mechanic-selection state whenever the active
+     ruleset (re)loads. Every observed ruleset-switch path in this file
+     goes through a full `window.location.reload()` (see the three
+     RELOAD_DELAY_MS call sites), which already re-executes this whole
+     module fresh and would naturally leave these undefined — but init()'s
+     own comment above says it "can fire multiple times across a Marinara
+     session (chat switches, route changes)", implying the engine may
+     re-invoke this script without a hard reload in some path this file
+     doesn't otherwise document. Explicit reset here costs nothing and
+     closes that gap defensively either way: a stale additionalMode
+     selection from a PRIOR ruleset must never survive into a new one
+     (the id may not even exist in the new ruleset's additionalModes). */
+  state.diceActiveModeId = "primary";
+  state.diceBuiltModeId = null;
   /* Seed the library with the currently active ruleset on first run after
      the library feature ships, so users who already had a ruleset configured
      see it in the Library list immediately. */
