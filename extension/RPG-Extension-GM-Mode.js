@@ -16206,6 +16206,17 @@ function processChatMessage(node) {
     resolveSwipeIndexForMessage(scanChatId, msgId).then(function (idx) {
       if (state.chatId !== scanChatId) return; /* chat switched mid-fetch — stale, ignore */
 
+      /* Round-14 Task A: cheap, permanent diagnostic — fires every time
+         this callback actually runs (proving the observer→schedule→
+         processChatMessage→resolveSwipeIndexForMessage chain reached
+         here at all) with exactly the three facts needed to read the
+         next live log conclusively: whether this msgId had a bucket-
+         only (tag-less) path active, and what swipe index actually
+         resolved (null means the recent-window fetch missed it —
+         round-10 FIX-B territory, transition intentionally no-ops on a
+         null idx). */
+      log("swipe-detect: msgId=" + msgId + " buckets=" + hasBuckets + " idx=" + idx);
+
       /* Round-12 F2: swipe-change detection now routes through the ONE
          shared transition owner, mrrHandleSwipeTransition — BEFORE the
          dedup gate, BEFORE any apply. See that function's header for the
@@ -16331,7 +16342,52 @@ function processChatMessage(node) {
    writer is never activated blind: "off" is inert (today's narrator-only
    behavior); "dump" logs one raw run row and applies nothing (used at the
    smoke test to confirm a run row's messageId maps to the narrator's
-   data-message-id); "apply" is the full transport. */
+   data-message-id); "apply" is the full transport.
+
+   Round-14 Task B — engine staging semantics, verified against
+   ~/Marinara-Engine source (packages/server/src/routes/generate.routes.ts,
+   packages/server/src/services/storage/agents.storage.ts,
+   packages/server/src/db/schema/agents.ts — see COUPLINGS.md row 2 for
+   file:line citations):
+   1. A swipe's fresh generation DOES run agents — regenerate goes through
+      the SAME generate.routes.ts POST handler as any turn, full pipeline
+      included. Nothing skips agents on regenerate.
+   2. Agent run rows ARE saved immediately upon each agent's completion
+      (agentsStore.saveRun, awaited synchronously in the same request
+      continuation) — there is NO "staged until next-turn-commit" delay
+      for the DB write our poller reads. What DOES move at "next turn" is
+      a separate, PURELY IN-MEMORY generation-slot bookkeeping structure
+      (activeGenerations -> activeAgentRuns) that lets the user start a
+      new generation without waiting for background post-processing to
+      finish — it does not gate write visibility to /agents/runs/:chatId
+      /custom at all.
+   3. Abandoned-swipe cancellation is real but narrower than "every
+      swipe": it only fires when the user submits a genuine NEW message
+      (not on a bare regenerate/swipe), and it's a coarse "skip if not
+      yet started" check, not a hard kill of an in-flight agent call
+      (executeAgent takes no AbortSignal) — an agent already mid-flight
+      when the cancellation pass runs still completes and still saves.
+      Net effect for us: usually less abandoned-swipe noise to dedup, but
+      not a guarantee.
+   4. GENUINE GAP, unfixable from our side: the agent_runs row has NO
+      swipe-index column (schema-confirmed) — only messageId. The engine
+      itself deliberately pins the swipe a slow agent's result belongs to
+      via an in-memory-only value at save time specifically so a user
+      swiping mid-generation doesn't misattribute results server-side —
+      but that pin never reaches the row we read. Our own swipeMap-at-
+      apply-time resolution (mrrHandleSwipeTransition) correctly handles
+      the COMMON case — a run finishing "late" while the CURRENT swipe is
+      still the one it was computed for just applies into that (still-
+      current) bucket normally, no misattribution, no special handling
+      needed (verified: T2b/F2's shared transition owner already no-ops
+      when priorIdx===newIdx, which is exactly this case). The rare,
+      structurally unresolvable case is a run computed for a swipe the
+      user has SINCE abandoned (via regenerate-to-regenerate, which the
+      engine's own cancellation doesn't catch) landing after the fact —
+      we have no way to know it wasn't for the CURRENT swipe, so it
+      applies into whatever bucket swipeMap reports as current at that
+      moment. Accepted, documented risk — same class as the pre-existing
+      Finding 7c journal-key-drift note below. */
 
 var processedRunIds = Object.create(null);
 var processedRunIdsChatId = null;
@@ -16674,6 +16730,15 @@ function watchChatMessages() {
   var pendingTokens = Object.create(null);
   var nextToken = 0;
   function findParentMessage(el) {
+    /* Round-14 Task A: a characterData mutation record's `target` is the
+       TEXT NODE itself (nodeType 3), not an element — the original
+       `while (el.nodeType === 1)` guard rejected it on the very first
+       check and returned null unconditionally, so even after enabling
+       characterData observation below, a text-only swipe update would
+       still never resolve to a message element. Hop to the nearest
+       element first for any non-element starting node (text nodes,
+       comment nodes), then walk up exactly as before. */
+    if (el && el.nodeType !== 1) el = el.parentElement;
     while (el && el.nodeType === 1) {
       if (el.hasAttribute && el.hasAttribute("data-message-id")) return el;
       el = el.parentElement;
@@ -16709,13 +16774,42 @@ function watchChatMessages() {
       }
     }
   });
-  /* Observer scope: document.body kept for resilience to DOM restructure
-     (Marinara's React tree re-mounts the chat pane on route change), but
-     characterData=true dropped per the skill's "heavy observers" pitfall
-     — was firing on every keystroke in any input field. New messages and
-     streaming chunks arrive as childList mutations on the message
-     container, which characterData isn't needed for. */
-  obs.observe(document.body, { childList: true, subtree: true });
+  /* Round-14 Task A (root cause of "swipe produces total silence" — retest
+     3, live logs DND_1640/EX3_1648): characterData=true was previously
+     dropped here per the skill's generic "heavy observers" pitfall
+     warning — reasoned defensively, never actually verified against this
+     engine's client source. Verified this round against
+     ~/Marinara-Engine: the message list renders `<ChatMessage key=
+     {msg.id} .../>` (ChatRoleplaySurface.tsx) — the React key is the
+     message's stable id, NOT id+swipeIndex, so a swipe (a new
+     activeSwipeIndex/content on the SAME message id) re-renders the
+     SAME component instance in place rather than remounting it. React's
+     DOM reconciler commits a text-only content change by writing
+     directly to the existing text node's `.nodeValue` (a characterData
+     mutation) — it does not remove/insert a new text node (which would
+     be a childList mutation). A childList-only observer is therefore
+     architecturally blind to exactly this case: the DOM genuinely
+     changes, but never in a shape this observer was watching for — zero
+     mutation records fire, schedule() never runs, processChatMessage
+     never runs, hence total silence with no error to even hint at the
+     cause. The historical keystroke-storm concern does not apply here:
+     grepped the ENTIRE client package for a real contentEditable-based
+     editor (React `contentEditable` prop, or a rich-text lib — Lexical/
+     Slate/TipTap/Quill/ProseMirror) and found none; the two lowercase
+     "contenteditable" string hits that DO exist are click-target/touch-
+     gesture IGNORE-LIST selectors (ChatMessage.tsx's quick-edit click
+     guard, ChatArea.tsx's swipe-gesture guard), not an actual editable
+     region — the message composer is a plain textarea/input, whose
+     value changes are a JS property, never reflected as DOM text-node
+     mutations at all, so MutationObserver's characterData channel is
+     silent for it regardless. And even in a future world where some
+     other characterData-triggering input DOES exist elsewhere on the
+     page, findParentMessage's own upward walk already scopes every
+     observed mutation to ones landing inside a tagged
+     [data-message-id] element — an unrelated input outside any message
+     element still resolves to null and is dropped before schedule() is
+     ever called, exactly as it already does for childList noise today. */
+  obs.observe(document.body, { childList: true, subtree: true, characterData: true });
   marinara.onCleanup(function () { obs.disconnect(); });
 
   /* Initial DOM sweep at extension load. Two paths:
