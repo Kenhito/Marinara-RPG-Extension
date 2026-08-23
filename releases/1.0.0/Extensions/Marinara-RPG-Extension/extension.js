@@ -14329,6 +14329,25 @@ function mrrJournalMutation(field, payload) {
    next), so this path is unreachable for direction:"forward". */
 function mrrBuildReplayAttrs(entry, direction) {
   var value = (direction === "inverse") ? entry.prev : entry.next;
+  /* Round-11 T2: typed-damage track snapshot entry ("__mrrTrack:" +
+     the derived stat's .name — there is no separate "track id" concept
+     in this codebase, the derivedStats entry's name IS the id). value
+     is the array of per-cell labels/nulls captured before ("inverse" /
+     revert) or after ("forward" / swipe-back reapply) the mutation.
+     Dispatches through the __mrrTrackRestore sentinel in
+     applyStateMutation rather than writing sheet.trackCells directly
+     here — sole-writer preserved, revert/reapply IS the mutator
+     pipeline. */
+  if (typeof entry.field === "string" && entry.field.indexOf("__mrrTrack:") === 0) {
+    return { field: entry.field, __mrrTrackRestore: { trackId: entry.field.slice("__mrrTrack:".length), snapshot: value } };
+  }
+  /* Round-11 T2-EXPANDED: conditions array snapshot entry. value is the
+     WHOLE sheet.conditions array captured before ("inverse"/revert) or
+     after ("forward"/swipe-back reapply) the mutation — dispatches
+     through the __mrrConditionsRestore sentinel below. */
+  if (entry.field === "__mrrConditions") {
+    return { field: entry.field, __mrrConditionsRestore: { snapshot: value } };
+  }
   var isState = !!resolveRulesetState(entry.field);
   if (isState && value === null) {
     return { field: entry.field, __mrrStateClear: true };
@@ -14393,6 +14412,14 @@ function mrrDeleteAppliedKeysForSig(anchor, sig) {
 function mrrClearDedupKeysForBucket(anchor, bucket) {
   bucket.entries.forEach(function (entry) {
     if (entry.sig == null) return; /* no captured sig (pre-round-10 entry, or created outside the gate) — nothing exact to clear */
+    /* T2c (round 11, static-cost semantics): an entry left in place by
+       mrrRevertBucket's skipSigs match keeps its dedup key intact ON
+       PURPOSE — Corey's ruling is that an identical-sig mutation (e.g. a
+       fixed mote/essence spend) must NOT revert/reapply on a swipe that
+       changes other content. Clearing its key here would re-admit the
+       incoming duplicate through applyStateTagsWithDedup's gate and
+       double-apply it. */
+    if (entry.staticSkipped) return;
     mrrDeleteAppliedKeysForSig(anchor, entry.sig);
   });
 }
@@ -14413,7 +14440,7 @@ function mrrClearDedupKeysForBucket(anchor, bucket) {
    what it does and why the split is safe (saveSheet's own debounced
    3-surface autosync still fires exactly once). No-op if the bucket
    doesn't exist, has no entries, or is already reverted. */
-function mrrRevertBucket(bucketKey) {
+function mrrRevertBucket(bucketKey, skipSigs) {
   var bucket = mrrMutationJournal.buckets[bucketKey];
   if (!bucket || !bucket.entries.length || bucket.reverted) return;
   var prevSuppressed = mrrJournalSuppressed; /* fix 5e — save/restore, match the bucket-key pattern, rather than blindly assuming false on entry/exit */
@@ -14422,6 +14449,25 @@ function mrrRevertBucket(bucketKey) {
   try {
     for (var i = bucket.entries.length - 1; i >= 0; i--) {
       var entry = bucket.entries[i];
+      /* T2c (round 11): Corey's static-cost ruling — "essence spends...
+         are static between swipes... the mutator not firing off to
+         revert/redo that expenditure is a good thing." skipSigs is the
+         incoming (new-swipe) tag content-sig set, computed by the caller
+         via the SAME normalize+sig pipeline applyStateTagsWithDedup
+         uses. An entry whose sig is present there represents a mutation
+         the incoming swipe is about to re-assert identically — leave it
+         exactly as-is: not reverted (no inverse write attempted), dedup
+         key left intact by mrrClearDedupKeysForBucket below (so the
+         incoming duplicate is swallowed exactly as it was pre-B2-R),
+         still counted applied/journaled in this bucket. Recomputed fresh
+         every call (same pattern as revertFailed below), so an entry
+         skipped on one swipe-away can be genuinely reverted on a later
+         one if the incoming content no longer matches. */
+      if (skipSigs && entry.sig != null && skipSigs[entry.sig]) {
+        entry.staticSkipped = true;
+        continue;
+      }
+      entry.staticSkipped = false;
       var ok = false;
       try {
         ok = applyStateMutation(mrrBuildReplayAttrs(entry, "inverse"));
@@ -14483,7 +14529,13 @@ function mrrReapplyBucket(bucketKey) {
   try {
     for (var i = 0; i < bucket.entries.length; i++) {
       var entry = bucket.entries[i];
-      if (entry.revertFailed) continue; /* fix 1d — excluded from reapply */
+      /* T2c (round 11): a staticSkipped entry was never reverted (its
+         sig matched the swipe that caused this bucket to be marked
+         reverted:true) — it's still live on the sheet under its
+         original dedup key, so forward-replaying it here would double-
+         apply. Same exclusion pattern as revertFailed, reused rather
+         than a parallel gate. */
+      if (entry.revertFailed || entry.staticSkipped) continue; /* fix 1d / T2c — excluded from reapply */
       try {
         if (!applyStateMutation(mrrBuildReplayAttrs(entry, "forward"))) {
           warn("B2-R swipe-back: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
@@ -14534,6 +14586,48 @@ var mrrSwipeIndexWarned = false;      // console.warn once per session on fetch 
 
 function mrrProcessedKey(msgId, idx) {
   return (idx === null || idx === undefined) ? msgId : (msgId + ":" + idx);
+}
+
+/* T2b (round 11): cheap in-memory check — does msgId own any NON-EMPTY
+   journal bucket (plain "<msgId>" or composite "<msgId>:<idx>")? Used by
+   processChatMessage to let swipe-change detection run for a tag-LESS
+   message whose mutations arrived entirely via the runs-transport poller
+   (the mutator's [mrr-state:] output never lands in chat DOM — see the
+   custom-agent-run capture header comment below). A plain O(bucket count)
+   scan of the already-loaded in-memory journal; no localStorage read, no
+   network call. */
+function mrrJournalHasBucketsFor(msgId) {
+  if (!msgId || !mrrMutationJournal || !mrrMutationJournal.buckets) return false;
+  var prefix = msgId + ":";
+  var keys = Object.keys(mrrMutationJournal.buckets);
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    if (k !== msgId && k.indexOf(prefix) !== 0) continue;
+    var b = mrrMutationJournal.buckets[k];
+    if (b && Array.isArray(b.entries) && b.entries.length) return true;
+  }
+  return false;
+}
+
+/* T2c (round 11): compute the content-sig set for an incoming (new-swipe)
+   tag list, via the EXACT SAME normalize+sig pipeline
+   applyStateTagsWithDedup uses (normalizeStateAttrs before
+   mutationContentSig) — so a sig computed here is guaranteed comparable
+   to entry.sig values stamped by that same pipeline (mrrCurrentApplySig).
+   Returns a plain lookup object ({sig: true, ...}), empty when tags is
+   empty/absent — the correct default for a tag-less (runs-transport)
+   message, where mrrRevertBucket falls through to its pre-T2c full-revert
+   behavior. */
+function mrrComputeIncomingSigs(tags) {
+  var sigs = Object.create(null);
+  if (!tags || !tags.length) return sigs;
+  for (var i = 0; i < tags.length; i++) {
+    var normalized = normalizeStateAttrs(tags[i].attrs);
+    for (var n = 0; n < normalized.length; n++) {
+      sigs[mutationContentSig(normalized[n])] = true;
+    }
+  }
+  return sigs;
 }
 
 /* FIX-2 (round-5 critical): closes an out-of-window replay hole WITHOUT
@@ -14969,11 +15063,29 @@ function applyStateMutation(attrs) {
 
   if (field === "conditions") {
     if (!Array.isArray(sheet.conditions)) sheet.conditions = [];
+    /* Round-11 T2-EXPANDED: snapshot BEFORE this mutation's add/remove —
+       sheet.conditions is a flat array of condition-name STRINGS (exact-
+       string dedup on add; exact-string filter on remove — a duration
+       change like "Poisoned (3 turns)" -> "Poisoned (2 turns)" is a
+       DIFFERENT string, so it adds a second entry rather than replacing,
+       same as the pre-existing add/remove semantics above, unchanged).
+       One journal entry per applyStateMutation call, same 1:1 mapping as
+       every other journaled branch. */
+    var prevConditionsSnapshot = sheet.conditions.slice();
     if (attrs.add) {
       if (sheet.conditions.indexOf(attrs.add) === -1) sheet.conditions.push(attrs.add);
     } else if (attrs.remove) {
       sheet.conditions = sheet.conditions.filter(function (c) { return c !== attrs.remove; });
     } else { return false; }
+    /* Journal a whole-array snapshot (field "__mrrConditions", one fixed
+       key — there is only ONE conditions array on the sheet, unlike
+       per-track-name typed-damage journaling) rather than a scalar prev/
+       next pair, since add/remove aren't invertible by re-running the
+       SAME op backwards (removing an item, then "reverting" by re-adding
+       it, could resurrect an item a LATER mutation in the same bucket
+       already removed for an unrelated reason — a snapshot sidesteps
+       that entirely, same reasoning as the typed-damage track snapshot). */
+    mrrJournalMutation("__mrrConditions", { prev: prevConditionsSnapshot, next: sheet.conditions.slice() });
     return finalizeMutation(attrs);
   }
 
@@ -15464,6 +15576,66 @@ function applyStateMutation(attrs) {
     return finalizeMutation(attrs);
   }
 
+  /* Round-11 T2 sentinel: internal-only track-restore dispatched
+     exclusively by mrrBuildReplayAttrs for a "__mrrTrack:" journal
+     entry (revert / swipe-back reapply of typed-damage per-cell
+     state). Placed ahead of the hasDelta/hasAbsolute guard below
+     because these synthetic attrs carry neither. Never parseable from
+     tag text — parseStateAttrs (STATE_KV_RE) only ever assigns STRING
+     capture-group values to attrs, so a tag author literally typing
+     __mrrTrackRestore="..." would produce a STRING, failing this
+     typeof-object check (same proof standard as __mrrStateClear
+     above). Restores ONLY sheet.trackCells[trackId] from the snapshot,
+     then re-derives sheet.track[trackId] (the legacy typed-counter) via
+     syncTrackCellsToTyped — the legacy counter is fully derived data
+     with zero independent information beyond trackCells, so the
+     journal entry only ever needs to snapshot the cells array (see the
+     typed-damage branch below where this entry is journaled). */
+  if (attrs.__mrrTrackRestore && typeof attrs.__mrrTrackRestore === "object") {
+    var trRestore = attrs.__mrrTrackRestore;
+    var trDerived = null;
+    if (state.ruleset && Array.isArray(state.ruleset.derivedStats)) {
+      for (var tdi = 0; tdi < state.ruleset.derivedStats.length; tdi++) {
+        if (state.ruleset.derivedStats[tdi] && state.ruleset.derivedStats[tdi].name === trRestore.trackId) {
+          trDerived = state.ruleset.derivedStats[tdi];
+          break;
+        }
+      }
+    }
+    if (!trDerived) {
+      warn("B2-R track-restore: track '" + trRestore.trackId + "' no longer exists in the active ruleset — skipped");
+      return false;
+    }
+    if (!Array.isArray(trRestore.snapshot)) {
+      warn("B2-R track-restore: malformed snapshot for track '" + trRestore.trackId + "' — skipped");
+      return false;
+    }
+    if (!sheet.trackCells || typeof sheet.trackCells !== "object") sheet.trackCells = {};
+    sheet.trackCells[trRestore.trackId] = trRestore.snapshot.slice();
+    syncTrackCellsToTyped(trDerived);
+    return finalizeMutation(attrs);
+  }
+
+  /* Round-11 T2-EXPANDED sentinel: internal-only conditions-array
+     restore, dispatched exclusively by mrrBuildReplayAttrs for a
+     "__mrrConditions" journal entry. Same "unreachable from tag text"
+     proof as __mrrStateClear/__mrrTrackRestore above — parseStateAttrs
+     only ever assigns STRING values, so a literal
+     __mrrConditionsRestore="..." in tag text fails this typeof-object
+     check. Wholesale-replaces sheet.conditions from the snapshot rather
+     than re-running add/remove, so an unrelated LATER mutation in the
+     same bucket can never be resurrected/re-deleted by this one's
+     revert (see the conditions branch's own journaling comment). */
+  if (attrs.__mrrConditionsRestore && typeof attrs.__mrrConditionsRestore === "object") {
+    var condRestore = attrs.__mrrConditionsRestore;
+    if (!Array.isArray(condRestore.snapshot)) {
+      warn("B2-R conditions-restore: malformed snapshot — skipped");
+      return false;
+    }
+    sheet.conditions = condRestore.snapshot.slice();
+    return finalizeMutation(attrs);
+  }
+
   var hasDelta = (attrs.delta != null);
   var hasAbsolute = (attrs.current != null || attrs.value != null || attrs.set != null);
   if (!hasDelta && !hasAbsolute) {
@@ -15513,6 +15685,13 @@ function applyStateMutation(attrs) {
       return false;
     }
     var cells = ensureTrackCells(derivedObj, totalLen);
+    /* Round-11 T2: snapshot BEFORE this mutation's add/remove loops run
+       (but AFTER ensureTrackCells's own pad/trim normalization, which is
+       treated as prior state, not part of this mutation's delta). cells
+       is the live array reference in sheet.trackCells[trackName] — the
+       loops below mutate it in place — so a plain .slice() taken now is
+       the only way to capture the pre-mutation shape. */
+    var prevCellsSnapshot = cells.slice();
     var typeForLabel = null;
     for (var ti = 0; ti < dmg.types.length; ti++) {
       if (dmg.types[ti].id === dmg.typeId) { typeForLabel = dmg.types[ti]; break; }
@@ -15547,6 +15726,15 @@ function applyStateMutation(attrs) {
         }
       }
     }
+    /* Round-11 T2: journal a snapshot entry so revert/swipe-back can
+       restore the per-cell array — the previously un-journaled branch
+       gap (typed-damage track damage was not reverted on swipe). Only
+       trackCells is snapshotted; sheet.track[trackName] (the legacy
+       typed-counter) is fully derived FROM trackCells by
+       syncTrackCellsToTyped below and carries zero independent
+       information, so restoring it separately would be redundant — the
+       __mrrTrackRestore sentinel re-derives it after restoring cells. */
+    mrrJournalMutation("__mrrTrack:" + dmg.trackName, { prev: prevCellsSnapshot, next: cells.slice() });
     /* Sync typed-counter from cells so the snapshot + classic renderer
        see the new totals on the post-mutation render. */
     syncTrackCellsToTyped(derivedObj);
@@ -15631,7 +15819,24 @@ function processChatMessage(node) {
   if (!node.classList || !node.classList.contains("mari-message-assistant")) return;
 
   var text = node.textContent || "";
-  if (text.indexOf("[mrr-state:") === -1) return;
+  var isTagBearing = text.indexOf("[mrr-state:") !== -1;
+  /* T2b (round 11): the old unconditional early-return here gated the
+     ENTIRE function on tag-presence, including swipe-change detection —
+     but runs-transport mutations (the poller — see the custom-agent-run
+     capture header comment below) journal under msgId:swipeIndex buckets
+     for messages whose DOM text often carries NO [mrr-state:] tags at
+     all (the State Mutator's own output never lands in chat DOM; it's
+     consumed only as next-turn prompt context). Swiping such a message
+     never reached the swipe-change block below, so revert never fired —
+     root cause of a live report ("swipe doesn't undo the damage") that
+     motivated this fix. A message with journal buckets but no tags still
+     needs swipe-change detection (to revert/reapply); it just has no
+     tags of its own to apply. Messages with NEITHER tags NOR buckets
+     keep today's zero-cost early return — the cheap in-memory
+     bucket-prefix scan (mrrJournalHasBucketsFor) only runs for the
+     subset that already failed the free tag-substring check. */
+  var hasBuckets = !isTagBearing && mrrJournalHasBucketsFor(msgId);
+  if (!isTagBearing && !hasBuckets) return;
 
   /* FIX-2b (round-6 critical, corrects round 5's FIX-2 wiring — see
      mrrProcessedTextMemo's declaration for the full contract): the fast
@@ -15645,9 +15850,24 @@ function processChatMessage(node) {
      re-observation means nothing new happened (skip); changed text means
      a swipe or a first-ever message (proceed to the fetch — the
      composite-exact check inside isMessageProcessed decides from there,
-     once idx is known). */
+     once idx is known).
+     T2b reuses this SAME memo for the tag-less/bucket-only path below
+     instead of adding a second memo variable — "unchanged text means
+     nothing new happened" is exactly as true for a bucket-only message
+     as for a tag-bearing one; the smaller, correct diff is one shared
+     memo, not a parallel one. */
   if (!processedMessageIds[msgId] && mrrProcessedTextMemo[msgId] !== text) {
     var scanChatId = state.chatId;
+    /* T2c (round 11): parsed here (not inside isMessageProcessed's guard
+       below, where the pre-T2 code parsed it) so the swipe-change block
+       can compute the incoming swipe's content-sig set BEFORE deciding
+       whether to fully revert the outgoing bucket — Corey's static-cost
+       ruling: an identical-sig mutation (e.g. a fixed mote/essence
+       spend) must not revert/reapply-churn across a swipe that changes
+       other content. Empty ([]) for a tag-less message — see
+       mrrComputeIncomingSigs's own header for why that correctly yields
+       a full revert (pre-T2c behavior) for the runs-transport case. */
+    var tags = isTagBearing ? parseStateTags(text) : [];
     resolveSwipeIndexForMessage(scanChatId, msgId).then(function (idx) {
       if (state.chatId !== scanChatId) return; /* chat switched mid-fetch — stale, ignore */
 
@@ -15672,7 +15892,13 @@ function processChatMessage(node) {
           var oldBucketKey = mrrProcessedKey(msgId, priorIdx);
           var oldBucket = mrrMutationJournal.buckets[oldBucketKey];
           if (oldBucket && oldBucket.entries.length && !oldBucket.reverted) {
-            mrrRevertBucket(oldBucketKey);
+            /* T2c: empty incomingSigs when !isTagBearing — a tag-less
+               (runs-transport) swipe always fully reverts here; see the
+               CHANGELOG/COUPLINGS churn note for why this is the
+               accepted, documented trade-off rather than the fuller
+               poller-deferred variant. */
+            var incomingSigs = mrrComputeIncomingSigs(tags);
+            mrrRevertBucket(oldBucketKey, incomingSigs);
             log("state-mutator: swipe change on " + msgId + " (" + priorIdx + " -> " + idx + ") reverted bucket " + oldBucketKey);
           }
 
@@ -15706,6 +15932,17 @@ function processChatMessage(node) {
         mrrSaveMutationJournal();
       }
 
+      if (!isTagBearing) {
+        /* T2b: bucket-bearing, tag-less message — swipe-change detection
+           above already did everything there is to do (revert / swipe-
+           back reapply / neither). There are no tags to apply. Stamp the
+           shared memo so an unchanged-text re-observation short-circuits
+           at the top-of-function guard instead of re-fetching the swipe
+           index on every DOM mutation. */
+        mrrProcessedTextMemo[msgId] = text;
+        return;
+      }
+
       if (isMessageProcessed(msgId, idx)) {
         /* Round-9 fix 5c: stamp the memo here too, not just after a fresh
            apply below — without this, a message whose composite entry was
@@ -15730,7 +15967,9 @@ function processChatMessage(node) {
         if (idx !== null && idx !== undefined) mrrProcessedTextMemo[msgId] = text;
         return; /* composite entry already applied (re-entrant observation) */
       }
-      var tags = parseStateTags(text);
+      /* T2c: `tags` was already parsed above (outer closure, before the
+         swipe-index fetch) so the swipe-change block could compute
+         incoming sigs — reused here rather than re-parsed. */
       var key = mrrProcessedKey(msgId, idx);
       /* FIX-1 (round-5 critical): the cross-transport dedup ANCHOR passed to
          applyStateTagsWithDedup is the PLAIN msgId, not the composite key —
@@ -15797,6 +16036,89 @@ var runsPollDumpedOnce = false;
    backlog in one pass (observed live 2026-08-22: 15 historical tags
    applied at once, Peripheral 47 → 7 instead of 47 → 42). */
 var runsBaselineExists = false;
+
+/* ─── T1 (round 11): deterministic sole-writer AT THE TRANSPORT ───────────
+   Live evidence (Corey's morning smoke test): a poll logged "applied
+   7/9 mutation(s)" — his 7 managed agents (state-mutator + 6 non-mutator
+   pre_generation agents, all enabled) ran on ONE generation, and >=3 of
+   the non-mutator agents echoed the SAME essence-spend tag with slightly
+   different `reason=` wording — the tag text was identical in intent but
+   the surrounding prose differed, so each one hashed to a DIFFERENT
+   contentSig and all three applied: -15 instead of -5. `[mrr-state:]`
+   text can leak into ANY agent's output (a shared baseline prompt
+   fragment, a model imitating a sibling agent's style, etc) — the
+   cross-transport dedup gate only catches EXACT duplicate content, not
+   "three non-identical tags expressing the same intent." The only
+   correct fix is at the SOURCE: only the run that actually IS the
+   managed state-mutator agent gets to write state at all.
+
+   Engine ground truth (confirmed by reading agents.storage.ts directly,
+   not assumed): GET /agents/runs/:chatId/custom = listCustomRunsForChat
+   → `db.select().from(agentRuns).innerJoin(agentConfigs, ...)`, mapped
+   through serializeRunWithConfig (agents.storage.ts:89-105) into a FLAT
+   row — {id, agentConfigId, agentType, agentName, chatId, messageId,
+   resultType, resultData, tokensUsed, durationMs, success, error,
+   createdAt}. agentConfigId is the joined agent_configs.id (the SAME id
+   the loader's own /agents list returns per agent) and agentName is
+   that config's display name — both already present on every row,
+   nothing further to fetch per-row.
+
+   Mutator identification: the installer stamps every additionalAgent's
+   settings with `mrrAgentRole: role` at install time (see the
+   additionalAgents install loop, ~line 1486 area) — `role` comes
+   straight from the bundle's `additionalAgents[].role` field, which is
+   "state-mutator" for the state-mutator sub-agent regardless of
+   ruleset (its display NAME varies per ruleset — "D&D 5e State
+   Mutator", "Exalted 3e State Mutator", etc — so name is NOT a robust
+   match; role is). mrrResolveMutatorConfigId scans a fresh /agents
+   fetch for the managed (mrrManaged===true), CURRENT-ruleset
+   (mrrRulesetId===rulesetId), mrrAgentRole==="state-mutator" agent and
+   caches its config id per ruleset (re-resolved only when the active
+   ruleset changes). Deliberately does NOT also require an authorId
+   match (unlike findManagedAgent) — the poller has no bundle payload in
+   scope to know which authorId installed the active mutator, and for
+   sole-writer purposes any managed state-mutator for the active
+   ruleset IS the mutator, regardless of which authorId's bundle
+   installed it. */
+var mrrMutatorConfigId = null;          /* the resolved managed state-mutator's agent-config id, or null = "couldn't determine it" (fallback: unfiltered) */
+var mrrMutatorConfigIdRulesetId = undefined; /* which ruleset mrrMutatorConfigId was resolved for — undefined so the FIRST call always (re)resolves */
+var mrrMutatorFilterWarned = false;     /* warn-once: "sole-writer filter inactive — mutator id unknown" */
+var mrrSoleWriterWarnedAgents = Object.create(null); /* warn-once PER OFFENDING AGENT NAME: "ignoring state tags from non-mutator agent '<name>'" */
+
+function mrrResolveMutatorConfigId(rulesetId) {
+  if (!rulesetId) return Promise.resolve(null);
+  if (mrrMutatorConfigIdRulesetId === rulesetId) return Promise.resolve(mrrMutatorConfigId);
+  return apiFetch("/agents").then(function (agents) {
+    var mutator = null;
+    if (Array.isArray(agents)) {
+      for (var i = 0; i < agents.length; i++) {
+        var a = agents[i];
+        if (!a || typeof a !== "object") continue;
+        var s = parseAgentSettings(a);
+        if (s.mrrManaged === true && s.mrrRulesetId === rulesetId && s.mrrAgentRole === "state-mutator") {
+          mutator = a;
+          break;
+        }
+      }
+    }
+    mrrMutatorConfigId = mutator ? mutator.id : null;
+    mrrMutatorConfigIdRulesetId = rulesetId; /* cache the result (positive OR negative) — a genuinely missing managed install shouldn't re-fetch /agents every poll cycle */
+    if (!mutator && !mrrMutatorFilterWarned) {
+      mrrMutatorFilterWarned = true;
+      warn("sole-writer filter inactive — mutator id unknown (no managed state-mutator agent found for ruleset '" + rulesetId + "') — applying state tags from all non-built-in agents, unfiltered");
+    }
+    return mrrMutatorConfigId;
+  }).catch(function (e) {
+    /* Do NOT cache a fetch failure as the ruleset's resolved state —
+       transient network errors shouldn't permanently disable the
+       filter; retry on the next poll cycle. */
+    if (!mrrMutatorFilterWarned) {
+      mrrMutatorFilterWarned = true;
+      warn("sole-writer filter inactive — /agents fetch failed (" + (e && e.message ? e.message : e) + ") — applying state tags from all non-built-in agents, unfiltered this cycle");
+    }
+    return null;
+  });
+}
 
 function loadProcessedRunIds(chatId) {
   if (!chatId) { processedRunIds = Object.create(null); processedRunIdsChatId = null; runsBaselineExists = false; return; }
@@ -15943,11 +16265,31 @@ function pollCustomAgentRuns(chatId) {
        the message fell outside the fetched recent-window). Per the plan:
        plain buckets are never auto-reverted by the narrator's swipe-
        change detection, only superseded forward. */
-    return fetchSwipeIndexMap(chatId).then(function (swipeMap) {
+    var mutatorRulesetId = state.ruleset && state.ruleset.id;
+    return Promise.all([fetchSwipeIndexMap(chatId), mrrResolveMutatorConfigId(mutatorRulesetId)]).then(function (hopResults) {
+      var swipeMap = hopResults[0];
+      var mutatorConfigId = hopResults[1];
       if (state.chatId !== pollChatId) return; /* round-9 fix 7 — chat switched during the async fetch; stale, do not apply against the wrong chat */
       try {
         for (var r = 0; r < tagBearingRows.length; r++) {
           var entry = tagBearingRows[r];
+          /* T1 (round 11) — deterministic sole-writer AT THE TRANSPORT:
+             a run only gets to apply state tags if it belongs to the
+             resolved managed state-mutator's agent config. mutatorConfigId
+             null means "couldn't determine it" (see
+             mrrResolveMutatorConfigId's own warn) — falls back to
+             unfiltered rather than silently dropping every run. The
+             offending run's id is STILL marked processed (never
+             re-scanned) even though its tags are never applied/journaled. */
+          if (mutatorConfigId != null && entry.row && entry.row.agentConfigId !== mutatorConfigId) {
+            var offendingName = (entry.row && entry.row.agentName) || "(unknown agent)";
+            if (!mrrSoleWriterWarnedAgents[offendingName]) {
+              mrrSoleWriterWarnedAgents[offendingName] = true;
+              warn("sole-writer: ignoring state tags from non-mutator agent '" + offendingName + "' — prompt leak");
+            }
+            if (entry.runId != null) { processedRunIds[entry.runId] = true; sawNew = true; }
+            continue;
+          }
           var anchor = extractRunAnchor(entry.row, entry.runId);
           var mid = entry.row && (entry.row.messageId || entry.row.message_id || (entry.row.message && entry.row.message.id));
           /* Finding 7c (accepted, comment-only — journal-key drift): this
@@ -15962,6 +16304,22 @@ function pollCustomAgentRuns(chatId) {
           var journalKey = (mid && swipeMap && Object.prototype.hasOwnProperty.call(swipeMap, mid))
             ? mrrProcessedKey(mid, swipeMap[mid])
             : anchor; /* unresolvable — plain bucket */
+          /* T2b (round 11): stamp lastSeenIdx here too, mirroring what
+             processChatMessage's own swipe-change block does whenever an
+             index resolves — WITHOUT this, a mutation delivered ONLY via
+             the runs transport (the State Mutator's tags never land in
+             chat DOM) leaves mrrMutationJournal.lastSeenIdx[mid]
+             permanently unset, so the FIRST time processChatMessage ever
+             observes this msgId (now reachable at all thanks to
+             mrrJournalHasBucketsFor's gate) its `priorIdx` read is
+             undefined and the `priorIdx !== undefined` guard silently
+             skips swipe-change detection forever — the bucket exists,
+             gets reached, but the comparison that would trigger revert
+             never fires. Confirmed via probe (T2b-i) before this line was
+             added: revert did not fire without it. */
+          if (mid && swipeMap && Object.prototype.hasOwnProperty.call(swipeMap, mid)) {
+            mrrMutationJournal.lastSeenIdx[mid] = swipeMap[mid];
+          }
           total += entry.tags.length;
           try {
             applied += applyStateTagsWithDedup(entry.tags, anchor, journalKey);
