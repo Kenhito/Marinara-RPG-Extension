@@ -13867,8 +13867,20 @@ function applyScenarioDefaultToCurrentChat(scenarioDefault, progressCb) {
   });
 }
 
-/* Ensure chat.metadata.activeAgentIds includes every overlay agent for the active ruleset — engine fires agents only on id-in-activeAgentIds, install doesn't auto-add, and game mode hides the per-agent toggle. Idempotent set-union; endpoint is /chats/:id/metadata (not /chats/:id). */
-function reconcileActiveAgents() {
+/* Ensure chat.metadata.activeAgentIds includes every overlay agent for the active ruleset — engine fires agents only on id-in-activeAgentIds, install doesn't auto-add, and game mode hides the per-agent toggle. Idempotent set-union; endpoint is /chats/:id/metadata (not /chats/:id).
+
+   Round-12 F1: `rebind` distinguishes the two call sites. `reconcileActiveAgents()` (no arg,
+   PASSIVE — called from watchRouteChanges' chat-switch handler) keeps the original protective
+   skip: a chat stamped for a DIFFERENT ruleset is left alone rather than silently mixing agent
+   sets, because a passive chat switch is not a decision to change that chat's ruleset binding.
+   `reconcileActiveAgents(true)` (ACTIVE — called from init() right after "activated ruleset ...",
+   a deliberate user act: they picked/switched the ruleset via the Ruleset picker, which reloads
+   the page) instead REBINDS: live evidence showed "activated ruleset dnd5e on chat X" immediately
+   followed by "bound to ruleset exalted3e — skipping" — the skip fired even though the user had
+   JUST activated dnd5e, and its own advice ("switch ruleset to update") was circular, since
+   activating a ruleset IS the mechanism that's supposed to update it. There was no rebind path
+   anywhere in the file before this fix. */
+function reconcileActiveAgents(rebind) {
   if (!state.chatId) return;
   if (!state.ruleset) return;
   var chatId = state.chatId;
@@ -13889,8 +13901,40 @@ function reconcileActiveAgents() {
     /* Chat-scoped ruleset stamp prevents cross-ruleset pollution: if the chat is bound to a different ruleset, skip with a warning instead of mixing agents from multiple rulesets into one chat's active list. Stamp round-trips via the engine's pass-through metadata merge (chats.routes.ts:349). */
     var stamp = meta.mrrChatRulesetId;
     if (stamp && stamp !== rulesetId) {
-      log("reconcileActiveAgents: chat " + chatId + " is bound to ruleset " + stamp + "; current active is " + rulesetId + " — skipping (switch ruleset to update this chat)");
-      return;
+      if (!rebind) {
+        log("reconcileActiveAgents: chat " + chatId + " is bound to ruleset " + stamp + "; current active is " + rulesetId + " — skipping (switch ruleset to update this chat)");
+        return;
+      }
+      /* F1 rebind path: one /agents fetch (already have it — `agents` above) yields BOTH the
+         OLD ruleset's managed ids (stamp) and the NEW ruleset's managed ids (rulesetId). New
+         activeAgentIds = (existing MINUS old-managed) UNION new-managed — drops every agent id
+         that belonged to the ruleset we're leaving, adds every agent id the new ruleset needs,
+         and leaves any non-MRR / foreign agent ids in `existing` untouched either way. */
+      var oldManagedIds = (Array.isArray(agents) ? agents : [])
+        .filter(function (a) {
+          var s = parseAgentSettings(a);
+          return s && s.mrrManaged === true && s.mrrRulesetId === stamp;
+        })
+        .map(function (a) { return a.id; });
+      var newManagedIdsForRebind = (Array.isArray(agents) ? agents : [])
+        .filter(function (a) {
+          var s = parseAgentSettings(a);
+          return s && s.mrrManaged === true && s.mrrRulesetId === rulesetId;
+        })
+        .map(function (a) { return a.id; });
+      var kept = existing.filter(function (id) { return oldManagedIds.indexOf(id) === -1; });
+      var removedCount = existing.length - kept.length;
+      var rebindSet = kept.slice();
+      var addedCount = 0;
+      newManagedIdsForRebind.forEach(function (id) {
+        if (rebindSet.indexOf(id) === -1) { rebindSet.push(id); addedCount++; }
+      });
+      return apiFetch("/chats/" + chatId + "/metadata", {
+        method: "PATCH",
+        body: JSON.stringify({ activeAgentIds: rebindSet, mrrChatRulesetId: rulesetId, enableAgents: true })
+      }).then(function () {
+        log("reconcileActiveAgents: rebound chat " + chatId + " from " + stamp + " to " + rulesetId + " (−" + removedCount + " old agents, +" + addedCount + " new)");
+      });
     }
 
     var managedIds = (Array.isArray(agents) ? agents : [])
@@ -14628,6 +14672,93 @@ function mrrComputeIncomingSigs(tags) {
     }
   }
   return sigs;
+}
+
+/* ─── Round-12 F2: THE single transition owner for a swipe on msgId ───────
+   Live wipe bug (Corey, retest logs 1787517870783 + 1787518829357): sheet
+   bytes changed (mutations genuinely applied) yet the NET visible effect
+   was nothing. Root cause — round 11's revert lived ONLY inside
+   processChatMessage, reached via a ~1.5s-debounced DOM-mutation observer;
+   the runs-transport poller (pollCustomAgentRuns) ticks far more often and
+   had NO swipe-transition awareness of its own. Sequence: poller sees the
+   NEW swipe's run first and applies it fresh on top of the OLD swipe's
+   still-un-reverted sheet state; THEN processChatMessage's late revert of
+   the OLD bucket finally fires, restoring prev-values captured when the
+   OLD bucket was journaled — which stomps the sheet back past the value
+   the poller just computed, discarding BOTH swipes' effects. The fix is
+   revert-before-apply, unconditionally, from ONE function every caller
+   that's about to apply a swipe's mutations calls FIRST — never after.
+
+   Call sites (all three MUST call this before their own apply):
+     (a) pollCustomAgentRuns's apply loop, per tag-bearing run row, BEFORE
+         applyStateTagsWithDedup — incomingSigs from that row's own parsed
+         tags (normalized). This is the NEW call site that closes the wipe:
+         the poller now reverts the old bucket itself instead of relying on
+         the narrator's much-later revert to ever catch up.
+     (b) processChatMessage's tag-bearing path, before its apply —
+         incomingSigs from the DOM tags just parsed.
+     (c) processChatMessage's T2b bucket-only (tag-less) path — empty
+         incomingSigs (nothing to statically match against).
+
+   Atomicity / reentrancy: the lastSeenIdx check, the revert, the swipe-back
+   reapply, and the lastSeenIdx STAMP all happen inside this one function's
+   SYNCHRONOUS body — no `await`, no `.then()`, no callback anywhere in
+   this function. JS is single-threaded and run-to-completion: two async
+   callers (the poller's fetch .then() and the narrator's fetch .then())
+   can only ever observe this function's state strictly BEFORE it starts or
+   strictly AFTER it fully returns — never mid-way. Since the lastSeenIdx
+   stamp happens at the END of the synchronous body (after the revert), a
+   second call for the SAME msgId/newIdx made by the OTHER transport (a
+   race on the same transition) will find lastSeenIdx already equal to
+   newIdx and take the early no-op branch — the revert can only ever fire
+   once per transition, however many callers discover it. This is the
+   entire mechanism that makes "poller-first" and "DOM-first" both safe
+   without any lock, mutex, or explicit coordination between the two
+   transports.
+
+   Returns false when no transition was handled (idx unresolved, no prior
+   history, or idx unchanged) — the caller proceeds with its own normal
+   apply. Returns an object {reverted, reappliedFromJournal, oldBucketKey,
+   newBucketKey} when a transition WAS handled; reappliedFromJournal=true
+   means the caller must NOT also run its own normal apply for this exact
+   observation (swipe-BACK is satisfied entirely from the journal — see
+   processChatMessage's existing early-return-after-reapply comment,
+   preserved verbatim in spirit here, just centralized). */
+function mrrHandleSwipeTransition(msgId, newIdx, incomingSigs) {
+  if (newIdx === null || newIdx === undefined) return false;
+  var priorIdx = mrrMutationJournal.lastSeenIdx[msgId];
+  if (priorIdx === undefined || priorIdx === newIdx) {
+    /* No transition to handle (first-ever observation of this msgId, or
+       idx hasn't actually changed since the last caller — including a
+       second transport racing the SAME transition, per the reentrancy
+       guarantee above). Still stamp forward when idx is a genuinely new
+       baseline (priorIdx undefined) so a later comparison has something
+       to compare against — matches the original per-caller behavior of
+       always stamping whenever idx resolves. */
+    if (priorIdx === undefined) mrrMutationJournal.lastSeenIdx[msgId] = newIdx;
+    return false;
+  }
+  var oldBucketKey = mrrProcessedKey(msgId, priorIdx);
+  var oldBucket = mrrMutationJournal.buckets[oldBucketKey];
+  var reverted = false;
+  if (oldBucket && oldBucket.entries.length && !oldBucket.reverted) {
+    mrrRevertBucket(oldBucketKey, incomingSigs || {});
+    log("state-mutator: swipe change on " + msgId + " (" + priorIdx + " -> " + newIdx + ") reverted bucket " + oldBucketKey);
+    reverted = true;
+  }
+  var newBucketKey = mrrProcessedKey(msgId, newIdx);
+  var newBucket = mrrMutationJournal.buckets[newBucketKey];
+  var reappliedFromJournal = false;
+  if (newBucket && newBucket.reverted) {
+    mrrReapplyBucket(newBucketKey);
+    reappliedFromJournal = true;
+    log("state-mutator: swipe-back re-applied bucket " + newBucketKey + " from journal");
+  }
+  /* The stamp is the LAST statement in this synchronous body — see the
+     atomicity comment above for why that ordering is load-bearing. */
+  mrrMutationJournal.lastSeenIdx[msgId] = newIdx;
+  mrrSaveMutationJournal();
+  return { reverted: reverted, reappliedFromJournal: reappliedFromJournal, oldBucketKey: oldBucketKey, newBucketKey: newBucketKey };
 }
 
 /* FIX-2 (round-5 critical): closes an out-of-window replay hole WITHOUT
@@ -15871,66 +16002,38 @@ function processChatMessage(node) {
     resolveSwipeIndexForMessage(scanChatId, msgId).then(function (idx) {
       if (state.chatId !== scanChatId) return; /* chat switched mid-fetch — stale, ignore */
 
-      /* B2-R (round 7) — swipe-change detection, BEFORE the dedup gate.
-         Only meaningful when idx actually resolved to a number AND we have
-         a prior lastSeenIdx for this msgId to compare against; an
-         unresolvable idx (fetch failure / out-of-window) can never be
-         "changed from" anything, so it falls straight through unchanged.
-         ALWAYS revert the bucket we're leaving (whichever was last active,
-         priorIdx) before deciding what happens to the bucket we're
-         arriving at — this is what makes an A->B->A round-trip restore A
-         EXACTLY. An earlier draft only reverted the OLD bucket on a
-         forward swipe and skipped straight to mrrReapplyBucket on a
-         swipe-back, which left the bucket being swiped AWAY FROM
-         (B) still active underneath A's reapplied entries — caught by the
-         session probe harness's (scratchpad-only, not in this repo) A->B->A
-         round-trip probe, which computed the wrong restored value until
-         this was fixed. */
-      if (idx !== null && idx !== undefined) {
-        var priorIdx = mrrMutationJournal.lastSeenIdx[msgId];
-        if (priorIdx !== undefined && priorIdx !== idx) {
-          var oldBucketKey = mrrProcessedKey(msgId, priorIdx);
-          var oldBucket = mrrMutationJournal.buckets[oldBucketKey];
-          if (oldBucket && oldBucket.entries.length && !oldBucket.reverted) {
-            /* T2c: empty incomingSigs when !isTagBearing — a tag-less
-               (runs-transport) swipe always fully reverts here; see the
-               CHANGELOG/COUPLINGS churn note for why this is the
-               accepted, documented trade-off rather than the fuller
-               poller-deferred variant. */
-            var incomingSigs = mrrComputeIncomingSigs(tags);
-            mrrRevertBucket(oldBucketKey, incomingSigs);
-            log("state-mutator: swipe change on " + msgId + " (" + priorIdx + " -> " + idx + ") reverted bucket " + oldBucketKey);
-          }
-
-          var newBucketKey = mrrProcessedKey(msgId, idx);
-          var newBucket = mrrMutationJournal.buckets[newBucketKey];
-          if (newBucket && newBucket.reverted) {
-            /* Swipe-BACK to a previously-journaled (and since-reverted)
-               swipe: re-apply from ITS journal, bypassing the dedup gate
-               entirely (point 5 — plain-anchor dedup would silently
-               swallow identical content re-applied through the normal
-               path, since the anchor was already marked applied the first
-               time). processedMessageIds already carries this bucket's key
-               true from its original apply — that flag is deliberately
-               NEVER cleared, so the dedup-gated normal path below could
-               never re-admit it on its own; this is the ONLY sanctioned
-               way back in. */
-            mrrReapplyBucket(newBucketKey);
-            mrrMutationJournal.lastSeenIdx[msgId] = idx;
-            mrrSaveMutationJournal();
-            processedMessageIds[newBucketKey] = true;
-            mrrProcessedTextMemo[msgId] = text;
-            saveProcessedMessageIds();
-            log("state-mutator: swipe-back re-applied bucket " + newBucketKey + " from journal");
-            return; /* hideStateTagsInElement already ran synchronously below, before this async callback started */
-          }
-          /* Otherwise: forward swipe to a genuinely new (or never-yet-
-             reverted) index — fall through to the normal apply path below,
-             which journals the new swipe's tags fresh under newBucketKey. */
-        }
-        mrrMutationJournal.lastSeenIdx[msgId] = idx;
-        mrrSaveMutationJournal();
+      /* Round-12 F2: swipe-change detection now routes through the ONE
+         shared transition owner, mrrHandleSwipeTransition — BEFORE the
+         dedup gate, BEFORE any apply. See that function's header for the
+         full wipe-bug postmortem and the atomicity/reentrancy guarantee
+         that makes it safe for both this path and the poller to race the
+         same transition. incomingSigs is the DOM tags' sigs when
+         tag-bearing (T2c static-skip needs to know what the arriving
+         swipe is about to re-assert), empty for the tag-less T2b path —
+         a tag-less swipe always fully reverts (see the CHANGELOG/
+         COUPLINGS churn note for why that trade-off is accepted rather
+         than trying to divine intent with no DOM tags to inspect). */
+      var incomingSigs = isTagBearing ? mrrComputeIncomingSigs(tags) : {};
+      var transition = mrrHandleSwipeTransition(msgId, idx, incomingSigs);
+      if (transition && transition.reappliedFromJournal) {
+        /* Swipe-BACK to a previously-journaled (and since-reverted) swipe
+           was satisfied entirely from the journal by the transition
+           function — bypassing the dedup gate entirely (point 5: plain-
+           anchor dedup would silently swallow identical content re-
+           applied through the normal path, since the anchor was already
+           marked applied the first time). processedMessageIds already
+           carries this bucket's key true from its original apply — that
+           flag is deliberately NEVER cleared, so the dedup-gated normal
+           path below could never re-admit it on its own; this was the
+           ONLY sanctioned way back in, and still is — just centralized. */
+        processedMessageIds[transition.newBucketKey] = true;
+        mrrProcessedTextMemo[msgId] = text;
+        saveProcessedMessageIds();
+        return; /* hideStateTagsInElement already ran synchronously below, before this async callback started */
       }
+      /* Otherwise (no transition, or a forward swipe to a genuinely new /
+         never-yet-reverted index): fall through to the normal apply path
+         below, which journals the new swipe's tags fresh. */
 
       if (!isTagBearing) {
         /* T2b: bucket-bearing, tag-less message — swipe-change detection
@@ -16304,24 +16407,41 @@ function pollCustomAgentRuns(chatId) {
           var journalKey = (mid && swipeMap && Object.prototype.hasOwnProperty.call(swipeMap, mid))
             ? mrrProcessedKey(mid, swipeMap[mid])
             : anchor; /* unresolvable — plain bucket */
-          /* T2b (round 11): stamp lastSeenIdx here too, mirroring what
-             processChatMessage's own swipe-change block does whenever an
-             index resolves — WITHOUT this, a mutation delivered ONLY via
-             the runs transport (the State Mutator's tags never land in
-             chat DOM) leaves mrrMutationJournal.lastSeenIdx[mid]
-             permanently unset, so the FIRST time processChatMessage ever
-             observes this msgId (now reachable at all thanks to
-             mrrJournalHasBucketsFor's gate) its `priorIdx` read is
-             undefined and the `priorIdx !== undefined` guard silently
-             skips swipe-change detection forever — the bucket exists,
-             gets reached, but the comparison that would trigger revert
-             never fires. Confirmed via probe (T2b-i) before this line was
-             added: revert did not fire without it. */
-          if (mid && swipeMap && Object.prototype.hasOwnProperty.call(swipeMap, mid)) {
-            mrrMutationJournal.lastSeenIdx[mid] = swipeMap[mid];
-          }
+          /* Round-12 F2 (supersedes round 11's bare lastSeenIdx stamp
+             here, absorbed into the shared owner): the poller now calls
+             mrrHandleSwipeTransition itself, BEFORE this row's apply —
+             not just a stamp. Round 11 only stamped lastSeenIdx from the
+             poller, leaving the actual REVERT to processChatMessage's
+             ~1.5s-debounced DOM observer, which the poller (ticking every
+             ROUTE_POLL_MS, far more often) could easily race ahead of:
+             live evidence showed the poller applying the NEW swipe's run
+             BEFORE the narrator's late revert of the OLD bucket fired,
+             and that late revert then stomped the sheet back past the
+             poller's freshly-applied value, wiping both swipes' effects.
+             Calling the shared transition function here — with THIS row's
+             own parsed-tag sigs as incomingSigs, so T2c static-skip still
+             applies — means the OLD bucket is reverted (or T2c-preserved)
+             synchronously, in this same poll cycle, strictly BEFORE
+             applyStateTagsWithDedup below ever runs for the new swipe.
+             The narrator's own later call to mrrHandleSwipeTransition for
+             the SAME msgId/idx is then a safe no-op (see that function's
+             atomicity/reentrancy comment) rather than a second, late,
+             wipe-causing revert.
+             Round-12 F2 fix (caught by probe R13 regressing): the
+             transition call — and mrrComputeIncomingSigs feeding it,
+             which walks state.ruleset.derivedStats via
+             normalizeStateAttrs and CAN throw on malformed ruleset data —
+             must live INSIDE the same per-row try/catch as the apply
+             below, not before it. Outside the try, a throw here would
+             abort the whole row silently (no "threw while applying"
+             warn, row never marked processed but also never retried
+             honestly) instead of going through fix 7's existing
+             throw-containment path. */
           total += entry.tags.length;
           try {
+            if (mid && swipeMap && Object.prototype.hasOwnProperty.call(swipeMap, mid)) {
+              mrrHandleSwipeTransition(mid, swipeMap[mid], mrrComputeIncomingSigs(entry.tags));
+            }
             applied += applyStateTagsWithDedup(entry.tags, anchor, journalKey);
             if (entry.runId != null) { processedRunIds[entry.runId] = true; sawNew = true; }
           } catch (e) {
@@ -16481,8 +16601,11 @@ function init() {
      as saveSheet so multiple activations on a fast SPA route change
      coalesce into one PATCH. */
   if (typeof scheduleAutoSync === "function") scheduleAutoSync();
-  /* Add this ruleset's overlay agents to the current chat's active list so the engine actually fires them. No-op on subsequent loads once the chat has them. */
-  if (typeof reconcileActiveAgents === "function") reconcileActiveAgents();
+  /* Add this ruleset's overlay agents to the current chat's active list so the engine actually fires them. No-op on subsequent loads once the chat has them.
+     Round-12 F1: rebind=true — this IS the deliberate-activation call site (the user just
+     picked/switched the ruleset, which is what got us here), so a chat stamped for a
+     different ruleset must be REBOUND, not skipped. */
+  if (typeof reconcileActiveAgents === "function") reconcileActiveAgents(true);
 }
 
 /* Console-callable diagnostics. Open DevTools and run:
