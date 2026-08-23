@@ -16145,7 +16145,23 @@ function hideStateTagsInElement(node) {
   if (wrapped !== html) node.innerHTML = wrapped;
 }
 
-function processChatMessage(node) {
+/* Round-15 hotfix: `isChildListOrigin` (second arg, defaults falsy) —
+   true when at least one mutation in this debounce window was a
+   childList mutation (a settled element add/move/remove), false when
+   EVERY mutation in the window was characterData-only (streamed text
+   landing via node.nodeValue writes — round 14's Task A). Gates the
+   hideStateTagsInElement call at the tail of this function: see that
+   call site's own comment for why a characterData-only observation must
+   never reach it — the short version is a live regression this round
+   (Corey: "regenerate does nothing") where hideStateTagsInElement's
+   node.innerHTML rewrite, firing off a characterData-only observation
+   during an in-progress stream, detached the text node React was
+   actively streaming into, freezing the visible text. Detection logic
+   (swipe-index resolution, mrrHandleSwipeTransition, tag application)
+   is completely UNAFFECTED by this flag — it still runs for both
+   origins, exactly as round 14 designed. Only the destructive DOM
+   rewrite is now childList-gated. */
+function processChatMessage(node, isChildListOrigin) {
   if (!node || !node.getAttribute) return;
   var msgId = node.getAttribute("data-message-id");
   if (!msgId) return;
@@ -16319,9 +16335,32 @@ function processChatMessage(node) {
       log("state-mutator: applied " + applied + "/" + tags.length + " mutation(s) from message " + key);
     });
   }
-  /* Visual hiding runs every observation — Marinara may re-render the
-     message and unwrap our spans; we re-wrap on next mutation. */
-  hideStateTagsInElement(node);
+  /* Round-15 hotfix: visual hiding used to run on every observation
+     unconditionally — now gated to childList-origin observations only.
+     hideStateTagsInElement does `node.innerHTML = wrapped` (a full
+     child-node replacement) whenever a complete `[mrr-state: ...]` tag
+     is present and not yet wrapped. Round 14 made characterData
+     mutations (streamed text landing via node.nodeValue writes) ALSO
+     reach this function once the message goes quiet for the debounce
+     window — but an in-progress regeneration can have a natural pause
+     ≥1500ms mid-stream (between sub-agent phases, thinking segments,
+     etc), so "quiet" does not always mean "stream is actually done".
+     Firing the innerHTML rewrite during such a pause detaches whatever
+     text node React is mid-stream into (React holds a reference to that
+     node and writes to it directly; the rewrite replaces it with a new
+     node parsed from the HTML string) — React's subsequent writes then
+     land on the orphaned node, and the visible message text freezes
+     from that point forward while generation silently continues
+     server-side. A childList mutation, by contrast, only happens when
+     Marinara actually adds/moves/removes elements — the message
+     settling into its final DOM shape — which is exactly when rewriting
+     text nodes is safe. characterData-only observations still run the
+     full swipe-detection path above (bucket check, resolveSwipeIndex,
+     mrrHandleSwipeTransition, tag application) — only this destructive
+     rewrite is skipped for them; the NEXT childList-origin observation
+     (or the initial-sweep/already-processed re-wrap path) catches the
+     hide once the message genuinely settles. */
+  if (isChildListOrigin) hideStateTagsInElement(node);
 }
 
 /* ─── Custom-agent run capture (B1 replacement for the dead console sniff) ───
@@ -16729,6 +16768,13 @@ function watchChatMessages() {
      so pending parses cannot fire after the extension is disabled. */
   var pendingTokens = Object.create(null);
   var nextToken = 0;
+  /* Round-15 hotfix: per-message "was any observation in this debounce
+     window a childList mutation" flag, OR-merged across every schedule()
+     call for that msgId until the timer actually fires (see schedule()
+     and processChatMessage's new second argument, below, for why this
+     exists — the short version: hideStateTagsInElement's innerHTML
+     rewrite must NEVER run off a characterData-only observation). */
+  var pendingOrigin = Object.create(null);
   function findParentMessage(el) {
     /* Round-14 Task A: a characterData mutation record's `target` is the
        TEXT NODE itself (nodeType 3), not an element — the original
@@ -16745,31 +16791,45 @@ function watchChatMessages() {
     }
     return null;
   }
-  function schedule(msgEl) {
+  /* Round-15 hotfix: `isChildListOrigin` — true when THIS particular
+     observation came from a childList mutation (a new/moved/removed
+     element), false for a characterData-only one (streamed text landing
+     via node.nodeValue writes, per round 14's Task A). OR-merged into
+     pendingOrigin[msgId] rather than overwritten, so a childList
+     observation earlier in the same debounce window is never forgotten
+     by a later characterData-only one before the timer fires. */
+  function schedule(msgEl, isChildListOrigin) {
     if (!msgEl || !msgEl.getAttribute) return;
     var msgId = msgEl.getAttribute("data-message-id");
     if (!msgId) return;
+    pendingOrigin[msgId] = !!pendingOrigin[msgId] || !!isChildListOrigin;
     var myToken = ++nextToken;
     pendingTokens[msgId] = myToken;
     marinara.setTimeout(function () {
       if (pendingTokens[msgId] !== myToken) return; /* superseded by newer schedule */
       delete pendingTokens[msgId];
-      processChatMessage(msgEl);
+      var wasChildList = !!pendingOrigin[msgId];
+      delete pendingOrigin[msgId];
+      processChatMessage(msgEl, wasChildList);
     }, 1500);
   }
 
   var obs = new MutationObserver(function (records) {
     for (var i = 0; i < records.length; i++) {
       var rec = records[i];
+      var isChildList = rec.type === "childList";
       var msg = findParentMessage(rec.target);
-      if (msg) schedule(msg);
+      if (msg) schedule(msg, isChildList);
       for (var j = 0; j < rec.addedNodes.length; j++) {
         var n = rec.addedNodes[j];
         if (!n || n.nodeType !== 1) continue;
-        if (n.hasAttribute && n.hasAttribute("data-message-id")) schedule(n);
+        /* addedNodes only ever exist on a childList record — always
+           childList-origin regardless of the outer isChildList check
+           above (which is redundant here but kept explicit on purpose). */
+        if (n.hasAttribute && n.hasAttribute("data-message-id")) schedule(n, true);
         if (n.querySelectorAll) {
           var msgs = n.querySelectorAll("[data-message-id]");
-          for (var k = 0; k < msgs.length; k++) schedule(msgs[k]);
+          for (var k = 0; k < msgs.length; k++) schedule(msgs[k], true);
         }
       }
     }
@@ -16829,7 +16889,11 @@ function watchChatMessages() {
     if (mid && isMessageProcessed(mid, null)) { /* FIX-2: shared helper — plain, composite-exact (n/a, idx null), and prefix-scan checks */
       hideStateTagsInElement(el);
     } else {
-      schedule(el);
+      /* Round-15 hotfix: these are static, already-rendered elements at
+         extension-load time (not a live stream) — childList-origin=true
+         so the initial sweep keeps its pre-round-14 behavior (full
+         processChatMessage including hide) unchanged. */
+      schedule(el, true);
     }
   }
 }
