@@ -6,8 +6,8 @@ Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara
 
 The fastest path: grab the self-contained release at [`releases/v0.4.0/`](releases/v0.4.0/) and follow [`releases/v0.4.0/INSTALL-GUIDE.md`](releases/v0.4.0/INSTALL-GUIDE.md). It includes:
 
-- **The framework JS** to paste into Marinara's Extensions panel
-- **Two complete reference rulesets** (D&D 5e and Exalted 3e) with bundle + agents pre-built, ready to paste
+- **The importable extension package** (`Marinara-RPG-Extension.extension.zip`) for Marinara's External Extensions import (Settings → Addons; requires engine 2.4.3+ with `ENABLE_EXTERNAL_EXTENSIONS=true` and the Danger Zone import toggle — see `INSTALL-GUIDE.md`)
+- **Two complete reference rulesets** (D&D 5e and Exalted 3e) with bundle + agents pre-built, ready to import
 - **Seven AI-feedable build documents** so you can have ChatGPT, Claude.ai, or any chat AI author a ruleset for any other system (GURPS, Cyberpunk RED, Vampire, Mörk Borg — anything)
 - **Step-by-step install + build guides** in plain language for non-technical users
 

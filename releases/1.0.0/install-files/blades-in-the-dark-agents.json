@@ -1,5 +1,5 @@
 {
-  "schema": "mrrp-agents",
+  "schema": "mrr-agents",
   "version": 1,
   "rulesetId": "blades-in-the-dark",
   "rulesetName": "Blades in the Dark",

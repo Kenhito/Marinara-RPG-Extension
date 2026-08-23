@@ -2,31 +2,29 @@
 
 This document defines every role agent the framework provides, the system-agnostic baseline behavior of each, and the override mechanism that tunes any role to a specific RPG system.
 
-The architecture lets you build a working ruleset for any system with **zero** per-system agent files (you inherit the shared baselines), or with as many overrides as the system warrants. Exalted ships with three overrides because its damage model and sorcery rules don't fit a generic baseline cleanly. D&D ships with one override because its mechanics align well with the baseline.
+The architecture lets you build a working ruleset for any system with **zero** per-system agent files (you inherit the shared baselines), or with as many overrides as the system warrants. Exalted ships a state-mutator override plus two parallel-phase trackers because its damage model, sorcery rules, and anima economy don't fit a generic baseline cleanly. D&D ships with one override because its mechanics align well with the baseline.
 
 ## File-system contract
 
 ```
 <repo-root>/
 ├── agents/                              # SHARED BASELINES — system-agnostic
-│   ├── state-mutator.md
-│   ├── state-reminder.md
-│   ├── combat-adjudicator.md
-│   ├── lore-query.md
-│   └── npc-bookkeeper.md
+│   ├── combat-overseer.md
+│   ├── context-fuser.md
+│   └── state-mutator.md
 └── rulesets/
     └── <your-system>/
         ├── ruleset.json
         ├── gm-agent.md                  # the main GM agent (always per-system)
         ├── lorebook.json
-        └── agents/                      # OVERRIDES — system-specific
+        └── agents/                      # OVERRIDES + PARALLEL TRACKERS — system-specific
             ├── state-mutator.md         # only present if your system needs custom mutation rules
-            └── combat-adjudicator.md    # only present if combat resolution differs from baseline
+            └── <tracker>.md             # optional parallel-phase tracker (no shared baseline)
 ```
 
-`tools/build-agents.mjs` reads both directories. For each role, the per-system override at `rulesets/<system>/agents/<role>.md` wins if present; otherwise the shared baseline at `agents/<role>.md` applies. The `main` agent is always system-specific (no shared baseline) and lives at `rulesets/<system>/gm-agent.md`.
+`tools/build-agents.mjs` reads both directories. For each role, the per-system override at `rulesets/<system>/agents/<role>.md` wins if present; otherwise the shared baseline at `agents/<role>.md` applies. The `main` agent is always system-specific (no shared baseline) and lives at `rulesets/<system>/gm-agent.md`. Per-system `parallel` trackers likewise live only in the ruleset directory — the resources they track exist only in that system.
 
-The output is `rulesets/<system>/agents.json` — a single envelope holding all six agent prompts that the user imports through Marinara's Import Agents dialog.
+The output is `rulesets/<system>/agents.json` — a single envelope holding every agent prompt that the user imports through Marinara's Import Agents dialog.
 
 ## The state-mutator tag protocol
 
@@ -78,9 +76,35 @@ The state-mutator's job is to map narrative to **canonical schema field names**.
 
 Length: 2,000–8,000 characters. Phase: `pre_generation`. Result type: `context_injection` (default fallback).
 
+### combat-overseer
+
+Shared baseline at `agents/combat-overseer.md`. Pre-generation. Two coordinated surfaces in one output:
+
+- **Combat math** — wakes only during combat (the prompt itself short-circuits with "No combat active." in social/ambient scenes). Restates initiative, action economy, attack/damage formulas, conditions, range, and defensive options in the active system's terms.
+- **NPC roster** — tracks active NPC HP, conditions, tactical state, and telegraphed intent across turns. Stays silent (`"No NPCs to track."`) outside combat or NPC-rich scenes.
+
+Override when:
+
+- Your system has **non-trivial action economy** (Exalted's Withering / Decisive split, PbtA's "tell me how you want it" framing, Forged-in-the-Dark's position/effect interplay).
+- Your system has **named maneuvers / stunts** (Pathfinder 2e's three-action economy, Mythic Bastionland's complications).
+
+### context-fuser
+
+Shared baseline at `agents/context-fuser.md`. Pre-generation. Two coordinated surfaces in one output:
+
+- **Rules query** — fires only when the latest user message is a rules question (`"How does grappling work?"`, `"What's the DC for picking a lock?"`). Pulls answers from the installed ruleset content and lorebook first, system RAW only as fallback.
+- **State reminder** — surfaces current PC state every turn so the GM doesn't drift.
+
+Override when:
+
+- Your system has **computed maximums** the AI needs to see live (Exalted: `Personal Motes max = Essence × 3 + 10`). The override computes those formulas in its output.
+- Your system has **multi-counter resources** to summarize (Exalted's typed damage display: `bashing 3 · lethal 2 · aggravated 0 (wound penalty -2)`).
+
+A good override also includes a **field-name reminder** at the bottom of the state section — listing the canonical `field=` names the state-mutator accepts. Pairing this with the state-mutator's FORBIDDEN section means the model sees the right names from two angles every turn.
+
 ### state-mutator
 
-Shared baseline at `agents/state-mutator.md`. Override at `rulesets/<system>/agents/state-mutator.md` when:
+Shared baseline at `agents/state-mutator.md`. Pre-generation; the only agent whose output leads to sheet writes. Override at `rulesets/<system>/agents/state-mutator.md` when:
 
 - Your system has **typed damage** (Bashing/Lethal/Aggravated like Exalted, or Slashing/Bludgeoning/Piercing like D&D 5e tracked separately). Override teaches the AI which `field` names route to typed damage.
 - Your system has **non-trivial resource costs** the model must parse (Exalted Charm cost lines like `Cost: 5m 1wp` get auto-converted into mote and Willpower deltas; D&D spell slots).
@@ -96,33 +120,17 @@ Override structure (recommended):
 6. **Conditions vocabulary** — system's named conditions
 7. **Examples** — concrete narrative → tag pairings, ideally one per common scenario
 
-### state-reminder
+### pre-input-transformer (optional)
 
-Shared baseline at `agents/state-reminder.md`. Surfaces current PC state every turn so the GM doesn't drift. Override when:
+Pre-generation. Translates D&D-flavored player input ("I roll Strength") into the ruleset's own vocabulary before generation. Auto-derived from `ruleset.json` `vocabularyHints[]` (or a full author-supplied prompt); omitted from bundles that don't need it.
 
-- Your system has **computed maximums** the AI needs to see live (Exalted: `Personal Motes max = Essence × 3 + 10`). The override computes those formulas in its output.
-- Your system has **multi-counter resources** to summarize (Exalted's typed damage display: `bashing 3 · lethal 2 · aggravated 0 (wound penalty -2)`).
+### Per-system parallel trackers (optional, at most one per ruleset)
 
-A good override also includes a **field-name reminder** at the bottom — listing the canonical `field=` names the state-mutator accepts. Pairing this with the state-mutator's FORBIDDEN section means the model sees the right names from two angles every turn.
+`parallel`-phase agents that track a system-specific resource alongside the narrator without blocking it — e.g., Exalted 3e's anima-banner / charm-cooldown tracking, V20's `blood-pool-tracker`. They live only at `rulesets/<system>/agents/<role>.md` — no shared baseline, because the tracked resource exists only in that system. A new mechanic should be a section of an existing agent's prompt unless it genuinely cannot be.
 
-### combat-adjudicator
+## Enablement — per game, at load time
 
-Shared baseline. Wakes only during combat (the prompt itself short-circuits with "No combat active." in social/ambient scenes). Override when:
-
-- Your system has **non-trivial action economy** (Exalted's Withering / Decisive split, PbtA's "tell me how you want it" framing, Forged-in-the-Dark's position/effect interplay).
-- Your system has **named maneuvers / stunts** (Pathfinder 2e's three-action economy, Mythic Bastionland's complications).
-
-### lore-query
-
-Shared baseline. Rarely overridden. Wakes only when the latest user message is a rules question (`"How does grappling work?"`, `"What's the DC for picking a lock?"`). Pulls answers from the installed lorebook + system RAW.
-
-### npc-bookkeeper
-
-Shared baseline. Rarely overridden. Tracks active NPC HP, conditions, tactical state across turns. Stays silent (`"No NPCs to track."`) outside combat or NPC-rich scenes.
-
-## Default-disabled philosophy
-
-All agents except `main` install **disabled by default**. Every additional pre-generation agent costs one model call per turn. The user explicitly enables only the ones they want. Bundle authors can opt a specific agent into enabled-on-install by setting `"enabled": true` in the agents.json entry — but the convention is leave it disabled unless the agent is truly load-bearing for the system.
+The bundle installs the agents, but they are not active until the user **enables them for each game** after the game launches (at load time, not during generation). The ruleset's lorebook must also be **manually attached to the game** — without it the agents have no ruleset info to follow and will misfire.
 
 The lorebook entry "Optional Sub-Agents — what they do and how to enable" exists in every shipped bundle so users can ask the in-engine chat about them.
 

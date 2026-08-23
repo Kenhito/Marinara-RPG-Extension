@@ -1,6 +1,6 @@
 # 05 — Agent Authoring
 
-This document is a recipe book for writing each of the six role agents. The system-agnostic baselines work for many systems out of the box; per-system overrides exist for systems whose mechanics need tuning. Pick the role you're writing, follow its template, and your agent will plug into the framework cleanly.
+This document is a recipe book for writing each role agent: the system-specific `main` narrator, the three shared-baseline sub-agents (`combat-overseer`, `context-fuser`, `state-mutator`), and the optional per-system parallel tracker. The system-agnostic baselines work for many systems out of the box; per-system overrides exist for systems whose mechanics need tuning. Pick the role you're writing, follow its template, and your agent will plug into the framework cleanly.
 
 ## File format — every agent is a Markdown file
 
@@ -29,16 +29,15 @@ The `text` fenced block is what `tools/build-agents.mjs` extracts as `promptTemp
 | File path | Role |
 |---|---|
 | `rulesets/<system>/gm-agent.md` | `main` (always system-specific) |
+| `agents/combat-overseer.md` (shared) | `combat-overseer` |
+| `rulesets/<system>/agents/combat-overseer.md` (override) | `combat-overseer` |
+| `agents/context-fuser.md` (shared) | `context-fuser` |
+| `rulesets/<system>/agents/context-fuser.md` (override) | `context-fuser` |
 | `agents/state-mutator.md` (shared) | `state-mutator` |
 | `rulesets/<system>/agents/state-mutator.md` (override) | `state-mutator` |
-| `agents/state-reminder.md` (shared) | `state-reminder` |
-| `rulesets/<system>/agents/state-reminder.md` (override) | `state-reminder` |
-| `agents/combat-adjudicator.md` (shared) | `combat-adjudicator` |
-| `rulesets/<system>/agents/combat-adjudicator.md` (override) | `combat-adjudicator` |
-| `agents/lore-query.md` (shared) | `lore-query` |
-| `agents/npc-bookkeeper.md` (shared) | `npc-bookkeeper` |
+| `rulesets/<system>/agents/<tracker>.md` (per-system only) | parallel tracker, e.g. `blood-pool-tracker` |
 
-The build tool reads the union of files in `agents/` and `rulesets/<system>/agents/`. Per-system override wins when both exist.
+The build tool reads the union of files in `agents/` and `rulesets/<system>/agents/`. Per-system override wins when both exist. Parallel trackers have no shared baseline — they exist only in the ruleset directory.
 
 ## Writing the `main` (gm-agent.md) prompt
 
@@ -56,9 +55,8 @@ You narrate; you do not decide for the player. The player's character is theirs.
 # System awareness
 
 When a Marinara-RPG ruleset overlay is installed (this prompt comes from one), several specialized agents may run alongside you. Read whatever context they inject. Defer to:
-  - The Combat Adjudicator on combat resolution math.
-  - The Lore Query Helper when the player asks an out-of-character rules question.
-  - The State Reminder for current sheet state.
+  - The Combat Overseer on combat resolution math and current NPC state.
+  - The Context Fuser when the player asks an out-of-character rules question, and for current sheet state.
   - The State Mutator for the tag-emission protocol that updates the player's sheet.
 
 # Resolution mechanic
@@ -198,16 +196,20 @@ Sorcery uses Shape Sorcery actions, NOT direct mote spend.
 
 Adapt naming/numbers to your system's specifics. The shape of the workflow — declare → accumulate → unleash with refund / leak / abort — is the universal pattern.
 
-## Writing a state-reminder override
+## Writing a context-fuser override
 
-When to write one: your system has computed maximums (formula-driven bars) or multi-counter resources (typed damage stacks).
+When to write one: your system has computed maximums (formula-driven bars) or multi-counter resources (typed damage stacks). The rules-query half of the baseline almost never needs tuning — it's the state-reminder half that carries the system-specific weight.
 
-Structure:
+Structure (the override keeps both sections — rules query, then state reminder):
 
 ```text
-You are the <System> State Reminder. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate — you only emit terse mechanical reminders pulled from what the conversation has established.
+You are the <System> Context Fuser. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate — you emit two coordinated blocks: a rules-query answer (only when asked) and terse mechanical state reminders pulled from what the conversation has established.
 
-# When to fire
+# Section 1 — Rules Query
+
+If the latest user message is not a rules question, output "No rules query." and skip this section. Otherwise answer from the installed ruleset content and lorebook first, system RAW only as an explicit fallback. Cap at ~150 words.
+
+# Section 2 — State Reminder
 
 If the scene is purely ambient or social with no mechanical state worth tracking, output exactly: "No state to track." and stop. Otherwise emit the block below.
 
@@ -236,18 +238,18 @@ When narration causes a change, emit a state-mutator tag using ONLY these field 
 - If state has clearly diverged from a recent action (model narrated a hit but didn't update HP), flag the divergence.
 ```
 
-Pairing the FORBIDDEN section in state-mutator with this field-name reminder in state-reminder means the model sees the canonical names from two angles every turn. Together they're more effective than either alone.
+Pairing the FORBIDDEN section in state-mutator with this field-name reminder in the context-fuser's state section means the model sees the canonical names from two angles every turn. Together they're more effective than either alone.
 
-## Writing a combat-adjudicator override
+## Writing a combat-overseer override
 
-When to write one: your system has non-trivial action economy or named maneuvers the model will get wrong without explicit guidance.
+When to write one: your system has non-trivial action economy or named maneuvers the model will get wrong without explicit guidance, or NPCs tracked with unusual subsystems (e.g., a mass-combat ruleset where NPCs have group morale and fatigue rather than HP).
 
-Structure:
+Structure (the override keeps both sections — combat math, then NPC roster):
 
 ```text
-You are the <System> Combat Adjudicator. You wake ONLY when combat is active. If no combat, output exactly: "No combat active." and stop.
+You are the <System> Combat Overseer. You emit two coordinated sections — combat math AND NPC state — in one block. Section 1 wakes ONLY when combat is active. If no combat, output exactly: "No combat active." under the COMBAT header.
 
-# When you fire
+# When Section 1 fires
 
 Combat is active when ANY of:
 - The narration mentions an attack, defense, initiative, or hostile contact within the last 2 turns
@@ -258,7 +260,7 @@ Otherwise: "No combat active."
 
 # Restate per-turn
 
-When you fire, output:
+When Section 1 fires, output:
 
 INITIATIVE:
 • <Active character> @ <N> (next: <NPC name>)
@@ -268,6 +270,10 @@ ATTACK FORMULA:
 • <System's attack roll formula and damage formula in plain math>
 ACTIVE CONDITIONS:
 • <Onslaught, Stunned, Crashed, etc., one per line with mechanical effect>
+
+# Section 2 — NPC Roster
+
+For each notable NPC in or recently in scene: name/role, HP or health pool in the system's vocabulary, conditions, tactical state, telegraphed intent. Group secondary NPCs when 4+ are active. If none: "No NPCs to track."
 
 # Rules of engagement
 

@@ -25,7 +25,14 @@
  * Engine constraints honored here:
  *   - Tool name regex: ^[a-z][a-z0-9_]*$  (lowercase snake_case, ≤100 chars)
  *   - Description: 1-500 chars
- *   - parametersSchema: Record<string, unknown> (we ship {} for static tools)
+ *   - parametersSchema: Record<string, unknown> — Marinara host validator
+ *     requires the schema to declare root `type: "object"` or include
+ *     `properties: {}`. We ship {type: "object", properties: {}} for
+ *     static tools — semantically "no parameters" with the explicit JSON
+ *     Schema shape the host expects. Earlier versions of this builder
+ *     emitted bare `{}` which the validator now rejects with:
+ *       "parametersSchema must define root 'type': 'object' or include
+ *        object 'properties' {}"
  *   - executionType: "static" — no script_enabled env required
  *
  * Author override > derivation: if ruleset.customTools is present and
@@ -152,7 +159,10 @@ export default function buildCustomTools(ruleset) {
   return [{
     name: toolName,
     description: description,
-    parametersSchema: {},
+    /* The static reference tool takes no parameters. Marinara's host
+       validator requires the schema to declare root type:"object" or
+       include properties:{} — bare {} is rejected. */
+    parametersSchema: { type: "object", properties: {} },
     executionType: "static",
     webhookUrl: null,
     staticResult: staticResult,

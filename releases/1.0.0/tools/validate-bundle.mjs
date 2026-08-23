@@ -12,6 +12,7 @@ import addFormats from "ajv-formats";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join, basename } from "node:path";
+import { isPatternSafe } from "./lib/regex-safety.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -35,6 +36,24 @@ function validateFile(path) {
   if (data.ruleset && !validateRuleset(data.ruleset)) {
     for (const e of validateRuleset.errors || []) {
       errors.push("ruleset" + e.instancePath + " " + e.message);
+    }
+  }
+  // Catastrophic-backtracking check (C-2, 2026-08-22): the engine's server-side
+  // POST /regex-scripts rejects unsafe patterns at import time with a 400 — this
+  // catches that HERE, before a live install ever sees it. See
+  // tools/lib/regex-safety.mjs for provenance; macro-stripping mirrors the
+  // engine's own regex.schema.ts validatePatternSafety exactly.
+  const regexScripts = Array.isArray(data.regexScripts) ? data.regexScripts : [];
+  for (let i = 0; i < regexScripts.length; i++) {
+    const findRegex = regexScripts[i]?.findRegex;
+    if (typeof findRegex !== "string") continue;
+    const stripped = findRegex.replace(/\{\{[^}]*\}\}/g, "x");
+    if (!isPatternSafe(stripped)) {
+      errors.push(
+        `regexScripts[${i}] (${regexScripts[i]?.name || "unnamed"}): findRegex is unsafe — the engine will reject it ` +
+        `with "Regex pattern is unsafe: it may cause catastrophic backtracking" at import time. Bound every ` +
+        `*/+ quantifier on a broad class (\\s \\S \\w \\W \\d \\D . or [^...]) to a finite {n,m}.`
+      );
     }
   }
   return errors;

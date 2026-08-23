@@ -1,5 +1,5 @@
 {
-  "schema": "mrrp-agents",
+  "schema": "mrr-agents",
   "version": 1,
   "rulesetId": "dnd5e",
   "rulesetName": "Dungeons & Dragons 5th Edition",

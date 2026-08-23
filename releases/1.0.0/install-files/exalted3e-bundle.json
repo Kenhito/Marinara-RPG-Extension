@@ -1291,27 +1291,25 @@
         "position": 0
       },
       {
-        "name": "Optional Sub-Agents — what they do and how to enable",
-        "content": "The Marinara-RPG ruleset bundle ships five OPTIONAL pre-generation sub-agents that focus the main narration model on specific tasks. They are installed DISABLED by default — flip them on individually in Marinara's Settings → Agents panel. Each adds one model call per turn while enabled, so enable only what your campaign needs.\n\nThe five sub-agents:\n\n1. **state-mutator** — Instructs the narration model to emit hidden `[mrr-state: ...]` tags inside narration when the story changes a character's HP, conditions, or inventory. The extension parses these tags, applies the change to the floating sheet, and shows a confirmation toast. Without this enabled, you have to mutate the sheet by hand. Enable when: you want narration to drive the sheet automatically.\n\n2. **state-reminder** — Surfaces a short bulleted list of current player character state (HP, conditions, equipped gear, tracked resources) at the top of every turn so the narration model stays mechanically honest between messages. Enable when: long sessions or complex sheets, the model is forgetting your stats.\n\n3. **combat-adjudicator** — Wakes up only when combat is active. Restates initiative, action economy, attack/damage formulas, and conditions in the active ruleset's terms before each turn. Outputs nothing (literally \"No combat active.\") in social or ambient scenes. Enable when: you run heavy-mechanics combat encounters.\n\n4. **lore-query** — Wakes up only when the latest user message is a rules question (e.g., \"How does grappling work?\", \"What's the DC for picking a lock?\"). Answers from the installed lorebook + system RAW. Outputs nothing (\"No rules query.\") otherwise. Enable when: you frequently ask the model rules questions mid-RP.\n\n5. **npc-bookkeeper** — Tracks active and recently-engaged NPC HP, conditions, tactical state, and telegraphed intentions across turns. Outputs nothing (\"No NPCs to track.\") when no NPCs are in scene. Enable when: combat or social scenes with multiple named NPCs you want continuity on.\n\nHow to enable: Marinara → Settings → Agents → find the agent (named like \"MRR: <System> — <Role>\" for GM-mode, \"MRRP: ...\" for RP-mode) → toggle on. The agent persists across chats; toggle off any time.",
+        "name": "Sub-Agents — what they do and how to manage them",
+        "content": "Besides the main Ruleset Helper, the bundle ships a small consolidated pool of sub-agents. ALL install ENABLED by default — the bundle IS the install (Marinara's GM mode has no per-agent pick-and-choose at install time). Each enabled agent costs one extra model call per turn; on a provider that allows only one call at a time, every agent call runs one after another, so disable what your table doesn't need via Marinara -> Settings -> Agents.\n\nThe pool: combat-overseer (one pre-generation agent covering combat-math framing AND NPC roster tracking). context-fuser (one pre-generation agent covering rules-question answers AND current player-state reminders). state-mutator (the ONLY agent that changes the character sheet — it emits hidden [mrr-state: ...] tags the extension applies; covers motes, Willpower, health track (bashing/lethal/aggravated), Anima Banner state, Intimacies, XP).\npre-input-transformer (pre-generation; recasts player input in this system's vocabulary before the GM sees it).\nanima-banner-monitor (runs in parallel with narration; reports each Exalt's anima banner level from Peripheral mote spend this scene).\ncharm-cooldown-tracker (runs in parallel with narration; tracks per-scene Charm usage and Excellency draw so cooldown bookkeeping stays honest).\n\nTo disable any of them: Marinara -> Settings -> Agents -> find the agent (named like 'MRR: <System> — <Role>') -> toggle off. Keep state-mutator on if you want narration to drive the sheet automatically — it is the sole writer; with it off, sheet changes are manual.",
         "keys": [
           "sub-agent",
-          "sub agents",
-          "subagent",
-          "additional agent",
-          "additionalagent",
+          "sub agent",
+          "sub-agents",
+          "agents",
           "state-mutator",
           "state mutator",
-          "state-reminder",
-          "state reminder",
-          "combat-adjudicator",
-          "combat adjudicator",
-          "lore-query",
-          "lore query",
-          "npc-bookkeeper",
-          "npc bookkeeper",
+          "combat-overseer",
+          "combat overseer",
+          "context-fuser",
+          "context fuser",
           "enable agent",
-          "Settings → Agents",
-          "agent toggle"
+          "disable agent",
+          "agent toggle",
+          "pre-input-transformer",
+          "anima-banner-monitor",
+          "charm-cooldown-tracker"
         ],
         "position": 1,
         "tokenBudget": 2000
@@ -2745,7 +2743,7 @@
   "regexScripts": [
     {
       "enabled": true,
-      "findRegex": "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      "findRegex": "\\[skill_check:\\s{0,20}dc=\"(\\d{1,6})\"\\s{1,20}rolls=\"(\\d{1,6})\"(?:\\s{1,20}modifier=\"([+-]?\\d{1,6})\")?(?:\\s{1,20}total=\"(-?\\d{1,6})\")?\\s{1,20}result=\"(success|failure|critical|fumble)\"\\s{0,20}\\]",
       "replaceString": "$5 — rolled against difficulty $1",
       "trimStrings": [],
       "placement": [
@@ -2760,7 +2758,7 @@
     },
     {
       "enabled": true,
-      "findRegex": "\\bDC\\s+(\\d+)\\b",
+      "findRegex": "\\bDC\\s{1,20}(\\d{1,6})\\b",
       "replaceString": "difficulty $1",
       "trimStrings": [],
       "placement": [
@@ -2778,7 +2776,10 @@
     {
       "name": "exalted3e_reference",
       "description": "Returns canonical Exalted 3rd Edition reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
-      "parametersSchema": {},
+      "parametersSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "executionType": "static",
       "webhookUrl": null,
       "staticResult": "# Exalted 3rd Edition — canonical reference\n\nStoryteller-system d10 dice pools. Pool = Attribute + Ability. Successes on 7+. Tens double on PC/major-NPC rolls. Botch on a roll that shows zero successes AND at least one 1.\n\n## Dice\n- Type: `d10`\n- Notation: `Xd10 vs 7`\n\n## Resolution\n- Mode: `dice-pool`\n- Pool formula: Attribute + Ability (+ specialty +1, + stunt up to +2, + Charm dice)\n- Default target: 7\n\n## Difficulty ladder\n- **Routine** (threshold 1) — Trivial for a competent character. Often waived.\n- **Standard** (threshold 2) — Default opposed baseline.\n- **Difficult** (threshold 3) — Pushes a skilled mortal.\n- **Demanding** (threshold 4) — Few mortals can do it reliably.\n- **Legendary** (threshold 5) — Peak of mortal-scale achievement; songs are sung.\n- **Beyond Legendary** (threshold 7) — Wyld navigation, First-Age relics, Essence > 5 territory.\n\n## Attributes\n- **Strength** (STR) [Physical] — Raw muscle. Lifting, melee damage.\n- **Dexterity** (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy.\n- **Stamina** (STA) [Physical] — Endurance, soak, resisting fatigue.\n- **Charisma** (CHA) [Social] — Honest charm, leadership, sincere persuasion.\n- **Manipulation** (MAN) [Social] — Deceit, guile, indirect influence.\n- **Appearance** (APP) [Social] — Beauty / presence; affects attraction and intimidation.\n- **Perception** (PER) [Mental] — Spotting, hearing, noticing details.\n- **Intelligence** (INT) [Mental] — Reasoning, learning, recall, abstract thought.\n- **Wits** (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative.\n\n## Skills\n- **Archery**\n- **Athletics**\n- **Awareness**\n- **Brawl** — Includes Martial Arts when the Martial Artist Merit is taken.\n- **Bureaucracy**\n- **Craft**\n- **Dodge**\n- **Integrity**\n- **Investigation**\n- **Larceny**\n- **Linguistics**\n- **Lore**\n- **Medicine**\n- **Melee**\n- **Occult**\n- **Performance**\n- **Presence**\n- **Resistance**\n- **Ride**\n- **Sail**\n- **Socialize**\n- **Stealth**\n- **Survival**\n- **Thrown**\n- **War**\n\n## Commitment\n- Model: `mote`",

@@ -82,7 +82,21 @@ export default function buildRegexScripts(ruleset) {
   if (!isD20Ruleset) {
     out.push(baseScript({
       name: "skill_check tag → " + ruleset.name + " surface",
-      findRegex: "\\[skill_check:\\s*dc=\"(\\d+)\"\\s+rolls=\"(\\d+)\"(?:\\s+modifier=\"([+-]?\\d+)\")?(?:\\s+total=\"(-?\\d+)\")?\\s+result=\"(success|failure|critical|fumble)\"\\s*\\]",
+      // Every \s*/\s+/\d+ below is bounded ({n,m}, finite m) rather than
+      // unbounded (*/+) — the engine's server-side isPatternSafe() flags 3+
+      // unbounded broad-class atoms (or 2 adjacent ones) as a catastrophic-
+      // backtracking risk (packages/shared/src/utils/regex-safety.ts) and
+      // this pattern trips both thresholds as originally written. Bounded
+      // repetition can't backtrack polynomially regardless of size (finite
+      // worst case) — verified against the real engine validator function.
+      // Whitespace bound is {0,20}/{1,20}, not tight: an LLM that
+      // pretty-prints a long tag one attribute per line with indentation
+      // easily exceeds 5 whitespace chars (newline + spaces) between
+      // attributes — adversarial review caught a too-tight bound missing
+      // that case; 20 comfortably covers realistic indentation while still
+      // being a finite, safe bound. Digit bounds are 6 (999999) — orders of
+      // magnitude beyond any realistic DC/roll/modifier/total value.
+      findRegex: "\\[skill_check:\\s{0,20}dc=\"(\\d{1,6})\"\\s{1,20}rolls=\"(\\d{1,6})\"(?:\\s{1,20}modifier=\"([+-]?\\d{1,6})\")?(?:\\s{1,20}total=\"(-?\\d{1,6})\")?\\s{1,20}result=\"(success|failure|critical|fumble)\"\\s{0,20}\\]",
       replaceString: "$5 — rolled against difficulty $1",
       flags: "gi",
       order: 100
@@ -96,7 +110,10 @@ export default function buildRegexScripts(ruleset) {
   if (hasDifficulties && !isD20Ruleset) {
     out.push(baseScript({
       name: "DC mention → " + ruleset.name + " difficulty",
-      findRegex: "\\bDC\\s+(\\d+)\\b",
+      // Bounded for the same reason as the skill_check pattern above —
+      // \s+ immediately adjacent to \d+ (across the non-counted capture-
+      // group paren) trips the engine's 2-adjacent-unbounded-atoms check.
+      findRegex: "\\bDC\\s{1,20}(\\d{1,6})\\b",
       replaceString: "difficulty $1",
       flags: "gi",
       order: 110

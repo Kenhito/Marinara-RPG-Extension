@@ -73,7 +73,7 @@ In Marinara's pipeline, `pre_generation` agents inject context BEFORE the main G
 
 ## Engine compatibility — reputation tags
 
-Marinara validates `[reputation: npc="Name" action="..."]` action strings at max 50 characters. Use short verb phrases (`helped`, `betrayed trust`, `shared secret`) — not literary descriptions. Anything longer triggers a 400 server error and the reputation update silently fails.
+Reputation `[reputation: npc="Name" action="..."]` action strings are a free-form field in Marinara 2.0+ — the pre-2.0 length cap (and the 400 it raised) is gone. Keep actions to short, clear verb phrases for readability (`helped`, `betrayed trust`, `shared secret`), but length is no longer constrained.
 
 ## State-mutator tags — XP and attunement
 

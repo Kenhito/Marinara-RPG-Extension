@@ -2,82 +2,70 @@
 
 This walks you through installing one of the example rulesets (D&D 5e or Exalted 3e) into Marinara Engine. If you want to install a system not in the examples, see `BUILD-YOUR-OWN-RULESET.md` first to author one, then come back here.
 
+> **⚠️ Requires Marinara Engine 2.4.3 or newer.** Marinara removed its old extension system in v2.3.4 and rebuilt it in v2.4.0 — older engines cannot load this extension, and older releases of this extension (v0.5.0 and earlier, or anything installed by pasting JS into a settings field) cannot load on a current engine. If you have an old install, remove its leftovers first (Marinara's Settings → Agents and Lorebooks can delete any strays) and start fresh here.
+
 ## Prerequisites
 
-- **Marinara Engine running locally.** [Install instructions on the Marinara repo.](https://github.com/Pasta-Devs/Marinara-Engine) Default port is `7860`.
-- **A Marinara connection configured** with an LLM (Anthropic Claude Sonnet/Opus, OpenAI GPT-4-class, local model via Ollama/LM Studio, etc.). Test that you can have a normal chat in Marinara before installing this overlay.
+- **Marinara Engine 2.4.3+ running locally.** [Install instructions on the Marinara repo.](https://github.com/Pasta-Devs/Marinara-Engine) Default port is `7860`.
+- **A Marinara connection configured** with an LLM (Anthropic Claude, OpenAI GPT-class, local model via Ollama/LM Studio, etc.). Test that you can have a normal chat in Marinara before installing this overlay.
 - **A modern browser.** Chrome, Firefox, Safari, or Edge (any current version).
 
-## Step 1 — Install the framework JS (one time)
+## Step 1 — Enable extension imports (one time, two switches)
 
-Open Marinara in your browser. Click **Settings** → **Extensions** → **Add Extension**.
+Marinara gates third-party extensions behind two deliberate safety switches. Both must be on:
 
-In the **JS** field, paste the entire contents of:
+1. **On the machine running the engine:** open the Marinara Engine `.env` file and set
 
-```
-install-files/RPG-Extension-GM-Mode.js
-```
+   ```
+   ENABLE_EXTERNAL_EXTENSIONS=true
+   ```
 
-In the **CSS** field, leave it empty (the CSS is embedded in the JS — that's why this is one paste instead of two).
+   then restart the engine. (If you access Marinara from another device — phone, tablet, second PC — you'll also need `ADMIN_SECRET` set and **Settings → Advanced → Admin Access** enabled.)
 
-Click **Save**. Refresh the page.
+2. **In the Marinara UI:** **Settings → Advanced → Danger Zone → Allow third-party extension imports** — toggle it on.
 
-You'll see a small scroll-icon button appear in the chat header. That's the character-sheet toggle. Click it once and the floating sheet opens (initially blank — we haven't activated a ruleset yet).
+## Step 2 — Import and approve the extension (one time)
 
-## Step 2 — Install your chosen ruleset bundle
+1. Go to **Settings → Addons → External Extensions → Import** and pick `Marinara-RPG-Extension.extension.zip` from this release folder.
 
-Click the **gear icon** in the floating sheet's header → **Ruleset** dialog. You'll see a textarea labeled "Paste a bundle.json or ruleset.json".
+   > **Do not import the loose `.js` file.** On Marinara 2.4.3+ a single-file `.js` import silently installs as a sandboxed Worker extension with no page access — it will "succeed" and then do nothing. Always use the zip.
 
-Pick one of the example bundles:
+2. The import arrives **disabled and unapproved**. Open it, glance over the code if you like, and click **Review and Run**. This approves the extension's exact code hash and enables it.
 
-- For **D&D 5e**: paste the entire contents of `install-files/dnd5e-bundle.json`
-- For **Exalted 3e**: paste the entire contents of `install-files/exalted3e-bundle.json`
+3. Refresh the page. You'll see a small scroll-icon button appear in the chat header — that's the character-sheet toggle. Click it once and the floating sheet opens (initially blank — no ruleset activated yet).
 
-Click **Save**. The dialog will show progress messages:
+**Every future update of the extension repeats the Review and Run step.** Marinara re-asks whenever the code changes — that's its trust model working, not an error.
 
-```
-Loading existing server state...
-Installing ruleset...
-Updating lorebook...        (or "Creating lorebook...")
-Clearing managed lorebook entries...
-Installing N lorebook entries...
-Done. Reloading...
-```
+## Step 3 — Install your chosen ruleset bundle
 
-After reload, the sheet panel will populate with attributes, skills, derived stats, and a sheet header showing your chosen system's name. The bundle install also creates the lorebook as a side-effect; you can confirm it via Marinara → Settings → Lorebooks.
+Click the **Ruleset** button in the chat header (or the gear icon in the floating sheet's header) to open the Ruleset dialog, then click **Choose file…** and pick one of the example bundles:
 
-## Step 3 — Import the agents
+- For **D&D 5e**: `install-files/dnd5e-bundle.json`
+- For **Exalted 3e**: `install-files/exalted3e-bundle.json`
 
-Marinara → Settings → Agents → **Import** dialog. Paste the entire contents of:
+(The same folder has a `<system>-bundle.json` for every ruleset in the repo — Fate Core, Call of Cthulhu 7e, GURPS Lite, Pathfinder 2e, and more.)
 
-- For **D&D 5e**: `install-files/dnd5e-agents.json`
-- For **Exalted 3e**: `install-files/exalted3e-agents.json`
+Click **Save and reload**. The dialog shows progress messages, then the page reloads with the ruleset active. Importing a bundle never re-triggers the extension approval — bundles are data, not code.
 
-Click **Confirm**. The dialog does delete-then-replace, so re-importing later doesn't accumulate duplicates.
+This one import installs the character sheet, the dice widget, the lorebook, the main GM agent, and the sub-agents. **Installing is not activating** — the next step wires them into your actual game.
 
-You'll see six new agents appear in the list:
+## Step 4 — Launch your game, attach the lorebook, enable the agents
 
-- **<System> Ruleset Helper** — the main GM agent (enabled)
-- **<System> — State Mutator** — disabled by default
-- **<System> — State Reminder** — disabled by default
-- **<System> — Combat Adjudicator** — disabled by default
-- **<System> — Lore Query Helper** — disabled by default
-- **<System> — NPC Stat Bookkeeper** — disabled by default
+On Marinara 2.4.3+ the MRR agents work like any custom agents: the bundle **installs** them, but each game has to **enable** them. Same for the lorebook. After you create/launch your game:
 
-## Step 4 — Enable the agents you want active
+1. **Attach the ruleset's lorebook to the game** (during game setup, or after launch via the game's lorebook selection). This is required — without it the agents have no ruleset rules to follow and will not work correctly.
+2. **Enable the MRR agents for the game** — after the game launches, not mid-generation: **Settings → Agents** (or the game's agent selection) → find the agents named like `MRR: <System> — <Role>` → enable the ones you want.
 
-Each pre-generation agent costs one model call per turn. Toggle on only what you want.
+The pool you're choosing from:
 
-**Recommended for most play:**
+- **Ruleset Helper** — the main GM agent. Always enable this one.
+- **State Mutator** — the one agent that writes to your sheet: it emits hidden `[mrr-state: ...]` tags that the extension applies (HP loss, motes spent, conditions, and so on). Enable it if you want narration to drive the sheet automatically.
+- **Combat Overseer** — combat-math framing + NPC roster tracking when combat is active.
+- **Context Fuser** — answers out-of-character rules questions AND reminds the GM of your current stats each turn.
+- **Pre-Input Transformer** *(most systems)* — recasts your typed input in the system's vocabulary before the GM sees it.
+- **Per-system trackers** *(some systems, run in parallel)* — e.g. Exalted's anima-banner and charm-cooldown trackers, V20's blood-pool tracker.
 
-- **State Mutator** — auto-updates the sheet from narration (HP loss, motes spent, etc.). Highly recommended.
-- **State Reminder** — keeps the GM aware of your current HP/motes/conditions between turns. Highly recommended.
-
-**Optional add-ons:**
-
-- **Combat Adjudicator** — restates initiative, attack/damage formulas during combat. Toggle on if you run heavy-mechanics combat encounters.
-- **Lore Query Helper** — answers out-of-character rules questions from the lorebook. Toggle on if your players frequently ask "how does X work?" mid-session.
-- **NPC Stat Bookkeeper** — tracks NPC HP and conditions. Toggle on for combat-heavy or NPC-rich scenes.
+Each enabled agent costs one model call per turn — and on a provider that only allows one call at a time, they run one after another, so enable only what your table needs. A good minimal set: **Ruleset Helper + State Mutator**.
 
 ## Step 5 — Build a character
 
@@ -91,39 +79,49 @@ The sheet auto-saves to localStorage on every change.
 
 ## Step 6 — Play
 
-Start a chat in Marinara. The active GM agent will use your system's vocabulary and mechanics. The state-mutator (if enabled) will emit hidden tags whenever narration causes mechanical changes; the extension parses them and updates your sheet in real time.
+Start a chat in Marinara. The active GM agent will use your system's vocabulary and mechanics. The State Mutator will emit hidden tags whenever narration causes mechanical changes; the extension applies them and updates your sheet in real time.
 
-When narration says "the orc's blade tears your shoulder", you'll see a damage tag fire and your health track update. When you say "I cast Fireball", the GM rolls the spell, the state-mutator deducts the spell slot, and you'll see a confirmation toast in the corner.
+When narration says "the orc's blade tears your shoulder", you'll see the damage land on your health track. When you say "I cast Fireball", the GM rolls the spell, the State Mutator deducts the spell slot, and you'll see a confirmation toast in the corner.
 
 ## Troubleshooting
 
-### Sheet doesn't render after pasting JS
+### Extension imported but nothing appears
 
-Check the browser console (F12 → Console). Errors will surface there. Common causes:
+Confirm it's **approved and enabled** in Settings → Addons → External Extensions (imports always arrive disabled — Review and Run is the required step). Then hard-refresh the page (Ctrl+Shift+R / Cmd+Shift+R). If it's still dead, check the browser console (F12 → Console) for errors mentioning the extension name.
 
-- **Connection error / 400 from Marinara:** check that your Marinara connection is configured correctly. Some models (Anthropic prefill-disabled models) need specific connection settings; check Marinara's docs.
-- **Sheet exists but is offscreen:** if you previously had this extension on a wider monitor, the saved position might be stale. In console run:
-  ```javascript
-  localStorage.removeItem("mrr-sheet-pos");
-  localStorage.removeItem("mrr-sheet-size");
-  location.reload();
-  ```
+### Import is rejected or the Import button is missing
+
+One of the two Step-1 switches is off. `ENABLE_EXTERNAL_EXTENSIONS=true` must be in the engine's `.env` (and the engine restarted), and the Danger Zone toggle must be on in Settings → Advanced.
+
+### Sheet exists but is offscreen
+
+If you previously had this extension on a wider monitor, the saved position might be stale. In console run:
+
+```javascript
+localStorage.removeItem("mrr-sheet-pos");
+localStorage.removeItem("mrr-sheet-size");
+location.reload();
+```
 
 ### Lorebook is empty after install
 
-Try reinstalling the bundle (Ruleset dialog → paste again → Save). If still empty, check the browser console during install for failed requests to `/api/lorebooks/<id>/entries`.
+Try reinstalling the bundle (Ruleset dialog → Choose file → Save and reload). If still empty, check the browser console during install for failed requests to `/api/lorebooks/<id>/entries`.
 
 ### State mutations don't apply
 
-Verify the **State Mutator** agent is enabled (Settings → Agents). It installs disabled by default. The sheet only updates from narration when this agent is on.
+Verify the **State Mutator** agent is enabled *for this game* (Settings → Agents) — agents must be enabled per game after launch (Step 4), and with the State Mutator off the sheet only changes when you edit it by hand. Also confirm the ruleset's lorebook is attached to the game — agents without the lorebook have no rules context and misbehave.
 
-### "Health Levels" or "Wound Penalty" warnings in console
+### Agents seem enabled but act like they know nothing about the system
 
-Those mean the GM agent emitted a field name the extension doesn't recognize. The shipped agent prompts have a FORBIDDEN section explicitly telling the model to avoid those, but if you've customized the prompt in Marinara → Agents, double-check the field vocabulary section is intact. Or just re-import the agents.json to reset to canonical prompts.
+The ruleset's lorebook isn't attached to the game. Attach it (game setup or after launch) — it carries the rules reference the agents depend on.
+
+### Field-name warnings in console
+
+`state-mutator: unmatched field ...` or `no label matching ...` warnings mean an agent emitted a field or state label the sheet doesn't recognize. The shipped prompts teach the model the exact field vocabulary, but if you've customized an agent's prompt in Marinara → Settings → Agents, double-check the injected field-reference section is intact — or reinstall the bundle to reset the prompts to canonical.
 
 ### Combat encounter modal looks wrong
 
-Marinara's combat-encounter modal is server-coded with hardcoded D&D-style six-attribute stat blocks. The overlay can't replace it. Combat narration (chat-based) uses your system's vocabulary; the modal stays d20-shaped. Recommended workaround: play combat in narrative mode (don't trigger the modal) for non-d20 systems.
+Marinara's combat-encounter modal is server-coded with hardcoded D&D-style six-attribute stat blocks. The overlay can't replace it. Combat narration (chat-based) uses your system's vocabulary at full power — sheets, dice, and state tracking all work normally in narrative combat; the modal alone stays d20-shaped. Recommended: play combat narratively (don't trigger the modal) for non-d20 systems.
 
 ### Character sheets disappear when switching chats
 
@@ -131,11 +129,8 @@ Marinara's chat IDs rotate per chat. Sheets in localStorage are keyed by chat ID
 
 ## Updating to a newer version
 
-When v0.5.0 ships:
-
-1. Replace the framework JS in your Extensions panel with the new file.
-2. Reinstall the bundle (Ruleset dialog).
-3. Re-import the agents (Import Agents dialog).
+1. Import the new release's `Marinara-RPG-Extension.extension.zip` (Settings → Addons → External Extensions → Import) and **Review and Run** the new hash — every code update re-requires this approval.
+2. Reinstall your ruleset's `bundle.json` via the Ruleset dialog (bundles are data — no approval prompt).
 
 Your sheets, characters, conditions, etc. all persist in localStorage. The update path doesn't lose data.
 

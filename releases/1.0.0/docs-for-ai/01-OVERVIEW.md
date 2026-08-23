@@ -13,7 +13,7 @@ A working ruleset is exactly **three source files** plus optional **per-ruleset 
 | `ruleset.json` | Schema-validated declaration: id, dice, resolution mode, attributes, skills, derived stats (HP / motes / Willpower), states, damage types, ability categories | Yes |
 | `gm-agent.md` | The system prompt the main AI Game Master follows for this system | Yes |
 | `lorebook.json` | Keyword-triggered rules reference the model pulls into context | Yes |
-| `agents/<role>.md` (optional) | Per-system override of any role agent (state-mutator, state-reminder, combat-adjudicator, lore-query, npc-bookkeeper). Falls back to the shared baseline at the repo root's `agents/<role>.md` when absent. | Optional |
+| `agents/<role>.md` (optional) | Per-system override of any role agent (combat-overseer, context-fuser, state-mutator), or a per-system `parallel`-phase tracker. Overrides fall back to the shared baseline at the repo root's `agents/<role>.md` when absent; parallel trackers have no shared baseline. | Optional |
 
 From these source files, two CLI tools produce the user-facing artifacts:
 
@@ -25,24 +25,24 @@ A user installs your ruleset by:
 1. Pasting the framework JS into Marinara's Extensions panel (one-time, system-independent)
 2. Pasting your `bundle.json` into Marinara's Ruleset dialog
 3. Pasting your `agents.json` into Marinara's Import Agents dialog
-4. Toggling on whichever role agents they want active
+4. Launching a game, attaching the ruleset lorebook to that game, and enabling the MRR agents for it — agents are enabled per game at load time (not during generation); without the attached lorebook the agents have no ruleset info to follow
 
 ## The system-agnostic agent architecture
 
-The framework ships **six role agents**. Five are shared baselines that work for any system; one is system-specific by design.
+The framework ships a consolidated pool: the `main` narrator (system-specific by design) plus three shared-baseline sub-agents that work for any system, with two optional per-system additions.
 
 | Role | Purpose | Default scope |
 |---|---|---|
 | `main` (gm-agent) | The actual Game Master narrator. Rolls dice, narrates outcomes, manages encounters. | **System-specific** — every ruleset writes its own. |
-| `state-mutator` | Instructs the GM to emit hidden `[mrr-state: ...]` tags whenever narration changes a sheet (HP loss, motes spent, condition gained, item taken). The extension parses tags and updates the sheet. | Shared baseline; per-system override recommended for systems with typed damage or non-trivial resource economies. |
-| `state-reminder` | Surfaces current sheet state to the GM each turn so it doesn't forget HP / motes / conditions. | Shared baseline; per-system override useful for systems with computed bars (e.g., Mote pool max = Essence × 7 + 26). |
-| `combat-adjudicator` | Wakes during combat. Restates initiative, attack/damage formula, action economy in the active system's terms. | Shared baseline; system-specific override common. |
-| `lore-query` | Wakes when the user asks an out-of-character rules question. Answers from the lorebook. | Shared baseline; rarely needs override. |
-| `npc-bookkeeper` | Tracks active NPC HP, conditions, tactical state across turns. | Shared baseline; rarely needs override. |
+| `combat-overseer` | Pre-generation. Wakes during combat to restate initiative, attack/damage formula, action economy in the active system's terms — AND tracks active NPC HP, conditions, and tactical state, both surfaces in one output. | Shared baseline; system-specific override common. |
+| `context-fuser` | Pre-generation. Answers rules questions when the user asks one (from the lorebook + system RAW) AND surfaces current sheet state each turn so the GM doesn't forget HP / motes / conditions — both in one output. | Shared baseline; per-system override useful for systems with computed bars (e.g., Mote pool max = Essence × 7 + 26). |
+| `state-mutator` | Pre-generation. Instructs the GM to emit hidden `[mrr-state: ...]` tags whenever narration changes a sheet (HP loss, motes spent, condition gained, item taken). The extension parses tags and updates the sheet — this is the only sheet writer. | Shared baseline; per-system override recommended for systems with typed damage or non-trivial resource economies. |
+| `pre-input-transformer` *(optional)* | Pre-generation. Translates D&D-flavored player input ("I roll Strength") into the ruleset's own vocabulary before generation. | Derived from `ruleset.json` `vocabularyHints[]`; omitted from bundles that don't need it. |
+| Per-system `parallel` tracker *(optional, at most one per ruleset)* | Parallel phase. Tracks a system-specific resource alongside the narrator without blocking it (e.g., Exalted anima banners, V20 blood pools). | Per-system only — no shared baseline; the tracked resource exists only in that system. |
 
 **The override pattern is a file-system fallback.** When the build-agents tool packages your ruleset's agents, it looks for `rulesets/<your-system>/agents/<role>.md` first. If that file exists, it's the prompt for that role in your system. If not, the shared baseline at `agents/<role>.md` (repo root) is used. This means:
 
-- A small ruleset can ship with **zero** per-system agent overrides and still get all six agents working.
+- A small ruleset can ship with **zero** per-system agent overrides and still get the full agent pool working.
 - A complex system (Exalted, with typed damage, sorcery, combat tempo) overrides the role agents that matter and inherits the rest.
 - Adding a new override is just dropping a `.md` file at the right path.
 
