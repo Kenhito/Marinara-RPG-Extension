@@ -2,7 +2,7 @@
 
 You are an AI coding agent working on or with the **Marinara-RPG-Extension** repository. This file is your single source of truth for **modifying the framework itself or the shipped reference rulesets**.
 
-> **For AUTHORING A NEW RULESET (e.g., GURPS, Cyberpunk, Mörk Borg, etc.):** the canonical, system-agnostic, self-contained build documentation is at [`releases/v0.4.0/docs-for-ai/`](releases/v0.4.0/docs-for-ai/) — seven numbered Markdown files designed to be fed to any chat AI. Use those for new-ruleset authoring.
+> **For AUTHORING A NEW RULESET (e.g., GURPS, Cyberpunk, Mörk Borg, etc.):** the canonical entry point is [`AUTHORING-PROMPT.md`](AUTHORING-PROMPT.md) (one-paste prompt template), with the deeper system-agnostic doc set at [`releases/1.0.0/docs-for-ai/`](releases/1.0.0/docs-for-ai/) — numbered Markdown files designed to be fed to any chat AI. Use those for new-ruleset authoring.
 >
 > This file (AGENTS.md) is for the deeper architectural concerns of working ON the framework (extending it with new resolution modes, modifying the extension JS, etc.).
 
@@ -39,7 +39,7 @@ Several major architectural changes since v0.3 that affect how authoring works:
 7. **Persisted state-mutator dedupe.** `processedMessageIds` is keyed per-chat in `localStorage["mrr-processed-msgs-<chatId>"]` so hard refresh doesn't replay historic mutations.
 8. **Lorebook install rewritten.** Per-entry POST with delete-then-add for clean re-installs. The bulk endpoint was returning OK while landing zero entries.
 
-Sections 5–8 of this file may reference older behavior. When in doubt, the v0.4.0 release docs at `releases/v0.4.0/docs-for-ai/` are the current truth.
+Sections 5–8 of this file may reference older behavior. When in doubt, the current release docs at `releases/1.0.0/docs-for-ai/` are the current truth.
 
 ---
 
