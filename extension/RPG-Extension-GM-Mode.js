@@ -13367,6 +13367,93 @@ function saveProcessedMessageIds() {
   lsSet(LS_PROCESSED_MSGS_PFX + processedMessageIdsChatId, JSON.stringify(processedMessageIds));
 }
 
+/* ─── B2: swipe-aware processed-message keying ────────────────────────────
+   A swiped assistant reply keeps the SAME data-message-id — Marinara's
+   schema stores the active variant as messages.activeSwipeIndex on the one
+   message row (alternate swipe content lives in a separate messageSwipes
+   table), it never mints a new message id per swipe (confirmed against
+   engine schema packages/server/src/db/schema/chats.ts:52, notNull default
+   0). Plain-msgId keying therefore treats every swipe of one message as
+   "the same message" and swallows swipe 1+'s [mrr-state:] tags once
+   swipe 0 has applied. Swipe indices are not present in the DOM (the
+   engine stamps only data-message-id), so they are looked up via
+   GET /chats/:chatId/messages?limit=N (COUPLINGS.md row 15) — fetched
+   ONLY when a tag-bearing candidate needs one, batched per "scan cycle"
+   via a shared in-flight promise: any candidate that asks while a fetch
+   is already in flight rides that same request/response instead of
+   issuing its own, and the map is discarded (not cached, not persisted,
+   not polled) the moment that fetch settles — the next candidate starts a
+   fresh cycle. (Design: 07-15 plan §4.2 / 08-22 plan B2.)
+
+   Keying rule (legacy-entry honor — no historical re-apply):
+     isMessageProcessed(msgId, idx) = set[msgId] || set[msgId + ":" + idx]
+   A plain msgId entry written before this upgrade keeps suppressing EVERY
+   swipe of that message (swipe 0 and any later swipe) — an accepted
+   trade-off: those are pre-upgrade historic messages, a brand-new swipe
+   appearing on one of them is vanishingly rare, and re-applying an entire
+   chat's mutation history on every legacy entry would be the worse
+   failure. New writes always use the composite key when an index was
+   discoverable this cycle; plain msgId otherwise (fetch failure, or the
+   candidate fell outside the fetched recent-window). */
+var mrrSwipeIndexFetchPromise = null; // shared per-cycle fetch; null whenever no fetch is in flight
+var mrrSwipeIndexWarned = false;      // console.warn once per session on fetch failure (soft degradation — not the visible warn-strip, which is reserved for storage degradation)
+
+function mrrProcessedKey(msgId, idx) {
+  return (idx === null || idx === undefined) ? msgId : (msgId + ":" + idx);
+}
+
+function isMessageProcessed(msgId, idx) {
+  if (processedMessageIds[msgId]) return true; /* legacy plain entry — suppresses every swipe, see trade-off above */
+  if (idx === null || idx === undefined) return false;
+  return !!processedMessageIds[msgId + ":" + idx];
+}
+
+/* Batched swipe-index lookup for the active chat. Coalesces concurrent
+   callers onto ONE GET /chats/:chatId/messages?limit=50 (recent-window —
+   tag-bearing candidates are, by construction, recent messages) through
+   the loader's attributed apiFetch wrapper. Resolves to a plain object
+   (msgId -> activeSwipeIndex) on success, or null on ANY failure (thrown/
+   rejected fetch, or a non-array response body — marinara.apiFetch never
+   checks HTTP status, so an error body arrives as a non-array) so callers
+   fall back to plain-messageId keying for that cycle. */
+function fetchSwipeIndexMap(chatId) {
+  if (mrrSwipeIndexFetchPromise) return mrrSwipeIndexFetchPromise;
+  mrrSwipeIndexFetchPromise = apiFetch("/chats/" + encodeURIComponent(chatId) + "/messages?limit=50")
+    .then(function (rows) {
+      if (!Array.isArray(rows)) return null;
+      var map = Object.create(null);
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        if (r && typeof r.id === "string" && typeof r.activeSwipeIndex === "number") {
+          map[r.id] = r.activeSwipeIndex;
+        }
+      }
+      return map;
+    })
+    .catch(function (e) {
+      if (!mrrSwipeIndexWarned) {
+        mrrSwipeIndexWarned = true;
+        warn("swipe-index fetch failed (" + (e && e.message ? e.message : e) + ") — falling back to plain-messageId keying");
+      }
+      return null;
+    })
+    .then(function (result) {
+      mrrSwipeIndexFetchPromise = null; /* cycle over — next candidate starts a fresh fetch; never cached beyond this */
+      return result;
+    });
+  return mrrSwipeIndexFetchPromise;
+}
+
+/* Resolves to a swipe index (number) for msgId, or null when not
+   discoverable this cycle (fetch failed, or msgId fell outside the
+   fetched recent-window) — callers treat null as "use plain msgId". */
+function resolveSwipeIndexForMessage(chatId, msgId) {
+  return fetchSwipeIndexMap(chatId).then(function (map) {
+    if (!map || !Object.prototype.hasOwnProperty.call(map, msgId)) return null;
+    return map[msgId];
+  });
+}
+
 function parseStateAttrs(attrStr) {
   var attrs = {};
   STATE_KV_RE.lastIndex = 0;
@@ -14302,16 +14389,30 @@ function processChatMessage(node) {
   var text = node.textContent || "";
   if (text.indexOf("[mrr-state:") === -1) return;
 
-  if (!processedMessageIds[msgId]) {
-    var tags = parseStateTags(text);
-    /* Route through the shared cross-transport dedup keyed by this message id.
-       The outer processedMessageIds gate still governs whole-message
-       reprocessing (unchanged); the helper additionally lets the runs poller
-       skip any tag the narrator already applied for this same turn. */
-    var applied = applyStateTagsWithDedup(tags, msgId);
-    processedMessageIds[msgId] = true;
-    saveProcessedMessageIds();
-    log("state-mutator: applied " + applied + "/" + tags.length + " mutation(s) from message " + msgId);
+  /* Fast path: a legacy plain-msgId entry already suppresses every swipe of
+     this message (isMessageProcessed's trade-off) — skip the swipe-index
+     fetch entirely when it already applies, so the batched lookup only
+     ever fires for candidates that genuinely need it. */
+  if (!isMessageProcessed(msgId, null)) {
+    var scanChatId = state.chatId;
+    resolveSwipeIndexForMessage(scanChatId, msgId).then(function (idx) {
+      if (state.chatId !== scanChatId) return; /* chat switched mid-fetch — stale, ignore */
+      if (isMessageProcessed(msgId, idx)) return; /* composite entry already applied (re-entrant observation) */
+      var tags = parseStateTags(text);
+      var key = mrrProcessedKey(msgId, idx);
+      /* Route through the shared cross-transport dedup keyed by this
+         message+swipe. The outer processedMessageIds gate still governs
+         whole-message(+swipe) reprocessing; the helper additionally lets
+         the runs poller skip any tag the narrator already applied for this
+         same turn. Even if two observations of the same message+swipe race
+         each other past the isMessageProcessed check above (e.g. a new DOM
+         mutation re-schedules while a prior fetch is still in flight), the
+         inner dedup below still applies each mutation exactly once. */
+      var applied = applyStateTagsWithDedup(tags, key);
+      processedMessageIds[key] = true;
+      saveProcessedMessageIds();
+      log("state-mutator: applied " + applied + "/" + tags.length + " mutation(s) from message " + key);
+    });
   }
   /* Visual hiding runs every observation — Marinara may re-render the
      message and unwrap our spans; we re-wrap on next mutation. */
