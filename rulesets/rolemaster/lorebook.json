@@ -1,0 +1,199 @@
+{
+  "name": "Rolemaster Fantasy Role Playing Rules Reference",
+  "description": "Keyword-triggered mechanics reference for the GM agent running a Rolemaster Fantasy Role Playing session. Mechanics and terminology only — no professions, spells, races, or setting content; see USER-LOREBOOK-GUIDE.md for how to add your own.",
+  "category": "world",
+  "scanDepth": 4,
+  "tokenBudget": 1500,
+  "recursiveScanning": false,
+  "entries": [
+    {
+      "id": "rm-open-ended",
+      "name": "Rule: Open-ended d100",
+      "keys": ["open-ended", "96", "cascade", "d100", "exploding dice"],
+      "content": "Rolls are d100 read HIGH. A first roll of 96-100 (\"96-00\") is high open-ended: reroll and ADD, and keep rerolling and adding while each new roll is also 96-100. A first roll of 01-05 is low open-ended: reroll and SUBTRACT — but unlike the high chain, the low chain keeps going only while each new roll comes up 96-100 (not while it's low again), so a low chain can ride a high follow-up roll right back down. Open-ended only ever triggers off the UNMODIFIED first roll — a modified total that lands in 96-100 purely from bonuses does not open. Because both directions can chain indefinitely, results have no hard ceiling and no hard floor. Worked examples from the book: high 99, then 96, then 04 = 199; low 04, then 97, then 03 = -96.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "id": "rm-result-bands",
+      "name": "Rule: Maneuver result bands and % extents",
+      "keys": ["result", "band", "partial success", "absolute failure", "spectacular", "near success", "absolute success"],
+      "content": "A modified static-maneuver total reads against seven numeric bands plus two Unmodified rows: Spectacular Failure (-26 and below), Absolute Failure (-25 to 04), Failure (05-75), Unmodified 66 = Unusual Event, Partial Success 76-90 (20% extent), Near Success 91-110 (80% extent), Unmodified 100 = Unusual Success (125% extent), Success 111-175 (100% extent), Absolute Success 176+ (120% extent). The \"% extent\" describes how much of the attempt succeeded — treat under 100% as a partial outcome scaled to that percentage unless the GM rules that only 100%+ counts as success here. Absolute Success also grants a non-cumulative +10 to that skill on future attempts, lasting until an Absolute or Spectacular Failure on that same skill cancels it. Because open-ended dice have no floor, the two failure bands below plain Failure come up routinely, not as rare edge cases.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "id": "rm-difficulty-ladder",
+      "name": "Rule: The nine difficulty bands",
+      "keys": ["difficulty", "routine", "sheer folly", "absurd", "easy", "hard"],
+      "content": "Nine difficulty labels apply to any check: Routine +30, Easy +20, Light +10, Medium +0, Hard -10, Very Hard -20, Extremely Hard -30, Sheer Folly -50, Absurd -70. For a STATIC maneuver this is an additive modifier to the roll before reading the result band. For a MOVING maneuver the same nine labels instead select a column on a separate percentage-of-completion table — not added to the roll in that case. The GM assigns the difficulty before the roll; changing it after seeing the result is bad form.",
+      "selective": false,
+      "constant": true,
+      "position": 0
+    },
+    {
+      "id": "rm-unmodified",
+      "name": "Rule: Unmodified rolls (UM 66, UM 100, fumble ranges)",
+      "keys": ["UM", "unmodified", "unusual event", "unusual success", "fumble"],
+      "content": "An \"unmodified\" result is the FIRST roll before any bonuses or penalties. For a static maneuver: unmodified 66 applies the Unusual Event row immediately, no modifications; unmodified 100 applies the Unusual Success row (125%) immediately, no modifications, and is NOT treated as open-ended (do not roll again). For an attack roll: an unmodified roll inside that weapon's specific fumble range (varies by weapon, commonly 01-03) means no modifications and no cascade — go straight to the fumble table instead. A natural 100 on an attack roll is NOT a UM — it's a normal high open-ended roll and the cascade stands. Resistance rolls have no UM convention. The dice widget always rolls the general open-ended rule and reports the first face; deciding whether a UM applies, and to which context, is the GM's call.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-static-maneuvers",
+      "name": "Rule: Static maneuvers",
+      "keys": ["static maneuver", "skill check", "attempt"],
+      "content": "Most skill checks — tracking, hiding, picking locks, disarming traps, reading runes, using items, observation, influencing another character, and similar non-movement activity — are static maneuvers. Roll open-ended d100, add the applicable skill bonus (or 3x a relevant stat bonus if no skill applies), add the difficulty modifier, add any standard or GM-assigned situational modifiers, and read the total against the seven-band result table. A static maneuver normally takes one round (100% activity) unless the GM says otherwise; using less than the required activity increases the difficulty.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-moving-maneuvers",
+      "name": "Rule: Moving maneuvers",
+      "keys": ["moving maneuver", "climb", "jump", "dodge", "tumble"],
+      "content": "Climbing, swimming, riding, stalking, acrobatics, dodging, tumbling, diving, and other in-motion activity are moving maneuvers, resolved on a different table than static maneuvers. Roll open-ended d100, add 3x the character's Agility bonus (or the applicable skill bonus if one exists), add any Moving Maneuver Penalty from worn armor, and cross-index the difficulty as a COLUMN rather than an added modifier. The result is usually read as a percentage of the maneuver actually accomplished (100+ means full success, and excess above 100 can extend the effect); a non-numeric result on that table is a failure with a stated fictional consequence.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-standard-mods",
+      "name": "Rule: Standard maneuver modifiers",
+      "keys": ["modifier", "activity", "hits taken", "lighting", "melee environment"],
+      "content": "Beyond the base difficulty, static and moving maneuvers both apply situational modifiers: percentage of hits taken (0 at under 25%, worsening to -30 at 76%+), reduced activity used (a growing penalty the further under the normal requirement), being stunned (-50 plus 3x Self Discipline bonus), fighting in a melee environment or under missile fire, and lighting conditions when vision matters. Only apply what the fiction actually supports — don't stack every possible modifier reflexively.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-stat-bonuses",
+      "name": "Rule: Stats and stat bonuses",
+      "keys": ["stat bonus", "stat", "agility", "quickness", "bonus table"],
+      "content": "Ten stats run 1-102 (this bundle tracks only the temporary/current value; the potential value is an advancement cap it doesn't track). Five are \"Primary\" stats (Empathy, Intuition, Presence, Quickness, Strength) that affect play directly; five are \"Development\" stats (Agility, Constitution, Memory, Reasoning, Self Discipline) that also average into how fast a character develops. Each stat's raw score converts to a stat bonus through a stepped table, not a simple formula — the framework can't compute a step table automatically, so the player enters the resulting bonus on the sheet once at chargen and updates it only when the raw stat changes. Stat bonuses feed skill bonuses, Resistance Rolls, DB, and Exhaustion Points — the bonus is the load-bearing number, not the raw 1-102 score.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-skill-bonus",
+      "name": "Rule: Where a skill bonus comes from",
+      "keys": ["skill bonus", "ranks", "category", "progression"],
+      "content": "A character's skill bonus for any skill combines several sources: the skill rank bonus (rises with purchased ranks, on one of several named progression curves), the skill category bonus (a smaller shared bonus from ranks in that whole category), the applicable stat bonuses (each skill uses a fixed three-stat \"triad\"), and any item or special bonuses. This bundle's sheet stores the FINAL combined total per skill — exactly what the printed Character Record Sheet's own Skill Bonus column shows — rather than the individual components, so the player computes it once at chargen or level-up and enters the total.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-combat-round",
+      "name": "Rule: The combat round",
+      "keys": ["combat round", "initiative", "declare", "action"],
+      "content": "Each round: combatants declare their action and, if attacking, split their Offensive Bonus between attack and the amount held back to parry. Initiative determines resolution order. Snap actions (up to 20% activity) take a -20 penalty; deliberate actions (up to 80%+ activity) take a +10 bonus; normal actions (up to 50% activity) take neither. Parry allocated this round adds to that combatant's DB for THIS round only — it does not carry forward. A stunned combatant cannot parry and, if attacking at all, fights at half OB.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-ob-db",
+      "name": "Rule: OB, DB, and the parry split",
+      "keys": ["OB", "DB", "offensive bonus", "defensive bonus", "parry"],
+      "content": "Offensive Bonus (OB) is a weapon skill's total bonus, spent per round between attacking and parrying. Defensive Bonus (DB) is 3x the Quickness stat bonus, minus the current armor's Quickness penalty, plus shield bonus, plus any parry allocated this round, plus special item bonuses. An attack roll is open-ended d100 + attacker's allocated OB - defender's current DB + situational modifiers, then cross-indexed against the defender's Armor Type on the attacker's weapon table.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-armor-types",
+      "name": "Rule: Armor Types 1-20",
+      "keys": ["armor type", "AT", "armor", "plate", "leather", "chain"],
+      "content": "Armor Type (AT) is a 1-20 scale that determines which column an attack reads on the weapon's attack table. Roughly: AT 1-4 no armor/light clothing, AT 5-8 soft or light rigid leather, AT 9-12 rigid leather, AT 13-16 chain, AT 17-20 plate. Heavier armor (higher AT) generally resists penetration better but imposes a larger Moving Maneuver Penalty and Quickness penalty to DB; lighter armor trades protection for mobility and produces more frequent, more severe critical strikes when it IS penetrated.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-attack-resolution",
+      "name": "Rule: Resolving an attack",
+      "keys": ["attack roll", "attack table", "hits and crit"],
+      "content": "Roll open-ended d100, add the attacker's allocated OB, subtract the defender's current DB, apply situational modifiers, then cross-index the modified total against the attacker's weapon-specific attack table at the defender's Armor Type column. The cell gives concussion hits and, often, a critical severity letter plus damage type (e.g. \"8D\" means 8 hits plus a D-severity critical of that weapon's type). Each table has a stated maximum result; an unmodified roll inside that weapon's fumble range short-circuits straight to a fumble instead — see the Unmodified Rolls entry.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-criticals",
+      "name": "Rule: Critical severity and types",
+      "keys": ["critical", "crit", "severity", "A crit", "E crit"],
+      "content": "A critical result from an attack table names a severity letter (A mildest through E most severe) and a damage type matching the weapon (Slash, Puncture, Krush, and similar). Roll d100 on the matching critical table at that severity and type; results can add extra hits, inflict ongoing bleeding, add stun rounds, impose an activity penalty, or kill outright at the worst severities. This bundle does not ship the critical table contents — read them from your own copy of the book, or narrate an honest estimate and say plainly that you're estimating.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-hits-bleeding",
+      "name": "Rule: Concussion hits and bleeding",
+      "keys": ["concussion hits", "hits", "bleeding", "wound"],
+      "content": "\"Hits\" (concussion hits) are the universal damage pool — a character passes out once hits taken reach their maximum and dies once hits taken reach maximum plus Constitution bonus. Maximum Hits equals the character's Body Development skill bonus. Bleeding is an ongoing hits-per-round loss set by an unhealed critical's severity; First Aid or a Stop Bleeding effort reduces or removes it. Hits recover slowly on their own and much faster with rest, sleep, or healing magic/herbs.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-stun",
+      "name": "Rule: Stun and stun removal",
+      "keys": ["stun", "stunned", "unable to parry"],
+      "content": "Stun is measured in rounds remaining, inflicted by criticals. A stunned combatant cannot attack, may only parry at half OB (some results forbid parrying entirely), and takes a -50 plus 3x Self Discipline bonus penalty to any static maneuver they attempt. A successful Stun Removal static maneuver shortens the remaining stun rounds; a failed attempt can add more stun instead, and the difficulty of that attempt rises with how many stun rounds are already accumulated.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-exhaustion",
+      "name": "Rule: Exhaustion points and pace",
+      "keys": ["exhaustion", "ExP", "tired", "sprint", "pace"],
+      "content": "Exhaustion Points (ExP) total 40 plus 3x the Constitution bonus. Faster movement paces (sprint, fast sprint, dash), melee, missile fire, and harsh conditions (heat, cold, rough terrain, sleep deprivation) all spend ExP at increasing rates. As spent-ExP percentage rises past 25%, 50%, 75%, and 90%, the character takes escalating penalties to attacks and maneuvers, bottoming out at -100 when fully exhausted. ExP recovers slowly while active, faster while resting, and fastest while sleeping.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-resistance-rolls",
+      "name": "Rule: Resistance rolls",
+      "keys": ["resistance roll", "RR", "resist", "save"],
+      "content": "A Resistance Roll (RR) is Rolemaster's saving throw. Cross-index the attack's level (caster level for a spell; the stated level for a poison, disease, or fear source) against the target's level to get a single target number — the target must roll that number or higher to resist. The roll is an open-ended d100 plus the target's RR bonus for the matching realm: Essence uses Empathy, Channeling uses Intuition, Mentalism uses Presence, and Poison/Disease/Fear use Constitution or Self Discipline as noted on the sheet (each 3x the relevant stat bonus, plus item and race bonuses). A willing target takes -50 to resist; a caster of the same power realm as the target gets +15. This bundle does not ship the RR target-number grid — the GM states the number and why.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-power-points",
+      "name": "Rule: Power points and casting",
+      "keys": ["power points", "PP", "cast", "realm", "essence", "channeling", "mentalism"],
+      "content": "Power Points (PP) equal a caster's Power Point Development skill bonus and are spent 1-for-1 per spell level cast. Rolemaster has three power realms — Essence, Channeling, Mentalism — each with its own casting stat and RR type. A spell that meets all its automatic-casting conditions (right realm, right list, enough free hands/voice, no disqualifying armor, prepared long enough) casts without a roll but can still fail on an unmodified 01-02. Otherwise the caster makes an open-ended casting static maneuver modified by level difference, preparation rounds, and casting conditions.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-vocabulary",
+      "name": "Reference: Rolemaster terms for D&D players",
+      "keys": ["AC", "saving throw", "hit points", "HP", "DC"],
+      "content": "Quick crib for players coming from d20 systems: AC -> compare OB minus the target's DB, then cross-index the result against their Armor Type. HP -> Hits (concussion hits), capped by Body Development skill bonus. Saving throw -> Resistance Roll (RR), an open-ended roll vs. a level-derived target number, not a flat DC. Spell slot -> Power Points, spent per spell level. DC -> the nine-step difficulty ladder, applied as an additive modifier (static maneuvers) or a table column (moving maneuvers), not a flat number to beat.",
+      "selective": false,
+      "constant": false,
+      "position": 0
+    },
+    {
+      "id": "rm-sub-agents",
+      "name": "Optional Sub-Agents — what they do and how to enable them",
+      "keys": ["sub-agent", "sub agent", "sub-agents", "agents", "state-mutator", "state mutator", "combat-overseer", "combat overseer", "enable agent", "disable agent", "agent toggle"],
+      "content": "Besides the main Ruleset Helper, the bundle installs a small pool of sub-agents. IMPORTANT: installing the bundle does NOT activate them — like all custom agents on Marinara 2.4.3+, they must be ENABLED FOR EACH GAME at load time, after the game launches (Marinara -> Settings -> Agents). The ruleset's lorebook must ALSO be attached to the game — without it the agents have no ruleset rules to follow.\n\nThe pool: combat-overseer (pre-generation; checks OB/parry allocation, DB composition, activity budget, stun legality, and damage-applied-once each round, plus tracks the NPC roster). state-mutator (the ONLY agent that changes the character sheet — it emits hidden [mrr-state: ...] tags the extension applies; covers Hits, Bleeding, Stun, Power Points, and Exhaustion Points).\n\nA reasonable minimal set for most tables: Ruleset Helper + state-mutator. Add combat-overseer for tactical, multi-combatant fights where the OB/DB bookkeeping matters. Each enabled agent costs one extra model call per turn.",
+      "selective": false,
+      "constant": false,
+      "position": 1
+    }
+  ]
+}

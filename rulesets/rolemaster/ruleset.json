@@ -1,0 +1,129 @@
+{
+  "id": "rolemaster",
+  "name": "Rolemaster Fantasy Role Playing",
+  "version": "0.1.0",
+  "edition": "Rolemaster Fantasy Role Playing (Iron Crown Enterprises, stock #5800)",
+  "license": "Original mechanics references only. Rolemaster, Rolemaster Fantasy Role Playing, Arms Law, and Spell Law are trademarks of Iron Crown Enterprises. Unofficial fan-made data file; no verbatim ICE text and no reproduced tables. Setting content, professions, spell lists, and character options are deliberately excluded — supply them in your own lorebook. For the full rules and all tables, buy the book.",
+  "summary": "Percentile skill resolution with open-ended dice. Roll d100, add your skill bonus and the situation's modifiers, and read the total against a result band. Rolls of 96 or better re-roll and add; rolls of 5 or less re-roll and subtract, so results have no ceiling and no floor. Combat resolves the same way: attack roll plus Offensive Bonus minus the defender's Defensive Bonus, cross-indexed against the defender's Armor Type for concussion hits and a critical severity. This bundle ships mechanics and terminology only — no professions, spells, races, or setting content; attach your own lorebook for those (see USER-LOREBOOK-GUIDE.md). Attributes are stored as their temporary (current) value only; RMFRP's potential stat is an advancement cap with no other in-play effect and is out of this bundle's scope.",
+  "dice": { "type": "d100", "notation": "open-ended d100 + bonus" },
+  "resolution": {
+    "mode": "d100-percentile",
+    "direction": "high",
+    "skillFormula": "Open-ended d100 + skill bonus + difficulty modifier + situational modifiers, read against the appropriate maneuver table",
+    "bonusFormula": "skill bonus (ranks + stat-triad bonus + item and special bonuses)",
+    "openEnded": {
+      "high": { "threshold": 96, "cascadeCap": 0 },
+      "low": { "threshold": 5, "subtract": true, "continueOn": "high", "cascadeCap": 0 },
+      "firstRollOnly": true
+    }
+  },
+  "difficulties": {
+    "Routine": { "threshold": 30, "description": "Trivial for a trained character. Roll only if failure would be interesting." },
+    "Easy": { "threshold": 20, "description": "Straightforward with basic competence." },
+    "Light": { "threshold": 10, "description": "Slightly taxing." },
+    "Medium": { "threshold": 0, "description": "The unmodified baseline." },
+    "Hard": { "threshold": -10, "description": "Demands real competence." },
+    "Very Hard": { "threshold": -20, "description": "Only the genuinely skilled should try." },
+    "Extremely Hard": { "threshold": -30, "description": "Near the edge of what training delivers." },
+    "Sheer Folly": { "threshold": -50, "description": "Reckless. Success is a story." },
+    "Absurd": { "threshold": -70, "description": "Should not be possible. Open-ended dice are the only path." }
+  },
+  "attributes": [
+    { "name": "Empathy", "abbreviation": "Em", "group": "Primary", "min": 1, "max": 102, "default": 50, "description": "Rapport with the natural and supernatural world. Keys the Essence realm's Resistance Roll bonus. Temporary (current) value only — RMFRP's Potential stat has no in-play effect and is not tracked here." },
+    { "name": "Intuition", "abbreviation": "In", "group": "Primary", "min": 1, "max": 102, "default": 50, "description": "Instinct, luck, and awareness. Keys the Channeling realm's Resistance Roll bonus." },
+    { "name": "Presence", "abbreviation": "Pr", "group": "Primary", "min": 1, "max": 102, "default": 50, "description": "Force of personality and self-command. Keys the Mentalism realm's Resistance Roll bonus." },
+    { "name": "Quickness", "abbreviation": "Qu", "group": "Primary", "min": 1, "max": 102, "default": 50, "description": "Speed, reflexes, and dodging ability. Keys the Defensive Bonus (DB)." },
+    { "name": "Strength", "abbreviation": "St", "group": "Primary", "min": 1, "max": 102, "default": 50, "description": "Physical power. Contributes to melee weapon skill bonuses and carrying capacity." },
+    { "name": "Agility", "abbreviation": "Ag", "group": "Development", "min": 1, "max": 102, "default": 50, "description": "Manual dexterity and balance. One of the five 'Development' stats that also average into how many development points a character earns." },
+    { "name": "Constitution", "abbreviation": "Co", "group": "Development", "min": 1, "max": 102, "default": 50, "description": "Stamina and resistance to harm. Keys Exhaustion Points and the Poison/Disease Resistance Roll bonuses." },
+    { "name": "Memory", "abbreviation": "Me", "group": "Development", "min": 1, "max": 102, "default": 50, "description": "Retention of learned information. A Development stat." },
+    { "name": "Reasoning", "abbreviation": "Re", "group": "Development", "min": 1, "max": 102, "default": 50, "description": "Logic, analysis, and deduction. A Development stat." },
+    { "name": "Self Discipline", "abbreviation": "SD", "group": "Development", "min": 1, "max": 102, "default": 50, "description": "Willpower and self-control. Keys the Fear Resistance Roll bonus and resistance to stun." }
+  ],
+  "skills": [
+    { "name": "Weapon (primary)", "min": -75, "max": 250, "default": 0, "aliases": ["weapon", "main weapon", "primary weapon"], "description": "Your main weapon's Offensive Bonus. Rename to the actual weapon (e.g. 'Broadsword', 'Longbow'). Stat triad depends on the weapon category — St/Ag/St for most one-handed, two-handed, and pole weapons; Ag/St/Ag for missile and thrown weapons; In/Ag/Re for siege weaponry. Offensive Bonus skill; contributes directly to the attack roll." },
+    { "name": "Weapon (secondary)", "min": -75, "max": 250, "default": 0, "aliases": ["off-hand weapon", "secondary weapon"], "description": "A second weapon or off-hand option. Same stat-triad rule as Weapon (primary) — see that entry. Offensive Bonus skill." },
+    { "name": "Armor", "min": -75, "max": 250, "default": 0, "description": "Your proficiency wearing the armor type you're in — reduces the Moving Maneuver Penalty (MMP) your armor imposes as rank rises. Light Armor uses Ag/St/Ag; Medium and Heavy Armor use St/Ag/St. Moving Maneuver skill." },
+    { "name": "Blocking", "min": -75, "max": 250, "default": 0, "description": "A defensive combat maneuver alongside Two-Weapon Fighting, Quickdraw, and Swashbuckling in the Combat Maneuvers category (Ag/Qu/SD, combined progression). Used at the GM's ruling to add to your DB against one incoming attack or to negate it outright; this MVP does not ship a dedicated block-effect sub-table." },
+    { "name": "Two-Weapon Fighting", "min": -75, "max": 250, "default": 0, "description": "Fighting with a weapon in each hand. Combat Maneuvers category, Ag/Qu/SD, combined progression. Your skill rank with a given weapon pairing can't exceed your rank with either individual weapon; the OB for each attack equals this skill's bonus, and both attacks take -20 against a second opponent." },
+    { "name": "Body Development", "min": -75, "max": 250, "default": 0, "aliases": ["body dev"], "description": "Determines your Hits maximum — see the Hits derived stat. Co/SD/Co, race-based category progression, Special classification. Structural — do not drop from the sheet; nothing else supplies a Hits cap." },
+    { "name": "Adrenal Defense", "min": -75, "max": 250, "default": 0, "description": "A Self Control skill (SD/Pr/SD, Static Maneuver) for resisting shock, fear, and adrenaline-driven panic in the moment. The core book lists this category's 'adrenal skills' as an open extension rather than one fixed named skill." },
+    { "name": "Stun Removal", "min": -75, "max": 250, "default": 0, "description": "Self Control category, SD/Pr/SD, Static Maneuver. A successful static maneuver shortens accumulated stun rounds; a failed attempt can add more stun instead. Difficulty rises with how many stun rounds you're already carrying." },
+    { "name": "Climbing", "min": -75, "max": 250, "default": 0, "description": "Athletic • Gymnastics category, Ag/Qu/Ag, Moving Maneuver. Scaling surfaces at roughly 10'/round at Medium difficulty on an adequate handhold wall; poorer holds or speed raise the difficulty." },
+    { "name": "Swimming", "min": -75, "max": 250, "default": 0, "description": "Athletic • Endurance category, Co/Ag/St, Moving Maneuver. Rank 1 alone is enough to avoid drowning in calm water; further ranks improve speed, distance, and swimming against a current or in armor." },
+    { "name": "Jumping", "min": -75, "max": 250, "default": 0, "description": "Athletic • Brawn category, St/Co/Ag, Moving Maneuver. Running and standing jumps, both horizontal and vertical." },
+    { "name": "Distance Running", "min": -75, "max": 250, "default": 0, "description": "Athletic • Endurance category, Co/Ag/St, Moving Maneuver. Pacing yourself over long distances and managing Exhaustion Point expenditure at a sustained pace." },
+    { "name": "Perception", "min": -75, "max": 250, "default": 0, "aliases": ["alertness", "spot", "notice"], "description": "MVP stand-in for RMFRP's Alertness skill (Awareness • Perceptions, In/SD/In, limited category progression) — unconscious, passive noticing of your surroundings. Use Observation instead for a deliberate, active search." },
+    { "name": "Observation", "min": -75, "max": 250, "default": 0, "description": "Awareness • Searching category, In/Re/SD, Static Maneuver. Active, deliberate scanning of an area for details — distinct from Perception/Alertness, which is passive and unconscious." },
+    { "name": "Tracking", "min": -75, "max": 250, "default": 0, "description": "Awareness • Searching category, In/Re/SD, Static Maneuver. Following and reading a trail of tracks or spoor." },
+    { "name": "Stalking & Hiding", "min": -75, "max": 250, "default": 0, "aliases": ["stealth", "sneak"], "description": "Combines RMFRP's separate Stalking (moving unseen) and Hiding (staying unseen) skills — both Subterfuge • Stealth, Ag/SD/In, Static Maneuver — into one MVP sheet row. Split them into two rows if your table wants that granularity." },
+    { "name": "Picking Locks", "min": -75, "max": 250, "default": 0, "aliases": ["lockpicking"], "description": "Subterfuge • Mechanics category, In/Ag/Re, Static Maneuver. Opening and locking mechanical locks." },
+    { "name": "Disarming Traps", "min": -75, "max": 250, "default": 0, "description": "Subterfuge • Mechanics category, In/Ag/Re, Static Maneuver. Identifying and disarming a trap you've already located — this skill does not find the trap; see Perception/Observation for that." },
+    { "name": "Diplomacy", "min": -75, "max": 250, "default": 0, "description": "Influence category, Pr/Em/In, Static Maneuver. Formal negotiation and reading a foreign or courtly protocol." },
+    { "name": "Duping", "min": -75, "max": 250, "default": 0, "description": "Influence category, Pr/Em/In, Static Maneuver. Fast talk and misdirection to get one person to act against their own interest." },
+    { "name": "Leadership", "min": -75, "max": 250, "default": 0, "description": "Influence category, Pr/Em/In, Static Maneuver. Inspiring others to follow you and to believe you know what you're doing." },
+    { "name": "Region Lore", "min": -75, "max": 250, "default": 0, "description": "Lore • General category, Me/Re/Me, Static Maneuver. Knowledge of a specific region's geography, people, and history. Rename to the region; every character starts with ranks in their home region's Region Lore." },
+    { "name": "Culture Lore", "min": -75, "max": 250, "default": 0, "description": "MVP stand-in for RMFRP's Race Lore / History / Anthropology cluster (Lore • General, Me/Re/Me, Static Maneuver) — knowledge of a specific culture's customs and beliefs. Not a single named RMFRP skill by this exact name; rename to the culture in question." },
+    { "name": "Power Point Development", "min": -75, "max": 250, "default": 0, "aliases": ["pp development"], "description": "Determines your Power Points maximum — see the Power Points derived stat. Applicable stat is your spellcasting realm stat (Empathy/Intuition/Presence); race-based category progression, Special classification. Structural — the spellcasting analogue of Body Development." },
+    { "name": "Spells (by list)", "min": -75, "max": 250, "default": 0, "description": "Your skill rank with one specific spell list — rename each row to the list's actual name (e.g. 'Fire Law', 'Bard Songs'). You know every spell on that list at or below your rank. Realm stat, Static Maneuver and Special classification. Your own lorebook supplies each list's actual spell effects — see USER-LOREBOOK-GUIDE.md." },
+    { "name": "Directed Spells", "min": -75, "max": 250, "default": 0, "description": "Attack-roll bonus for one specific directed-bolt spell type — Fire Bolts, Ice Bolts, Lightning Bolts, Shock Bolts, or Water Bolts (one skill row per type). Ag/SD/Ag, Offensive Bonus classification. Adds to the open-ended attack roll the same way a weapon OB does." }
+  ],
+  "derivedStats": [
+    { "name": "Hits", "formula": "Equal to your Body Development skill bonus (p.33 worked example). Some printed Character Record Sheets annotate this as '10 + Body Dev skill bonus' — that appears to double-count the +10 special bonus already folded into Body Development's own skill bonus. This bundle defaults to the simpler, worked-example form; switch conventions if your table's sheet uses the other one.", "renderAs": "bar", "maxFormula": "{Body Development}", "default": 10, "aliases": ["hp", "HP", "concussion hits", "hit points"] },
+    { "name": "Power Points", "formula": "Equal to your Power Point Development skill bonus.", "renderAs": "bar", "maxFormula": "{Power Point Development}", "aliases": ["pp", "PP", "power point"] },
+    { "name": "Exhaustion Points", "formula": "40 + (3 x Constitution Bonus) + any special bonuses.", "renderAs": "bar", "maxFormula": "40 + 3 * {Constitution Bonus}", "aliases": ["exp", "ExP", "exhaustion"] },
+    { "name": "Defensive Bonus (DB)", "formula": "(3 x Quickness Bonus) - armor Quickness penalty + shield bonus + special item bonuses. Enter your computed total; this framework can't auto-derive the armor-specific Quickness penalty from Armor Table T-3.3.", "renderAs": "value", "aliases": ["db", "AC", "armor class"] },
+    { "name": "Offensive Bonus (OB)", "formula": "Your weapon skill's total bonus, allocated per round between attack and parry. Enter the OB for the weapon you're wielding this scene.", "renderAs": "value", "aliases": ["ob"] },
+    { "name": "Armor Type (AT)", "formula": "1-20, the column read on the attacker's weapon table. Grouped: 1-4 No Armor, 5-8 Soft/Rigid Leather, 9-12 Rigid Leather, 13-16 Chain, 17-20 Plate.", "renderAs": "value", "default": 1, "max": 20, "aliases": ["at", "armor type"] },
+    { "name": "Moving Maneuver Penalty (MMP)", "formula": "Set by your Armor skill rank against your armor's Minimum/Maximum Maneuver Modification band on Armor Table T-3.3 (p.104). This framework doesn't compute the interpolation — enter the current value by hand. Applies to moving maneuvers.", "renderAs": "value", "aliases": ["mmp"] },
+    { "name": "RR: Essence", "formula": "3 x Empathy Bonus + item + race bonuses. Compare an open-ended d100 + this bonus against the GM-stated target number (Resistance Roll Table T-3.4, attack level vs. your level).", "renderAs": "value" },
+    { "name": "RR: Channeling", "formula": "3 x Intuition Bonus + item + race bonuses. Same procedure as RR: Essence.", "renderAs": "value" },
+    { "name": "RR: Mentalism", "formula": "3 x Presence Bonus + item + race bonuses. Same procedure as RR: Essence.", "renderAs": "value" },
+    { "name": "RR: Poison", "formula": "3 x Constitution Bonus + item + race bonuses. Same procedure as RR: Essence.", "renderAs": "value" },
+    { "name": "RR: Disease", "formula": "3 x Constitution Bonus + item + race bonuses. Same procedure as RR: Essence.", "renderAs": "value" },
+    { "name": "RR: Fear", "formula": "3 x Self Discipline Bonus + item + race bonuses. Same procedure as RR: Essence.", "renderAs": "value" },
+    { "name": "Bleeding (hits/round)", "formula": "Ongoing hit loss per round from an unhealed critical. Set by the critical's severity; First Aid or Stop Bleeding effort reduces or removes it.", "renderAs": "value" },
+    { "name": "Stun (rounds remaining)", "formula": "Rounds of stun remaining from a critical. A stunned combatant may not attack and may only parry with half OB. Stun Removal can shorten it.", "renderAs": "value" },
+    { "name": "Empathy Bonus", "formula": "Basic Stat Bonus Table T-2.1 (p.17) is a piecewise step table this framework's arithmetic-only formulas can't express. Compute your Empathy stat bonus by hand from T-2.1 (plus any racial/special modification) and enter it here.", "renderAs": "value" },
+    { "name": "Intuition Bonus", "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.", "renderAs": "value" },
+    { "name": "Presence Bonus", "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.", "renderAs": "value" },
+    { "name": "Quickness Bonus", "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.", "renderAs": "value" },
+    { "name": "Strength Bonus", "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.", "renderAs": "value" },
+    { "name": "Agility Bonus", "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.", "renderAs": "value" },
+    { "name": "Constitution Bonus", "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry. Feeds Exhaustion Points and the Poison/Disease Resistance Rolls.", "renderAs": "value" },
+    { "name": "Memory Bonus", "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.", "renderAs": "value" },
+    { "name": "Reasoning Bonus", "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.", "renderAs": "value" },
+    { "name": "Self Discipline Bonus", "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry. Feeds the Fear Resistance Roll.", "renderAs": "value" }
+  ],
+  "states": [
+    { "name": "Stunned", "values": [ { "label": "No" }, { "label": "Stunned" }, { "label": "Stunned & Unable to Parry" } ] },
+    { "name": "Posture", "values": [ { "label": "Standing" }, { "label": "Prone" }, { "label": "Down & Helpless" } ] },
+    { "name": "Consciousness", "values": [ { "label": "Awake" }, { "label": "Unconscious" }, { "label": "Dying" } ] }
+  ],
+  "diceTagFormat": {
+    "template": "[mrr-roll: mode=d100-open first={first} chain={chain} roll={roll} bonus={bonus} diff={diff} total={total} um={um}]",
+    "example": "[mrr-roll: mode=d100-open first=99 chain=+96,+04 roll=199 bonus=+62 diff=-20 total=241]"
+  },
+  "sections": {
+    "order": ["identity", "attributes", "skills", "derived", "states", "abilities", "inventory", "notes"]
+  },
+  "lorebookKeys": ["maneuver", "open-ended", "critical", "concussion hits", "power points", "exhaustion", "resistance roll", "OB", "DB", "armor type", "stun", "bleeding"],
+  "abilities": {
+    "label": "Spell Lists",
+    "categories": [
+      { "id": "open", "label": "Open Lists" },
+      { "id": "closed", "label": "Closed Lists" },
+      { "id": "base", "label": "Base Lists" }
+    ]
+  },
+  "equipmentSlots": ["Weapon", "Off-hand", "Shield", "Armor", "Helmet", "Greaves", "Arm Greaves", "Worn", "Carried"],
+  "equipmentBonusTargets": ["Offensive Bonus (OB)", "Defensive Bonus (DB)", "Armor Type (AT)", "Hits", "Power Points", "RR: Essence", "RR: Channeling", "RR: Mentalism"],
+  "vocabularyHints": [
+    { "pattern": "AC / armor class", "hint": "RMFRP has no single AC number — compare Offensive Bonus (OB) minus the target's Defensive Bonus (DB), then cross-index the modified attack roll against the target's Armor Type (AT 1-20) on the attacker's weapon table." },
+    { "pattern": "HP / hit points", "hint": "RMFRP calls this concussion hits — the Hits derived stat, capped by the character's Body Development skill bonus. There's no separate damage roll; the attack table gives hits directly." },
+    { "pattern": "saving throw", "hint": "RMFRP calls this a resistance roll (RR) — an open-ended d100 plus 3x the relevant stat bonus, read against a target number the GM states from the attack's level vs. the target's level." },
+    { "pattern": "spell slot", "hint": "RMFRP casters spend Power Points equal to a spell's level, not a slot — see the Power Points derived stat." },
+    { "pattern": "to-hit roll / attack roll", "hint": "RMFRP attacks are an open-ended d100 + OB - the target's DB, cross-indexed against the target's Armor Type (AT) — not a flat AC comparison." },
+    { "pattern": "DC / difficulty class", "hint": "RMFRP uses the nine-step difficulty ladder (Routine +30 ... Absurd -70) as an additive modifier to a static maneuver roll, not a flat number to beat." }
+  ]
+}

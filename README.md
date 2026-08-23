@@ -42,6 +42,7 @@ Every ruleset ships as a single `bundle.json`, right here on GitHub — no build
 | Lasers & Feelings | d6 | [`rulesets/lasers-and-feelings/bundle.json`](rulesets/lasers-and-feelings/bundle.json) |
 | Old School Essentials | d20 | [`rulesets/ose/bundle.json`](rulesets/ose/bundle.json) |
 | Pathfinder 2nd Edition | d20 | [`rulesets/pathfinder2e/bundle.json`](rulesets/pathfinder2e/bundle.json) |
+| Rolemaster (RMFRP) | open-ended d100 | [`rulesets/rolemaster/bundle.json`](rulesets/rolemaster/bundle.json) |
 | The Stewpot | d6 | [`rulesets/stewpot/bundle.json`](rulesets/stewpot/bundle.json) |
 | Trophy Dark | d6 | [`rulesets/trophy-dark/bundle.json`](rulesets/trophy-dark/bundle.json) |
 | Vampire: The Masquerade 20th Anniversary | d10 pool | [`rulesets/vtmv20/bundle.json`](rulesets/vtmv20/bundle.json) |
