@@ -26,9 +26,9 @@
     },
     {
       "id": "ose-rules-off-widget",
-      "name": "Off-Widget Subsystems (Thief Skills & d6-in-X)",
-      "keys": ["thief skill", "open doors", "listen check", "hear noise", "surprise roll", "d6-in-x", "percentile roll"],
-      "content": "Two subsystems exist outside the dice widget entirely, because the widget only rolls the single declared resolution mode (1d20 for this bundle). Thief Skills (Open Locks, Find/Remove Traps, Pick Pockets, Move Silently, Hide in Shadows, Climb Sheer Surfaces) are percentile: roll d100, success on a result UNDER the skill's sheet value. Thief class only. Open Doors, Listen (Hear Noise), and Surprise are d6-in-X: roll 1d6, success on a result LESS THAN OR EQUAL TO the sheet value. Both families are GM-adjudicated by hand — call for the roll in prose and resolve the outcome narratively rather than emitting a dice-widget tag.",
+      "name": "Dice Mechanic Routing (Thief Skills & d6-in-X)",
+      "keys": ["thief skill", "open doors", "listen check", "hear noise", "surprise roll", "d6-in-x", "percentile roll", "mechanic selector"],
+      "content": "This bundle's dice widget has a mechanic selector (B18) alongside the primary d20 (attacks, saves, most ability checks): Thief Skills (Open Locks, Find/Remove Traps, Pick Pockets, Move Silently, Hide in Shadows, Climb Sheer Surfaces — Thief class only) roll under mode=thief-skills — d100 roll-under, success on a result AT OR UNDER the skill's sheet value. Open Doors, Listen (Hear Noise), and Surprise roll under mode=door-checks — 1d6 roll-under, success on a result AT OR UNDER the stat's X-in-6 value. Do not adjudicate these by hand: clicking the skill/stat's roll button on the sheet auto-selects the right mechanic and the widget rolls it, reporting a self-describing tag like [dice: mode=thief-skills ...] or [dice: mode=door-checks ...] — read the tag for pass/fail exactly like any other roll instead of asking the player to roll narratively.",
       "selective": false,
       "constant": true,
       "position": 0

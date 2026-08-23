@@ -6256,7 +6256,7 @@ function mrrP3RenderDerivedPoolCard(parent, d) {
      / under modes use their own roll widgets and don't surface a per-
      derived roll here. */
   if (typeof d.rollFormula === "string" && d.rollFormula
-      && state.ruleset.resolution && derivedRollSupported(state.ruleset.resolution.mode)) {
+      && state.ruleset.resolution && derivedRollSupported(mrrResolveModeId(d.resolutionId).mode)) {
     var rollBtn = marinara.addElement(card, "button", {
       "class": "mrr-derived-pool-card__roll",
       textContent: "roll"
@@ -7908,7 +7908,12 @@ function renderSpecialtyRow(parent, skill, spec, idx) {
    to whatever the GM called. */
 function quickRollForSave(save) {
   if (!state.ruleset) return;
-  var mode = state.ruleset.resolution.mode;
+  /* B18: saves are never resolutionId-routable (schema scopes
+     resolutionId to skills[]/derivedStats[] only) — always force
+     primary and rebuild the widget if it was last built for some
+     other additionalMode, so the SINGLE/UNDER/STANCE prefill below
+     never lands on stale DOM from a prior skill roll. */
+  var mode = mrrPrepareDiceForResolutionId(null);
   if (mode !== MODES.SINGLE && mode !== MODES.UNDER && mode !== MODES.STANCE) return;
   /* Pre-set advantage / disadvantage from active conditions. (SINGLE only —
      UNDER and STANCE have no advantage/disadvantage concept by default.) */
@@ -7988,7 +7993,10 @@ function derivedRollSupported(mode) {
    stat context to produce the bonus, then opens the dice widget. */
 function quickRollForDerived(derived) {
   if (!state.ruleset) return;
-  var mode = state.ruleset.resolution.mode;
+  /* B18: resolve derived.resolutionId (OSE binds Open Doors/Listen/
+     Surprise to "door-checks") before dispatch, and rebuild the widget
+     if it was last built for a different mechanic. */
+  var mode = mrrPrepareDiceForResolutionId(derived && derived.resolutionId);
   if (mode !== MODES.SINGLE && mode !== MODES.UNDER && mode !== MODES.STANCE && mode !== MODES.POOL) return;
   if (!derived || typeof derived.rollFormula !== "string" || !derived.rollFormula) return;
   if (mode === MODES.POOL) {
@@ -8038,6 +8046,19 @@ function quickRollForDerived(derived) {
       var dv = evalFormula(derived.formula, ctx);
       if (typeof dv === "number" && isFinite(dv)) underTarget = Math.floor(dv);
     }
+    /* B18: derived.formula is often prose (a GM hint), not an arithmetic
+       expression — OSE's Open Doors/Listen/Surprise read "X-in-6, roll
+       1d6, success on a result <= this value...". evalFormula returns
+       null on non-arithmetic text (it fails the digits/operators-only
+       regex), leaving underTarget at its 0 default. Fall back to the
+       stat's own stored/autocalc'd value — the number actually shown on
+       the sheet — instead of silently prefilling a target of 0 for any
+       derivedStat whose formula field is descriptive text. No-op for
+       CoC/GURPS-style derivedStats whose formula DOES evaluate —
+       underTarget is already the right nonzero number by this point. */
+    if (underTarget === 0 && state.sheet.derived && typeof state.sheet.derived[derived.name] === "number") {
+      underTarget = state.sheet.derived[derived.name];
+    }
     var dBonuses = equippedBonuses(derived.name);
     showDice(true);
     state.diceContext = { derivedName: derived.name, base: { target: underTarget, bonus: dBonuses.value } };
@@ -8063,6 +8084,11 @@ function quickRollForDerived(derived) {
    and let the player edit. */
 function quickRollAttack(item) {
   if (!state.ruleset || state.ruleset.resolution.mode !== MODES.SINGLE) return;
+  /* B18: weapon attacks are never resolutionId-routable — force primary
+     and rebuild the widget if it was last built for some other
+     additionalMode, so the mod/prof/equip/dc inputs setDiceInput below
+     targets always exist. */
+  mrrPrepareDiceForResolutionId(null);
   /* Conditions imposing disadvantage on attack rolls auto-arm the widget. */
   var condMode = conditionRollMode("attack");
   if (condMode !== "normal") state.diceAdvantage = condMode;
@@ -8219,7 +8245,10 @@ function rollWeaponDamage(item) {
 }
 
 function quickRollForSkill(skill) {
-  var mode = state.ruleset.resolution.mode;
+  /* B18: resolve skill.resolutionId (OSE binds its six Thief skills to
+     "thief-skills") before dispatch, and rebuild the widget if it was
+     last built for a different mechanic. */
+  var mode = mrrPrepareDiceForResolutionId(skill && skill.resolutionId);
   /* Skill checks pick up disadvantage from Poisoned, Frightened, etc. */
   if (mode === MODES.SINGLE) {
     var condMode = conditionRollMode("skill");
@@ -8254,7 +8283,13 @@ function quickRollForSkill(skill) {
        never written in the autocalc path. */
     var ctxS = statContext();
     var modVal;
-    var skillFormula = state.ruleset.resolution && state.ruleset.resolution.skillBonusFormula;
+    /* B18: reads mrrActiveResolutionConfig() so a SINGLE-mode
+       additionalMode's own skillBonusFormula applies here instead of
+       the ruleset's primary resolution block; identical to the old
+       direct state.ruleset.resolution read when no additionalMode is
+       selected (the OSE pilot never exercises this branch — its two
+       additionalModes are both roll-under). */
+    var skillFormula = mrrActiveResolutionConfig().skillBonusFormula;
     if (skillFormula && skill.linkedAttribute) {
       var mk = skill.linkedAttribute + "_mod";
       modVal = (typeof ctxS[mk] === "number") ? ctxS[mk] : 0;
@@ -8611,7 +8646,7 @@ function renderValue(parent, derived) {
        Skipped on derived without a rollFormula because there's nothing
        to roll — Hit Points, Armor Class, Speed are values, not checks. */
     if (typeof derived.rollFormula === "string" && derived.rollFormula
-        && state.ruleset.resolution && derivedRollSupported(state.ruleset.resolution.mode)) {
+        && state.ruleset.resolution && derivedRollSupported(mrrResolveModeId(derived.resolutionId).mode)) {
       var rollD = marinara.addElement(row, "button", { textContent: "roll", "class": "mrr-row__roll" });
       if (rollD) marinara.on(rollD, "click", function (e) {
         if (e && typeof e.stopPropagation === "function") e.stopPropagation();
@@ -11327,6 +11362,127 @@ function deleteAbilityLorebookEntry(ability) {
 
 /* ─────  dice widget  ───── */
 
+/* B18 — multi-mechanic dice. `state.diceActiveModeId` names the currently
+   selected mechanic: "primary" (or unset) means the ruleset's own
+   `resolution.mode`; any other value is the `id` of a
+   `resolution.additionalModes[]` entry. `state.diceBuiltModeId` records
+   which mode the CURRENTLY MOUNTED `state.diceEl` was built for, so a
+   mode switch can detect staleness and rebuild instead of silently
+   reusing DOM for the wrong mechanic (a roll-under widget has no `mod`
+   input; setDiceInput would just no-op against it).
+
+   The dice never leave deterministic code: nothing here executes agent-
+   supplied logic. An additionalMode is only ever selected by (a) the
+   player via the mechanic-selector <select> in the widget, or (b) a
+   skill/derivedStat's own resolutionId when its roll button is clicked.
+   The agent only ever REQUESTS a mechanic by name (via the routing table
+   taught in buildSheetForPrompt/buildFieldReferenceContent) and reads the
+   resulting self-describing `[dice: mode=<id> ...]` tag. */
+
+/* Resolves the currently active resolution config. Returns the top-level
+   `resolution` object UNCHANGED (same reference) whenever no
+   additionalMode is selected — every mode-specific reader downstream
+   (res.diceFormula, res.skillFormula, etc.) behaves byte-identically to
+   pre-B18 code for primary-mode rolls and rulesets with no
+   additionalModes at all (P1 zero-regression). When an additionalMode
+   IS selected, synthesizes a plain object shaped exactly like
+   `resolution` for that mode: `mode` from the additionalMode entry, plus
+   every field in its `config` block (config carries the same per-mode
+   field set `resolution` uses for that mode, minus the `mode`
+   discriminator — see the schema's $defs comment). */
+function mrrActiveResolutionConfig() {
+  var ruleset = state.ruleset;
+  if (!ruleset || !ruleset.resolution) return {};
+  var amId = state.diceActiveModeId;
+  if (!amId || amId === "primary") return ruleset.resolution;
+  var modes = Array.isArray(ruleset.resolution.additionalModes) ? ruleset.resolution.additionalModes : [];
+  for (var i = 0; i < modes.length; i++) {
+    var am = modes[i];
+    if (am && am.id === amId) {
+      var cfg = am.config || {};
+      var merged = { mode: am.mode };
+      for (var k in cfg) {
+        if (Object.prototype.hasOwnProperty.call(cfg, k)) merged[k] = cfg[k];
+      }
+      return merged;
+    }
+  }
+  /* Unknown id (stale state, or a resolutionId the schema/validator
+     should have already caught) — fall back to primary rather than
+     silently rendering nothing. */
+  return ruleset.resolution;
+}
+
+/* Resolves a skill/derivedStat's `resolutionId` (or the forced-primary
+   case for saves/attacks, which always pass null/undefined) to
+   {id, mode}. "primary", omitted, and unrecognized ids all resolve to
+   primary — an authoring error here is a silently-safe no-op, never a
+   corrupted roll. */
+function mrrResolveModeId(resolutionId) {
+  var primaryMode = state.ruleset && state.ruleset.resolution && state.ruleset.resolution.mode;
+  if (!resolutionId || resolutionId === "primary") {
+    return { id: "primary", mode: primaryMode };
+  }
+  var modes = (state.ruleset && state.ruleset.resolution && Array.isArray(state.ruleset.resolution.additionalModes))
+    ? state.ruleset.resolution.additionalModes
+    : [];
+  for (var i = 0; i < modes.length; i++) {
+    if (modes[i] && modes[i].id === resolutionId) {
+      return { id: modes[i].id, mode: modes[i].mode };
+    }
+  }
+  return { id: "primary", mode: primaryMode };
+}
+
+/* Points state.diceActiveModeId at the resolved mechanic and forces a
+   widget rebuild when the currently-mounted widget was built for a
+   DIFFERENT mode. Called from every quickRollFor-family entry
+   point BEFORE showDice(true) so the widget that opens always matches
+   the mechanic about to be prefilled. Passing a falsy resolutionId
+   always resolves to primary (the save/attack call sites use this —
+   resolutionId routing is scoped to skills[]/derivedStats[] only). */
+function mrrPrepareDiceForResolutionId(resolutionId) {
+  var resolved = mrrResolveModeId(resolutionId);
+  state.diceActiveModeId = resolved.id;
+  if (state.diceEl && state.diceBuiltModeId !== resolved.id) {
+    if (state.diceEl.parentNode) state.diceEl.parentNode.removeChild(state.diceEl);
+    state.diceEl = null;
+  }
+  return resolved.mode;
+}
+
+/* Mechanic selector — rendered inside buildDice() only when the active
+   ruleset declares resolution.additionalModes. Idiom-matched to the
+   existing stance-toggle pattern's use of a plain labeled row (no
+   existing <select>-as-mode-picker idiom exists in the dice widget
+   itself; the many other <select> elements in the sheet use the
+   "mrr-*-select"/"mrr-item-form__select" class family, matched here as
+   "mrr-dice__mechanic-select" for visual consistency). Switching
+   mechanics nukes and rebuilds the widget so the correct per-mode
+   builder renders. */
+function buildMechanicSelector(parent, additionalModes) {
+  var row = marinara.addElement(parent, "div", { "class": "mrr-dice__mechanic-row" });
+  if (!row) return;
+  marinara.addElement(row, "label", { textContent: "Mechanic" });
+  var sel = marinara.addElement(row, "select", { "class": "mrr-dice__mechanic-select" });
+  if (!sel) return;
+  var current = state.diceActiveModeId || "primary";
+  var primaryOpt = marinara.addElement(sel, "option", { textContent: "Primary", value: "primary" });
+  if (primaryOpt && current === "primary") primaryOpt.selected = true;
+  additionalModes.forEach(function (am) {
+    if (!am || typeof am.id !== "string") return;
+    var opt = marinara.addElement(sel, "option", { textContent: am.label || am.id, value: am.id });
+    if (opt && current === am.id) opt.selected = true;
+  });
+  marinara.on(sel, "change", function () {
+    var newId = sel.value || "primary";
+    state.diceActiveModeId = newId;
+    if (state.diceEl && state.diceEl.parentNode) state.diceEl.parentNode.removeChild(state.diceEl);
+    state.diceEl = null;
+    showDice(true);
+  });
+}
+
 function buildDice() {
   if (state.diceEl) return state.diceEl;
   /* D8: a ruleset missing its `resolution` block would TypeError on
@@ -11337,6 +11493,10 @@ function buildDice() {
   }
   state.diceEl = marinara.addElement(document.body, "div", { "class": "mrr-dice" });
   if (!state.diceEl) return null;
+  /* B18 — stamp which mechanic this DOM was built for. Untouched
+     (always "primary") on rulesets with no additionalModes, since
+     nothing ever sets state.diceActiveModeId to anything else. */
+  state.diceBuiltModeId = state.diceActiveModeId || "primary";
 
   var header = marinara.addElement(state.diceEl, "div", { "class": "mrr-dice__header" });
   if (header) {
@@ -11346,7 +11506,16 @@ function buildDice() {
     makeDraggable(state.diceEl, header, "mrr-dice-pos");
   }
 
-  var mode = state.ruleset.resolution.mode;
+  /* B18 — mechanic selector, only when the ruleset declares
+     additionalModes. Absent entirely for the other 15 shipped
+     rulesets: amList is empty, buildMechanicSelector never runs, and
+     mrrActiveResolutionConfig() returns state.ruleset.resolution
+     unchanged, so `mode` below is byte-identical to pre-B18 code. */
+  var amList = Array.isArray(state.ruleset.resolution.additionalModes) ? state.ruleset.resolution.additionalModes : [];
+  if (amList.length) buildMechanicSelector(state.diceEl, amList);
+
+  var resCfg = mrrActiveResolutionConfig();
+  var mode = resCfg.mode;
   if      (mode === MODES.POOL)   buildPoolWidget();
   else if (mode === MODES.SINGLE) buildSingleRollWidget();
   else if (mode === MODES.SUM)    buildSumWidget();
@@ -11423,7 +11592,7 @@ function buildPoolWidget() {
      "Difficulty N" role and is editable per roll. JS input IDs are
      unchanged (`diff` stays for successes-required; `target` is the new
      per-die face threshold) so rollDicePool back-compat is preserved. */
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
   var defaultTarget = (typeof res.target === "number") ? res.target : 7;
   diceRow(d, "Pool",        "pool",   "5");
   diceRow(d, "Target Face", "target", String(defaultTarget));
@@ -11441,7 +11610,7 @@ function buildPoolWidget() {
    The actual rolling logic + chat-tag emission live in rollDicePoolSum. */
 function buildSumWidget() {
   var d = state.diceEl;
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
   var difficultyHint = (typeof res.difficultyHint === "number") ? res.difficultyHint : 15;
   var wd = res.wildDie || null;
   diceRow(d, "Pool (dice)", "pool",  "3");
@@ -11460,7 +11629,7 @@ function buildSumWidget() {
 
 function buildD100Widget() {
   var d   = state.diceEl;
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
   var oe  = res.openEnded || null;
   if (res.direction === "high") {
     diceRow(d, "Bonus",      "bonus", "0");   // skill + stat + item, player-entered
@@ -11506,7 +11675,13 @@ function buildFateWidget() {
      criticalFailureFormula   — total >= eval(formula) => fumble (GURPS: margin <= -10) */
 function buildRollUnderWidget() {
   var d = state.diceEl;
-  var formula = (state.ruleset.resolution && state.ruleset.resolution.diceFormula) || "1d100";
+  /* B18: reads mrrActiveResolutionConfig() so an additionalModes
+     roll-under mechanic's own diceFormula (OSE: "1d100" for thief
+     skills, "1d6" for door checks) drives the label instead of the
+     ruleset's primary resolution block; identical to the old direct
+     state.ruleset.resolution read when no additionalMode is selected. */
+  var resUnder = mrrActiveResolutionConfig();
+  var formula = (resUnder && resUnder.diceFormula) || "1d100";
   diceRow(d, "Target", "target", "50");
   diceRow(d, "Bonus",  "bonus",  "0");
   diceFooter(d, "Roll " + formula, rollRollUnder);
@@ -11544,7 +11719,7 @@ function evalRollUnderFormula(formula, target, margin) {
 }
 
 function rollRollUnder() {
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
   var parsed = parseRollUnderFormula(res.diceFormula) || { count: 1, sides: 100 };
   var baseTarget = clamp(numFromInput("target", 50), 1, 9999);
   var bonus = numFromInput("bonus", 0);
@@ -11607,7 +11782,7 @@ function rollRollUnder() {
    and is sticky across rolls in the same widget session. */
 function buildStanceModalPoolWidget() {
   var d = state.diceEl;
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
   var stances = Array.isArray(res.stances) ? res.stances : [];
   var statName = res.stat || "Stat";
 
@@ -11687,7 +11862,7 @@ function buildStanceModalPoolWidget() {
       exactMatches, tier, and narrationHook (when an exact-match was rolled
       AND the ruleset declares one). */
 function rollStanceModalPool() {
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
   var stances = Array.isArray(res.stances) ? res.stances : [];
   var stanceId = state.diceStanceId || (stances[0] && stances[0].id) || "stance";
   var stance = null;
@@ -11852,13 +12027,18 @@ function rollDicePool() {
   /* Target = per-die face threshold. Read from widget input first (V20 / W20:
      varies 6-9 per check); fall back to schema's resolution.target (Exalted's
      fixed 7); fall back to canonical 7 if neither set. This is what makes
-     V20-style variable difficulty work without forcing a ruleset fork. */
-  var schemaTarget = (state.ruleset.resolution && typeof state.ruleset.resolution.target === "number") ? state.ruleset.resolution.target : 7;
+     V20-style variable difficulty work without forcing a ruleset fork.
+     B18: reads mrrActiveResolutionConfig() so an additionalModes dice-pool
+     mechanic's own target/doubles/botches parameterize this roller instead
+     of the ruleset's primary resolution block; identical to the old direct
+     state.ruleset.resolution reads when no additionalMode is selected. */
+  var resDP = mrrActiveResolutionConfig();
+  var schemaTarget = (resDP && typeof resDP.target === "number") ? resDP.target : 7;
   var target = numFromInput("target", schemaTarget);
-  var doubleFace = (state.ruleset.resolution.doubles && state.ruleset.resolution.doubles.face) || 10;
-  var doubleSucc = (state.ruleset.resolution.doubles && state.ruleset.resolution.doubles.successes) || 2;
-  var botchFace  = (state.ruleset.resolution.botches && state.ruleset.resolution.botches.onFace) || 1;
-  var botchTrigger = (state.ruleset.resolution.botches && state.ruleset.resolution.botches.trigger) || BOTCH_TRIGGER.ZERO;
+  var doubleFace = (resDP.doubles && resDP.doubles.face) || 10;
+  var doubleSucc = (resDP.doubles && resDP.doubles.successes) || 2;
+  var botchFace  = (resDP.botches && resDP.botches.onFace) || 1;
+  var botchTrigger = (resDP.botches && resDP.botches.trigger) || BOTCH_TRIGGER.ZERO;
 
   var successes = 0;
   var doubled   = 0;
@@ -11923,7 +12103,7 @@ function rollDicePoolSum() {
   var pool  = Math.max(1, numFromInput("pool", 1));
   var pips  = numFromInput("pips", 0);
   var diff  = Math.max(1, numFromInput("diff", 15));
-  var res   = state.ruleset.resolution || {};
+  var res   = mrrActiveResolutionConfig(); /* B18 */
   var dieSize = (typeof res.dieSize === "number") ? res.dieSize : 6;
   var wd    = res.wildDie || null;
   var wdOn  = !!(wd && wd.enabled);
@@ -12003,7 +12183,7 @@ function signedNum(n) {
 }
 
 function rollD100() {
-  var res = state.ruleset.resolution || {};
+  var res = mrrActiveResolutionConfig(); /* B18 */
 
   if (res.direction !== "high") {
     /* Legacy roll-under path — byte-equivalent to the pre-C1 body.
@@ -12155,7 +12335,25 @@ function rollFate() {
   }));
 }
 
+/* B18 chokepoint — every `[dice: ...]` tag from ANY mode's roll function
+   (rollSingleRoll, rollDicePool, rollRollUnder, etc.) funnels through
+   here before it ever reaches the player. When an additionalMode is
+   active, splice `mode=<id>` in immediately after the "[dice: " prefix
+   per the design's self-describing-tag contract — one insertion point
+   instead of touching all 8 roll functions' tag-building code. Gated on
+   BOTH state.diceActiveModeId being a real (non-"primary") id AND the
+   text literally starting with "[dice: " so item-use / spell-cast /
+   narrate tags built from other finalizeRoll call sites (which use
+   different tag prefixes) are never touched — zero regression for
+   anything that isn't a mode-widget roll. Primary-mode rolls and
+   rulesets with no additionalModes never set diceActiveModeId to
+   anything but "primary"/undefined, so this is a no-op there — P1
+   zero-regression. */
 function finalizeRoll(text, kind, faces) {
+  var amId = state.diceActiveModeId;
+  if (amId && amId !== "primary" && typeof text === "string" && text.indexOf("[dice: ") === 0) {
+    text = "[dice: mode=" + amId + " " + text.slice("[dice: ".length);
+  }
   lastRollText = text;
   showResult(text, kind, faces);
 }
@@ -12789,6 +12987,42 @@ function syncSheetToChat() {
    (character/persona/lorebook) carry narrative copy, not numbers.
    Putting the sheet inline in promptTemplate puts it where every agent
    we install reads, with no engine-side cooperation required. */
+
+/* B18 — the only AI-facing surface of multi-mechanic dice. Returns the
+   compact routing block lines (including its own header + trailing
+   blank line) teaching the GM agent which additionalModes exist, when
+   to call each by id (whenToUse), and which skills/derivedStats are
+   already bound to it via resolutionId. Returns [] (a true no-op, both
+   call sites just push an empty array) when the ruleset has no
+   additionalModes — 15 of the 16 shipped rulesets never emit this
+   block at all (P5 zero-regression for everything but the OSE pilot).
+   Shared by buildSheetForPrompt (overlay-agent prompts) and
+   buildFieldReferenceContent (the narrator-visible lorebook entry) so
+   the routing table doesn't drift between the two teaching surfaces. */
+function mrrMechanicRoutingLines() {
+  var res = state.ruleset && state.ruleset.resolution;
+  var modes = (res && Array.isArray(res.additionalModes)) ? res.additionalModes : [];
+  if (!modes.length) return [];
+  var lines = [];
+  lines.push("Dice mechanic routing (this ruleset offers more than one dice mechanic — request the right one by id; the dice widget rolls it and reports a self-describing [dice: mode=<id> ...] tag, you never roll it yourself):");
+  modes.forEach(function (am) {
+    if (!am || typeof am.id !== "string") return;
+    var bound = [];
+    (state.ruleset.skills || []).forEach(function (sk) {
+      if (sk && sk.resolutionId === am.id && typeof sk.name === "string") bound.push(sk.name);
+    });
+    (state.ruleset.derivedStats || []).forEach(function (d) {
+      if (d && d.resolutionId === am.id && typeof d.name === "string") bound.push(d.name);
+    });
+    var line = "- " + am.id + " (" + (am.label || am.id) + ")";
+    if (typeof am.whenToUse === "string" && am.whenToUse) line += " — " + am.whenToUse;
+    if (bound.length) line += " [sheet-bound: " + bound.join(", ") + "]";
+    lines.push(line);
+  });
+  lines.push("");
+  return lines;
+}
+
 function buildSheetForPrompt() {
   if (!state.sheet || !state.ruleset) return "";
   var current = state.characters.find(function (c) { return c.id === state.activeCharacterId; });
@@ -13271,6 +13505,10 @@ function buildSheetForPrompt() {
     lines.push("");
   }
 
+  /* B18 — appended only when the ruleset declares additionalModes; a
+     true no-op (empty array) otherwise. */
+  Array.prototype.push.apply(lines, mrrMechanicRoutingLines());
+
   return lines.join("\n").trim();
 }
 
@@ -13404,7 +13642,11 @@ function buildFieldReferenceContent() {
   lines.push("  category          — \"equipment\" (lives in the on-sheet Inventory section, equippable to slot) or \"item\" (Items flyout, usable / consumable). Default: \"item\" when no slot, \"equipment\" when slot is set.");
   lines.push("");
   lines.push("Repeated inventory.add tags with the same name BUMP QUANTITY and ENRICH any blank fields on the existing item — populate fields once authoritatively on first add, omit them on subsequent qty bumps.");
-  return lines.join("\n");
+  lines.push("");
+  /* B18 — appended only when the ruleset declares additionalModes; a
+     true no-op (empty array) otherwise. */
+  Array.prototype.push.apply(lines, mrrMechanicRoutingLines());
+  return lines.join("\n").trim();
 }
 
 var FIELD_REF_TAG = "mrr-field-reference";

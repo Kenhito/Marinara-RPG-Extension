@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "edition": "B/X-compatible retroclone (Necrotic Gnome)",
   "license": "Mechanics reference only, paraphrased from the public B/X tradition; no verbatim text from Old School Essentials. OSE trade dress and text belong to Necrotic Gnome.",
-  "summary": "Classic dungeon-crawling d20 retroclone. Attacks and saving throws are a single d20 roll compared to a target number. This bundle uses the ASCENDING Armor Class convention (AC 10 unarmored baseline, higher AC = harder to hit) instead of the original descending/THAC0 convention, chosen for dice-widget compatibility — see the 'Ascending AC — a house convention' lorebook entry. Two further subsystems exist OUTSIDE the dice widget: percentile Thief Skills (d100 roll-under) and d6-in-X checks (Open Doors, Listen, Surprise) — both are GM-adjudicated by hand; see 'Off-Widget Subsystems'. Ability score modifiers follow a non-linear step table, not a formula. Every class has its own XP-to-level progression; the sheet's XP table below shows the Fighter progression only — consult your class table for any other class. Low-level play is lethal: a 1st-level character has a single Hit Die and can die to one bad roll.",
+  "summary": "Classic dungeon-crawling d20 retroclone. Attacks and saving throws are a single d20 roll compared to a target number. This bundle uses the ASCENDING Armor Class convention (AC 10 unarmored baseline, higher AC = harder to hit) instead of the original descending/THAC0 convention, chosen for dice-widget compatibility — see the 'Ascending AC — a house convention' lorebook entry. Two further subsystems ride the dice widget's mechanic selector (B18) alongside the primary d20: percentile Thief Skills (mode=thief-skills, d100 roll-under) and d6-in-X checks (mode=door-checks — Open Doors, Listen, Surprise); see the 'Dice Mechanic Routing' lorebook entry. Ability score modifiers follow a non-linear step table, not a formula. Every class has its own XP-to-level progression; the sheet's XP table below shows the Fighter progression only — consult your class table for any other class. Low-level play is lethal: a 1st-level character has a single Hit Die and can die to one bad roll.",
 
   "xpTable": [
     { "level": 1, "xp": 0 },
@@ -26,7 +26,23 @@
   "dice": { "type": "d20", "notation": "1d20 + mod vs AC / Save Target" },
   "resolution": {
     "mode": "single-roll",
-    "modifierFormula": "1d20 + attack_bonus + ability_mod (STR for melee, DEX for missile; ability_mod from the step table, not a formula)"
+    "modifierFormula": "1d20 + attack_bonus + ability_mod (STR for melee, DEX for missile; ability_mod from the step table, not a formula)",
+    "additionalModes": [
+      {
+        "id": "thief-skills",
+        "label": "Thief Skills (d100 roll-under)",
+        "mode": "roll-under",
+        "config": { "diceFormula": "1d100" },
+        "whenToUse": "Thief-class percentile skills (Open Locks, Find/Remove Traps, Pick Pockets, Move Silently, Hide in Shadows, Climb Sheer Surfaces): roll d100, success on a result at or under the skill's sheet value."
+      },
+      {
+        "id": "door-checks",
+        "label": "d6-in-X Check (Open Doors / Listen / Surprise)",
+        "mode": "roll-under",
+        "config": { "diceFormula": "1d6" },
+        "whenToUse": "Open Doors, Listen (Hear Noise), and Surprise checks: roll 1d6, success on a result at or under the stat's X-in-6 value."
+      }
+    ]
   },
 
   "difficulties": {
@@ -46,12 +62,12 @@
   ],
 
   "skills": [
-    { "name": "Open Locks", "min": 0, "max": 99, "default": 15, "description": "Thief only. d100 roll UNDER this value succeeds. Off dice-widget — GM calls for the roll narratively; see 'Off-Widget Subsystems'." },
-    { "name": "Find/Remove Traps", "min": 0, "max": 99, "default": 10, "description": "Thief only. d100 roll-under. Off dice-widget." },
-    { "name": "Pick Pockets", "min": 0, "max": 99, "default": 20, "description": "Thief only. d100 roll-under. Off dice-widget." },
-    { "name": "Move Silently", "min": 0, "max": 99, "default": 20, "description": "Thief only. d100 roll-under. Off dice-widget." },
-    { "name": "Hide in Shadows", "min": 0, "max": 99, "default": 10, "description": "Thief only. d100 roll-under. Off dice-widget." },
-    { "name": "Climb Sheer Surfaces", "min": 0, "max": 99, "default": 87, "description": "Thief only. d100 roll-under. Off dice-widget." }
+    { "name": "Open Locks", "min": 0, "max": 99, "default": 15, "description": "Thief only. d100 roll UNDER this value succeeds. Pick \"Thief Skills\" in the dice widget's mechanic selector (mode=thief-skills) to roll it.", "resolutionId": "thief-skills" },
+    { "name": "Find/Remove Traps", "min": 0, "max": 99, "default": 10, "description": "Thief only. d100 roll-under (mode=thief-skills).", "resolutionId": "thief-skills" },
+    { "name": "Pick Pockets", "min": 0, "max": 99, "default": 20, "description": "Thief only. d100 roll-under (mode=thief-skills).", "resolutionId": "thief-skills" },
+    { "name": "Move Silently", "min": 0, "max": 99, "default": 20, "description": "Thief only. d100 roll-under (mode=thief-skills).", "resolutionId": "thief-skills" },
+    { "name": "Hide in Shadows", "min": 0, "max": 99, "default": 10, "description": "Thief only. d100 roll-under (mode=thief-skills).", "resolutionId": "thief-skills" },
+    { "name": "Climb Sheer Surfaces", "min": 0, "max": 99, "default": 87, "description": "Thief only. d100 roll-under (mode=thief-skills).", "resolutionId": "thief-skills" }
   ],
 
   "saves": [
@@ -66,9 +82,9 @@
     { "name": "Hit Points", "formula": "Sum of class Hit Dice rolled at each level (Fighter/Dwarf d8, Cleric/Thief/Halfling/Elf d6, Magic-User d4) plus CON modifier per die, minimum 1 HP per die. A 1st-level character has exactly one Hit Die.", "renderAs": "bar", "default": 4, "aliases": ["hp", "HP", "hitPoints", "hit points"] },
     { "name": "Armor Class", "formula": "Ascending house convention: 10 unarmored, +armor bonus, +DEX modifier (step table). Higher is better. See 'Ascending AC — a house convention'.", "renderAs": "value", "default": 10, "aliases": ["ac", "AC", "armorClass", "armor class"] },
     { "name": "Attack Bonus", "formula": "Class-and-level lookup table, not a formula. Fighters gain +1 every level; Cleric/Thief roughly every 2-3 levels; Magic-User roughly every 3-5 levels. See 'Attack Bonus Progression'.", "renderAs": "value", "default": 0, "aliases": ["attackBonus", "attack bonus", "toHit", "to-hit"] },
-    { "name": "Open Doors", "formula": "X-in-6, roll 1d6, success on a result <= this value. Most classes 2, Fighter/Dwarf/Half-Orc-type strongfolk 3-4 with high STR. Off dice-widget.", "renderAs": "value", "default": 2, "aliases": ["openDoors", "open doors"] },
-    { "name": "Listen", "formula": "X-in-6 (Hear Noise), roll 1d6, success on a result <= this value. 1 for most classes, 2 for Thief/Elf/Halfling. Off dice-widget.", "renderAs": "value", "default": 1, "aliases": ["listen", "hearNoise", "hear noise"] },
-    { "name": "Surprise", "formula": "X-in-6, roll 1d6 for each side at an unexpected encounter, success on a result <= this value causes that side to be surprised (loses the first round). Baseline 2 for both PCs and monsters. Off dice-widget.", "renderAs": "value", "default": 2, "aliases": ["surprise"] },
+    { "name": "Open Doors", "formula": "X-in-6, roll 1d6, success on a result <= this value. Most classes 2, Fighter/Dwarf/Half-Orc-type strongfolk 3-4 with high STR. Roll via the dice widget's \"Door Checks\" mechanic (mode=door-checks).", "renderAs": "value", "default": 2, "aliases": ["openDoors", "open doors"], "rollFormula": "{Open Doors}", "resolutionId": "door-checks" },
+    { "name": "Listen", "formula": "X-in-6 (Hear Noise), roll 1d6, success on a result <= this value. 1 for most classes, 2 for Thief/Elf/Halfling. Roll via the dice widget's \"Door Checks\" mechanic (mode=door-checks).", "renderAs": "value", "default": 1, "aliases": ["listen", "hearNoise", "hear noise"], "rollFormula": "{Listen}", "resolutionId": "door-checks" },
+    { "name": "Surprise", "formula": "X-in-6, roll 1d6 for each side at an unexpected encounter, success on a result <= this value causes that side to be surprised (loses the first round). Baseline 2 for both PCs and monsters. Roll via the dice widget's \"Door Checks\" mechanic (mode=door-checks).", "renderAs": "value", "default": 2, "aliases": ["surprise"], "rollFormula": "{Surprise}", "resolutionId": "door-checks" },
     { "name": "Level", "formula": "Character level. XP thresholds are class-specific; the xpTable above (and this sheet's XP bar) show the Fighter progression only — see 'Experience & Class-Specific XP Tables'.", "renderAs": "value", "default": 1, "max": 14, "aliases": ["level", "lvl"] }
   ],
 

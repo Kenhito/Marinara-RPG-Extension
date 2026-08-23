@@ -8,7 +8,7 @@
 
 ## ⚠️ Before you start — does the schema even support your dice mechanic?
 
-The schema supports the **nine resolution modes listed in section 1 below**. They cover the vast majority of shipping tabletop systems: d20, dice pools, percentile, PbtA, Fate, roll-under, stance-modal pools, OpenD6-family sum-and-compare, and prose-resolved (no dice).
+The schema supports the **nine resolution modes listed in section 1 below**. They cover the vast majority of shipping tabletop systems: d20, dice pools, percentile, PbtA, Fate, roll-under, stance-modal pools, OpenD6-family sum-and-compare, and prose-resolved (no dice). A ruleset is no longer limited to ONE mode — `resolution.additionalModes[]` (§1, "multi-mechanic dice") lets you mix and match any of the nine for a system that genuinely uses more than one (a d20 combat game with a percentile skill subsystem, say). The nine-mode ceiling below is still real — it's a ceiling per MECHANIC, not per ruleset.
 
 **If your system's dice mechanic isn't one of the nine — don't author it.** Ask Kenhito to add it first. Post in the **Marinara Extension community thread** (linked from the project README; if you can't find the thread, open an issue at the project's GitHub repo) and describe:
 
@@ -128,6 +128,46 @@ The dice tag reports the whole chain, e.g. `[mrr-roll: mode=d100-open first=97 c
 ```
 
 The widget renders the `noticeText` as informational copy. No dice are rolled. Use sparingly — narrative-handled mode is for systems whose canonical resolution is "the GM decides" (Trophy Dark dark dice, certain freeform scenes). If a system has dice that the schema doesn't yet model, do NOT use `narrative-handled` as an escape valve — that lies about how the system plays. Ask Kenhito to add the mode (see the callout at the top of this doc).
+
+### `resolution.additionalModes[]` — multi-mechanic dice (B18)
+
+A ruleset used to be locked to exactly ONE dice-resolution mode. A game that rolls a d20 for combat but a percentile roll-under for something else had no automation path for the second mechanic — it had to live in prose plus a lorebook entry telling the GM and player how to call for it by hand. **That limit is lifted.** `resolution` gains an optional sibling array:
+
+```jsonc
+"resolution": {
+  "mode": "single-roll",                 // still the PRIMARY mode — unchanged, still required
+  "modifierFormula": "1d20 + attack_bonus + ability_mod",
+  "additionalModes": [
+    {
+      "id": "thief-skills",              // stable slug — referenced by resolutionId below AND echoed in the dice tag
+      "label": "Thief Skills (d100 roll-under)",   // shown in the dice widget's mechanic selector
+      "mode": "roll-under",              // any of the nine modes — same enum as the top-level resolution.mode
+      "config": {                        // the SAME per-mode field set `resolution` uses for this mode, minus `mode` itself
+        "diceFormula": "1d100"
+      },
+      "whenToUse": "Thief-class percentile skills: roll d100, success on a result at or under the skill's sheet value."
+    },
+    {
+      "id": "door-checks",
+      "label": "d6-in-X Check",
+      "mode": "roll-under",
+      "config": { "diceFormula": "1d6" },
+      "whenToUse": "Open Doors, Listen, Surprise: roll 1d6, success on a result at or under the stat's X-in-6 value."
+    }
+  ]
+}
+```
+
+Rules of the road:
+
+- **`config` mirrors the primary `resolution` object's shape for that `mode`, minus the `mode` field itself** (already given as the sibling `mode` property). A `roll-under` additionalMode's `config` takes exactly the fields `resolution.mode: "roll-under"` would (`diceFormula`, optional `skillBonusFormula`/`criticalSuccessFormula`/`criticalFailureThreshold`/`criticalFailureFormula`) — same rules, same doc section above, just nested one level deeper.
+- **`id` uniqueness** across `additionalModes[]` is enforced by `npm run validate-rulesets` (not expressible as a pure JSON Schema constraint) — pick distinct slugs.
+- **Binding a skill or derived stat to a mechanic:** add `resolutionId: "<additionalModes id>"` (or the literal `"primary"`, equivalent to omitting it) to a `skills[]` or `derivedStats[]` item. Its roll button pre-selects that mechanic in the dice widget instead of the primary mode. `resolutionId` values are also cross-checked by `npm run validate-rulesets` against the declared `additionalModes` ids.
+- **`whenToUse`** (optional, one line) is auto-taught into the GM agent's prompt — a compact routing table (id, label, `whenToUse`, and which skills/derivedStats are bound) appears ONLY when `additionalModes` is non-empty. Write it as guidance for WHEN the agent should request this mechanic by name, not how the dice work — the widget already knows the math.
+- **Self-describing tags:** any roll made under a non-primary mechanic tags its chat output `[dice: mode=<id> ...]` immediately after `[dice: `. The dice never leave deterministic code — the agent only ever requests a mechanic by id and reads the resulting tag; it never rolls anything itself.
+- **The dice widget** gains a manual mechanic selector (a `<select>` above the roll inputs) whenever `additionalModes` is non-empty, so the player can also switch mechanics by hand, independent of any skill's `resolutionId`.
+- **Still a real limit:** a mechanic that doesn't reduce to one of the nine typed `resolution` modes (a genuine non-dice subsystem, a card draw, a diceless resource spend) still has no automation path — it's still prose + a lorebook entry, exactly as before. `additionalModes` only removes the "exactly one MODE" ceiling; it doesn't add a tenth kind of mode.
+- **Shipped example:** `rulesets/ose/ruleset.json` — primary `single-roll` (d20 attack/save math) plus `thief-skills` and `door-checks`, both `roll-under`, bound to the six Thief skills and the Open Doors/Listen/Surprise derived stats respectively. See its `lorebook.json`'s "Dice Mechanic Routing" entry for the player/GM-facing writeup.
 
 ---
 
