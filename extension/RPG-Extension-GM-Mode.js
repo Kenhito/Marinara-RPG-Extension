@@ -31,6 +31,7 @@ var LS_INTIMACIES_POS = "mrr-intimacies-pos";
 var LS_SPELLBOOK_LB_PFX = "mrr-spellbook-lb-";   // appended with chatId
 var LS_PROCESSED_MSGS_PFX = "mrr-processed-msgs-"; // appended with chatId — set of message ids whose state-mutator tags have already applied; persisted so hard-refresh doesn't re-apply historic mutations
 var LS_PROCESSED_RUNS_PFX = "mrr-processed-runs-"; // appended with chatId — set of custom-agent run ids whose [mrr-state:] tags have applied via the runs-endpoint transport (B1 replacement)
+var LS_MUTATION_JOURNAL_PFX = "mrr-mutation-journal-"; // appended with chatId — B2-R swipe-revert journal, per messageId:swipeIndex bucket. Same per-browser observation class as the two prefixes above — LOCAL-only, NEVER server-synced (see mrrIsSyncedKey and the classification comment below).
 /* B1 replacement gate. The old console.log sniff of the State Mutator overlay
    is dead on every 2.0.x+ build (engine line is debug-gated console.warn,
    prod-stripped since v1.4.0). The sanctioned source is GET /agents/runs/
@@ -366,6 +367,12 @@ function lsDelRaw(key) { try { localStorage.removeItem(key); } catch (e) {} }
          is active even with the sheets themselves synced.)
      LOCAL (explicit per spec):
        - LS_PROCESSED_MSGS_PFX / LS_PROCESSED_RUNS_PFX  per-browser dedup sets
+       - LS_MUTATION_JOURNAL_PFX "mrr-mutation-journal-<chatId>" — B2-R
+         swipe-revert journal (round 7). Same per-browser-observation class
+         as the two dedup sets above: what this specific browser watched
+         apply, so it alone can invert it. A second device wouldn't have
+         seen the same DOM stream and has no basis to revert anything —
+         syncing this would be actively wrong, not just unnecessary.
        - LS_LIBRARY         "marinara-rpg-ruleset-library"  bulky, re-importable
        - LS_RULESET_URL     "marinara-rpg-ruleset-url"
        - LS_SHEET_SIZE, LS_SPELLBOOK_POS, LS_INTIMACIES_POS  panel size/position
@@ -13625,6 +13632,7 @@ function scheduleAutoSync() {
 
 var STATE_TAG_RE = /\[mrr-state:\s+([^\]]+)\]/g;
 var STATE_KV_RE  = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+var MRR_STATE_TAG_VERSION = 1; /* [mrr-state:] grammar version — round 7, closes the B14 leftover COUPLINGS.md flagged as "not yet stamped". One constant, no behavior change; not read/enforced anywhere yet. */
 /* Per-chat processed-message-id set, persisted across reloads. Without
    persistence, every hard refresh would walk the chat DOM, replay every
    historic [mrr-state: ...] tag, and double-apply mutations to the
@@ -13755,32 +13763,45 @@ function normalizeStateAttrs(attrs) {
 /* Apply a parsed [mrr-state:] tag list with cross-transport dedup. Returns
    the count applied. Both the narrator DOM path and the runs poller route
    through here so a tag present in BOTH sources applies exactly once. The key
-   is recorded before applying (idempotent under re-entrancy). */
-function applyStateTagsWithDedup(tags, anchorId) {
+   is recorded before applying (idempotent under re-entrancy).
+   B2-R: `journalKey` (optional, defaults to anchorId) is the msgId:idx
+   bucket applyStateMutation's journaling branches write into for the
+   duration of this call — kept SEPARATE from anchorId on purpose, since
+   the dedup anchor is plain msgId (FIX-1) while the journal needs the
+   swipe-specific composite key. Reset in a finally so a thrown mutation
+   can never leave a stale bucket key active for an unrelated later call. */
+function applyStateTagsWithDedup(tags, anchorId, journalKey) {
   if (!tags || !tags.length) return 0;
   var occ = Object.create(null);
   var applied = 0;
-  for (var i = 0; i < tags.length; i++) {
-    /* Normalize BEFORE the signature so equivalent surface forms from
-       different agents collide (see normalizeStateAttrs). */
-    var normalized = normalizeStateAttrs(tags[i].attrs);
-    for (var n = 0; n < normalized.length; n++) {
-      var sig = mutationContentSig(normalized[n]);
-      var idx = (occ[sig] = (occ[sig] || 0) + 1) - 1;
-      var key = String(anchorId) + "::" + sig + "::" + idx;
-      if (appliedMutationKeys[key]) continue; /* other transport already applied this exact mutation for this turn */
-      appliedMutationKeys[key] = true;
-      if (applyStateMutation(normalized[n])) applied++;
+  var prevJournalBucketKey = mrrCurrentJournalBucketKey;
+  mrrCurrentJournalBucketKey = journalKey || anchorId;
+  try {
+    for (var i = 0; i < tags.length; i++) {
+      /* Normalize BEFORE the signature so equivalent surface forms from
+         different agents collide (see normalizeStateAttrs). */
+      var normalized = normalizeStateAttrs(tags[i].attrs);
+      for (var n = 0; n < normalized.length; n++) {
+        var sig = mutationContentSig(normalized[n]);
+        var idx = (occ[sig] = (occ[sig] || 0) + 1) - 1;
+        var key = String(anchorId) + "::" + sig + "::" + idx;
+        if (appliedMutationKeys[key]) continue; /* other transport already applied this exact mutation for this turn */
+        appliedMutationKeys[key] = true;
+        if (applyStateMutation(normalized[n])) applied++;
+      }
     }
+  } finally {
+    mrrCurrentJournalBucketKey = prevJournalBucketKey;
   }
   return applied;
 }
 
 function loadProcessedMessageIds(chatId) {
-  if (!chatId) { processedMessageIds = {}; processedMessageIdsChatId = null; appliedMutationKeys = Object.create(null); mrrProcessedTextMemo = Object.create(null); return; }
+  if (!chatId) { processedMessageIds = {}; processedMessageIdsChatId = null; appliedMutationKeys = Object.create(null); mrrProcessedTextMemo = Object.create(null); mrrLoadMutationJournal(null); return; }
   if (processedMessageIdsChatId === chatId) return; /* already loaded */
   appliedMutationKeys = Object.create(null); /* new chat — clear cross-transport dedup so old-chat keys can't suppress new applies */
   mrrProcessedTextMemo = Object.create(null); /* FIX-2b: new chat — a msgId's text memo from a DIFFERENT chat must never suppress this chat's fast path (message ids are not guaranteed unique across chats) */
+  mrrLoadMutationJournal(chatId); /* B2-R: same chat-switch chokepoint the other per-chat observation state already resets on */
   var raw = lsGet(LS_PROCESSED_MSGS_PFX + chatId);
   var parsed = raw ? safeParse(raw) : null;
   processedMessageIds = (parsed && typeof parsed === "object") ? parsed : {};
@@ -13790,6 +13811,181 @@ function loadProcessedMessageIds(chatId) {
 function saveProcessedMessageIds() {
   if (!processedMessageIdsChatId) return;
   lsSet(LS_PROCESSED_MSGS_PFX + processedMessageIdsChatId, JSON.stringify(processedMessageIds));
+}
+
+/* ─── B2-R: swipe-revert mutation journal ──────────────────────────────────
+   Design authority: Plans/2026-08-22_engine-2.4.3-upgrade-and-rolemaster-
+   plan.md § "B2-R — Swipe-revert" (Corey, 2026-08-23: "if we can do it we
+   should" — save-scumming sanctioned).
+
+   Shape (persisted per chat, LS_MUTATION_JOURNAL_PFX + chatId):
+     {
+       buckets: {
+         "<msgId>:<idx>" (or plain "<msgId>" when unresolvable): {
+           entries: [ {field,kind:"delta",delta} | {field,kind:"set",prev,next}, ... ],
+           reverted: boolean
+         }, ...
+       },
+       lastSeenIdx: { "<msgId>": <last resolved swipe index seen>, ... }
+     }
+
+   CHOKEPOINT (reported per the coder-instructions requirement to justify
+   it): entries are written from THREE specific branches inside
+   applyStateMutation — the ruleset-states label-set branch, the generic
+   numeric-field branch (resolveSheetField), and the unknown-field dotted-
+   path stash branch — NOT from one single call site. This is deliberate:
+   the plan's two declared entry shapes ({field,kind:"delta",delta} and
+   {field,kind:"set",prev,next}) only describe SCALAR numeric-or-label
+   writes, and prev/next/delta values only exist inside each branch's own
+   already-resolved local variables (current, next, canonicalLabel, etc) —
+   an outside call site (applyStateTagsWithDedup, or processChatMessage)
+   never sees the resolved field or its prior value, only the raw tag
+   attrs. The three branches all funnel through the SAME shared helper,
+   mrrJournalMutation, which is the actual single point of truth for HOW a
+   journal entry gets constructed/stored — "one chokepoint" in the sense of
+   one function, not one call site.
+   SCOPE GAP (flagged, not solved — see round-7 report): applyStateMutation
+   has several OTHER branches (conditions/inventory/backgrounds/intimacies
+   array add-remove-update, xp's compound object, attunement/investiture/
+   commitment's item-scoped multi-field writes, the typed-damage track-
+   cells path) that do not reduce to a scalar delta or prev/next set at
+   all — the plan's two shapes don't cover them, and inventing a third
+   "kind" for array/object mutations was not authorized. Swipe-revert
+   therefore only reverts/reapplies the scalar-field mutations (attributes,
+   skills, derived stats via the generic numeric path, ruleset-declared
+   states, and ad-hoc stashed fields) — NOT inventory adds, condition
+   toggles, background edits, intimacy changes, xp, attunement/investiture/
+   commitment, or typed-damage-track hits. A swipe that reverts will leave
+   those other mutation types in place exactly as point 4's "known-
+   accepted limits" already frames manual-edit skew — undone scalar fields
+   sitting alongside un-reverted array/object ones is the same class of
+   partial-consistency trade-off, just automatically triggered rather than
+   from a manual edit.
+
+   GC (point 4): NO existing per-chat localStorage cleanup lifecycle was
+   found anywhere in this file for LS_PROCESSED_MSGS_PFX / LS_PROCESSED_
+   RUNS_PFX (the same observation-class prefixes this journal sits beside)
+   — no chat-deletion listener, no uninstall sweep. Per instruction, one is
+   NOT invented here; this journal inherits the exact same characteristic
+   its siblings already have: per-chat LS keys accumulate for chats the
+   user later deletes, unbounded, until a future cleanup pass addresses
+   all three prefixes together. */
+var mrrMutationJournal = { buckets: {}, lastSeenIdx: {} };
+var mrrMutationJournalChatId = null;
+var mrrCurrentJournalBucketKey = null; /* set by applyStateTagsWithDedup for the duration of its loop; read by the three journaling branches inside applyStateMutation */
+var mrrJournalSuppressed = false;      /* true while mrrRevertBucket/mrrReapplyBucket are replaying through applyStateMutation, so the replay itself is never re-journaled (would double-journal and could recurse) */
+
+function mrrLoadMutationJournal(chatId) {
+  if (!chatId) { mrrMutationJournal = { buckets: {}, lastSeenIdx: {} }; mrrMutationJournalChatId = null; return; }
+  if (mrrMutationJournalChatId === chatId) return; /* already loaded */
+  var raw = lsGet(LS_MUTATION_JOURNAL_PFX + chatId);
+  var parsed = raw ? safeParse(raw) : null;
+  mrrMutationJournal = (parsed && typeof parsed === "object" && parsed.buckets && parsed.lastSeenIdx)
+    ? parsed
+    : { buckets: {}, lastSeenIdx: {} };
+  mrrMutationJournalChatId = chatId;
+}
+
+function mrrSaveMutationJournal() {
+  if (!mrrMutationJournalChatId) return;
+  lsSet(LS_MUTATION_JOURNAL_PFX + mrrMutationJournalChatId, JSON.stringify(mrrMutationJournal));
+}
+
+/* The chokepoint helper (see header comment). No-ops when there's no
+   active bucket key (defensive — should not happen in practice, every
+   caller of applyStateTagsWithDedup sets one) or while a revert/reapply
+   replay is in progress (mrrJournalSuppressed). Appending never touches
+   an existing bucket's `reverted` flag — a runs-transport mutation landing
+   in an already-reverted bucket (edge case, see point 3's "plain buckets
+   never auto-reverted, only superseded forward") simply adds to it without
+   un-reverting; the simplest, most conservative choice for an interaction
+   the design doesn't explicitly address. */
+function mrrJournalMutation(field, kind, payload) {
+  if (mrrJournalSuppressed) return;
+  var bucketKey = mrrCurrentJournalBucketKey;
+  if (!bucketKey) return;
+  var bucket = mrrMutationJournal.buckets[bucketKey];
+  if (!bucket) { bucket = { entries: [], reverted: false }; mrrMutationJournal.buckets[bucketKey] = bucket; }
+  var entry = { field: field, kind: kind };
+  if (kind === "delta") entry.delta = payload.delta;
+  else { entry.prev = payload.prev; entry.next = payload.next; }
+  bucket.entries.push(entry);
+  mrrSaveMutationJournal();
+}
+
+/* Builds the synthetic attrs object that re-dispatches through
+   applyStateMutation's SAME field-resolution branches (point 5 — sole-
+   writer preserved, revert/reapply IS the mutator pipeline, never a new
+   direct sheet-write path). direction "inverse" (revert) negates deltas
+   and restores `prev`; direction "forward" (reapply / swipe-back) replays
+   the entry exactly as it was originally applied. */
+function mrrBuildReplayAttrs(entry, direction) {
+  if (entry.kind === "set") {
+    var value = (direction === "inverse") ? entry.prev : entry.next;
+    return resolveRulesetState(entry.field) ? { field: entry.field, value: value } : { field: entry.field, current: value };
+  }
+  var delta = (direction === "inverse") ? -entry.delta : entry.delta;
+  return { field: entry.field, delta: delta };
+}
+
+/* Revert a bucket's journaled entries: inverse deltas / prev-restoring
+   sets, in REVERSE order (undo most-recent-first), through
+   applyStateMutation with journaling suppressed. Marks reverted:true. A
+   no-op if the bucket doesn't exist, has no entries, or is already
+   reverted. Best-effort per entry — a field that fails to re-resolve
+   (ruleset changed, etc.) is logged and skipped rather than aborting the
+   whole revert. */
+function mrrRevertBucket(bucketKey) {
+  var bucket = mrrMutationJournal.buckets[bucketKey];
+  if (!bucket || !bucket.entries.length || bucket.reverted) return;
+  mrrJournalSuppressed = true;
+  try {
+    for (var i = bucket.entries.length - 1; i >= 0; i--) {
+      var entry = bucket.entries[i];
+      try {
+        if (!applyStateMutation(mrrBuildReplayAttrs(entry, "inverse"))) {
+          warn("B2-R revert: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
+        }
+      } catch (e) {
+        warn("B2-R revert: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' threw on replay — skipped (" + (e && e.message ? e.message : e) + ")");
+      }
+    }
+  } finally {
+    mrrJournalSuppressed = false;
+  }
+  bucket.reverted = true;
+  mrrSaveMutationJournal();
+}
+
+/* Swipe-BACK re-apply: replays a previously-reverted bucket's entries
+   FORWARD, in their original order, through applyStateMutation with
+   journaling suppressed — deliberately bypassing applyStateTagsWithDedup's
+   plain-msgId dedup gate (point 5: identical content re-applied via the
+   dedup path would be silently swallowed, since the plain anchor was
+   already marked applied the first time this content was seen — the
+   journal is the one sanctioned way around that gate, and ONLY on an
+   explicit swipe-back). Clears reverted:false. A no-op if the bucket
+   doesn't exist or isn't currently reverted. */
+function mrrReapplyBucket(bucketKey) {
+  var bucket = mrrMutationJournal.buckets[bucketKey];
+  if (!bucket || !bucket.entries.length || !bucket.reverted) return;
+  mrrJournalSuppressed = true;
+  try {
+    for (var i = 0; i < bucket.entries.length; i++) {
+      var entry = bucket.entries[i];
+      try {
+        if (!applyStateMutation(mrrBuildReplayAttrs(entry, "forward"))) {
+          warn("B2-R swipe-back: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
+        }
+      } catch (e) {
+        warn("B2-R swipe-back: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' threw on replay — skipped (" + (e && e.message ? e.message : e) + ")");
+      }
+    }
+  } finally {
+    mrrJournalSuppressed = false;
+  }
+  bucket.reverted = false;
+  mrrSaveMutationJournal();
 }
 
 /* ─── B2: swipe-aware processed-message keying ────────────────────────────
@@ -14707,7 +14903,9 @@ function applyStateMutation(attrs) {
       return false;
     }
     if (!sheet.states || typeof sheet.states !== "object") sheet.states = {};
+    var prevStateLabel = (sheet.states[stateDef.name] !== undefined) ? sheet.states[stateDef.name] : null;
     sheet.states[stateDef.name] = canonicalLabel;
+    mrrJournalMutation(stateDef.name, "set", { prev: prevStateLabel, next: canonicalLabel }); /* B2-R: label-valued "set" — see plan point 1 ("value=/states/label sets") */
     return finalizeMutation(attrs);
   }
 
@@ -14807,7 +15005,21 @@ function applyStateMutation(attrs) {
     var max = resolvedFieldMax(resolved.map, resolved.key);
     var next = hasAbsolute ? absoluteValue : (current + delta);
     if (typeof max === "number") next = Math.min(max, next);
-    bucket[resolved.key] = Math.max(0, next);
+    var finalNext = Math.max(0, next);
+    bucket[resolved.key] = finalNext;
+    /* B2-R: journal against resolved.key (the CANONICAL, alias-resolved
+       name), not the raw possibly-aliased `field` — a revert/reapply
+       reconstructs a synthetic attrs and re-dispatches through
+       applyStateMutation, and the canonical name is guaranteed to
+       exact-match resolveSheetField's first pass on that replay. Delta
+       entries record the ORIGINAL signed delta (not the clamped effective
+       change) so a revert re-derives its own clamp from live sheet state
+       via the same code path, rather than trusting a stale clamped number. */
+    if (hasAbsolute) {
+      mrrJournalMutation(resolved.key, "set", { prev: current, next: finalNext });
+    } else {
+      mrrJournalMutation(resolved.key, "delta", { delta: delta });
+    }
     return finalizeMutation(attrs);
   }
   /* Unknown field — stash on the sheet root as a generic numeric so
@@ -14827,7 +15039,16 @@ function applyStateMutation(attrs) {
   }
   var leaf = pathParts[pathParts.length - 1];
   var rootCurrent = (typeof node[leaf] === "number") ? node[leaf] : 0;
-  node[leaf] = hasAbsolute ? Math.max(0, absoluteValue) : Math.max(0, rootCurrent + delta);
+  var stashFinal = hasAbsolute ? Math.max(0, absoluteValue) : Math.max(0, rootCurrent + delta);
+  node[leaf] = stashFinal;
+  /* B2-R: journal against the full dotted-path `field` string — replay
+     re-runs the SAME stash-path resolution (resolveSheetField fails first,
+     falls through to here), so the path string round-trips correctly. */
+  if (hasAbsolute) {
+    mrrJournalMutation(field, "set", { prev: rootCurrent, next: stashFinal });
+  } else {
+    mrrJournalMutation(field, "delta", { delta: delta });
+  }
   return finalizeMutation(attrs);
 }
 
@@ -14873,6 +15094,61 @@ function processChatMessage(node) {
     var scanChatId = state.chatId;
     resolveSwipeIndexForMessage(scanChatId, msgId).then(function (idx) {
       if (state.chatId !== scanChatId) return; /* chat switched mid-fetch — stale, ignore */
+
+      /* B2-R (round 7) — swipe-change detection, BEFORE the dedup gate.
+         Only meaningful when idx actually resolved to a number AND we have
+         a prior lastSeenIdx for this msgId to compare against; an
+         unresolvable idx (fetch failure / out-of-window) can never be
+         "changed from" anything, so it falls straight through unchanged.
+         ALWAYS revert the bucket we're leaving (whichever was last active,
+         priorIdx) before deciding what happens to the bucket we're
+         arriving at — this is what makes an A->B->A round-trip restore A
+         EXACTLY. An earlier draft only reverted the OLD bucket on a
+         forward swipe and skipped straight to mrrReapplyBucket on a
+         swipe-back, which left the bucket being swiped AWAY FROM
+         (B) still active underneath A's reapplied entries — caught by the
+         b2r-revert-probes.mjs A->B->A round-trip probe, which computed the
+         wrong restored value until this was fixed. */
+      if (idx !== null && idx !== undefined) {
+        var priorIdx = mrrMutationJournal.lastSeenIdx[msgId];
+        if (priorIdx !== undefined && priorIdx !== idx) {
+          var oldBucketKey = mrrProcessedKey(msgId, priorIdx);
+          var oldBucket = mrrMutationJournal.buckets[oldBucketKey];
+          if (oldBucket && oldBucket.entries.length && !oldBucket.reverted) {
+            mrrRevertBucket(oldBucketKey);
+            log("state-mutator: swipe change on " + msgId + " (" + priorIdx + " -> " + idx + ") reverted bucket " + oldBucketKey);
+          }
+
+          var newBucketKey = mrrProcessedKey(msgId, idx);
+          var newBucket = mrrMutationJournal.buckets[newBucketKey];
+          if (newBucket && newBucket.reverted) {
+            /* Swipe-BACK to a previously-journaled (and since-reverted)
+               swipe: re-apply from ITS journal, bypassing the dedup gate
+               entirely (point 5 — plain-anchor dedup would silently
+               swallow identical content re-applied through the normal
+               path, since the anchor was already marked applied the first
+               time). processedMessageIds already carries this bucket's key
+               true from its original apply — that flag is deliberately
+               NEVER cleared, so the dedup-gated normal path below could
+               never re-admit it on its own; this is the ONLY sanctioned
+               way back in. */
+            mrrReapplyBucket(newBucketKey);
+            mrrMutationJournal.lastSeenIdx[msgId] = idx;
+            mrrSaveMutationJournal();
+            processedMessageIds[newBucketKey] = true;
+            mrrProcessedTextMemo[msgId] = text;
+            saveProcessedMessageIds();
+            log("state-mutator: swipe-back re-applied bucket " + newBucketKey + " from journal");
+            return; /* hideStateTagsInElement already ran synchronously below, before this async callback started */
+          }
+          /* Otherwise: forward swipe to a genuinely new (or never-yet-
+             reverted) index — fall through to the normal apply path below,
+             which journals the new swipe's tags fresh under newBucketKey. */
+        }
+        mrrMutationJournal.lastSeenIdx[msgId] = idx;
+        mrrSaveMutationJournal();
+      }
+
       if (isMessageProcessed(msgId, idx)) return; /* composite entry already applied (re-entrant observation) */
       var tags = parseStateTags(text);
       var key = mrrProcessedKey(msgId, idx);
@@ -14890,9 +15166,16 @@ function processChatMessage(node) {
          swipes: identical-content tags on two different swipes of the same
          message now dedup to a single apply (protective — was already true
          pre-B2). Different-content tags on different swipes still each
-         apply (stacking both swipes' mutations) — a known open design
-         question logged for Corey; not solved here. */
-      var applied = applyStateTagsWithDedup(tags, msgId);
+         apply (stacking both swipes' mutations) for any field OUTSIDE
+         B2-R's scalar-field journal (round 7) — conditions, inventory,
+         backgrounds, intimacies, xp, attunement/investiture/commitment,
+         and typed-damage-track hits are not reverted on a swipe change, so
+         they keep stacking exactly as before. Scalar fields (attributes,
+         skills, derived stats, ruleset states) no longer stack: the swipe-
+         change detection above reverts the old swipe's journaled entries
+         first. Still a known open design question for the un-covered
+         mutation types; not solved here. */
+      var applied = applyStateTagsWithDedup(tags, msgId, key);
       processedMessageIds[key] = true;
       mrrProcessedTextMemo[msgId] = text; /* FIX-2b: record what content this msgId was processed against, so a spurious re-observation with the SAME text short-circuits at the fast path without a fetch */
       saveProcessedMessageIds();
@@ -15016,19 +15299,41 @@ function pollCustomAgentRuns(chatId) {
       return;
     }
     var total = 0, applied = 0, sawNew = false;
+    var tagBearingRows = []; /* B2-R (point 3): collected first so the swipe-index map is fetched ONCE, only if actually needed */
     for (var i = 0; i < rows.length; i++) {
       var runId = extractRunId(rows[i]);
       if (runId != null && processedRunIds[runId]) continue;
       var text = extractRunText(rows[i]);
       var tags = text ? parseStateTags(text) : [];
-      if (tags.length) {
-        applied += applyStateTagsWithDedup(tags, extractRunAnchor(rows[i], runId));
-        total += tags.length;
-      }
+      if (tags.length) tagBearingRows.push({ row: rows[i], runId: runId, tags: tags });
       if (runId != null) { processedRunIds[runId] = true; sawNew = true; }
     }
-    if (sawNew) saveProcessedRunIds();
-    if (total) log("runs-poller: applied " + applied + "/" + total + " mutation(s) from custom-agent runs");
+    function finishRunsPoll() {
+      if (sawNew) saveProcessedRunIds();
+      if (total) log("runs-poller: applied " + applied + "/" + total + " mutation(s) from custom-agent runs");
+    }
+    if (!tagBearingRows.length) { finishRunsPoll(); return; }
+    /* B2-R (point 3): a run's mutations journal under the messageId:
+       swipeIndex ACTIVE at apply time, resolved via the SAME
+       fetchSwipeIndexMap the narrator path uses (coalesces onto one
+       in-flight request if the narrator side is already fetching) —
+       plain-anchor bucket when unresolvable (no messageId on the row, or
+       the message fell outside the fetched recent-window). Per the plan:
+       plain buckets are never auto-reverted by the narrator's swipe-
+       change detection, only superseded forward. */
+    return fetchSwipeIndexMap(chatId).then(function (swipeMap) {
+      for (var r = 0; r < tagBearingRows.length; r++) {
+        var entry = tagBearingRows[r];
+        var anchor = extractRunAnchor(entry.row, entry.runId);
+        var mid = entry.row && (entry.row.messageId || entry.row.message_id || (entry.row.message && entry.row.message.id));
+        var journalKey = (mid && swipeMap && Object.prototype.hasOwnProperty.call(swipeMap, mid))
+          ? mrrProcessedKey(mid, swipeMap[mid])
+          : anchor; /* unresolvable — plain bucket */
+        applied += applyStateTagsWithDedup(entry.tags, anchor, journalKey);
+        total += entry.tags.length;
+      }
+      finishRunsPoll();
+    });
   }).catch(function (e) {
     warn("runs-poller: /agents/runs fetch failed (" + (e && e.message ? e.message : e) + ") — degrading; narrator path unaffected");
   }).then(function () { runsPollInFlight = false; }, function () { runsPollInFlight = false; });
