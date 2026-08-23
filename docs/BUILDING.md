@@ -281,7 +281,7 @@ The generated agent recognizes those patterns and annotates each matching turn w
 
 **Input:** ruleset directory (uses `agents/*.md` + optional per-ruleset overrides). **Output:** `agents.json` in the same directory.
 
-**Purpose:** assemble the canonical agent pool — `combat-overseer` (pre_generation), `context-fuser` (pre_generation), `state-mutator` (post_processing) — plus the per-system `main` Ruleset Helper, plus any per-system parallel-phase overlays. Output is a structured payload usable by either GM-mode (where `build-bundle.mjs` embeds it into the bundle) or RP-mode (where users import it through Marinara's Import Agents dialog). All sub-agents emit with `enabled:true` because GM-mode bundles ship them live; RP-mode users can disable per-agent in Settings → Agents after install.
+**Purpose:** assemble the canonical agent pool — `combat-overseer` (pre_generation), `context-fuser` (pre_generation), `state-mutator` (pre_generation) — plus the per-system `main` Ruleset Helper, plus any per-system parallel-phase overlays. Output is a structured payload usable by either GM-mode (where `build-bundle.mjs` embeds it into the bundle) or RP-mode (where users import it through Marinara's Import Agents dialog). On Marinara 2.4.3+ ALL custom agents — both modes — are enabled per game by the user after launch (Settings → Agents); the emitted `enabled` flag does not activate anything by itself.
 
 **Override surface:** drop `agents/<role>.md` into a per-ruleset directory to override the shared baseline for that ruleset. Roles can also be introduced per-ruleset (no shared baseline required) — this is how `exalted3e` ships its parallel-phase `anima-banner-monitor` and `charm-cooldown-tracker`, and how `vtmv20` ships `blood-pool-tracker`.
 
@@ -411,7 +411,7 @@ Every GM-mode ruleset bundle ships the following agent layout, installed by the 
 | `main` (Ruleset Helper) | `pre_generation` | `gm-agent.md` | Ruleset-specific narrator brain — teaches the GM model your dice mechanic, skill list, derived stats, dice-tag format, what to emit each turn. Auto-installed from `bundle.gmAgent`. |
 | `combat-overseer` | `pre_generation` | `agents/combat-overseer.md` | Combat math framing (initiative / action economy / attack resolution / damage / conditions / range) AND NPC roster (HP / conditions / state / intent) — both surfaces emitted in one output. |
 | `context-fuser` | `pre_generation` | `agents/context-fuser.md` | Rules-query answers (when asked) AND player-state reminder (HP / resources / conditions / equipped gear / duration effects) — both surfaces in one output. |
-| `state-mutator` | `post_processing` | `agents/state-mutator.md` | Parses the GM model's output for `[mrr-state: ...]` tags and writes the deltas to the character sheet. Different phase from the pre-generation pair; runs after narration. |
+| `state-mutator` | `pre_generation` | `agents/state-mutator.md` | The sole sheet-writer: instructs narration to emit `[mrr-state: ...]` tags and emits them itself; the extension applies them (from the chat DOM and from the persisted custom-agent runs the poller reads). |
 | `pre-input-transformer` *(when present)* | `pre_generation` | derived from `ruleset.vocabularyHints[]` or `ruleset.preInputTransformerAgent` | Translates D&D-flavored player input ("I roll Strength") into ruleset-specific vocabulary before generation. Auto-omitted from bundles that don't need it. |
 
 ### Per-system parallel-phase overlays

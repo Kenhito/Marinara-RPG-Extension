@@ -198,7 +198,7 @@ Adapt naming/numbers to your system's specifics. The shape of the workflow — d
 
 ## Writing a context-fuser override
 
-When to write one: your system has computed maximums (formula-driven bars) or multi-counter resources (typed damage stacks). The rules-query half of the baseline almost never needs tuning — it's the state-reminder half that carries the system-specific weight.
+When to write one: your system has computed maximums (formula-driven bars) or multi-counter resources (typed damage stacks). The rules-query half of the baseline almost never needs tuning — it's the state reminder half that carries the system-specific weight.
 
 Structure (the override keeps both sections — rules query, then state reminder):
 
@@ -284,21 +284,24 @@ For each notable NPC in or recently in scene: name/role, HP or health pool in th
 <List the gotchas the model commonly gets wrong: surprise rounds, opportunity attacks, area-of-effect resolution, etc.>
 ```
 
-## Writing the lore-query agent
+## Writing a per-system parallel tracker
 
-Almost never needs an override. The shared baseline pulls answers from the installed lorebook. Override only if your system has unusually complex rules-question routing (e.g., distinguishing "tactical question" → combat-adjudicator from "system question" → lore-query).
+Some systems have one resource whose bookkeeping is worth its own agent — a value that changes on a per-turn cadence the narrator reliably loses track of (Exalted's anima banner levels driven by Peripheral mote spend, V20's blood pools). These ship as `parallel`-phase agents: they run alongside the narrator without blocking it, so per-turn latency stays flat.
 
-## Writing the npc-bookkeeper agent
+Rules of thumb:
 
-Almost never needs an override. The shared baseline tracks NPC HP and conditions across turns. Override if your system tracks NPCs with unusual subsystems (e.g., a mass-combat ruleset where NPCs have group morale and fatigue rather than HP).
+- **At most one per ruleset.** A new mechanic should be a section of an existing agent's prompt unless it genuinely cannot be — do not invent additional per-turn agents beyond the canonical pool.
+- They live ONLY at `rulesets/<system>/agents/<role>.md` — no shared baseline, because the tracked resource exists only in that system.
+- The prompt should open by declaring what it is NOT: it does not narrate, does not speak to the player, does not block the narrator. Its output is silent bookkeeping for the GM-side player.
+- Give it a reference table (spend thresholds → banner level, blood pool per generation, etc.) so it never invents values, and a fixed plain-text output format with an explicit "nothing to report" sentinel line (e.g., "No charm activity this scene.").
 
 ## Hiding the prompt from the user
 
 The `[mrr-v1:<authorId>/<rulesetId>:<role>]` prefix is auto-prepended by the install path. Authors don't add it themselves. The prefix is the idempotency key that lets re-installs find and update existing agents without duplicating.
 
-## Default-disabled philosophy
+## Enablement — per game, at load time
 
-Every role agent except `main` ships **disabled by default**. Each pre-generation agent costs one model call per turn. Users explicitly enable only what they want. The convention is to leave them disabled in the agents.json output unless the system's mechanics genuinely require an agent to be on (rare).
+Installing the bundle installs the agents, but they are not active until the user **enables them for each game** after the game launches (at load time, not during generation). The ruleset's lorebook must also be **manually attached to the game** — without it the agents have no ruleset info to follow. Budget matters regardless: each pre-generation agent costs one model call per turn, which is why the pool is consolidated instead of one-agent-per-mechanic.
 
 ## Validation
 

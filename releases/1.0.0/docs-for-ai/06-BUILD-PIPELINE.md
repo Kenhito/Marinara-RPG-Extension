@@ -78,8 +78,9 @@ What it does:
      "generator": { "name": "build-agents.mjs", "version": "1.0.0" },
      "agents": [
        { "role": "main", "name": "...", "enabled": true, "promptTemplate": "...", ... },
-       { "role": "state-mutator", "enabled": false, ... },
-       { "role": "state-reminder", "enabled": false, ... },
+       { "role": "combat-overseer", ... },
+       { "role": "context-fuser", ... },
+       { "role": "state-mutator", ... },
        ...
      ]
    }
@@ -135,7 +136,7 @@ A user installs your ruleset by:
 1. **Paste the framework JS into Extensions** (one-time, system-independent). Marinara → Settings → Extensions → Add Extension → paste `extension/RPG-Extension-GM-Mode.js` (the version with embedded CSS) into the JS field. CSS field stays empty.
 2. **Paste the bundle into the Ruleset dialog**. Click the gear icon on the floating sheet → Ruleset → paste `bundle.json` into the textarea → Save.
 3. **Paste the agents into the Import Agents dialog.** Marinara → Settings → Agents → Import → paste `agents.json` → Confirm.
-4. **Toggle on the agents they want active.** All except `main` install disabled. User enables state-mutator and state-reminder for typical play.
+4. **Attach the lorebook and enable the agents per game.** After launching or creating a game, attach the ruleset's lorebook to that game, then enable the MRR agents for it (agents are enabled per game at load time, not during generation). Without the attached lorebook the agents have no ruleset info to follow.
 
 ## What changes when you edit which files
 

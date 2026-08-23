@@ -60,7 +60,7 @@ Build me a complete ruleset for <YOUR SYSTEM HERE>. Produce:
 - gm-agent.md (the main GM narrator's prompt)
 - lorebook.json (keyword-triggered rules reference, 14-25 entries)
 - INSTALL.md (user-facing install walkthrough modeled on the example INSTALL.md files)
-- agents/<role>.md per-system overrides for ONLY the roles that need system-specific tuning. The shared baselines work for systems with a clean single-counter HP model. Override state-mutator if your system has typed damage; override state-reminder if your system has formula-driven max bars; override combat-adjudicator if combat resolution is non-trivial.
+- agents/<role>.md per-system overrides for ONLY the roles that need system-specific tuning. The shared baselines (combat-overseer, context-fuser, state-mutator) work for systems with a clean single-counter HP model. Override state-mutator if your system has typed damage; override context-fuser if your system has formula-driven max bars; override combat-overseer if combat resolution is non-trivial.
 
 Constraints:
 - Use one of the five existing resolution modes. Tell me first if none fit.
@@ -120,11 +120,11 @@ Now produce per-system agent overrides ONLY for the roles that need system-speci
 
 If the system has typed damage → override state-mutator with a FORBIDDEN section listing field-name traps and a Field vocabulary section listing the exact damage type ids.
 
-If the system has formula-driven max bars → override state-reminder to compute and display the maximums.
+If the system has formula-driven max bars → override context-fuser so its state reminder section computes and displays the maximums.
 
 If the system has multi-turn casting → extend the state-mutator override with a casting workflow section (declare → accumulate → unleash with refund / leak / abort).
 
-If combat is non-trivial → override combat-adjudicator with the action economy and named maneuvers.
+If combat is non-trivial → override combat-overseer with the action economy and named maneuvers.
 
 Skip overrides for roles that don't need them — the framework falls back to the shared baseline and that's fine.
 ```
@@ -179,8 +179,8 @@ Then in Marinara:
 1. Reinstall the framework JS.
 2. Reinstall the bundle (Ruleset dialog).
 3. Re-import the agents (Import Agents dialog).
-4. Toggle on state-mutator and state-reminder.
-5. Start a chat, build a character, play a few turns.
+4. Launch a game, attach the ruleset lorebook to it, and enable the MRR agents for that game (combat-overseer, context-fuser, state-mutator — agents are enabled per game at load time).
+5. Build a character, play a few turns.
 
 If the sheet updates correctly when narration causes mechanical changes, and the narrator model uses your system's vocabulary instead of D&D-isms, you've shipped a working ruleset.
 

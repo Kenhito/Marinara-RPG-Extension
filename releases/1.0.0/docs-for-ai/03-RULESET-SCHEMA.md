@@ -476,7 +476,7 @@ Both must pass. The validator prints exact JSON Pointers to offending fields.
 
 ### New `derivedStats.track[].penaltyKind`
 
-- **`penaltyKind` enum: `"flat" | "dice"`** (NEW v0.4.2) — controls how the renderer and state-reminder agent display `penalty`. Default `"flat"` (back-compat: Exalted Wound Levels, WoD health-state penalties). Set to `"dice"` for OpenD6 / WEG D6 / Mini Six Wound Levels — the renderer prefixes the cell text with `D` (e.g. `-1D` instead of `-1`) and the state-reminder agent emits "minus N dice from every pool" instead of "minus N to total."
+- **`penaltyKind` enum: `"flat" | "dice"`** (NEW v0.4.2) — controls how the renderer and the context-fuser agent's state reminder section display `penalty`. Default `"flat"` (back-compat: Exalted Wound Levels, WoD health-state penalties). Set to `"dice"` for OpenD6 / WEG D6 / Mini Six Wound Levels — the renderer prefixes the cell text with `D` (e.g. `-1D` instead of `-1`) and the context-fuser emits "minus N dice from every pool" instead of "minus N to total."
 
 ### New `equipment.bonuses[].kind: "damage-pool"`
 
