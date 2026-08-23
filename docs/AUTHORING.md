@@ -24,7 +24,7 @@ The schema's `resolution.mode` enum has **nine** modes. The four first-class mod
 |------|---------|---------------------|---------------|
 | `single-roll`     | D&D, Pathfinder, Cypher System | `modifierFormula` | this doc |
 | `dice-pool`       | Exalted, oWoD/nWoD, Shadowrun  | `poolFormula`, `target`, `doubles`, `botches` | this doc |
-| `d100-percentile` | Call of Cthulhu, BRP-derived   | `skillFormula` | this doc |
+| `d100-percentile` | Call of Cthulhu, BRP-derived (roll-under); Rolemaster-family (roll-high, optional open-ended) | `skillFormula`; optional `direction`, `bonusFormula`, `openEnded` | this doc; open-ended shape in AUTHORING-PHASE-6 §1 |
 | `2d6-stat`        | PbtA (Apocalypse, Dungeon, Monster of the Week) | `modifierFormula`, `bands` | this doc |
 | `fate-ladder`     | Fate Core, Fate Accelerated | `modifierFormula`, `ladder`, `successWithStyle` | AUTHORING-PHASE-6 §1 |
 | `roll-under`      | GURPS, CoC 7e, Pendragon | `diceFormula`, target source, optional crit/fumble | AUTHORING-PHASE-6 §1 |

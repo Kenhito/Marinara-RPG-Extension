@@ -11452,8 +11452,21 @@ function buildSumWidget() {
 }
 
 function buildD100Widget() {
-  var d = state.diceEl;
-  diceRow(d, "Skill %", "skill", "50");
+  var d   = state.diceEl;
+  var res = state.ruleset.resolution || {};
+  var oe  = res.openEnded || null;
+  if (res.direction === "high") {
+    diceRow(d, "Bonus",      "bonus", "0");   // skill + stat + item, player-entered
+    diceRow(d, "Difficulty", "diff",  "0");   // ladder modifier: +30 .. -70
+  } else {
+    diceRow(d, "Skill %",    "skill", "50");  // unchanged legacy path
+  }
+  if (oe) {
+    marinara.addElement(d, "div", { "class": "mrr-dice__hint", textContent:
+      "Open-ended: " + (oe.high ? "high ≥" + (oe.high.threshold || 96) + " adds" : "") +
+      (oe.low ? ", low ≤" + (oe.low.threshold || 5) + " subtracts" : "") +
+      ". Unmodified first roll only. Narrator adjudicates the result table." });
+  }
   diceFooter(d, "Roll d100", rollD100);
 }
 
@@ -11968,12 +11981,113 @@ function rollDicePoolSum() {
   finalizeRoll(text, kind, renderFaces);
 }
 
+/* Pad a single d100 face to the traditional two-digit percentile notation
+   (02, not 2; 100 stays 100). Matches the C1 spec's worked examples
+   (Plans/2026-08-23_rolemaster-mvp-plan.md §3.3/§3.5). */
+function padD100Face(n) {
+  return (n < 10) ? "0" + n : String(n);
+}
+
+/* Sign-prefixed integer for the bonus/diff tag fragments — always shows a
+   leading "+" for zero/positive, "-" for negative (matches every worked
+   bonus example in §3.5; the roll/total fields are NOT sign-prefixed). */
+function signedNum(n) {
+  return (n >= 0 ? "+" : "") + n;
+}
+
 function rollD100() {
-  var skill = clamp(numFromInput("skill", 50), 1, 100);
-  var face = 1 + Math.floor(Math.random() * 100);
-  var pass = face <= skill;
-  var text = "[d100: rolled " + face + " vs " + skill + " = " + (pass ? "success" : "failure") + "]";
-  finalizeRoll(text, pass ? "success" : "fail", null);
+  var res = state.ruleset.resolution || {};
+
+  if (res.direction !== "high") {
+    /* Legacy roll-under path — byte-equivalent to the pre-C1 body.
+       No shipped ruleset uses d100-percentile today (census, plan §3.1),
+       so this is provably zero-regression, but it is kept verbatim anyway. */
+    var skill = clamp(numFromInput("skill", 50), 1, 100);
+    var face = 1 + Math.floor(Math.random() * 100);
+    var pass = face <= skill;
+    var text = "[d100: rolled " + face + " vs " + skill + " = " + (pass ? "success" : "failure") + "]";
+    finalizeRoll(text, pass ? "success" : "fail", null);
+    return;
+  }
+
+  /* Roll-high d100, optionally open-ended (Plans/2026-08-23_rolemaster-mvp-plan.md §3).
+     RMSS canon: high open-ended 96-100 inclusive (adds, cascades while the new
+     face is also >= high.threshold); low open-ended 01-05 (subtracts, and —
+     asymmetrically — the chain continues only while the new face is HIGH,
+     i.e. >= high.threshold, not while it is itself low). Open-ended triggers
+     on the UNMODIFIED first die only when firstRollOnly (default true). */
+  var oe        = res.openEnded || null;
+  var highCfg   = (oe && oe.high) || null;
+  var lowCfg    = (oe && oe.low) || null;
+  var firstRollOnly = !oe || oe.firstRollOnly !== false; /* default true */
+  var highThreshold = (highCfg && typeof highCfg.threshold === "number") ? highCfg.threshold : 96;
+  var lowThreshold  = (lowCfg && typeof lowCfg.threshold === "number") ? lowCfg.threshold : 5;
+  var lowSubtract   = !lowCfg || lowCfg.subtract !== false; /* default true */
+  var lowContinueOn = (lowCfg && lowCfg.continueOn) || "high";
+  var highCap   = (highCfg && typeof highCfg.cascadeCap === "number") ? highCfg.cascadeCap : 0;
+  var lowCap    = (lowCfg && typeof lowCfg.cascadeCap === "number") ? lowCfg.cascadeCap : 0;
+  var SAFETY_CAP = 100; /* hard bound regardless of cascadeCap — malformed-RNG defense, mirrors rollDicePoolSum */
+
+  var bonus = numFromInput("bonus", 0);
+  var diff  = numFromInput("diff", 0);
+
+  var first = 1 + Math.floor(Math.random() * 100);
+  var um = (first === 66 || first === 100) ? first : null;
+
+  var openHigh = !!(highCfg && firstRollOnly && first >= highThreshold);
+  var openLow  = !openHigh && !!(lowCfg && firstRollOnly && first <= lowThreshold);
+
+  var chainRolls = []; /* unsigned d100 faces rolled after the first, in order */
+  var cascades = 0;
+  var r;
+
+  if (openHigh) {
+    r = first;
+    while (r >= highThreshold) {
+      if (highCap > 0 && cascades >= highCap) break;
+      if (cascades >= SAFETY_CAP) break;
+      r = 1 + Math.floor(Math.random() * 100);
+      chainRolls.push(r);
+      cascades++;
+    }
+  } else if (openLow) {
+    /* The low chain always rerolls at least once (that IS the low-open rule),
+       then continues per lowContinueOn — RMSS default "high": keep going
+       while the newest face is >= high.threshold, NOT while it is low. */
+    while (true) {
+      if (lowCap > 0 && cascades >= lowCap) break;
+      if (cascades >= SAFETY_CAP) break;
+      r = 1 + Math.floor(Math.random() * 100);
+      chainRolls.push(r);
+      cascades++;
+      var continues = (lowContinueOn === "low") ? (r <= lowThreshold) : (r >= highThreshold);
+      if (!continues) break;
+    }
+  }
+
+  var chainSum = chainRolls.reduce(function (a, b) { return a + b; }, 0);
+  var roll = openLow ? (first + (lowSubtract ? -chainSum : chainSum)) : (first + chainSum);
+  var total = roll + bonus + diff;
+
+  var chainSign = openLow ? (lowSubtract ? "-" : "+") : "+";
+  var chainText = chainRolls.length
+    ? " chain=" + chainRolls.map(function (f) { return chainSign + padD100Face(f); }).join(",")
+    : "";
+  var diffText = diff !== 0 ? " diff=" + signedNum(diff) : "";
+  var umText = um !== null ? " um=" + um : "";
+
+  var text = "[mrr-roll: mode=d100-open first=" + padD100Face(first) + chainText +
+             " roll=" + roll + " bonus=" + signedNum(bonus) + diffText +
+             " total=" + total + umText + "]";
+
+  var renderFaces = [{
+    face: first,
+    cls: "mrr-dice__face" + ((openHigh || openLow) ? " mrr-dice__face--wild" : "")
+  }].concat(chainRolls.map(function (f) {
+    return { face: f, cls: "mrr-dice__face mrr-dice__face--double" };
+  }));
+
+  finalizeRoll(text, "narrate", renderFaces);
 }
 
 function rollPbta() {

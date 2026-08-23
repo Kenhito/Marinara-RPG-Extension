@@ -145,6 +145,76 @@
             "skillFormula": {
               "type": "string",
               "description": "Plain-language formula (e.g. \"Roll 1d100 under skill_value\")."
+            },
+            "direction": {
+              "type": "string",
+              "enum": ["under", "high"],
+              "default": "under",
+              "description": "Comparison direction. 'under' (default, back-compatible): success when the roll is at or under the target. 'high': success when roll + bonus meets or beats the target; the widget reports a total rather than a pass/fail against a percentile cap. Rolemaster and other roll-high d100 systems use 'high'."
+            },
+            "bonusFormula": {
+              "type": "string",
+              "description": "Plain-language description of what the player adds to a 'high' roll (e.g. 'skill bonus + stat bonus + item bonus'). Descriptive only — the widget takes the bonus as a numeric input; it does not parse this string."
+            },
+            "openEnded": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Open-ended (exploding, and optionally imploding) d100. Absent = feature off. Mirrors the dice-pool-sum wildDie explode pattern.",
+              "properties": {
+                "high": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "threshold": {
+                      "type": "integer",
+                      "minimum": 2,
+                      "maximum": 100,
+                      "default": 96,
+                      "description": "Roll at or above this face re-rolls and ADDS. RMSS: 96 (inclusive of 100)."
+                    },
+                    "cascadeCap": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "default": 0,
+                      "description": "Max chained re-rolls. 0 = uncapped. Mirrors wildDie.explodeCap."
+                    }
+                  }
+                },
+                "low": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "threshold": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 99,
+                      "default": 5,
+                      "description": "Roll at or below this face triggers the low chain. RMSS: 5."
+                    },
+                    "subtract": {
+                      "type": "boolean",
+                      "default": true,
+                      "description": "Whether the low chain subtracts from the first roll."
+                    },
+                    "continueOn": {
+                      "type": "string",
+                      "enum": ["high", "low"],
+                      "default": "high",
+                      "description": "Which follow-up faces extend the low chain. RMSS is asymmetric: the low chain continues while each new roll is at or above openEnded.high.threshold, NOT while it is low. 'low' is provided for systems that mirror the high rule."
+                    },
+                    "cascadeCap": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "default": 0
+                    }
+                  }
+                },
+                "firstRollOnly": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Open-ended triggers on the UNMODIFIED first die only (RMSS canon). When false, the modified total is tested — a house-rule shape some tables use."
+                }
+              }
             }
           },
           "additionalProperties": false

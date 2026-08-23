@@ -29,7 +29,7 @@ The `resolution.mode` enum now has **nine** modes. The four original modes still
 |------|---------|---------------------|-------|
 | `single-roll` | D&D, Pathfinder, Cypher | `modifierFormula` | d20 + mod vs DC |
 | `dice-pool` | Exalted, oWoD, Shadowrun | `poolFormula`, `target`, `doubles`, `botches` | Count successes against target |
-| `d100-percentile` | Call of Cthulhu, BRP | `skillFormula` | Percentile under skill |
+| `d100-percentile` | Call of Cthulhu, BRP (roll-under, default); Rolemaster-family (roll-high, optional open-ended) | `skillFormula`; optional `direction`, `bonusFormula`, `openEnded` | Percentile under skill by default; `direction: "high"` switches to roll d100 + bonus vs a target, with optional exploding/imploding open-ended dice |
 | `2d6-stat` | PbtA games | `modifierFormula`, `bands` | 2d6 + stat with outcome bands |
 | `fate-ladder` | Fate Core, Fate Accelerated | `modifierFormula`, `ladder`, `successWithStyle` | 4dF + skill on a verbal ladder |
 | `roll-under` | GURPS, CoC 7e, Pendragon | `diceFormula`, `target` source, optional crit/fumble | Total under target = success |
@@ -89,6 +89,33 @@ The widget surfaces the stance selector + the pool size + the prepared number; t
 ```
 
 The widget shows Pool / Pips / Difficulty inputs and rolls Xd<dieSize>, sums, applies pips, compares to difficulty. When `wildDie.enabled`, one of the dice in the pool is designated the Wild Die and re-rolls on `explodeFace` (cascading until non-max). A Wild Die showing `critFailFace` flags the roll with a `wildFail=true` marker for the narrator to interpret as complication or partial success.
+
+### `d100-percentile` open-ended shape (roll-high)
+
+By default `d100-percentile` is roll-under (see `docs/AUTHORING.md`): the widget rolls 1d100 and succeeds when the result is at or under the skill target. Setting `direction: "high"` switches the widget to roll-**high**: the player enters a Bonus and a Difficulty modifier, the widget rolls d100 + bonus + difficulty, and reports a total rather than a pass/fail — the GM (or a `bands`/`difficulties` table elsewhere in the ruleset) reads the total against a result band. Rolemaster/RMSS-family systems use this shape.
+
+```jsonc
+"resolution": {
+  "mode": "d100-percentile",
+  "direction": "high",                       // "under" (default) or "high"
+  "skillFormula": "d100 (open-ended) + skill bonus + difficulty modifier",
+  "bonusFormula": "skill bonus (ranks + stat bonus + item bonus)",  // descriptive only — not parsed
+  "openEnded": {
+    "high": { "threshold": 96, "cascadeCap": 0 },   // roll >= threshold re-rolls and ADDS; 0 = uncapped
+    "low":  { "threshold": 5, "subtract": true, "continueOn": "high", "cascadeCap": 0 },
+    "firstRollOnly": true                            // trigger on the UNMODIFIED first die only (RMSS canon)
+  }
+}
+```
+
+`openEnded` is entirely optional — omit it for a plain roll-high d100 with no exploding dice. When present:
+
+- **`high`** — a roll at or above `threshold` re-rolls and adds to the total, cascading while each new roll is also `>= threshold`. RMSS: 96 (inclusive of 100).
+- **`low`** — a roll at or below `threshold` re-rolls and subtracts (`subtract: true`, the default). RMSS's low chain is **asymmetric**: `continueOn: "high"` (the default) means the low chain keeps extending only while each new roll is `>= high.threshold`, NOT while it is itself low. Set `continueOn: "low"` for a symmetric house rule instead.
+- **`cascadeCap`** (on `high` and `low` independently) — maximum chained re-rolls; `0` = uncapped. Same semantics as `wildDie.explodeCap` (§1 above). A hard `SAFETY_CAP` of 100 chained re-rolls applies regardless, as malformed-RNG defense.
+- **`firstRollOnly`** (default `true`) — open-ended triggers on the raw first die only. The widget does not currently implement the `false` (modified-total-triggers) house-rule path beyond accepting the field; author it as `true` unless you have confirmed the alternate behavior with the extension's maintainer.
+
+The dice tag reports the whole chain, e.g. `[mrr-roll: mode=d100-open first=97 chain=+88 roll=185 bonus=+62 diff=-20 total=227]`. It carries no band label — mapping the total to a result band (Failure/Success/etc.) is the GM agent's job, not the widget's. Two faces are also flagged unconditionally whenever `direction: "high"` is set, independent of whether `openEnded` triggered: a natural (unmodified first-roll) `66` or `100` appends `um=66` / `um=100` to the tag, for the GM to optionally treat as a Rolemaster-style unusual-event/unusual-success table row — this is a fixed convention of the roll-high d100 tag family, not a configurable field.
 
 ### `narrative-handled` shape
 
