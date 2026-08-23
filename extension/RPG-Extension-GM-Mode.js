@@ -1026,8 +1026,12 @@ var mrrLsWriteFailWarned = Object.create(null);
 
 function lsSet(key, val) {
   var ok = lsSetRaw(key, val); /* LS remains a current local mirror this release — never removed; always the raw string, envelopes are a server/cache-only concept */
-  if (!ok && !mrrLsWriteFailWarned[key]) {
-    mrrLsWriteFailWarned[key] = true;
+  /* Round-10 nit fix: namespaced by operation — a lsSet failure warning
+     for this key used to also suppress a LATER, distinct lsDel failure
+     for the SAME key (and vice versa), since both shared one un-namespaced
+     mrrLsWriteFailWarned[key] flag. */
+  if (!ok && !mrrLsWriteFailWarned["set:" + key]) {
+    mrrLsWriteFailWarned["set:" + key] = true;
     warn("lsSet: localStorage write failed for '" + key + "' (quota exceeded or private mode?) — ts-map NOT stamped for this write");
   }
   if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key)) {
@@ -1057,8 +1061,8 @@ function lsSet(key, val) {
 
 function lsDel(key) {
   var ok = lsDelRaw(key);
-  if (!ok && !mrrLsWriteFailWarned[key]) {
-    mrrLsWriteFailWarned[key] = true;
+  if (!ok && !mrrLsWriteFailWarned["del:" + key]) {
+    mrrLsWriteFailWarned["del:" + key] = true;
     warn("lsDel: localStorage removeItem failed for '" + key + "' — ts-map NOT stamped for this delete");
   }
   if (hasServerStorage && mrrServerCache && mrrIsSyncedKey(key)) {
@@ -14129,7 +14133,24 @@ function applyStateTagsWithDedup(tags, anchorId, journalKey) {
         var key = String(anchorId) + "::" + sig + "::" + idx;
         if (appliedMutationKeys[key]) continue; /* other transport already applied this exact mutation for this turn */
         appliedMutationKeys[key] = true;
-        if (applyStateMutation(normalized[n])) applied++;
+        /* Round-10 fix A: thread the EXACT dedup sig this call is applying
+           under into whatever journal entry it produces (mrrJournalMutation
+           reads mrrCurrentApplySig), save/restored exactly like
+           mrrCurrentJournalBucketKey above — a thrown mutation must not
+           leak a stale sig into an unrelated later call. This replaces the
+           old "reconstruct the sig from the journaled entry" approach in
+           mrrClearDedupKeysForBucket, which could never exactly match the
+           original tag's sig (reason=/target= participate in it, "+N" vs
+           bare "N" sign forms, set=/value=/current= vs delta=, field
+           aliases the journal only stores canonically) — capturing it here,
+           at the one point the real sig is already known, is exact. */
+        var prevApplySig = mrrCurrentApplySig;
+        mrrCurrentApplySig = sig;
+        try {
+          if (applyStateMutation(normalized[n])) applied++;
+        } finally {
+          mrrCurrentApplySig = prevApplySig;
+        }
       }
     }
   } finally {
@@ -14216,6 +14237,7 @@ var mrrMutationJournal = { buckets: {}, lastSeenIdx: {} };
 var mrrMutationJournalChatId = null;
 var mrrCurrentJournalBucketKey = null; /* set by applyStateTagsWithDedup for the duration of its loop; read by the three journaling branches inside applyStateMutation */
 var mrrJournalSuppressed = false;      /* true while mrrRevertBucket/mrrReapplyBucket are replaying through applyStateMutation, so the replay itself is never re-journaled (would double-journal and could recurse) */
+var mrrCurrentApplySig = null;         /* round-10 fix A: set by applyStateTagsWithDedup for the duration of one applyStateMutation call; mrrJournalMutation stamps it onto the entry it creates (if any) as entry.sig — null when a journal entry is somehow created outside that call (shouldn't happen; mrrJournalMutation already no-ops without an active bucket key, which is set by the same caller) */
 
 function mrrLoadMutationJournal(chatId) {
   if (!chatId) { mrrMutationJournal = { buckets: {}, lastSeenIdx: {} }; mrrMutationJournalChatId = null; return; }
@@ -14274,13 +14296,20 @@ function mrrSaveMutationJournal() {
    are both already in scope at every call site (the clamp site) — store
    both, unconditionally, so revert is an exact prev-restore regardless
    of whether the original write was itself a delta or an absolute set. */
-function mrrJournalMutation(field, kind, payload) {
+function mrrJournalMutation(field, payload) {
   if (mrrJournalSuppressed) return;
   var bucketKey = mrrCurrentJournalBucketKey;
   if (!bucketKey) return;
   var bucket = mrrMutationJournal.buckets[bucketKey];
   if (!bucket) { bucket = { entries: [], reverted: false }; mrrMutationJournal.buckets[bucketKey] = bucket; }
-  var entry = { field: field, kind: "set", prev: payload.prev, next: payload.next };
+  /* Round-10 fix A: entry.sig is the EXACT dedup-gate signature the
+     originating applyStateTagsWithDedup call computed for this mutation
+     (see mrrCurrentApplySig) — used by mrrClearDedupKeysForBucket to
+     delete precisely the right appliedMutationKeys entry on revert, no
+     reconstruction. null here only if this entry somehow got created
+     outside that call (shouldn't happen — see mrrCurrentApplySig's own
+     comment); mrrClearDedupKeysForBucket treats null as nothing to clear. */
+  var entry = { field: field, kind: "set", prev: payload.prev, next: payload.next, sig: mrrCurrentApplySig || null };
   bucket.entries.push(entry);
   mrrSaveMutationJournal();
 }
@@ -14343,40 +14372,28 @@ function mrrDeleteAppliedKeysForSig(anchor, sig) {
    (different surrounding prose, same field/delta/value) would compute
    the SAME sig and be silently swallowed as a dupe — never re-applying,
    never re-journaling under the new swipe's own bucket. Fix: for each
-   reverted entry, reconstruct its forward-direction attrs and delete
-   any matching dedup key so the NEXT identical-content tag is admitted
-   through the normal gate.
-   HONEST CAVEAT (found while building this, reported per instruction):
-   mrrBuildReplayAttrs("forward") reconstructs an ABSOLUTE form
-   ({field, current: next}) — correct for genuinely re-APPLYING an
-   entry to the sheet (mrrReapplyBucket), but the ORIGINAL tag that
-   produced this entry may have used delta="N" instead, which computes
-   a DIFFERENT contentSig ("delta=N|field=X" vs "current=<next>|
-   field=X"). Journal storage (fix 1b) only keeps absolute prev/next,
-   not which surface form the original tag used, so the absolute
-   reconstruction alone would silently miss deleting the blocking key
-   for a delta-authored tag — exactly the headline scenario. Also
-   deletes a SECOND candidate sig built from the algebraically
-   equivalent delta (next - prev) for non-state numeric fields, which
-   exactly matches the original tag's sig whenever the original write
-   wasn't itself clamped (current + delta === next, the common case;
-   the field-reference teaching offers delta= as the primary numeric
-   form). Both candidates run through the SAME normalizeStateAttrs +
-   mutationContentSig pipeline the gate itself uses; deleting a
-   candidate whose key doesn't exist is a harmless no-op. */
+   reverted entry, delete its matching dedup key so the NEXT
+   identical-content tag is admitted through the normal gate.
+   ROUND-10 FIX A: round 9's first attempt RECONSTRUCTED the sig from the
+   journaled entry (via mrrBuildReplayAttrs) — this could never exactly
+   match the original tag's real sig, because mutationContentSig hashes
+   the RAW parsed attrs verbatim: reason=/target= (never journaled)
+   participate in it, "+N" vs bare "N" sign forms differ, set=/value=/
+   current= vs delta= are different keys entirely, and a field ALIAS the
+   agent typed (journaled under its canonical name) produces a different
+   field= value. Round 9 papered over the delta-vs-absolute axis with a
+   second reconstructed candidate, but reason=/target=/aliases/sign-form
+   were still unhandled — genuinely exact only by coincidence.
+   The correct fix: capture the REAL sig at the one place it's already
+   known — applyStateTagsWithDedup computes it right before dispatching
+   to applyStateMutation, and now threads it through
+   (mrrCurrentApplySig) so mrrJournalMutation can stamp it onto the entry
+   it creates as entry.sig. No reconstruction, no mismatch axes: deleting
+   anchor + "::" + entry.sig + "::"-prefixed keys is exact. */
 function mrrClearDedupKeysForBucket(anchor, bucket) {
   bucket.entries.forEach(function (entry) {
-    var fwd = mrrBuildReplayAttrs(entry, "forward");
-    normalizeStateAttrs(fwd).forEach(function (na) {
-      mrrDeleteAppliedKeysForSig(anchor, mutationContentSig(na));
-    });
-    var isState = !!resolveRulesetState(entry.field);
-    if (!isState && typeof entry.prev === "number" && typeof entry.next === "number") {
-      var deltaCandidate = { field: entry.field, delta: String(entry.next - entry.prev) };
-      normalizeStateAttrs(deltaCandidate).forEach(function (na) {
-        mrrDeleteAppliedKeysForSig(anchor, mutationContentSig(na));
-      });
-    }
+    if (entry.sig == null) return; /* no captured sig (pre-round-10 entry, or created outside the gate) — nothing exact to clear */
+    mrrDeleteAppliedKeysForSig(anchor, entry.sig);
   });
 }
 
@@ -14422,8 +14439,17 @@ function mrrRevertBucket(bucketKey) {
   /* Fix 1a — clear dedup keys for EVERY entry regardless of its own
      revert success/failure: the goal is admitting the incoming swipe's
      tag through the gate, which matters independent of whether this
-     particular OLD entry's inverse write landed on the sheet. */
-  mrrClearDedupKeysForBucket(mrrAnchorFromBucketKey(bucketKey), bucket);
+     particular OLD entry's inverse write landed on the sheet.
+     Round-10 fix D: wrapped — an uncaught throw here would skip the
+     mrrSaveMutationJournal + batched saveSheet/renderSheet that follow,
+     silently losing the revert's own journal persistence and sheet
+     render even though the sheet-side revert loop above already
+     succeeded. Warn and continue rather than lose those. */
+  try {
+    mrrClearDedupKeysForBucket(mrrAnchorFromBucketKey(bucketKey), bucket);
+  } catch (e) {
+    warn("B2-R revert: mrrClearDedupKeysForBucket threw for bucket '" + bucketKey + "' — dedup keys may not be cleared, incoming identical-content swipes may still be blocked (" + (e && e.message ? e.message : e) + ")");
+  }
   mrrSaveMutationJournal();
   if (!prevSuppressed) { saveSheet(state.chatId, state.sheet); renderSheet(); }
 }
@@ -15434,7 +15460,7 @@ function applyStateMutation(attrs) {
     if (!sheet.states || typeof sheet.states !== "object") sheet.states = {};
     var prevStateLabel = (sheet.states[stateDef.name] !== undefined) ? sheet.states[stateDef.name] : null;
     sheet.states[stateDef.name] = canonicalLabel;
-    mrrJournalMutation(stateDef.name, "set", { prev: prevStateLabel, next: canonicalLabel }); /* B2-R: label-valued "set" — see plan point 1 ("value=/states/label sets") */
+    mrrJournalMutation(stateDef.name, { prev: prevStateLabel, next: canonicalLabel }); /* B2-R: label-valued "set" — see plan point 1 ("value=/states/label sets") */
     return finalizeMutation(attrs);
   }
 
@@ -15551,7 +15577,7 @@ function applyStateMutation(attrs) {
        finalNext=0; a delta-kind revert re-applied +8 against the LIVE
        (already-0) value and landed on 8, not the original 3. prev/next
        are exact, unconditionally — revert is now a plain prev-restore. */
-    mrrJournalMutation(resolved.key, "set", { prev: current, next: finalNext });
+    mrrJournalMutation(resolved.key, { prev: current, next: finalNext });
     return finalizeMutation(attrs);
   }
   /* Unknown field — stash on the sheet root as a generic numeric so
@@ -15578,7 +15604,7 @@ function applyStateMutation(attrs) {
      falls through to here), so the path string round-trips correctly.
      Round-9 fix 1b: unconditional absolute prev/next, same reasoning as
      the resolved-field branch above (clamp-loss fix). */
-  mrrJournalMutation(field, "set", { prev: rootCurrent, next: stashFinal });
+  mrrJournalMutation(field, { prev: rootCurrent, next: stashFinal });
   return finalizeMutation(attrs);
 }
 
@@ -15688,8 +15714,20 @@ function processChatMessage(node) {
            fast-path memo check on every future re-observation of THIS
            text, re-triggering the swipe-index fetch every single time
            instead of short-circuiting like a freshly-applied message
-           would. Harmless no-op when the memo was already correct. */
-        mrrProcessedTextMemo[msgId] = text;
+           would. Harmless no-op when the memo was already correct.
+           Round-10 fix B (new bug introduced by 5c): ONLY when idx is
+           genuinely known. When idx is null/undefined (fetch failure or
+           out-of-window), isMessageProcessed falls to its prefix-scan
+           fallback, which returns true whenever ANY swipe of this msgId
+           was EVER processed — even though THIS swipe's tags (this exact
+           text) were never actually applied. Stamping the memo there
+           would permanently block recovery: every future re-observation
+           of that same never-applied text would short-circuit at the
+           fast-path gate above instead of retrying the fetch, which is
+           the only thing that can ever resolve idx and let the real
+           composite-key check run. Pre-5c, an unresolvable observation
+           always retried; 5c's unconditional stamp silently broke that. */
+        if (idx !== null && idx !== undefined) mrrProcessedTextMemo[msgId] = text;
         return; /* composite entry already applied (re-entrant observation) */
       }
       var tags = parseStateTags(text);
@@ -15833,6 +15871,20 @@ function pollCustomAgentRuns(chatId) {
   var pollChatId = chatId;
   loadProcessedRunIds(chatId);
   apiFetch("/agents/runs/" + encodeURIComponent(chatId) + "/custom?limit=50").then(function (rows) {
+    /* Round-10 fix C: the stale-chat guard previously only existed at the
+       SECOND hop (fetchSwipeIndexMap's .then, below) — but a chat switch
+       during THIS FIRST apiFetch was already unguarded and had a real,
+       distinct failure mode: the baseline-seeding branch a few lines down
+       would seed chat A's run ids into chat B's now-active processedRunIds
+       set (loadProcessedRunIds(chatId) above already loaded/created B's
+       set before this callback fires, since chatId was captured
+       synchronously) and mark B's runsBaselineExists true for a chat that
+       was never actually baselined — B's first REAL poll would then see
+       every one of its own pre-existing runs as "new" and replay its
+       entire history in one sweep. Duplicated here (not hoisted out) so
+       each hop independently guards against a switch that happened during
+       ITS OWN async gap. */
+    if (state.chatId !== pollChatId) return;
     /* marinara.apiFetch does not check status (returns res.json() always), so
        a 404/error body arrives as a non-array — degrade silently. */
     if (!Array.isArray(rows)) return;
