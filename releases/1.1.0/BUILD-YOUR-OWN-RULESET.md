@@ -28,12 +28,12 @@ I want to build a Marinara-RPG-Extension ruleset for <YOUR SYSTEM HERE>.
 The framework lives at: https://github.com/Kenhito/Marinara-RPG-Extension
 
 The build documentation is in:
-  releases/1.0.0/docs-for-ai/01-OVERVIEW.md through 07-EXAMPLE-PROMPTS.md
+  releases/1.1.0/docs-for-ai/01-OVERVIEW.md through 07-EXAMPLE-PROMPTS.md
   (read all seven in order)
 
 Two complete worked examples are in:
-  releases/1.0.0/examples/exalted3e/  (complex: typed damage, multi-turn sorcery, three agent overrides)
-  releases/1.0.0/examples/dnd5e/      (simpler: single-roll d20, one agent override)
+  releases/1.1.0/examples/exalted3e/  (complex: typed damage, multi-turn sorcery, three agent overrides)
+  releases/1.1.0/examples/dnd5e/      (simpler: single-roll d20, one agent override)
 
 Please read all seven docs, skim both example folders, then produce a complete ruleset folder for <YOUR SYSTEM>:
 

@@ -4,7 +4,7 @@ Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara
 
 ## Quick start (5 minutes)
 
-The fastest path: grab the self-contained release at [`releases/1.0.0/`](releases/1.0.0/) and follow [`releases/1.0.0/INSTALL-GUIDE.md`](releases/1.0.0/INSTALL-GUIDE.md). It includes:
+The fastest path: grab the self-contained release at [`releases/1.1.0/`](releases/1.1.0/) and follow [`releases/1.1.0/INSTALL-GUIDE.md`](releases/1.1.0/INSTALL-GUIDE.md). It includes:
 
 - **The importable extension package** (`Marinara-RPG-Extension.extension.zip`) for Marinara's External Extensions import (Settings → Addons; requires engine 2.4.3+ with `ENABLE_EXTERNAL_EXTENSIONS=true` and the Danger Zone import toggle — see `INSTALL-GUIDE.md`)
 - **Two complete reference rulesets** (D&D 5e and Exalted 3e) with bundle + agents pre-built, ready to import
@@ -13,7 +13,7 @@ The fastest path: grab the self-contained release at [`releases/1.0.0/`](release
 
 If you just want to play D&D or Exalted, install the extension and import the ruleset bundle and you're on your way. Other systems are being added as requested and you can submit a PR to add one you've created to the repo.
 
-If you want a system the framework doesn't ship, see [`releases/1.0.0/BUILD-YOUR-OWN-RULESET.md`](releases/1.0.0/BUILD-YOUR-OWN-RULESET.md) — options for AI-assisted or manual authoring.
+If you want a system the framework doesn't ship, see [`releases/1.1.0/BUILD-YOUR-OWN-RULESET.md`](releases/1.1.0/BUILD-YOUR-OWN-RULESET.md) — options for AI-assisted or manual authoring.
 
 ## What this is
 
@@ -29,7 +29,7 @@ The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps
 - **Per-chat ruleset stamping and auto-switch.** Each chat remembers the ruleset it belongs to, so switching chats switches the sheet and dice widget with it instead of bleeding one system's rules into another's game.
 - **Preset agent-sections reconcile themselves.** On engine 2.4.0+ a roleplay preset owns agent placement; a bundle reinstall used to orphan the marker sections you had added, silently discarding agent output. The extension now repoints them after every import and re-derives a wiped ruleset stamp on its own.
 - **Comment-stripped packaging.** The shipped `extension.js` is the repo loader put through a comments-only AST round-trip (compress and mangle stay off, so identifiers and control flow are untouched) — about 1.0 MB of comment-heavy source becomes ~620 KB of identical behavior.
-- **Self-contained release folder** at `releases/1.0.0/` with the AI-feedable build docs, reference systems, and drop-in install files for every shipped ruleset.
+- **Self-contained release folder** at `releases/1.1.0/` with the AI-feedable build docs, reference systems, and drop-in install files for every shipped ruleset.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the full list.
 

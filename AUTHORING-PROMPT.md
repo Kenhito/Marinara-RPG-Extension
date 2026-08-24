@@ -1,6 +1,6 @@
 # Authoring Prompt — Build a Marinara-RPG-Extension Ruleset Bundle
 
-> **This is the canonical entry point for authoring a new ruleset.** The prompt block below tells your chat AI to read the full current doc set itself — the system-agnostic architecture at [`releases/1.0.0/docs-for-ai/`](releases/1.0.0/docs-for-ai/) (agent architecture, ruleset schema, lorebook format, build pipeline) plus the newer schema surface at [`docs/AUTHORING-PHASE-6.md`](docs/AUTHORING-PHASE-6.md) — Resources cluster, sections.order / sections.hidden, autocalc derived stats with valueFormula / tooltipFormula / formulaShort, commitmentModel + commitmentPool, state-banner resource type, the **nine resolution modes** (single-roll, dice-pool, d100-percentile, 2d6-stat, fate-ladder, roll-under, stance-modal-pool, dice-pool-sum with Wild Die, narrative-handled — docs-for-ai only documents the first five), the item.hardness / item.moteCommitment + item.motePool auto-inheritance, **pipGranularity** (OpenD6 sub-die precision), **effects.onSpend** (Character-Points style spend-driven bonuses), **roundCounters[]** (per-round combat penalties), **penaltyKind** flat/dice on track cells, **abilities.groups[]** (V20 Talents/Skills/Knowledges trinity), and the **meritsFlaws** section type. You don't need to paste anything extra alongside the prompt block below — it names every file the AI needs to fetch (or, for file-upload-only AIs, the note further down lists exactly what to upload instead).
+> **This is the canonical entry point for authoring a new ruleset.** The prompt block below tells your chat AI to read the full current doc set itself — the system-agnostic architecture at [`releases/1.1.0/docs-for-ai/`](releases/1.1.0/docs-for-ai/) (agent architecture, ruleset schema, lorebook format, build pipeline) plus the newer schema surface at [`docs/AUTHORING-PHASE-6.md`](docs/AUTHORING-PHASE-6.md) — Resources cluster, sections.order / sections.hidden, autocalc derived stats with valueFormula / tooltipFormula / formulaShort, commitmentModel + commitmentPool, state-banner resource type, the **nine resolution modes** (single-roll, dice-pool, d100-percentile, 2d6-stat, fate-ladder, roll-under, stance-modal-pool, dice-pool-sum with Wild Die, narrative-handled — docs-for-ai only documents the first five), the item.hardness / item.moteCommitment + item.motePool auto-inheritance, **pipGranularity** (OpenD6 sub-die precision), **effects.onSpend** (Character-Points style spend-driven bonuses), **roundCounters[]** (per-round combat penalties), **penaltyKind** flat/dice on track cells, **abilities.groups[]** (V20 Talents/Skills/Knowledges trinity), and the **meritsFlaws** section type. You don't need to paste anything extra alongside the prompt block below — it names every file the AI needs to fetch (or, for file-upload-only AIs, the note further down lists exactly what to upload instead).
 
 > ## ⚠️ Before authoring: does the schema support your system's dice mechanic?
 >
@@ -22,7 +22,7 @@ Marinara-RPG-Extension's ruleset dialog.
 ## How this works
 
 1. The AI reads the reference docs named in the prompt below:
-   - [`releases/1.0.0/docs-for-ai/`](releases/1.0.0/docs-for-ai/) (01 through 07) — full schema, agent architecture, and authoring patterns
+   - [`releases/1.1.0/docs-for-ai/`](releases/1.1.0/docs-for-ai/) (01 through 07) — full schema, agent architecture, and authoring patterns
    - [`docs/AUTHORING-PHASE-6.md`](docs/AUTHORING-PHASE-6.md) — the newer schema fields docs-for-ai doesn't cover yet
    - [`schema/bundle.schema.json`](./schema/bundle.schema.json) — the bundle envelope
    - One or more reference bundles (D&D, Fate, Exalted) so it has worked examples
@@ -48,8 +48,8 @@ The system I want is: **<<YOUR SYSTEM>>**.
 
 Read these files in the GitHub repo `Kenhito/Marinara-RPG-Extension`:
 
-1. `releases/1.0.0/docs-for-ai/01-OVERVIEW.md` through
-   `releases/1.0.0/docs-for-ai/07-EXAMPLE-PROMPTS.md` — read all seven, in
+1. `releases/1.1.0/docs-for-ai/01-OVERVIEW.md` through
+   `releases/1.1.0/docs-for-ai/07-EXAMPLE-PROMPTS.md` — read all seven, in
    numeric order. This is the primary authoring reference: the ruleset
    schema, the system-agnostic agent architecture, the lorebook format, and
    the build pipeline.
@@ -107,7 +107,7 @@ pasting the prompt above, upload these files instead of pointing the AI at
 the repo:
 
 - This file, `AUTHORING-PROMPT.md`.
-- All seven files in `releases/1.0.0/docs-for-ai/` (`01-OVERVIEW.md` through
+- All seven files in `releases/1.1.0/docs-for-ai/` (`01-OVERVIEW.md` through
   `07-EXAMPLE-PROMPTS.md`).
 - `docs/AUTHORING-PHASE-6.md`.
 - `schema/bundle.schema.json`.

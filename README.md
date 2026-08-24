@@ -14,7 +14,7 @@ Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara
 
 ## Quick start (5 minutes)
 
-The fastest path: grab the self-contained release at [`releases/1.0.0/`](releases/1.0.0/) and follow [`releases/1.0.0/INSTALL-GUIDE.md`](releases/1.0.0/INSTALL-GUIDE.md). It includes:
+The fastest path: grab the self-contained release at [`releases/1.1.0/`](releases/1.1.0/) and follow [`releases/1.1.0/INSTALL-GUIDE.md`](releases/1.1.0/INSTALL-GUIDE.md). It includes:
 
 - **The importable extension package** (`Marinara-RPG-Extension.extension.zip`) for Marinara's External Extensions import
 - **Two complete reference rulesets** (D&D 5e and Exalted 3e) with bundle + agents pre-built, ready to import
@@ -23,7 +23,7 @@ The fastest path: grab the self-contained release at [`releases/1.0.0/`](release
 
 If you just want to play D&D or Exalted, install the extension and import the ruleset bundle and you're on your way. Other systems are being added as requested and you can submit a PR to add one you've created to the repo.
 
-If you want a system the framework doesn't ship, see [`releases/1.0.0/BUILD-YOUR-OWN-RULESET.md`](releases/1.0.0/BUILD-YOUR-OWN-RULESET.md) — options for AI-assisted or manual authoring.
+If you want a system the framework doesn't ship, see [`releases/1.1.0/BUILD-YOUR-OWN-RULESET.md`](releases/1.1.0/BUILD-YOUR-OWN-RULESET.md) — options for AI-assisted or manual authoring.
 
 ## Available rulesets (grab-and-go)
 
@@ -58,7 +58,7 @@ Every ruleset ships as a single `bundle.json`, right here on GitHub — no build
 
    e.g. `.../main/rulesets/exalted3e/bundle.json`. (If your Marinara server blocks outbound fetches, use one of the other two ways.)
 2. **Download from GitHub.** Click the bundle link in the table above, then the **Raw** button (top-right of the file view), then save the page (Ctrl+S / Cmd+S) as a `.json` file. In the **Ruleset** dialog use **Choose file…** to pick it, then **Save and reload**.
-3. **From the release folder.** Every bundle is also in [`releases/1.0.0/install-files/`](releases/1.0.0/install-files/) as `<id>-bundle.json` — if you downloaded the release, they're already on your disk.
+3. **From the release folder.** Every bundle is also in [`releases/1.1.0/install-files/`](releases/1.1.0/install-files/) as `<id>-bundle.json` — if you downloaded the release, they're already on your disk.
 
 After the import: attach the ruleset's lorebook to your game and enable the MRR agents after the game launches (Step 6 below) — importing installs, but each game activates its own.
 
@@ -88,7 +88,7 @@ The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps
 - **CSP-safe formula evaluator.** The `{StatName}*N+M` parser uses recursive descent instead of `new Function`. Marinara pages with strict CSP that blocks `'unsafe-eval'` now compute bar maxes correctly.
 - **State-mutator field-name normalization** + max-clamp on numeric deltas + persisted dedupe across reloads.
 - **Lorebook install path rewritten** to fix the silent-failure bulk endpoint. Per-entry POST with delete-then-add for clean re-installs.
-- **Self-contained release folder** at `releases/1.0.0/` with seven AI-feedable build docs, two complete reference systems, and drop-in install files.
+- **Self-contained release folder** at `releases/1.1.0/` with seven AI-feedable build docs, two complete reference systems, and drop-in install files.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the full list.
 
@@ -152,8 +152,8 @@ If you just want to use the extension and don't have Node, npm, or git installed
 
 **Step 3 — Import the extension into Marinara.** MRR loads through the **External Extensions** lane (Full page access). Before importing, confirm both gates are on: `ENABLE_EXTERNAL_EXTENSIONS=true` on the engine host, and **Settings -> Advanced -> Danger Zone -> Allow third-party extension imports**. Then go to **Settings -> Addons -> External Extensions -> Import** and use ONE of these forms:
 
-- **Zip import (primary).** Import `releases/1.0.0/Marinara-RPG-Extension.extension.zip` directly — it's packaged in Marinara's own canonical export layout (`Extensions/<name>/manifest.json` + `extension.js` + a `marinara-extensions.json` envelope).
-- **Folder import.** Point **Import Folder** at the extracted `releases/1.0.0/Extensions/Marinara-RPG-Extension/` folder.
+- **Zip import (primary).** Import `releases/1.1.0/Marinara-RPG-Extension.extension.zip` directly — it's packaged in Marinara's own canonical export layout (`Extensions/<name>/manifest.json` + `extension.js` + a `marinara-extensions.json` envelope).
+- **Folder import.** Point **Import Folder** at the extracted `releases/1.1.0/Extensions/Marinara-RPG-Extension/` folder.
 - **Manifest-only import.** Import the `manifest.json` from that same folder.
 
 **Do NOT use a loose single-file `.js` import.** At 2.4.3, importing `RPG-Extension-GM-Mode.js` by itself builds a **sandboxed Worker extension** with no DOM and no same-origin API access — it "succeeds" but MRR cannot run in that sandbox. Always use one of the three forms above.

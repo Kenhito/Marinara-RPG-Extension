@@ -38,7 +38,7 @@ var MRR_TAG_CHAR_PFX = "mrr-char-";
 
 var MRR_TAG_CAT_PFX = "mrr-cat-";
 
-var EXT_VERSION = "1.0.0";
+var EXT_VERSION = "1.1.0";
 
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 

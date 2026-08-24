@@ -7,7 +7,7 @@
  *
  * Usage:
  *   node tools/validate-extension-package.mjs            # validates releases/<package.json version>/
- *   node tools/validate-extension-package.mjs --version 1.0.0
+ *   node tools/validate-extension-package.mjs --version 1.1.0
  * Exit 0 = all checks pass; exit 1 = one or more failures.
  */
 import { readFileSync, existsSync } from "node:fs";

@@ -12,11 +12,11 @@ I want to build a Marinara-RPG-Extension ruleset for <YOUR SYSTEM HERE — e.g.,
 The framework lives at: https://github.com/Kenhito/Marinara-RPG-Extension
 
 The build documentation is in:
-- releases/1.0.0/docs-for-ai/01-OVERVIEW.md through 07-EXAMPLE-PROMPTS.md (read all seven in order)
+- releases/1.1.0/docs-for-ai/01-OVERVIEW.md through 07-EXAMPLE-PROMPTS.md (read all seven in order)
 
 Two complete worked examples are in:
-- releases/1.0.0/examples/exalted3e/ (a complex system with typed damage, multi-turn sorcery casting, and per-system agent overrides)
-- releases/1.0.0/examples/dnd5e/ (a simpler single-roll system that mostly inherits the shared agent baselines)
+- releases/1.1.0/examples/exalted3e/ (a complex system with typed damage, multi-turn sorcery casting, and per-system agent overrides)
+- releases/1.1.0/examples/dnd5e/ (a simpler single-roll system that mostly inherits the shared agent baselines)
 
 Please:
 
@@ -46,7 +46,7 @@ Ask me clarifying questions if any system mechanics are ambiguous. Otherwise pro
 
 This works when your AI accepts file uploads but can't browse. Extract the release zip locally and upload these to the AI:
 
-- The seven `.md` files in `releases/1.0.0/docs-for-ai/`
+- The seven `.md` files in `releases/1.1.0/docs-for-ai/`
 - The `examples/exalted3e/` folder (or just its `ruleset.json`, `gm-agent.md`, `lorebook.json`, and `agents/` contents)
 - The `examples/dnd5e/` folder
 

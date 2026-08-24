@@ -53,7 +53,7 @@ The release zip you're reading exists so a user can hand all this to a chat AI a
 
 If your AI platform supports browsing or repo ingestion (Claude.ai with the GitHub URL, ChatGPT with web browsing, Gemini, etc.), give it:
 
-> Read the repo at `github.com/Kenhito/Marinara-RPG-Extension`. The directory `releases/1.0.0/docs-for-ai/` contains the build documentation. The directory `releases/1.0.0/examples/` contains two complete working examples (D&D 5e and Exalted 3e). Build me a ruleset bundle for **<your target system>**, including ruleset.json, gm-agent.md, lorebook.json, and any per-system agent overrides under `rulesets/<system>/agents/`. Match the file shapes shown in the examples exactly.
+> Read the repo at `github.com/Kenhito/Marinara-RPG-Extension`. The directory `releases/1.1.0/docs-for-ai/` contains the build documentation. The directory `releases/1.1.0/examples/` contains two complete working examples (D&D 5e and Exalted 3e). Build me a ruleset bundle for **<your target system>**, including ruleset.json, gm-agent.md, lorebook.json, and any per-system agent overrides under `rulesets/<system>/agents/`. Match the file shapes shown in the examples exactly.
 
 ### Pattern B — AI can't browse but accepts file uploads
 
