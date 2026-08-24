@@ -127,6 +127,21 @@ const artifactPathspecs = [
     `${releaseDir}/marinara-extensions.json`,
     `${releaseDir}/Extensions`,
     `${releaseDir}/RPG-Extension-GM-Mode.js`,
+    /* The release folder's source mirrors — install-files/, examples/, the
+       shared agent baselines, schema/, tools/, package.json, and the two
+       mirrored authoring docs. These are what a downloader actually imports
+       and reads, and until the 1.1.0 bump they were hand-copied snapshots
+       that had silently frozen (install-files/ shipped 14 of 16 bundles from
+       before the state-mutator moved to post_processing). The builder now
+       regenerates them; this gate is what proves they were regenerated. */
+    `${releaseDir}/install-files`,
+    `${releaseDir}/examples`,
+    `${releaseDir}/agents`,
+    `${releaseDir}/schema`,
+    `${releaseDir}/tools`,
+    `${releaseDir}/package.json`,
+    `${releaseDir}/AUTHORING-PROMPT.md`,
+    `${releaseDir}/docs-for-ai/AUTHORING-PHASE-6.md`,
     `:(exclude,glob)releases/*/*.extension.zip`,
   ]),
 ];
