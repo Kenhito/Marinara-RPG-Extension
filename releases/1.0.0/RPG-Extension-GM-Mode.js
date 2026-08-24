@@ -13257,20 +13257,31 @@ function syncSheetToChat() {
      other characters' and any user-created customTrackerFields. Bail. */
   if (!current) { warn("sync skipped: no active character for id " + state.activeCharacterId); return; }
   var prefix = "[" + current.name + "] ";
+  /* Round-19 (found during the BUG-3 audit): capture the chat id ONCE, at
+     entry — the same pattern reconcileActiveAgents:14090 already uses.
+     This used to read `state.chatId` THREE separate times (the GET, the
+     PATCH inside the .then, and the log), so a chat switch during the GET
+     made this a cross-chat read-modify-write: chat A's customTrackerFields
+     were read, merged with the active character's fresh slice, and then
+     PATCHed onto chat B — clobbering chat B's own tracker fields with
+     chat A's merged set. Completing the write against the captured chat is
+     correct (the sync was initiated FOR that chat) and is all this needs;
+     no bail is required, only consistency. */
+  var syncChatId = state.chatId;
 
-  marinara.apiFetch("/chats/" + state.chatId).then(function (chat) {
+  marinara.apiFetch("/chats/" + syncChatId).then(function (chat) {
     var existing = (chat && chat.customTrackerFields) || [];
     /* Read-modify-write so other characters' synced fields survive when we
        update this character's slice. Strip our own prefix, then re-add. */
     var kept = existing.filter(function (f) { return !f.name || f.name.indexOf(prefix) !== 0; });
     var fresh = buildSyncFields(prefix);
     var allFields = kept.concat(fresh);
-    return marinara.apiFetch("/chats/" + state.chatId, {
+    return marinara.apiFetch("/chats/" + syncChatId, {
       method: "PATCH",
       body: JSON.stringify({ customTrackerFields: allFields })
     }).then(function () { return fresh.length; });
   }).then(function (n) {
-    log("synced " + n + " fields for " + (current ? current.name : "?") + " to chat " + state.chatId);
+    log("synced " + n + " fields for " + (current ? current.name : "?") + " to chat " + syncChatId);
   }).catch(function (e) {
     warn("sync failed: " + (e && e.message ? e.message : e));
   });
@@ -17001,10 +17012,87 @@ function extractRunAnchor(row, fallbackId) {
   return "run:" + fallbackId;
 }
 
+/* ─── Round-19 BUG-3: `runsPollInFlight` was a latch with no release path ──
+   Retest-8 symptom: "cut once, then never again" — the first mutation
+   applies, then the poller emits NOTHING ever again (zero `applied` lines,
+   zero per-run diagnostics). Reproduced end to end (probes R19-S1/S2): the
+   in-flight guard is set at the top of this function and cleared ONLY in the
+   promise chain's terminal `.then`. Two paths reach neither:
+
+     H1 — a fetch that never settles. Nothing in this poller has a timeout
+          (contrast `hydrateStore`, which races `marinara.storage.get()`
+          against 8000ms precisely because a hung get bricked init — round-5
+          FIX-8). One stalled `/agents/runs` or `/chats/:id/messages`
+          request and the poller is dead for the rest of the session.
+     H2 — a SYNCHRONOUS throw between `runsPollInFlight = true` and the
+          promise chain being handed off. The prologue is not promise-
+          protected: `loadProcessedMessageIds` and `loadProcessedRunIds`
+          both touch storage (round 16 ADDED the first of those here), and
+          a synchronously-throwing `apiFetch` lands in the same window. The
+          throw escapes to `watchRouteChanges`' interval callback with the
+          latch still true.
+
+   Both are pre-existing (H1 since this poller was written; H2 widened by
+   round 16), NOT introduced by round 18's re-anchoring — but either one
+   produces retest-8's symptom exactly, which is why the round-18 defer
+   branch could not be cleared by inspection alone.
+
+   Fix, two halves, no new dependencies (deliberately NOT a timer: the
+   fragment has no injected timer API, and a self-healing deadline check is
+   both testable and immune to the timer itself being cancelled):
+     (a) a stall deadline — if a cycle has held the latch longer than
+         MRR_RUNS_POLL_STALL_MS, the NEXT call force-releases it, warns, and
+         proceeds. Self-healing rather than permanently dead.
+     (b) a try/catch around the whole synchronous prologue that releases the
+         latch and warns before rethrowing nothing (the poll is simply
+         skipped this tick, and the next tick retries honestly).
+   A monotonic cycle token keeps a zombie cycle — one that stalled, got
+   force-released, and settles much later — from clearing a NEWER cycle's
+   latch or applying its own stale results on top of it. */
+var runsPollStartedAt = 0;        // epoch ms the current in-flight cycle claimed the latch
+var runsPollCycleToken = 0;       // monotonic id of the current cycle
+var runsPollStallWarned = false;  // warn-once per session on the first forced release
+var MRR_RUNS_POLL_STALL_MS = 30000; // 20 poll ticks at ROUTE_POLL_MS — far beyond any healthy cycle
+
+/* One-line indirection over Date.now() so the stall deadline is testable
+   deterministically (a probe cannot wait 30 real seconds). Plain Date.now()
+   in production — same clock source the storage envelopes use. */
+function mrrNow() { return Date.now(); }
+
 function pollCustomAgentRuns(chatId) {
   if (MRR_RUNS_POLLER_MODE === "off") return;
-  if (!chatId || runsPollInFlight) return;
+  if (!chatId) return;
+  if (runsPollInFlight) {
+    /* Round-19 BUG-3(a): a cycle that has held the latch past the stall
+       deadline is presumed hung (H1) — release it and take this tick
+       rather than staying dead forever. The zombie's own terminal handler
+       is neutered by the token bump below. */
+    if (!runsPollStartedAt || (mrrNow() - runsPollStartedAt) < MRR_RUNS_POLL_STALL_MS) return;
+    if (!runsPollStallWarned) {
+      runsPollStallWarned = true;
+      warn("runs-poller: a poll cycle has been in flight for over " + Math.round(MRR_RUNS_POLL_STALL_MS / 1000) +
+           "s (hung request?) — force-releasing the in-flight latch so polling can resume. Without this the poller stays dead for the rest of the session.");
+    }
+    runsPollInFlight = false;
+  }
   runsPollInFlight = true;
+  runsPollStartedAt = mrrNow();
+  var pollToken = ++runsPollCycleToken;
+  /* Round-19 BUG-3(b): everything from here to the promise handoff is
+     synchronous and CAN throw (storage reads, a synchronously-throwing
+     apiFetch). Without this the latch strands true and the poller never
+     runs again — reproduced in probe R19-S2. */
+  try {
+    return mrrPollCustomAgentRunsInner(chatId, pollToken);
+  } catch (e) {
+    if (runsPollCycleToken === pollToken) { runsPollInFlight = false; runsPollStartedAt = 0; }
+    warn("runs-poller: poll cycle threw synchronously (" + (e && e.message ? e.message : e) +
+         ") — latch released, retrying next tick rather than stalling the poller permanently");
+    return;
+  }
+}
+
+function mrrPollCustomAgentRunsInner(chatId, pollToken) {
   /* Round-9 fix 7: captured now, checked after the async swipe-index
      fetch below — mirrors processChatMessage's own
      `if (state.chatId !== scanChatId) return;` stale-chat guard, which
@@ -17084,6 +17172,7 @@ function pollCustomAgentRuns(chatId) {
       return;
     }
     var total = 0, applied = 0, sawNew = false;
+    var deferredThisPoll = 0, deferredMaxPolls = 0; /* round-19: make the silent defer visible — see finishRunsPoll */
     var tagBearingRows = []; /* B2-R (point 3): collected first so the swipe-index map is fetched ONCE, only if actually needed */
     for (var i = 0; i < rows.length; i++) {
       var runId = extractRunId(rows[i]);
@@ -17107,6 +17196,16 @@ function pollCustomAgentRuns(chatId) {
     function finishRunsPoll() {
       if (sawNew) saveProcessedRunIds();
       if (total) log("runs-poller: applied " + applied + "/" + total + " mutation(s) from custom-agent runs");
+      /* Round-19: THE line retest-8 needed and did not have. A deferred
+         run produced no output at all, so "every run is parked waiting
+         for its assistant anchor" and "the poller is dead" looked
+         identical in the console — both were simply silence. One line
+         per poll cycle that has at least one deferral, naming how many
+         and how long the oldest has waited against the backstop. */
+      if (deferredThisPoll) {
+        log("runs-poller: " + deferredThisPoll + " run(s) deferred awaiting assistant anchor (poll " +
+            deferredMaxPolls + "/" + MRR_RUN_ANCHOR_MAX_DEFERRALS + ")");
+      }
     }
     if (!tagBearingRows.length) { finishRunsPoll(); return; }
     /* B2-R (point 3): a run's mutations journal under the messageId:
@@ -17122,6 +17221,10 @@ function pollCustomAgentRuns(chatId) {
       var swipeMap = hopResults[0];
       var mutatorConfigId = hopResults[1];
       if (state.chatId !== pollChatId) return; /* round-9 fix 7 — chat switched during the async fetch; stale, do not apply against the wrong chat */
+      /* Round-19 BUG-3: a zombie cycle (stalled past the deadline, latch
+         force-released, a newer cycle since started) must not apply its
+         stale results on top of the live one. */
+      if (runsPollCycleToken !== pollToken) return;
       /* Round-17 TASK 2(d): explicit verify-before-write, per the brief's
          exact prescription ("journal writes must verify
          mrrMutationJournalChatId === the chatId the apply belongs to...
@@ -17195,15 +17298,26 @@ function pollCustomAgentRuns(chatId) {
             /* The assistant reply does not exist YET (pre_generation runs are
                persisted before it is created). Leave the run UNPROCESSED so
                the next poll retries it once the reply lands — deliberately
-               NOT marked processed and NOT counted into total/applied. */
-            var deferrals = (mrrRunAnchorDeferrals[entry.runId] = (mrrRunAnchorDeferrals[entry.runId] || 0) + 1);
-            if (deferrals <= MRR_RUN_ANCHOR_MAX_DEFERRALS) continue;
-            /* Backstop only (see MRR_RUN_ANCHOR_MAX_DEFERRALS): apply under
-               the legacy raw anchor rather than lose the mutation. */
-            if (!mrrRunAnchorFallbackWarned) {
-              mrrRunAnchorFallbackWarned = true;
-              warn("runs-poller: run " + entry.runId + " waited " + deferrals + " polls for an assistant reply to anchor to and never got one — applying under the raw messageId '" + rawMid + "' (mutation lands, but this bucket cannot be swipe-reverted)");
+               NOT marked processed and NOT counted into total/applied.
+               Round-19: a deferral used to be COMPLETELY SILENT, which is
+               why "the poller applies nothing" was indistinguishable from
+               "the poller is dead" in retest-8's log. Counted here and
+               reported once per poll cycle by finishRunsPoll. */
+            var deferKey = (entry.runId != null) ? entry.runId : ("anchorless:" + rawMid); /* round-19: a null runId must not share one counter across unrelated runs */
+            var deferrals = (mrrRunAnchorDeferrals[deferKey] = (mrrRunAnchorDeferrals[deferKey] || 0) + 1);
+            if (deferrals <= MRR_RUN_ANCHOR_MAX_DEFERRALS) {
+              deferredThisPoll++;
+              deferredMaxPolls = Math.max(deferredMaxPolls, deferrals);
+              continue;
             }
+            /* Backstop only (see MRR_RUN_ANCHOR_MAX_DEFERRALS): apply under
+               the legacy raw anchor rather than lose the mutation. Round-19:
+               warns EVERY time it trips (not warn-once, and not sharing the
+               "none" latch) — this is the loud failure the coordinator asked
+               for, and it means a real mutation lost its revert anchor. */
+            warn("runs-poller: BACKSTOP TRIPPED — run " + entry.runId + " waited " + deferrals +
+                 " polls (~" + Math.round(deferrals * ROUTE_POLL_MS / 1000) + "s) for an assistant reply to anchor to and never got one. Applying under the raw messageId '" + rawMid +
+                 "': the mutation lands, but this bucket can NEVER be swipe-reverted. If you see this repeatedly, the run→assistant mapping is broken, not merely slow.");
           } else if (anchorResolution.status === "none" && !mrrRunAnchorFallbackWarned) {
             mrrRunAnchorFallbackWarned = true;
             warn("runs-poller: run " + entry.runId + " anchors to message '" + rawMid + "', which has later messages but no visible assistant reply among them — applying under the raw messageId (mutation lands, but this bucket cannot be swipe-reverted)");
@@ -17285,7 +17399,16 @@ function pollCustomAgentRuns(chatId) {
     });
   }).catch(function (e) {
     warn("runs-poller: /agents/runs fetch failed (" + (e && e.message ? e.message : e) + ") — degrading; narrator path unaffected");
-  }).then(function () { runsPollInFlight = false; }, function () { runsPollInFlight = false; });
+  }).then(releaseRunsPollLatch, releaseRunsPollLatch);
+  /* Round-19 BUG-3: token-guarded release. A cycle that stalled past the
+     deadline, got force-released, and settles much later is a ZOMBIE — its
+     token no longer matches, so it must NOT clear the latch a newer,
+     legitimately-in-flight cycle is holding. */
+  function releaseRunsPollLatch() {
+    if (runsPollCycleToken !== pollToken) return;
+    runsPollInFlight = false;
+    runsPollStartedAt = 0;
+  }
 }
 
 function watchChatMessages() {
