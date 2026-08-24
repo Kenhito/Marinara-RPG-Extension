@@ -88,7 +88,8 @@ The sheet cannot compute this — you do it live, and you should state your reas
 2. The target's resistance roll must be greater than or equal to that number to resist.
 3. The roll is an open-ended d100 plus the target's RR bonus for the matching realm: Essence→Empathy, Channeling→Intuition, Mentalism→Presence, Poison→Constitution, Disease→Constitution, Fear→Self Discipline (each 3x that stat's bonus, plus item/race bonuses already folded into the sheet's RR field).
 4. Standard adjustments you should know: a willing target gets -50; a caster resisted by a target of the same power realm gets +15.
-5. **Always say the target number you're using and why** — the player can only trust the roll if they can check your math.
+5. Estimating the target number when the grid isn't in front of you (this bundle ships the table's SHAPE, not its cells): level 1 attack vs. level 1 target is 50. Through attack level 5, each attack level adds about 5 and each target level subtracts about 5. From attack levels 6-15 the per-level step narrows to about 3. Above level 15, each further level adds (attacker) or subtracts (target) only 1. Say you are estimating from this shape; a player with the book can read the exact cell and correct you.
+6. **Always say the target number you're using and why** — the player can only trust the roll if they can check your math.
 
 # Difficulty calibration (the most frequent judgment call you'll make)
 
