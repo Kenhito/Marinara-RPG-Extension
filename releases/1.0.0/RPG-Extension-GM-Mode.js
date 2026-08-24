@@ -32,6 +32,8 @@ var LS_SPELLBOOK_LB_PFX = "mrr-spellbook-lb-";   // appended with chatId
 var LS_PROCESSED_MSGS_PFX = "mrr-processed-msgs-"; // appended with chatId — set of message ids whose state-mutator tags have already applied; persisted so hard-refresh doesn't re-apply historic mutations
 var LS_PROCESSED_RUNS_PFX = "mrr-processed-runs-"; // appended with chatId — set of custom-agent run ids whose [mrr-state:] tags have applied via the runs-endpoint transport (B1 replacement)
 var LS_MUTATION_JOURNAL_PFX = "mrr-mutation-journal-"; // appended with chatId — B2-R swipe-revert journal, per messageId:swipeIndex bucket. Same per-browser observation class as the two prefixes above — LOCAL-only, NEVER server-synced (see mrrIsSyncedKey and the classification comment below).
+var LS_AUTOSWITCH_GUARD = "mrr-autoswitch-guard";      // round-24 Part 1 reload-loop sentinel — {chatId, stamp, ts}. LOCAL-only by definition: it exists to describe a reload THIS browser just performed; syncing it would let one device suppress another's legitimate auto-switch.
+var LS_SWITCH_INTENT = "mrr-ruleset-switch-intent";    // round-24 Part 1 deliberate-switch marker — {rulesetId, ts}. LOCAL-only, same reasoning; written by the three user-driven ruleset-activation paths so the auto-switch never yanks the user back to the chat's old stamp.
 /* B1 replacement gate. The old console.log sniff of the State Mutator overlay
    is dead on every 2.0.x+ build (engine line is debug-gated console.warn,
    prod-stripped since v1.4.0). The sanctioned source is GET /agents/runs/
@@ -437,6 +439,13 @@ function lsDelRaw(key) { try { localStorage.removeItem(key); return true; } catc
        - LS_SHEET_PFX legacy chat-scoped sheet key ("mrr-sheet-<chatId>-<id>")
          — distinct prefix from LS_CHARACTER_PFX; write-once migration
          source only, never the modern home for sheet data.
+       - LS_AUTOSWITCH_GUARD "mrr-autoswitch-guard" — round-24 reload-loop
+         sentinel, and LS_SWITCH_INTENT "mrr-ruleset-switch-intent" —
+         round-24 deliberate-switch marker. Both describe an action THIS
+         browser tab just took (a reload it triggered / a Switch button
+         the user just clicked here); syncing either would let one device
+         suppress another's legitimate auto-switch. Per-device by
+         definition, same class as MRR_MIGRATED_FLAG below.
        - MRR_MIGRATED_FLAG "mrr-migrated-v1" — must be per-device by
          definition (the migration gate itself).
        - MRR_TS_MAP_KEY "mrr-ts-map" — per-device by definition (see the
@@ -1450,6 +1459,10 @@ function installBundle(bundle, progressCb) {
 
     progress("Installing ruleset...");
     lsSet(LS_RULESET, JSON.stringify(bundle.ruleset));
+    /* Round-24: user-driven activation #1 of 3. Marks intent so the new
+       chat-stamp check honors this choice after the installer's reload
+       instead of switching straight back to the open chat's old stamp. */
+    mrrMarkDeliberateRulesetSwitch(bundle.ruleset.id);
     addToLibrary(bundle.ruleset);
 
     var existingLb = findManagedLorebook(lorebooks, rulesetId);
@@ -1983,6 +1996,251 @@ function mrrMigrateIfNeeded(parsed, ruleset) {
   return mrrMigrateSheet(parsed, ruleset);
 }
 
+/* ═══ ROUND 24 — cross-ruleset SHEET BLEED containment ═════════════════════
+   LIVE EVIDENCE (Corey, 2026-08-23): switching between a D&D chat and an
+   Exalted chat "resets" the character sheet. Two distinct symptom shapes
+   were reported, and they are the two halves of ONE mechanism:
+     (a) same-named fields take the OTHER ruleset's stored number —
+         Strength on the Exalted sheet shows the D&D character's Strength;
+     (b) fields with no analog in the other system floor to their blank
+         minimum — Exalted Perception -> 1, Brawl -> 0.
+   Plus the third report: the active ruleset never follows the chat. The
+   user has to switch rulesets by hand every single time.
+
+   MECHANISM (code-verified — three cooperating defects):
+
+   1. `state.ruleset` has EXACTLY ONE assignment site in this entire file:
+      init() (fed by the global LS key LS_RULESET). AUTO-SWITCH ON CHAT
+      ENTER WAS NEVER BUILT. Commit fd6d755 (2026-05-16) added the
+      per-chat metadata stamp `mrrChatRulesetId`, but ONLY as AGENT
+      pollution protection (reconcileActiveAgents skips or rebinds a chat
+      whose stamp disagrees) — its own commit message explicitly deferred
+      "Phase 2 (auto-switch global ruleset on chat enter)". Phase 2 is
+      what Part 1 below finally finishes.
+
+   2. watchRouteChanges' chat-change branch loads the NEW chat's character
+      THROUGH THE OLD CHAT'S RULESET: `state.sheet = loadSheet(state.chatId,
+      state.ruleset)`. loadSheet does `mergeSheet(blankSheet(ruleset),
+      parsed)`, and mergeSheet is a per-bucket NAME-MATCHED whitelist
+      (`if (name in base[k])`) — so a field name that exists in BOTH
+      systems survives carrying the other system's number (symptom a),
+      and everything else is silently dropped, leaving the blankSheet
+      default in place (symptom b). Exactly the two shapes reported.
+
+   3. The character-library key `characterKey(id)` = "mrr-character-<id>"
+      is ruleset-AGNOSTIC by design, and saveSheet writes the merged
+      (wrong-ruleset-shaped) sheet straight back to it. The writer that
+      SEALS the damage is `flushSave()` at the TOP of the chat-switch
+      handler, which fires on every chat LEAVE: enter an Exalted chat
+      while D&D is active, then leave it, and the D&D-shaped merge is
+      PERSISTED over the Exalted character's own record.
+
+   THE FIX — three parts, all in this round:
+     Part 1  mrrCheckChatRulesetStamp() (declared beside
+             reconcileActiveAgents, which reads the same stamp): read the
+             chat's `mrrChatRulesetId` on enter; if it names a different
+             ruleset, activate that one from the library and reload —
+             the same full-reload pattern every existing ruleset switch
+             in this file already uses (the RELOAD_DELAY_MS call sites).
+     Part 2  the SAVE LATCH below: NO sheet write happens at all until
+             the chat's ruleset is confirmed, so the async check in Part
+             1 can never be outrun by flushSave/autosave/the runs poller.
+     Part 3  `sheet._rulesetId`: a stamp ON THE RECORD, checked by
+             loadSheet, so even an unconfirmed or undetectable mismatch
+             can never merge one ruleset's sheet into another's shape.
+
+   KNOWN LIMITATION — documented deliberately, NOT fixed here: the same
+   library character DELIBERATELY loaded under two different rulesets
+   still shares ONE "mrr-character-<id>" record. Per-ruleset character
+   records (characterId x rulesetId) are the structural fix and are
+   queued for the Phase-B replan. This round makes the ACCIDENTAL
+   cross-ruleset write impossible; the deliberate one remains design debt.
+
+   Legacy records (written before this round) carry no `_rulesetId` and
+   therefore cannot be judged by Part 3 at all. Parts 1+2 close that
+   window operationally instead; no heuristic is invented for unstamped
+   records — guessing a ruleset from a sheet's field names is exactly the
+   name-matching that caused the bug.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+var MRR_AUTOSWITCH_GUARD_TTL_MS = 30000;  /* a sentinel older than this describes some earlier session, not the reload we just performed */
+var MRR_SWITCH_INTENT_TTL_MS    = 30000;  /* same window: a deliberate switch is a click followed by a ~600ms reload, never minutes */
+
+/* Part 2 — THE SAVE LATCH.
+   `mrrRulesetConfirmedChatId` is the id of the chat whose ruleset has
+   been positively confirmed (its stamp matches the active ruleset, or it
+   carries no stamp at all). While `state.chatId` is truthy and does NOT
+   equal this, saveSheet refuses to write. That window is short — one
+   GET /chats/:id — but it is precisely the window in which the old
+   ruleset's blankSheet-merged data would otherwise be persisted over the
+   new chat's character. Null at load: the very first save of a session
+   waits for init()'s check, same as every later one. */
+var mrrRulesetConfirmedChatId = null;
+var mrrDeferredSaveWanted = false;      /* a write was refused while latched — replay it once on confirm so an edit made during the check window isn't lost */
+var mrrLatchWarnedReason = null;        /* warn-once discipline: one line per (chat, reason) pair, not one per debounced save */
+
+/* Part 1 bookkeeping (all reset on every chat change). */
+var mrrStampCheckInFlightChatId = null; /* one metadata fetch at a time per chat */
+var mrrStampHeldChatId = null;          /* chat deliberately held (unavailable ruleset / reload-loop guard) — stops the per-tick retry from becoming a fetch storm */
+var mrrStampWarnedChatId = null;
+var mrrStampFetchWarnedChatId = null;
+
+/* Part 3 — per-character cross-ruleset hold. characterId -> the ruleset id
+   the STORED record was saved under. Set by loadSheet when it refuses to
+   merge; cleared by loadSheet on the next successful (matching) load. */
+var mrrSheetHold = Object.create(null);
+var mrrSheetHoldWarned = Object.create(null);
+
+/* Single source of truth for "may anything write to this character's sheet
+   record right now?". Returns null when writes are allowed, else
+   { code, msg }. Consulted by saveSheet (Part 2/3 proper) and by the two
+   ASYNC state-writers that would otherwise mutate state.sheet behind the
+   latch's back — pollCustomAgentRuns and the debounced narrator-message
+   processor. See those call sites for what each does about it. */
+function mrrSheetWriteBlockReason() {
+  if (state.chatId && mrrRulesetConfirmedChatId !== state.chatId) {
+    return {
+      code: "latch",
+      msg: "chat " + state.chatId + " has not confirmed its ruleset yet (the chat-metadata check is in flight or failed) — refusing to write until it does"
+    };
+  }
+  var held = state.activeCharacterId ? mrrSheetHold[state.activeCharacterId] : null;
+  if (held) {
+    return {
+      code: "hold",
+      msg: "character " + state.activeCharacterId + "'s stored sheet belongs to ruleset '" + held +
+           "' but the active ruleset is '" + (state.ruleset && state.ruleset.id ? state.ruleset.id : "(none)") +
+           "' — refusing to write (switch to '" + held + "' to edit this character)"
+    };
+  }
+  return null;
+}
+
+/* Called ONLY from mrrCheckChatRulesetStamp's settled paths. Opens the
+   latch, clears the reload sentinel, replays a deferred save, and fires
+   the agent reconcile that init()/watchRouteChanges used to fire
+   unconditionally — see the RACE note in mrrCheckChatRulesetStamp for why
+   that call had to move behind confirmation. */
+function mrrConfirmChatRuleset(chatId, why) {
+  if (!chatId) return;
+  if (mrrRulesetConfirmedChatId === chatId) return;
+  mrrRulesetConfirmedChatId = chatId;
+  mrrStampHeldChatId = null;
+  mrrLatchWarnedReason = null;
+  mrrClearAutoswitchGuard();
+  log("ruleset latch: chat " + chatId + " confirmed for ruleset " +
+      (state.ruleset && state.ruleset.id ? state.ruleset.id : "(none)") + " — " + why);
+  if (mrrDeferredSaveWanted) {
+    mrrDeferredSaveWanted = false;
+    log("ruleset latch: replaying the save that was deferred while chat " + chatId + " was unconfirmed");
+    flushSave();
+  }
+  /* rebind=true is what init() always passed here; on a confirmed chat the
+     argument is unread anyway (reconcileActiveAgents only reads `rebind`
+     inside its `stamp && stamp !== rulesetId` branch, and a confirmed chat
+     by definition has no such mismatch) EXCEPT on the deliberate-switch
+     path, which is the one case where we genuinely do want the rebind. */
+  if (typeof reconcileActiveAgents === "function") reconcileActiveAgents(true);
+}
+
+/* The latch must reset on EVERY chat change — called from watchRouteChanges
+   AFTER the outgoing flushSave(), which legitimately runs under the OLD
+   chat's confirmation. */
+function mrrResetRulesetLatch() {
+  mrrRulesetConfirmedChatId = null;
+  mrrDeferredSaveWanted = false;
+  mrrLatchWarnedReason = null;
+  mrrStampCheckInFlightChatId = null;
+  mrrStampHeldChatId = null;
+  mrrStampWarnedChatId = null;
+  mrrStampFetchWarnedChatId = null;
+}
+
+/* ─── reload-loop sentinel ───
+   Part 1 reloads the page to activate a ruleset. If the activation does
+   NOT stick (library entry present but somehow unreadable after reload,
+   a storage write that silently failed, an engine stamp that keeps
+   disagreeing), the post-reload check would see the same mismatch and
+   reload again — forever. The sentinel records {chatId, stamp, ts} right
+   before the reload; if the very same (chatId, stamp) mismatch is still
+   present within MRR_AUTOSWITCH_GUARD_TTL_MS, we refuse to reload a
+   second time and hold instead. */
+function mrrReadAutoswitchGuard() {
+  var raw = lsGet(LS_AUTOSWITCH_GUARD);
+  if (!raw) return null;
+  var g = safeParse(raw);
+  if (!g || typeof g !== "object") return null;
+  if (typeof g.ts !== "number" || (Date.now() - g.ts) > MRR_AUTOSWITCH_GUARD_TTL_MS) return null;
+  return g;
+}
+
+function mrrWriteAutoswitchGuard(chatId, stamp) {
+  lsSet(LS_AUTOSWITCH_GUARD, JSON.stringify({ chatId: chatId, stamp: stamp, ts: Date.now() }));
+}
+
+function mrrClearAutoswitchGuard() {
+  if (lsGet(LS_AUTOSWITCH_GUARD)) lsDel(LS_AUTOSWITCH_GUARD);
+}
+
+/* ─── deliberate-switch marker ───
+   THE CONFLICT this exists to resolve: the Library "Switch" button (and
+   the paste/bundle-install paths) activate ruleset X and reload while the
+   open chat is still stamped Y. Without this marker, Part 1 would wake up
+   after that reload, see stamp Y != active X, and switch the user straight
+   back to Y — undoing a deliberate choice, and (because reconcileActiveAgents'
+   rebind path re-stamps the chat to whatever is active) potentially
+   ping-ponging between the two forever. So every USER-DRIVEN activation
+   path stamps its intent; Part 1 honors it once, then rebinds the chat to
+   the newly-chosen ruleset instead of switching away from it. */
+function mrrMarkDeliberateRulesetSwitch(rulesetId) {
+  if (!rulesetId) return;
+  lsSet(LS_SWITCH_INTENT, JSON.stringify({ rulesetId: rulesetId, ts: Date.now() }));
+}
+
+/* One-shot: the marker is deleted on ANY read, matched or not, so a stale
+   one can never suppress a LATER, genuine auto-switch. */
+function mrrConsumeDeliberateSwitchIntent(rulesetId) {
+  var raw = lsGet(LS_SWITCH_INTENT);
+  if (!raw) return false;
+  lsDel(LS_SWITCH_INTENT);
+  var it = safeParse(raw);
+  if (!it || typeof it !== "object") return false;
+  if (typeof it.ts !== "number" || (Date.now() - it.ts) > MRR_SWITCH_INTENT_TTL_MS) return false;
+  return it.rulesetId === rulesetId;
+}
+
+/* Part 3 gate. Returns the STORED ruleset id when this record must be HELD
+   — i.e. it carries an explicit `_rulesetId` naming a ruleset other than
+   the one we are being asked to load it under — or null when the load may
+   proceed. A held record is returned to the caller as a blankSheet: NOT
+   merged (that is the bleed), NOT written (saveSheet's hold check refuses),
+   and NOT deleted. It sits untouched until the user activates the ruleset
+   it belongs to.
+   An UNSTAMPED record (every sheet saved before this round) returns null —
+   it cannot be judged, and Parts 1+2 are what cover it. */
+function mrrSheetRulesetHoldCheck(parsed, ruleset, characterId) {
+  var stored = parsed && parsed._rulesetId;
+  if (typeof stored !== "string" || !stored) return null;
+  var activeId = ruleset && ruleset.id;
+  if (!activeId || stored === activeId) return null;
+  mrrSheetHold[characterId] = stored;
+  if (mrrSheetHoldWarned[characterId] !== stored) {
+    mrrSheetHoldWarned[characterId] = stored;
+    warn("sheet for character " + characterId + " was saved under ruleset '" + stored +
+         "', active is '" + activeId + "' — holding the stored sheet untouched to prevent cross-ruleset bleed " +
+         "(no merge, no write; activate '" + stored + "' to edit this character)");
+  }
+  return stored;
+}
+
+/* Clears a hold once the record and the active ruleset agree again. Called
+   from every successful load path so the hold can never outlive its cause. */
+function mrrClearSheetHold(characterId) {
+  if (!characterId) return;
+  if (mrrSheetHold[characterId]) delete mrrSheetHold[characterId];
+  if (mrrSheetHoldWarned[characterId]) delete mrrSheetHoldWarned[characterId];
+}
+
 function loadSheet(chatId, ruleset) {
   if (!state.activeCharacterId) {
     log("loadSheet -> blank: no activeCharacterId");
@@ -1994,6 +2252,10 @@ function loadSheet(chatId, ruleset) {
   if (raw) {
     var parsed = safeParse(raw);
     if (parsed) {
+      /* Round-24 Part 3: judge the record's OWN ruleset stamp before the
+         merge, never after — mergeSheet is the thing that does the damage. */
+      if (mrrSheetRulesetHoldCheck(parsed, ruleset, state.activeCharacterId)) return blankSheet(ruleset);
+      mrrClearSheetHold(state.activeCharacterId);
       log("loadSheet hydrated key=" + key + " bytes=" + raw.length);
       return mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(parsed, ruleset));
     }
@@ -2010,7 +2272,16 @@ function loadSheet(chatId, ruleset) {
       lsSet(key, legacyRaw);
       log("loadSheet auto-migrated " + legacyKey + " -> " + key + " bytes=" + legacyRaw.length);
       var legacyParsed = safeParse(legacyRaw);
-      if (legacyParsed) return mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(legacyParsed, ruleset));
+      if (legacyParsed) {
+        /* Round-24 Part 3: same gate on the legacy path. A pre-v0.4.1
+           chat-scoped sheet is by definition unstamped, so this is a
+           no-op today — but the copy-forward above means the record is
+           now the modern one, and this branch must not become a hole
+           the moment a stamped record reaches it by any future route. */
+        if (mrrSheetRulesetHoldCheck(legacyParsed, ruleset, state.activeCharacterId)) return blankSheet(ruleset);
+        mrrClearSheetHold(state.activeCharacterId);
+        return mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(legacyParsed, ruleset));
+      }
       warn("loadSheet: migrated bytes but parse failed for " + legacyKey);
     }
   }
@@ -2072,6 +2343,12 @@ function mrrIsPristineBlankSheet(sheet, ruleset) {
   if (!sheet || typeof sheet !== "object" || !ruleset) return false;
   var candidate = Object.assign({}, sheet);
   delete candidate._schemaVersion;
+  /* Round-24: `_rulesetId` is the second bookkeeping stamp saveSheet
+     writes and blankSheet() never sets — strip it for exactly the same
+     reason as _schemaVersion above. Without this, ANY previously-saved
+     sheet would fail the deep-equal against a fresh blankSheet purely on
+     key count, silently disarming the T5-d blank-over-good guard. */
+  delete candidate._rulesetId;
   return mrrDeepEqual(candidate, blankSheet(ruleset));
 }
 
@@ -2080,6 +2357,32 @@ function saveSheet(chatId, sheet) {
      key is independent of chat now. */
   if (!state.activeCharacterId) { warn("saveSheet skipped: no activeCharacterId"); return; }
   if (!sheet) { warn("saveSheet skipped: no sheet object"); return; }
+  /* ─── Round-24 Parts 2+3: the write gate ───────────────────────────────
+     This is the ONE chokepoint every sheet write in the file goes through
+     (~90 call sites, plus flushSave, plus finalizeMutation), which is why
+     both containment mechanisms are enforced here rather than at each
+     writer. `latch` = the new chat's ruleset is not confirmed yet, so we
+     do not yet know whether state.sheet is even the right SHAPE — this is
+     the exact window in which the outgoing flushSave() used to persist an
+     old-ruleset merge over a new chat's character. `hold` = loadSheet has
+     positively identified this character's stored record as belonging to
+     another ruleset and returned a blank instead; writing now would
+     destroy the record we are protecting.
+     A latched refusal sets mrrDeferredSaveWanted so a user edit made
+     during the (sub-second) check window is replayed on confirm; a HELD
+     refusal deliberately does not, because a hold does not resolve on its
+     own — it resolves when the user activates the other ruleset, which
+     goes through a full reload anyway. */
+  var writeBlock = mrrSheetWriteBlockReason();
+  if (writeBlock) {
+    if (writeBlock.code === "latch") mrrDeferredSaveWanted = true;
+    var warnKey = (state.chatId || "-") + "|" + (state.activeCharacterId || "-") + "|" + writeBlock.code;
+    if (mrrLatchWarnedReason !== warnKey) {
+      mrrLatchWarnedReason = warnKey;
+      warn("saveSheet deferred (" + writeBlock.code + "): " + writeBlock.msg);
+    }
+    return;
+  }
   var key = characterKey(state.activeCharacterId);
   /* Round-13 T5-d: conservative destructive-write guard, targeting the
      hypothesis flagged in the T4+T5 investigation — a failed or partial
@@ -2112,6 +2415,14 @@ function saveSheet(chatId, sheet) {
      built fresh from blankSheet() is already current-shape and needs the
      stamp too, so a FUTURE migration knows not to re-run against it. */
   sheet._schemaVersion = MRR_SHEET_SCHEMA_VERSION;
+  /* Round-24 Part 3: stamp the ruleset this sheet's SHAPE belongs to. Sits
+     immediately beside the _schemaVersion stamp and for the same structural
+     reason — both must land AFTER the T5-d pristine-blank guard above, so
+     the guard's mrrIsPristineBlankSheet comparison sees the sheet's true
+     content and is not perturbed by a bookkeeping key blankSheet() never
+     sets (mrrIsPristineBlankSheet strips both stamps before comparing —
+     see its body). Read back by loadSheet's mrrSheetRulesetHoldCheck. */
+  if (state.ruleset && state.ruleset.id) sheet._rulesetId = state.ruleset.id;
   var payload = JSON.stringify(sheet);
   var ok = lsSet(key, payload);
   if (!ok) { warn("saveSheet: lsSet failed for " + key + " (quota or private mode?)"); return; }
@@ -13322,6 +13633,8 @@ function openDialog() {
       var err = validateRuleset(parsed);
       if (err) { setMsg(msg, "Invalid: " + err, "err"); return; }
       lsSet(LS_RULESET, JSON.stringify(parsed));
+      /* Round-24: user-driven activation #2 of 3 (paste / fetch-by-URL). */
+      mrrMarkDeliberateRulesetSwitch(parsed.id);
       if (urlInput && urlInput.value) lsSet(LS_RULESET_URL, urlInput.value);
       addToLibrary(parsed);
       setMsg(msg, "Saved. Reloading ...", "ok");
@@ -13369,6 +13682,14 @@ function renderLibrarySection(dialog, msg) {
       var btnSwitch = marinara.addElement(row, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Switch" });
       if (btnSwitch) marinara.on(btnSwitch, "click", function () {
         if (activateFromLibrary(id)) {
+          /* Round-24: user-driven activation #3 of 3 (Library "Switch"), and
+             the one that most needed the marker — clicking Switch while a
+             chat stamped for the OLD ruleset is open is precisely the case
+             where the new auto-switch would otherwise undo the click. The
+             marker is set HERE rather than inside activateFromLibrary
+             because the auto-switch path calls that helper too, and must
+             not mark its own reload as a deliberate user choice. */
+          mrrMarkDeliberateRulesetSwitch(id);
           setMsg(msg, "Activated " + entry.name + ". Reloading ...", "ok");
           marinara.setTimeout(function () { window.location.reload(); }, RELOAD_DELAY_MS);
         }
@@ -14733,6 +15054,135 @@ function reconcileActiveAgents(rebind) {
     });
   }).catch(function (e) {
     warn("reconcileActiveAgents failed: " + (e && e.message ? e.message : e));
+  });
+}
+
+/* ═══ ROUND 24 PART 1 — auto-switch the ruleset on chat enter ══════════════
+   Finishes the "Phase 2" that commit fd6d755 (2026-05-16) explicitly
+   deferred when it introduced the `mrrChatRulesetId` stamp. Until now that
+   stamp was read by exactly one consumer — reconcileActiveAgents, purely to
+   stop one ruleset's overlay agents polluting another ruleset's chat. The
+   SHEET side of the same mismatch went entirely unhandled, which is the
+   bleed Corey hit on 2026-08-23 (Strength carrying across D&D/Exalted,
+   Perception falling to 1, Brawl to 0 — see the round-24 header block above
+   loadSheet for the full mechanism).
+
+   Reads the chat's metadata through the same fetch shape reconcileActiveAgents
+   uses (GET /chats/:id, metadata arrives as a JSON STRING from the engine
+   route and must be parsed). Four outcomes:
+
+     no stamp / stamp matches  -> CONFIRM the chat (opens the save latch).
+     stamp differs, but the user JUST deliberately switched to the active
+       ruleset -> honor the deliberate choice: confirm, and let the
+       reconcile fired by mrrConfirmChatRuleset REBIND the chat's stamp.
+     stamp differs, ruleset IS in the library -> activate it and reload.
+     stamp differs, ruleset is NOT in the library -> warn once and HOLD
+       (the latch stays shut; the sheet is never merged or written).
+
+   RACE THIS FUNCTION HAD TO RESOLVE (not in the original spec — found while
+   wiring the call sites): init() used to end with reconcileActiveAgents(TRUE),
+   whose rebind branch PATCHes the chat's stamp to whatever is currently
+   active. Fired concurrently with this check, the two would fight over the
+   same field: reconcile rewrites the stamp to the active ruleset while this
+   check is switching the active ruleset to the old stamp, and each reload
+   flips the disagreement to the other side — an unbounded ping-pong that the
+   {chatId, stamp} sentinel alone cannot catch, because the stamp CHANGES on
+   every lap. Resolution: the unconditional reconcile calls in init() and in
+   watchRouteChanges' chat-change branch are gone; reconcileActiveAgents is
+   now fired from mrrConfirmChatRuleset, i.e. only for a chat whose ruleset
+   is settled. On a confirmed chat the rebind argument is unread anyway (it
+   is only consulted inside reconcile's own `stamp !== rulesetId` branch),
+   and on the deliberate-switch path the rebind is exactly what we want.
+
+   Self-guarding by design so the route poller can call it every tick
+   (that tick is also the retry for a transient metadata-fetch failure —
+   a network blip must never latch saves shut for the rest of the session).
+   ═══════════════════════════════════════════════════════════════════════ */
+function mrrCheckChatRulesetStamp(chatId) {
+  if (!chatId) return;                                  /* no chat selected yet — the route poller will call again */
+  if (!state.ruleset || !state.ruleset.id) return;      /* extension dormant (no ruleset configured); nothing to compare */
+  if (mrrRulesetConfirmedChatId === chatId) return;     /* already settled */
+  if (mrrStampHeldChatId === chatId) return;            /* deliberately held — do NOT re-fetch every 1.5s forever */
+  if (mrrStampCheckInFlightChatId === chatId) return;   /* one in flight is enough */
+
+  var activeId = state.ruleset.id;
+  mrrStampCheckInFlightChatId = chatId;
+
+  apiFetch("/chats/" + chatId).then(function (chat) {
+    mrrStampCheckInFlightChatId = null;
+    /* The user can switch chats during the fetch; this answer describes a
+       chat we have already left. Mirrors the stale-chat guards the runs
+       poller uses at each of its own async hops. */
+    if (state.chatId !== chatId) return;
+
+    /* chat.metadata is a JSON string from the engine route; parse before reading. */
+    var meta = (chat && typeof chat.metadata === "string")
+      ? (safeParse(chat.metadata) || {})
+      : ((chat && chat.metadata) || {});
+    var stamp = meta.mrrChatRulesetId;
+
+    if (!stamp || stamp === activeId) {
+      mrrConfirmChatRuleset(chatId, stamp
+        ? "chat stamp '" + stamp + "' matches the active ruleset"
+        : "chat carries no ruleset stamp (nothing to disagree with)");
+      return;
+    }
+
+    /* ── mismatch ── */
+
+    if (mrrConsumeDeliberateSwitchIntent(activeId)) {
+      log("auto-switch: chat " + chatId + " is stamped " + stamp + " but the user just deliberately activated " +
+          activeId + " — honoring the deliberate switch and rebinding the chat rather than switching back");
+      mrrConfirmChatRuleset(chatId, "deliberate switch to " + activeId + "; chat is being rebound from " + stamp);
+      return;
+    }
+
+    var guard = mrrReadAutoswitchGuard();
+    if (guard && guard.chatId === chatId && guard.stamp === stamp) {
+      /* We already reloaded for exactly this (chat, stamp) pair inside the
+         last MRR_AUTOSWITCH_GUARD_TTL_MS and the mismatch SURVIVED it —
+         activation did not stick. Reloading again would loop forever. */
+      mrrStampHeldChatId = chatId;
+      warn("auto-switch RELOAD-LOOP GUARD: chat " + chatId + " is stamped '" + stamp + "' and we already reloaded to activate it, " +
+           "but the active ruleset is STILL '" + activeId + "' — activation is not sticking. NOT reloading again. " +
+           "Sheet writes stay latched shut for this chat to prevent cross-ruleset bleed; activate '" + stamp + "' by hand (Ruleset > Library) and report this.");
+      return;
+    }
+
+    if (activateFromLibrary(stamp)) {
+      /* Sentinel BEFORE the reload, never after — the reload is what makes
+         "after" unreachable. */
+      mrrWriteAutoswitchGuard(chatId, stamp);
+      log("auto-switch: chat " + chatId + " is stamped " + stamp + ", active is " + activeId + " — activating and reloading");
+      /* Every ruleset switch in this file goes through a full page reload
+         on the same RELOAD_DELAY_MS pattern (the paste path, the bundle
+         installer, and the Library Switch button) — reused verbatim rather
+         than inventing a fourth, softer switch mechanism. */
+      marinara.setTimeout(function () { window.location.reload(); }, RELOAD_DELAY_MS);
+      return;
+    }
+
+    /* Stamped for a ruleset this browser's library does not have. We cannot
+       switch to it, and we must not load this chat's characters under the
+       wrong one — so hold: latch stays shut, loadSheet's Part-3 gate keeps
+       any stamped record intact, nothing is written. */
+    mrrStampHeldChatId = chatId;
+    if (mrrStampWarnedChatId !== chatId) {
+      mrrStampWarnedChatId = chatId;
+      warn("chat " + chatId + " is stamped '" + stamp + "' but that ruleset is not in the library — sheet is held to prevent bleed; activate '" +
+           stamp + "' manually (Ruleset > Library, or import its bundle) to use this chat.");
+    }
+  }).catch(function (e) {
+    mrrStampCheckInFlightChatId = null;
+    /* Transient failure: do NOT confirm. Confirming on a failed read is
+       exactly the guess this whole round exists to remove. The latch stays
+       shut and the route-poll tick retries — warn-once so a sustained
+       outage doesn't spam one line every 1.5s. */
+    if (mrrStampFetchWarnedChatId !== chatId) {
+      mrrStampFetchWarnedChatId = chatId;
+      warn("mrrCheckChatRulesetStamp: could not read chat " + chatId + "'s metadata (" +
+           (e && e.message ? e.message : e) + ") — sheet writes stay latched shut and the check retries on the next route-poll tick");
+    }
   });
 }
 
@@ -17746,9 +18196,36 @@ var MRR_RUNS_POLL_STALL_MS = 30000; // 20 poll ticks at ROUTE_POLL_MS — far be
    in production — same clock source the storage envelopes use. */
 function mrrNow() { return Date.now(); }
 
+/* Round-24: warn-once bookkeeping for the poller's write-gate below. */
+var mrrPollerBlockLogged = null;
+
 function pollCustomAgentRuns(chatId) {
   if (MRR_RUNS_POLLER_MODE === "off") return;
   if (!chatId) return;
+  /* ─── Round-24: the poller is an ASYNC SHEET WRITER, and the save latch
+     alone is not enough to make it safe ───────────────────────────────────
+     Left ungated, a poll cycle that lands while the latch is shut would:
+     (1) apply its mutations to state.sheet in memory, (2) have the
+     resulting saveSheet REFUSED by the Part-2 gate, and — the actually
+     damaging part — (3) still mark those run ids processed in
+     `processedRunIds` and PERSIST that set, so the mutations would never
+     be applied again after the auto-switch reload discarded them. Silent,
+     permanent loss of a State Mutator turn.
+     Bailing here instead is free and lossless: nothing is fetched, nothing
+     is marked, and the next tick (ROUTE_POLL_MS = 1.5s) retries. In the
+     normal case the latch is open again within one metadata round-trip.
+     Also covers the Part-3 hold, where applying mutations to a blank
+     stand-in sheet would be pure noise. */
+  var pollBlock = mrrSheetWriteBlockReason();
+  if (pollBlock) {
+    var pollKey = chatId + "|" + pollBlock.code;
+    if (mrrPollerBlockLogged !== pollKey) {
+      mrrPollerBlockLogged = pollKey;
+      log("runs-poller: standing down while sheet writes are blocked (" + pollBlock.code + ") — no fetch, no run marked processed, retrying each tick");
+    }
+    return;
+  }
+  mrrPollerBlockLogged = null;
   if (runsPollInFlight) {
     /* Round-19 BUG-3(a): a cycle that has held the latch past the stall
        deadline is presumed hung (H1) — release it and take this tick
@@ -18123,6 +18600,11 @@ function watchChatMessages() {
      exists — the short version: hideStateTagsInElement's innerHTML
      rewrite must NEVER run off a characterData-only observation). */
   var pendingOrigin = Object.create(null);
+  /* Round-24: per-message re-deferral counter for the write-gate check in
+     schedule()'s timer body. 20 tries x the 1500ms debounce = ~30s, the
+     same order as MRR_AUTOSWITCH_GUARD_TTL_MS. */
+  var mrrMsgDeferCounts = Object.create(null);
+  var MRR_MSG_DEFER_MAX_TRIES = 20;
   function findParentMessage(el) {
     /* Round-14 Task A: a characterData mutation record's `target` is the
        TEXT NODE itself (nodeType 3), not an element — the original
@@ -18166,6 +18648,31 @@ function watchChatMessages() {
       delete pendingTokens[msgId];
       var wasChildList = !!pendingOrigin[msgId];
       delete pendingOrigin[msgId];
+      /* ─── Round-24: the narrator DOM path is the OTHER async sheet writer,
+         and it has the same hazard the runs poller does (see the gate at the
+         top of pollCustomAgentRuns): processing a tag-bearing message while
+         sheet writes are blocked would apply its mutations in memory, have
+         the save refused, and still record the message id in the PERSISTED
+         processedMessageIds set — so the auto-switch reload's initial sweep
+         would skip it and the mutation would be lost for good.
+         Unlike the poller this path has no natural retry (MutationObserver
+         only fires on DOM change), so instead of dropping the observation we
+         re-arm the same debounce and try again. Bounded: after ~30s of a
+         still-blocked latch we drop the observation WITHOUT processing it —
+         which leaves the message UNMARKED, so the initial sweep after the
+         next reload picks it up cleanly. Skipping a mutation is recoverable;
+         marking it applied when it wasn't is not. */
+      var msgBlock = mrrSheetWriteBlockReason();
+      if (msgBlock) {
+        var tries = (mrrMsgDeferCounts[msgId] || 0) + 1;
+        mrrMsgDeferCounts[msgId] = tries;
+        if (tries <= MRR_MSG_DEFER_MAX_TRIES) { schedule(msgEl, wasChildList); return; }
+        delete mrrMsgDeferCounts[msgId];
+        warn("message " + msgId + " deferred " + MRR_MSG_DEFER_MAX_TRIES + " times while sheet writes were blocked (" +
+             msgBlock.code + ") — dropping this observation UNPROCESSED (not marked applied) so a later reload can re-process it. " + msgBlock.msg);
+        return;
+      }
+      delete mrrMsgDeferCounts[msgId];
       processChatMessage(msgEl, wasChildList);
     }, 1500);
   }
@@ -18301,6 +18808,15 @@ function init() {
      see it in the Library list immediately. */
   addToLibrary(rs);
   state.chatId  = getChatId();
+  /* Round-24 Part 1, call site (a). Fired the moment the chat id resolves
+     and BEFORE the sheet load below, because the load is what would
+     otherwise merge this chat's character through the wrong ruleset. The
+     check is async and cannot finish before loadSheet runs — that is what
+     the Part-2 save latch is for: the in-memory sheet may briefly be the
+     wrong shape, but NOTHING can persist it until the chat is confirmed,
+     and a confirm that requires a ruleset switch reloads the page anyway
+     (discarding the in-memory sheet entirely). */
+  mrrCheckChatRulesetStamp(state.chatId);
   migrateLegacySheet(state.chatId);
   state.characters = loadCharacters(state.chatId);
   state.activeCharacterId = loadActiveCharacterId(state.chatId, state.characters[0].id);
@@ -18325,11 +18841,19 @@ function init() {
      as saveSheet so multiple activations on a fast SPA route change
      coalesce into one PATCH. */
   if (typeof scheduleAutoSync === "function") scheduleAutoSync();
-  /* Add this ruleset's overlay agents to the current chat's active list so the engine actually fires them. No-op on subsequent loads once the chat has them.
-     Round-12 F1: rebind=true — this IS the deliberate-activation call site (the user just
-     picked/switched the ruleset, which is what got us here), so a chat stamped for a
-     different ruleset must be REBOUND, not skipped. */
-  if (typeof reconcileActiveAgents === "function") reconcileActiveAgents(true);
+  /* Round-24: the unconditional `reconcileActiveAgents(true)` that used to
+     live here has MOVED into mrrConfirmChatRuleset. Reason (full write-up
+     in mrrCheckChatRulesetStamp's header, "RACE THIS FUNCTION HAD TO
+     RESOLVE"): reconcile's rebind branch PATCHes the chat's
+     mrrChatRulesetId to whatever ruleset is currently active. Fired here,
+     concurrently with the new chat-stamp check, the two write and read the
+     same field in opposite directions and can ping-pong the page through
+     an unbounded reload loop that the {chatId, stamp} sentinel cannot
+     catch (the stamp changes every lap). It now fires exactly once per
+     CONFIRMED chat instead — still with rebind=true, which preserves this
+     call site's original round-12 F1 intent for the one case that still
+     needs it (the user deliberately switched ruleset, so the chat gets
+     rebound rather than switched away from). */
 }
 
 /* Console-callable diagnostics. Open DevTools and run:
@@ -18378,16 +18902,40 @@ function watchRouteChanges() {
        "off" — zero fetch, zero localStorage, no side effects. */
     pollCustomAgentRuns(state.chatId);
 
+    /* Round-24 Part 1: the retry tick. mrrCheckChatRulesetStamp is
+       self-guarding (already-confirmed / held / in-flight all return
+       immediately), so this costs one comparison per tick in the steady
+       state. It exists so a TRANSIENT metadata-fetch failure — or a chat
+       id that wasn't available yet when init() ran — resolves on its own
+       instead of leaving sheet writes latched shut for the session. */
+    mrrCheckChatRulesetStamp(state.chatId);
+
     var newId = getChatId();
     if (newId === lastSeenChatId) return;
     lastSeenChatId = newId;
 
     log("chatId changed: " + state.chatId + " -> " + newId);
 
-    /* Persist the outgoing chat's character before swapping any state. */
+    /* Persist the outgoing chat's character before swapping any state.
+       Round-24 ORDERING (load-bearing, verified): this flush runs while
+       state.chatId is still the OLD id, which IS the confirmed chat — so
+       the Part-2 latch permits it, exactly as before. The latch reset
+       below must therefore come AFTER this call, never before, or the
+       outgoing chat's last edits would be silently dropped. */
     flushSave();
 
     state.chatId = newId;
+    /* Round-24 Part 2: the latch resets on EVERY chat change — including
+       the early-return cases below (no ruleset, no chat selected), which
+       is why it sits above them. From here until mrrCheckChatRulesetStamp
+       confirms `newId`, no sheet write of any kind can land. This is the
+       precise window in which the bleed used to be persisted: loadSheet
+       below is about to merge the NEW chat's character through the OLD
+       chat's ruleset, and the next flushSave would write that merge back
+       over the character's real record. */
+    mrrResetRulesetLatch();
+    /* Round-24 Part 1, call site (b). */
+    mrrCheckChatRulesetStamp(newId);
     if (!state.ruleset) return;
     if (!newId) return;  /* nothing to load until a chat is selected */
 
@@ -18412,8 +18960,13 @@ function watchRouteChanges() {
        — more importantly — historic mutations in this chat would replay
        on the next refresh. */
     loadProcessedMessageIds(state.chatId);
-    /* New chat default activeAgentIds is empty or just ["spotify"]; reconcile so overlay agents fire without manual toggling per chat. */
-    if (typeof reconcileActiveAgents === "function") reconcileActiveAgents();
+    /* Round-24: the `reconcileActiveAgents()` that used to fire here has
+       moved into mrrConfirmChatRuleset, alongside init()'s. Same reason
+       (see mrrCheckChatRulesetStamp's header) plus one specific to this
+       call site: a new chat's default activeAgentIds still gets reconciled
+       — just a beat later, once this chat's ruleset is confirmed, so the
+       agents we add are guaranteed to be the RIGHT ruleset's agents rather
+       than the outgoing chat's. */
   }, ROUTE_POLL_MS);
 }
 
