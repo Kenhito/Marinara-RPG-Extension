@@ -54,6 +54,56 @@ var BUNDLE_SCHEMA_ID = "mrr-bundle";
    in the user's Marinara database. Single source of truth — install,
    uninstall, and search paths all read from here. */
 var MRR_AGENT_TYPE   = "mrr-overlay-v1";
+
+/* ─── Round-20 F1: PER-ROLE agent types ──────────────────────────────────
+   Every MRR agent used to share the single `type` above. Two engine
+   mechanisms are keyed on agent TYPE, not on the agent-config row id, and
+   both broke under one shared type:
+
+     (a) PER-CHAT ACTIVATION. `perChatAgentSet` is built verbatim from
+         `chatMeta.activeAgentIds` (generate.routes.ts:1521-1522, no id→type
+         mapping anywhere) and the gate is
+         `if (hasPerChatAgentList && !perChatAgentSet.has(cfg.type)) continue;`
+         (agent-resolution.ts:405). With one shared type, ONE entry in that
+         list turns on ALL our agents at once and there is no way to enable
+         them individually — which is exactly what Corey saw.
+     (b) PRESET-OWNED INJECTION PLACEMENT (v2.4.0+). A pre_generation
+         agent's context injection lands only at an `agent_data` marker
+         section whose agentType matches, and both the injection map and
+         the placeholder tokens are type-keyed — so even WITH a marker,
+         only the first of our seven injections could ever land.
+
+   Per-role types fix both. The gmAgent (Ruleset Helper) keeps the original
+   "mrr-overlay-v1" for continuity with already-installed chats; every
+   additionalAgent gets "mrr-overlay-v1-<role-slug>".
+
+   NOTE: agent DISCOVERY is unaffected by this change — `findManagedAgent`,
+   the uninstall sweep, and the sole-writer filter all match on SETTINGS
+   tags (`mrrManaged`/`mrrRulesetId`/`mrrAuthorId`/`mrrAgentRole`), never on
+   `type`. Verified by call-site audit before changing anything. */
+/* The distinct TYPES of every managed agent for one ruleset, de-duplicated
+   and in discovery order. Reads each row's real `type` rather than deriving
+   it from the role, so an agent installed by an OLDER version (shared type)
+   still reports the type it actually carries — which is what makes the
+   type-migration reinstall converge instead of stranding a chat pointing at
+   a type nothing has. */
+function mrrManagedAgentTypes(agents, rulesetId) {
+  var out = [];
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    var s = parseAgentSettings(a);
+    if (!s || s.mrrManaged !== true || s.mrrRulesetId !== rulesetId) continue;
+    if (typeof a.type === "string" && a.type && out.indexOf(a.type) === -1) out.push(a.type);
+  }
+  return out;
+}
+
+function mrrAgentTypeForRole(role) {
+  if (!role || role === "main") return MRR_AGENT_TYPE;
+  var slug = String(role).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return slug ? (MRR_AGENT_TYPE + "-" + slug) : MRR_AGENT_TYPE;
+}
 var MRR_TAG_MANAGED  = "mrr-managed";
 var MRR_TAG_RS_PFX   = "mrr:";
 var MRR_PROMPT_PFX   = "[mrr-v1:";
@@ -1307,9 +1357,27 @@ function findManagedLorebook(lorebooks, rulesetId) {
    exists. Returns null when 0 or >1 — the user must wire it themselves.
    HTTP errors propagate (we don't want to silently set null when the
    server is broken or unreachable). */
+/* Round-20 F4 (COSMETIC ONLY — explicitly NOT the read-path fix):
+   installing our agents with connectionId=null is safe by design — the
+   engine resolves a connection per agent at generation time
+   (agent-resolution.ts:233-257), and the "no connection configured" notice
+   it emits is a BILLING/attribution notice, not an error. It was a red
+   herring during the read-path investigation; agent output was being
+   discarded by preset placement (F1/F2/F3), never by the connection.
+   Preferring the user's designated agents-connection just stops the notice
+   firing every turn. Behaviour is otherwise unchanged: the previous
+   single-connection fallback is preserved verbatim, and null remains a
+   legitimate result. */
 function pickDefaultConnection() {
   return apiFetch("/connections", {}).then(function (list) {
-    if (!Array.isArray(list) || list.length !== 1) return null;
+    if (!Array.isArray(list)) return null;
+    /* The engine stores this flag as either a real boolean or the string
+       "true" depending on how the row was written — accept both. */
+    var forAgents = list.find(function (c) {
+      return c && (c.defaultForAgents === true || c.defaultForAgents === "true");
+    });
+    if (forAgents && forAgents.id) return forAgents.id;
+    if (list.length !== 1) return null;
     return list[0] && list[0].id ? list[0].id : null;
   });
 }
@@ -1476,7 +1544,7 @@ function installBundle(bundle, progressCb) {
              system lorebook document each agent's purpose and how to flip
              the toggle in Settings -> Agents. */
           var subBody = {
-            type: MRR_AGENT_TYPE,
+            type: mrrAgentTypeForRole(role), /* round-20 F1 — per-role type */
             name: "MRR: " + (ag.name || (rulesetId + " " + role)),
             description: ag.description || "",
             phase: ag.phase || "pre_generation",
@@ -2327,6 +2395,202 @@ function deleteManagedAgents(ids, progressCb) {
   }, Promise.resolve()).then(function () { return ids.length; });
 }
 
+/* ═══ Round-20 F3: preset agent-section assist ══════════════════════════
+   WHY THIS EXISTS. Engine v2.4.0+ makes an RP preset OWN agent placement.
+   A pre_generation agent's context injection is delivered ONLY by
+   substituting a token minted for an `agent_data` marker section whose
+   `markerConfig.agentType` equals the agent's type. If no marker matches
+   and the preset assembler ran, `splitRuntimeHandledAgentInjections` is
+   called with `omitUnmatched: presetOwnsAgentPlacement === true`
+   (generate.routes.ts:5274) and the output is put in `omittedInjections`,
+   then dropped entirely (:5276-5278). There is NO depth-0 fallback — that
+   only happens when the assembler did NOT run. So: no marker ⇒ the agent
+   runs, bills tokens, writes a healthy-looking row into the runs history,
+   and contributes NOTHING to the narrator's prompt, silently. That is the
+   whole read-path bug.
+
+   ENGINE FACTS THIS CODE DEPENDS ON (all verified against source, and two
+   of them contradict what the shape "looks like" from a GET):
+     · Route prefix is `/api/prompts` (routes/index.ts:70) — NOT
+       `/api/presets`; `/api/chat-presets` is an unrelated subsystem.
+     · READ returns STRINGS: `enabled`/`isMarker` come back as "true"/"false"
+       and `markerConfig` as a JSON STRING (prompts.storage.ts:329-335 does
+       no deserialization). WRITE demands real booleans and a real object —
+       `createPromptSectionSchema` uses `z.boolean()` with no coercion
+       (prompt.schema.ts:170-188), so posting "true" is a 400.
+     · The stock "Marinara Universal" preset is read-only: every mutating
+       route calls rejectStockPresetMutation and returns 409
+       (prompts.routes.ts:39-48).
+     · A chat with promptPresetId === null uses NO preset at all — the
+       server has no default fallback, so markers would be inert.
+     · Markers are roleplay-only (generate.routes.ts:2457 excludes
+       conversation and game).
+     · The match key is the agent's TYPE, and one token is minted per type,
+       consumed on first substitution — hence round-20 F1's per-role types.
+
+   Corey's consent rules: this is OFFERED, never automatic. It confirms with
+   the preset's real name before writing, and it is idempotent — a type that
+   already has an `agent_data` marker is skipped, never duplicated. */
+
+/* Server-side eligibility, applied by US so we never create a marker the
+   runtime will refuse to fill. The Preset Editor's own picker only checks
+   `settings.injectAsSection === true` (PresetEditor.tsx:1245-1254) and does
+   NOT check phase or resultType — a real divergence that lets a user add a
+   section the server silently ignores. We apply the server's rules
+   (runtime-agent-sections.ts:117-124) as well as our own intent flag. */
+function mrrInjectableManagedAgents(agents, rulesetId) {
+  var out = [];
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    var s = parseAgentSettings(a);
+    if (!s || s.mrrManaged !== true || s.mrrRulesetId !== rulesetId) continue;
+    if (s.injectAsSection !== true) continue;               /* our intent flag; strict boolean, matching the editor */
+    if (s.resultType !== "context_injection") continue;      /* runtime-agent-sections.ts:122 */
+    if (a.phase !== "pre_generation") continue;              /* runtime-agent-sections.ts:120 */
+    if (typeof a.type !== "string" || !a.type) continue;
+    out.push({ type: a.type, name: a.name || a.type });
+  }
+  /* De-dupe by type: one token is minted per type and consumed on first
+     substitution, so a second marker for the same type could never fill. */
+  var seen = Object.create(null);
+  return out.filter(function (x) {
+    if (seen[x.type]) return false;
+    seen[x.type] = true;
+    return true;
+  });
+}
+
+/* The agent types that already own an `agent_data` marker in this section
+   list. `markerConfig` arrives as a JSON STRING on read — parsed
+   defensively, exactly as the engine's own consumer does
+   (generate.routes.ts:2465-2477 wraps its JSON.parse in try/catch and
+   ignores malformed configs). */
+function mrrExistingAgentSectionTypes(sections) {
+  var types = Object.create(null);
+  var list = Array.isArray(sections) ? sections : [];
+  for (var i = 0; i < list.length; i++) {
+    var sec = list[i];
+    if (!sec || !sec.markerConfig) continue;
+    var mc = sec.markerConfig;
+    if (typeof mc === "string") mc = safeParse(mc);
+    if (!mc || typeof mc !== "object") continue;
+    if (mc.type !== "agent_data") continue;
+    if (typeof mc.agentType === "string" && mc.agentType) types[mc.agentType] = true;
+  }
+  return types;
+}
+
+/* Build the POST body for one agent_data marker section, mirroring
+   PresetEditor.tsx:1265-1294's handleAddSection verbatim — same identifier
+   scheme, same name suffix, same `{{agent::<type>}}` content (the assembler
+   DISCARDS a marker section whose content is empty, assembler.ts:844-890,
+   which is why the editor pre-fills it), same role, and REAL BOOLEANS. */
+function mrrBuildAgentSectionBody(agentType, agentName) {
+  return {
+    identifier: "agent_" + agentType,
+    name: (agentName || agentType) + " (Agent)",
+    content: "{{agent::" + agentType + "}}",
+    role: "system",
+    isMarker: true,                                          /* boolean, not "true" — z.boolean() */
+    markerConfig: { type: "agent_data", agentType: agentType } /* object, not a JSON string */
+  };
+}
+
+/* Resolve the preset the ACTIVE chat will actually generate against.
+   Returns {presetId, presetName, boundNow} or throws with a message the
+   dialog can show verbatim. */
+function mrrResolveActivePreset(chatId) {
+  return apiFetch("/chats/" + encodeURIComponent(chatId)).then(function (chat) {
+    var presetId = chat && chat.promptPresetId;
+    if (presetId) return { presetId: presetId, boundNow: false };
+    /* No preset on the chat: the server does NOT fall back to the default,
+       so sections would be inert. The client back-fills this for new chats
+       (ChatSetupWizard.tsx:2065-2070); do the same rather than writing
+       markers into a preset this chat never loads. */
+    return apiFetch("/prompts/default").then(function (def) {
+      if (!def || !def.id) {
+        throw new Error("This chat has no prompt preset and no default preset exists. Open the chat's settings and pick a preset first — without one, Marinara uses no preset sections at all and agent output cannot be placed.");
+      }
+      return { presetId: def.id, boundNow: true };
+    });
+  });
+}
+
+/* The offered action. Returns a Promise resolving to a human-readable
+   summary string; rejects with an Error whose message is safe to show. */
+function mrrAddAgentSectionsToActivePreset(confirmFn, progressCb) {
+  function progress(m) { if (progressCb) progressCb(m); }
+  var chatId = state.chatId;
+  if (!chatId) return Promise.reject(new Error("No active chat — open a chat first."));
+  if (!state.ruleset || !state.ruleset.id) return Promise.reject(new Error("No active ruleset — activate a ruleset first."));
+  var rulesetId = state.ruleset.id;
+  progress("Resolving the active preset...");
+  return Promise.all([
+    mrrResolveActivePreset(chatId),
+    apiFetch("/agents")
+  ]).then(function (r) {
+    var resolved = r[0];
+    var injectable = mrrInjectableManagedAgents(r[1], rulesetId);
+    if (!injectable.length) {
+      throw new Error("No injectable agents found for ruleset '" + rulesetId + "'. Re-install the ruleset bundle so its agents carry the injection settings this needs.");
+    }
+    progress("Reading preset...");
+    return apiFetch("/prompts/" + encodeURIComponent(resolved.presetId) + "/full").then(function (full) {
+      var preset = (full && full.preset) || {};
+      var presetName = preset.name || resolved.presetId;
+      var have = mrrExistingAgentSectionTypes(full && full.sections);
+      var missing = injectable.filter(function (a) { return !have[a.type]; });
+      if (!missing.length) {
+        return "Preset \"" + presetName + "\" already has agent sections for all " +
+               injectable.length + " injectable agent(s). Nothing to do.";
+      }
+      var names = missing.map(function (m) { return "  • " + m.name + "  (" + m.type + ")"; }).join("\n");
+      var prompt = "This will modify preset \"" + presetName + "\".\n\n" +
+        "Adding " + missing.length + " agent section(s):\n" + names + "\n\n" +
+        (resolved.boundNow ? "This chat has no preset selected, so the DEFAULT preset will also be attached to it.\n\n" : "") +
+        "Without these sections Marinara silently discards these agents' output on engine 2.4.0+. Continue?";
+      var ok = confirmFn ? confirmFn(prompt) : window.confirm(prompt);
+      if (!ok) return "Cancelled — no changes made.";
+
+      var chain = Promise.resolve();
+      if (resolved.boundNow) {
+        chain = chain.then(function () {
+          progress("Attaching the default preset to this chat...");
+          return apiFetch("/chats/" + encodeURIComponent(chatId), {
+            method: "PATCH",
+            body: JSON.stringify({ promptPresetId: resolved.presetId })
+          });
+        });
+      }
+      var added = 0;
+      return missing.reduce(function (c, m) {
+        return c.then(function () {
+          progress("Adding section for " + m.name + "...");
+          /* POST one at a time — there is no bulk section write, and each
+             POST appends its new id to preset.sectionOrder server-side
+             (prompts.storage.ts:360-366). Placement is left at the schema
+             default injectionOrder (100); we deliberately do NOT call
+             PUT /sections/reorder, because that rewrites EVERY section's
+             injectionOrder to i*100 and would silently reshuffle a preset
+             the user has hand-tuned. */
+          return apiPostRaw("/prompts/" + encodeURIComponent(resolved.presetId) + "/sections",
+                            mrrBuildAgentSectionBody(m.type, m.name))
+            .then(function () { added++; });
+        });
+      }, chain).then(function () {
+        return "Added " + added + " agent section(s) to preset \"" + presetName + "\"" +
+               (resolved.boundNow ? " and attached it to this chat" : "") + ".";
+      });
+    });
+  }).catch(function (e) {
+    if (e && e.status === 409) {
+      throw new Error("Preset is read-only. The stock \"Marinara Universal\" preset cannot be modified — open it in the Preset Editor and use \"Save as copy\" to create an editable preset, select that for this chat, then run this again.");
+    }
+    throw e;
+  });
+}
+
 function openAgentManagerDialog() {
   if (state.agentMgrDialogEl && state.agentMgrDialogEl.parentNode) {
     state.agentMgrDialogEl.parentNode.removeChild(state.agentMgrDialogEl);
@@ -2345,6 +2609,7 @@ function openAgentManagerDialog() {
   var msg = marinara.addElement(dialog, "div", { "class": "mrr-msg mrr-msg--info", textContent: "Loading..." });
   var list = marinara.addElement(dialog, "div", { "class": "mrr-dialog__lib" });
   var buttons = marinara.addElement(dialog, "div", { "class": "mrr-dialog__buttons" });
+  var sectionsBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Add agent sections to active preset" });
   var refreshBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Refresh" });
   var closeBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn", textContent: "Close" });
 
@@ -2354,6 +2619,22 @@ function openAgentManagerDialog() {
   }
   marinara.on(backdrop, "click", function (e) { if (e.target === backdrop) close(); });
   if (closeBtn) marinara.on(closeBtn, "click", close);
+
+  /* Round-20 F3 — offered, never silent (see mrrAddAgentSectionsToActivePreset's
+     header for why this is required on engine 2.4.0+). */
+  if (sectionsBtn) marinara.on(sectionsBtn, "click", function () {
+    sectionsBtn.disabled = true;
+    if (msg) { msg.textContent = "Working..."; msg.className = "mrr-msg mrr-msg--info"; }
+    mrrAddAgentSectionsToActivePreset(null, function (s) { if (msg) msg.textContent = s; })
+      .then(function (summary) {
+        if (msg) { msg.textContent = summary; msg.className = "mrr-msg mrr-msg--ok"; }
+        sectionsBtn.disabled = false;
+      })
+      .catch(function (e) {
+        if (msg) { msg.textContent = (e && e.message) || String(e); msg.className = "mrr-msg mrr-msg--err"; }
+        sectionsBtn.disabled = false;
+      });
+  });
 
   function refresh() {
     if (msg) { msg.textContent = "Loading..."; msg.className = "mrr-msg mrr-msg--info"; }
@@ -2498,7 +2779,7 @@ function importAgents(payload, progressCb) {
             var prefix = MRR_PROMPT_PFX + authorId + "/" + rulesetId + (role && role !== "main" ? ":" + role : "") + "]";
             var promptTemplate = prefix + " " + (ag.promptTemplate || "");
             var body = {
-              type: MRR_AGENT_TYPE,
+              type: mrrAgentTypeForRole(role), /* round-20 F1 — per-role type */
               name: "MRR: " + (ag.name || rulesetId + " " + role),
               description: ag.description || "",
               phase: ag.phase || "pre_generation",
@@ -14095,6 +14376,34 @@ function applyScenarioDefaultToCurrentChat(scenarioDefault, progressCb) {
    JUST activated dnd5e, and its own advice ("switch ruleset to update") was circular, since
    activating a ruleset IS the mechanism that's supposed to update it. There was no rebind path
    anywhere in the file before this fix. */
+/* ─── Round-20 F1: this function now unions agent TYPES, not row ids ─────
+   THE FINDING (engine-verified, and it corrects a long-standing assumption):
+   this function has always pushed agent-config ROW IDS
+   (`.map(function (a) { return a.id; })`) into `chatMeta.activeAgentIds`.
+   The engine builds `perChatAgentSet = new Set(chatActiveAgentIds)` verbatim
+   — no id→type mapping exists anywhere (generate.routes.ts:1521-1522) — and
+   then gates every configured agent with
+   `if (hasPerChatAgentList && !perChatAgentSet.has(cfg.type)) continue;`
+   (agent-resolution.ts:405). A row id can therefore NEVER match. The only
+   other `perChatAgentSet` read (:503) iterates BUILT_IN_AGENTS, whose `.id`
+   IS the built-in's type — so there is no id-keyed path at all.
+
+   So why did our agents run? Because the ENGINE'S OWN per-chat agent toggle
+   writes TYPES: its list is built from installed manifests and looked up via
+   `agentConfigsByType.get(a.id)` (ChatSettingsDrawer.tsx:1485-1499), so the
+   `agent.id` it appends at :3589 is the agent TYPE. When Corey enabled the
+   MRR agents for a game, the engine wrote "mrr-overlay-v1" — and because all
+   seven shared that one type, one toggle switched on all seven. Our own
+   pushed row ids were inert passengers the whole time; their ONLY effect was
+   making `hasPerChatAgentList` true, which switches the per-chat filter ON.
+   (Left unfixed alongside per-role types, that inert-id behavior would have
+   become actively harmful: seven distinct types, none of them ever written
+   by us, and a filter our own ids had switched on.)
+
+   Fixed here: union the managed agents' TYPES. Row ids are no longer written.
+   Pre-existing row ids left behind in a chat's list by earlier versions are
+   harmless (they match no `cfg.type`) and are deliberately NOT purged — see
+   the migration note at the union site below. */
 function reconcileActiveAgents(rebind) {
   if (!state.chatId) return;
   if (!state.ruleset) return;
@@ -14125,18 +14434,20 @@ function reconcileActiveAgents(rebind) {
          activeAgentIds = (existing MINUS old-managed) UNION new-managed — drops every agent id
          that belonged to the ruleset we're leaving, adds every agent id the new ruleset needs,
          and leaves any non-MRR / foreign agent ids in `existing` untouched either way. */
+      /* Round-20 F1: TYPES on both sides of the swap. Also drops the OLD
+         ruleset's stale row ids (`a.id`) if any survive from a pre-round-20
+         install, so a rebind cleans up after the old behavior too. */
       var oldManagedIds = (Array.isArray(agents) ? agents : [])
         .filter(function (a) {
           var s = parseAgentSettings(a);
           return s && s.mrrManaged === true && s.mrrRulesetId === stamp;
         })
-        .map(function (a) { return a.id; });
-      var newManagedIdsForRebind = (Array.isArray(agents) ? agents : [])
-        .filter(function (a) {
-          var s = parseAgentSettings(a);
-          return s && s.mrrManaged === true && s.mrrRulesetId === rulesetId;
-        })
-        .map(function (a) { return a.id; });
+        .reduce(function (acc, a) {
+          if (acc.indexOf(a.type) === -1) acc.push(a.type);
+          if (acc.indexOf(a.id) === -1) acc.push(a.id); /* legacy row id, if present */
+          return acc;
+        }, []);
+      var newManagedIdsForRebind = mrrManagedAgentTypes(agents, rulesetId);
       var kept = existing.filter(function (id) { return oldManagedIds.indexOf(id) === -1; });
       var removedCount = existing.length - kept.length;
       var rebindSet = kept.slice();
@@ -14152,12 +14463,11 @@ function reconcileActiveAgents(rebind) {
       });
     }
 
-    var managedIds = (Array.isArray(agents) ? agents : [])
-      .filter(function (a) {
-        var s = parseAgentSettings(a);
-        return s && s.mrrManaged === true && s.mrrRulesetId === rulesetId;
-      })
-      .map(function (a) { return a.id; });
+    /* Round-20 F1: TYPES, not row ids — see this function's header. Legacy
+       row ids already in `existing` are left alone: they match no cfg.type,
+       so they are inert, and stripping ids we can no longer attribute risks
+       removing a foreign agent the user added by hand. */
+    var managedIds = mrrManagedAgentTypes(agents, rulesetId);
 
     if (managedIds.length === 0) {
       log("reconcileActiveAgents: no managed agents for " + rulesetId);

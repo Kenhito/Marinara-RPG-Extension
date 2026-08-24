@@ -36,6 +36,38 @@ Installing is not activating. After you create or launch your game:
 2. **Attach your own lorebook, if you have one**, for professions, spell lists, races, and setting content — see `USER-LOREBOOK-GUIDE.md` in this folder for how to build one that interoperates cleanly with this bundle. Optional; the game runs without it, just more generically.
 3. **Enable the MRR agents for the game**, after it launches (not mid-generation): **Settings → Agents** → find the agents named like `Rolemaster Fantasy Role Playing — <Role>` → enable the ones your table wants. A reasonable minimal set: **Ruleset Helper + State Mutator** (State Mutator is the one agent that writes to the sheet). Add **Combat Overseer** for tactical, multi-combatant fights where the OB/parry/DB bookkeeping matters. Each enabled agent costs one model call per turn.
 
+## Add the MRR agent sections to your roleplay preset (engine 2.4.0+)
+
+**This step is not optional, and skipping it fails silently.** Since Marinara
+2.4.0 a roleplay preset *owns* agent placement: an agent's output is inserted
+only where a matching **Agent Data** marker section sits in the preset. With no
+matching section the engine **discards that agent's output entirely** — no
+warning, no fallback. The agents still run, still cost tokens, and still show
+healthy rows in their run history, while the narrator never sees a word of it.
+
+Two ways to add the sections:
+
+- **One click (recommended):** open the extension's **Manage MRR Agents** dialog
+  → **Add agent sections to active preset**. It names the preset before changing
+  anything, skips agents that already have a section, and never edits a preset
+  without your confirmation.
+- **By hand:** **Preset Editor → Add Section → Agent Sections**, then pick each
+  MRR agent in the list.
+
+Notes: this applies to **roleplay mode only** — Game mode and conversation mode
+don't use preset sections. The State Mutator deliberately has **no** section: its
+output is `[mrr-state: ...]` tags meant for the extension, which reads them
+directly from the agent-run history, and feeding raw tag syntax to the narrator
+invites it to echo tags. If your chat has **no preset selected at all**, Marinara
+uses no preset sections whatsoever — pick one first, or the one-click assist will
+offer to attach your default.
+
+**A note on the connection warning.** If Marinara warns that an MRR agent has no
+connection configured, that is a **billing/attribution notice, not an error**.
+Agents without an explicit connection resolve one at generation time and work
+normally. It is not the cause of missing agent output — that is the preset
+section step above.
+
 ## Build a character
 
 1. Set your ten stats (1-102, temporary value) and, for each, compute and enter its stat bonus by hand from the Basic Stat Bonus Table (T-2.1) — this bundle can't compute that step table automatically. See the "Stats and stat bonuses" lorebook entry.

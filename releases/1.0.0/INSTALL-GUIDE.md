@@ -67,6 +67,35 @@ The pool you're choosing from:
 
 Each enabled agent costs one model call per turn — and on a provider that only allows one call at a time, they run one after another, so enable only what your table needs. A good minimal set: **Ruleset Helper + State Mutator**.
 
+## Step 4b — Add the MRR agent sections to your roleplay preset (engine 2.4.0+)
+
+**Roleplay mode only. This step is not optional, and skipping it fails silently.**
+
+Since Marinara 2.4.0 a roleplay preset *owns* agent placement. An agent's output is
+inserted only where a matching **Agent Data** marker section sits in the preset. With
+no matching section the engine **discards that agent's output entirely** — no warning,
+no fallback. The agents still run, still cost tokens, and still show healthy rows in
+their run history, while the narrator never sees a word of it. If your agents seem to
+"do nothing", this is almost always why.
+
+- **One click (recommended):** **Manage MRR Agents** → **Add agent sections to active
+  preset**. It names the preset before changing anything, skips agents that already
+  have a section, and never edits a preset without your confirmation.
+- **By hand:** **Preset Editor → Add Section → Agent Sections**, then pick each MRR
+  agent.
+
+The **State Mutator** deliberately gets no section: its `[mrr-state: ...]` output is
+addressed to the extension, which reads it straight from the agent-run history, and
+feeding raw tag syntax to the narrator invites it to echo tags. Game mode and
+conversation mode don't use preset sections at all. If your chat has **no preset
+selected**, Marinara uses no sections whatsoever — pick one first, or let the
+one-click assist attach your default.
+
+**The connection warning is harmless.** If Marinara warns that an MRR agent has no
+connection configured, that is a **billing/attribution notice, not an error**. Agents
+without an explicit connection resolve one at generation time and work normally. It is
+never the cause of missing agent output.
+
 ## Step 5 — Build a character
 
 Open the floating sheet (the scroll icon in the chat header). Click **+ Add character**, name them, fill in attributes / skills / derived values using the +/- steppers.

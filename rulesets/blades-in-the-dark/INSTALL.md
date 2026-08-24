@@ -36,6 +36,38 @@ Installing is not activating. After you create/launch your game:
 1. **Attach the Blades lorebook to the game** (at setup or after launch). Required — without it the agents have no rules context and will not work correctly.
 2. **Enable the MRR agents for the game** — after it launches, not mid-generation: **Settings → Agents** → find the agents named like `MRR: Blades in the Dark — <Role>` → enable the ones your table wants. A good minimal set: **Ruleset Helper + State Mutator**. Each enabled agent costs one model call per turn — on a provider that allows only one call at a time they run one after another.
 
+## Add the MRR agent sections to your roleplay preset (engine 2.4.0+)
+
+**This step is not optional, and skipping it fails silently.** Since Marinara
+2.4.0 a roleplay preset *owns* agent placement: an agent's output is inserted
+only where a matching **Agent Data** marker section sits in the preset. With no
+matching section the engine **discards that agent's output entirely** — no
+warning, no fallback. The agents still run, still cost tokens, and still show
+healthy rows in their run history, while the narrator never sees a word of it.
+
+Two ways to add the sections:
+
+- **One click (recommended):** open the extension's **Manage MRR Agents** dialog
+  → **Add agent sections to active preset**. It names the preset before changing
+  anything, skips agents that already have a section, and never edits a preset
+  without your confirmation.
+- **By hand:** **Preset Editor → Add Section → Agent Sections**, then pick each
+  MRR agent in the list.
+
+Notes: this applies to **roleplay mode only** — Game mode and conversation mode
+don't use preset sections. The State Mutator deliberately has **no** section: its
+output is `[mrr-state: ...]` tags meant for the extension, which reads them
+directly from the agent-run history, and feeding raw tag syntax to the narrator
+invites it to echo tags. If your chat has **no preset selected at all**, Marinara
+uses no preset sections whatsoever — pick one first, or the one-click assist will
+offer to attach your default.
+
+**A note on the connection warning.** If Marinara warns that an MRR agent has no
+connection configured, that is a **billing/attribution notice, not an error**.
+Agents without an explicit connection resolve one at generation time and work
+normally. It is not the cause of missing agent output — that is the preset
+section step above.
+
 ## What the dice widget does (and doesn't do)
 
 Blades' Nd6-take-highest mechanic is mechanically simple, but the dice widget runs in **manual NdX mode** because the game's resolution lives in the combination of dice + Position + Effect — not just dice. Roll 6-sided dice physically (or via any d6 roller), tell the AI your highest result, and the GM agent will narrate the outcome from there.

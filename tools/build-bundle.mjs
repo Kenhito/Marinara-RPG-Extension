@@ -123,9 +123,57 @@ function loadAdditionalAgents(rulesetName, rulesetDir) {
       description: "Focused " + role.replace(/-/g, " ") + " agent for " + rulesetName + tunedNote + ".",
       phase,
       promptTemplate,
-      settings: {}
+      settings: mrrInjectionSettings(role, phase)
     };
   });
+}
+
+/* ─── Round-20 F2: injection-eligibility settings ────────────────────────
+   Engine v2.4.0+ makes an RP preset OWN agent placement. For a
+   pre_generation agent's output to reach the narrator at all, three things
+   must line up (all verified against ~/Marinara-Engine):
+
+     1. the agent's TYPE is in chatMeta.activeAgentIds
+        (runtime-agent-sections.ts:118 `activeAgentIds.has(agent.type)`),
+     2. phase === "pre_generation"        (:120),
+     3. resolveAgentResultType(...) === "context_injection"   (:122).
+
+   `resultType` is therefore RUNTIME-CRITICAL and is stamped explicitly here
+   rather than left to inference. `injectAsSection` is the separate,
+   CLIENT-side flag that makes an agent show up in Preset Editor → Add
+   Section → Agent Sections — without it the user cannot add the marker the
+   runtime then needs, so the two travel together.
+
+   Two roles are deliberately NOT narrator-facing:
+
+     · state-mutator — its output is `[mrr-state: ...]` tags (or the literal
+       "NO TAG DIRECTIVE"), addressed to THIS EXTENSION, not to the
+       narrator. The extension reads it through the runs poller
+       (GET /agents/runs/:chatId/custom), which is entirely independent of
+       preset placement, so injecting it buys the read path nothing. It also
+       carries real risk: feeding raw tag syntax into the narrator's context
+       invites the narrator to echo tags, and that is not hypothetical —
+       round 11 diagnosed a live triple-apply (−15 instead of −5) caused by
+       non-mutator agents echoing tag text, which is why the sole-writer
+       filter exists. Injecting the mutator's own tags would reopen that
+       exact failure mode from a new direction. injectAsSection: false.
+     · pre-input-transformer — transforms the USER's input; its result is
+       not a narrator context injection.
+
+   Parallel-phase overlays (e.g. exalted3e's anima-banner-monitor) are also
+   left alone: :120 rejects any phase other than pre_generation, so marking
+   them injectable would be a lie the runtime silently ignores. */
+const MRR_NON_INJECTING_ROLES = new Set(["state-mutator", "pre-input-transformer"]);
+
+function mrrInjectionSettings(role, phase) {
+  if (phase !== "pre_generation") return {};
+  if (role && MRR_NON_INJECTING_ROLES.has(role)) {
+    /* Explicit false, not merely absent — the mutator IS a
+       context_injection run type (that is how the poller reads it), so we
+       state the UI intent rather than letting it be inferred. */
+    return { resultType: "context_injection", injectAsSection: false };
+  }
+  return { resultType: "context_injection", injectAsSection: true };
 }
 
 function buildBundle(dir) {
@@ -178,7 +226,7 @@ function buildBundle(dir) {
       description: "Auto-installed by GM-mode bundle. Provides " + ruleset.name + " skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
       phase: "pre_generation",
       promptTemplate: mainPromptTemplate,
-      settings: {}
+      settings: mrrInjectionSettings("main", "pre_generation")
     },
     lorebook: {
       name: lb.name,
@@ -222,7 +270,17 @@ function buildBundle(dir) {
   const transformerAgent = buildPreInputTransformer(ruleset);
   if (transformerAgent && typeof transformerAgent === "object") {
     if (!Array.isArray(bundle.additionalAgents)) bundle.additionalAgents = [];
-    bundle.additionalAgents.push(Object.assign({}, transformerAgent, { enabled: true }));
+    /* Round-20 F2: the transformer is a non-injecting role (it rewrites the
+       USER's input, not the narrator's context) — stamped explicitly so the
+       built bundle states the intent rather than leaving it inferred. */
+    bundle.additionalAgents.push(Object.assign({}, transformerAgent, {
+      enabled: true,
+      settings: Object.assign(
+        {},
+        transformerAgent.settings || {},
+        mrrInjectionSettings("pre-input-transformer", transformerAgent.phase || "pre_generation")
+      )
+    }));
   }
 
   /* Vector 8: scenario default (NON-persona). When present the engine

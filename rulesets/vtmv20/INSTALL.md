@@ -36,6 +36,38 @@ Installing is not activating. After you create/launch your chronicle's game:
 | `context-fuser` | You ask rules questions mid-RP, or the model keeps forgetting Blood Pool / Willpower / Humanity — it answers OOC questions and restates current stats each turn. |
 | `blood-pool-tracker` | Long nights of heavy blood expenditure — a parallel tracker dedicated to the Blood Pool. |
 
+## Add the MRR agent sections to your roleplay preset (engine 2.4.0+)
+
+**This step is not optional, and skipping it fails silently.** Since Marinara
+2.4.0 a roleplay preset *owns* agent placement: an agent's output is inserted
+only where a matching **Agent Data** marker section sits in the preset. With no
+matching section the engine **discards that agent's output entirely** — no
+warning, no fallback. The agents still run, still cost tokens, and still show
+healthy rows in their run history, while the narrator never sees a word of it.
+
+Two ways to add the sections:
+
+- **One click (recommended):** open the extension's **Manage MRR Agents** dialog
+  → **Add agent sections to active preset**. It names the preset before changing
+  anything, skips agents that already have a section, and never edits a preset
+  without your confirmation.
+- **By hand:** **Preset Editor → Add Section → Agent Sections**, then pick each
+  MRR agent in the list.
+
+Notes: this applies to **roleplay mode only** — Game mode and conversation mode
+don't use preset sections. The State Mutator deliberately has **no** section: its
+output is `[mrr-state: ...]` tags meant for the extension, which reads them
+directly from the agent-run history, and feeding raw tag syntax to the narrator
+invites it to echo tags. If your chat has **no preset selected at all**, Marinara
+uses no preset sections whatsoever — pick one first, or the one-click assist will
+offer to attach your default.
+
+**A note on the connection warning.** If Marinara warns that an MRR agent has no
+connection configured, that is a **billing/attribution notice, not an error**.
+Agents without an explicit connection resolve one at generation time and work
+normally. It is not the cause of missing agent output — that is the preset
+section step above.
+
 ## Updating the ruleset later
 
 If you edit any source file (`ruleset.json`, `lorebook.json`, `gm-agent.md`, `agents/*.md`), regenerate `agents.json` and `bundle.json`:
