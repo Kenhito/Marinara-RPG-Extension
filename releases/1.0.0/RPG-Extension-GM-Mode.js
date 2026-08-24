@@ -16109,9 +16109,10 @@ var mrrSwipeIndexWarned = false;      // console.warn once per session on fetch 
        · custom lorebook read-behind    → generate.routes.ts:4858-4862, :8276
            a deliberately HISTORICAL (much older) message id
 
-   Every MRR ruleset installs its State Mutator as `phase: "pre_generation"`
-   — all sixteen bundle.json files, verified by grep. So EVERY mutator run
-   this poller reads is stamped with the USER message's id.
+   R25: 13/16 mutators are now post_processing (finding #15) — those runs
+   stamp the ASSISTANT id and self-anchor with zero deferrals. The re-anchor
+   machinery below serves the held pre-gen three (vtmv20/exwod/w20), whose
+   runs still stamp the USER message's id.
 
    What that did to us: the poller journaled its buckets under
    "<userMsgId>:<idx>". processChatMessage bails on any node lacking the
