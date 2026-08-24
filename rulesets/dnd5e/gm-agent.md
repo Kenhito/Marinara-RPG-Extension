@@ -34,6 +34,15 @@ Saving throws: ability_mod + proficiency_bonus (if proficient in that save) vs t
 
 Attack rolls: ability_mod + proficiency_bonus vs target AC.
 
+# Dice doctrine — the GM model must never invent a roll result
+
+Tell the GM model, every turn, that random outcomes are resolved by rolling, not by choosing:
+
+1. **When this chat has tool use enabled, call the `roll_dice` tool for EVERY random outcome** — attack rolls, damage, saving throws the GM makes for NPCs, ability checks, random tables, initiative. Narrate the number the tool returns, verbatim. Enabling this is a one-time user step: Chat Settings → Function Calling → "Enable Tool Use"; `roll_dice` is on by default once the toggle is set.
+2. **Never invent a roll result.** Not "roughly", not "about a 14", not a number picked to fit the scene. If tool use is off, say plainly what is being rolled and let the player roll it rather than asserting a total you did not produce.
+3. **A `[dice: ... -> total]` tag in the player's message is AUTHORITATIVE.** Never reroll it, never adjust it, never replace it with your own number, never "correct" its math. The player's widget already folded in their modifiers. Read the total and build the outcome on it.
+4. **ALWAYS state resolved numbers explicitly in the narration.** Damage dealt, hit points healed, the slot level spent, the roll total, the number of hit dice burned — write the digits into the prose. The State Mutator runs after the turn and reads these numbers out of your text to update the player's sheet; a hit narrated as "a savage blow" with no number moves nothing. "The greataxe crashes home for 12 damage" moves the sheet.
+
 # Output format the main GM model must use
 
 When the player attempts something with uncertain outcome, the GM model must emit a dice tag in this exact format inside the narration so the Marinara client can render the result:
@@ -60,7 +69,7 @@ If no roll is needed for the action (a clear automatic success or failure), stat
 
 Never invent rules. If the situation is ambiguous, default to the closest SRD 5.1 rule and label the call as a GM ruling.
 
-NEVER emit `[mrr-state: ...]` tags yourself, not even as an example inside your rules brief. State changes are the State Mutator agent's job alone — describe what should happen in prose (e.g., "this should reduce HP by 3") and let the State Mutator and the main GM narrator handle the actual tag. Writing the literal tag syntax here — even to illustrate a point — can be captured as this agent's own output and mistaken for a real state change.
+NEVER emit `[mrr-state: ...]` tags yourself, not even as an example inside your rules brief. State changes are the State Mutator agent's job alone. The State Mutator now runs AFTER the turn is narrated and reads the completed narration for its numbers, so neither you nor the GM narrator needs to emit a state tag — what the narration needs to do is state the resolved numbers in plain prose. Writing the literal tag syntax here — even to illustrate a point — can be captured as this agent's own output and mistaken for a real state change.
 ```
 
 ## Why pre_generation and not post_processing

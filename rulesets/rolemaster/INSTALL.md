@@ -58,18 +58,43 @@ Notes: this applies to **roleplay mode only**, and Game mode is genuinely fine
 without it — the preset assembler is skipped entirely for game and conversation
 chats, so those modes keep the older depth-0 injection fallback and their agent
 output is delivered as it always was. Only roleplay chats hand placement to the
-preset. The State Mutator deliberately has **no** section: its
-output is `[mrr-state: ...]` tags meant for the extension, which reads them
-directly from the agent-run history, and feeding raw tag syntax to the narrator
-invites it to echo tags. If your chat has **no preset selected at all**, Marinara
-uses no preset sections whatsoever — pick one first, or the one-click assist will
-offer to attach your default.
+preset. The State Mutator deliberately has **no** section, and as of round 25 it
+cannot take one: it is a `post_processing` agent, so it runs after the narration
+and its output can never reach the narrator's prompt. It writes the sheet
+directly — the extension reads its `[mrr-state: ...]` tags out of the agent-run
+history. The one-click assist filters it out automatically. If your chat has **no
+preset selected at all**, Marinara uses no preset sections whatsoever — pick one
+first, or the one-click assist will offer to attach your default.
 
 **A note on the connection warning.** If Marinara warns that an MRR agent has no
 connection configured, that is a **billing/attribution notice, not an error**.
 Agents without an explicit connection resolve one at generation time and work
 normally. It is not the cause of missing agent output — that is the preset
 section step above.
+
+## Turn on tool use so the GM rolls real dice (recommended)
+
+**Chat Settings → Function Calling → "Enable Tool Use"** — on.
+
+This hands the main GM model Marinara's server-side `roll_dice` tool, a true RNG.
+`roll_dice` is enabled by default once the chat toggle is on; there is no separate
+grant to make. Without it the narrating model *invents* every NPC attack,
+critical, fumble, and resistance roll by picking a plausible number — and in an
+open-ended percentile system the gap between 95 and 96 is the gap between a wound
+and a cascade. With the toggle on, the GM agent's dice doctrine routes the
+outcomes it owns through the tool and reports what was actually rolled.
+
+This does not change whose rolls are whose: **your** rolls stay yours. A
+`[mrr-roll: ...]` tag your dice widget produced is authoritative and the GM is
+instructed never to reroll, adjust, or replace it.
+
+**You do not need to grant `roll_dice` to the MRR agents themselves.**
+Agent-attached tools need the same chat toggle *plus* a per-agent grant in the
+Agents UI, and the bundle cannot ship that grant (the agent-import route strips
+`settings.enabledTools`). It is also unnecessary: **the State Mutator needs no
+dice.** It reads Hits, bleeding, stun rounds, and Power Point spends out of the
+GM's finished narration and copies them verbatim — it never rolls, by design.
+Same toggle gates this ruleset's custom tools, if it ships any.
 
 ## Build a character
 

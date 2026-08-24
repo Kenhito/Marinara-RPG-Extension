@@ -38,13 +38,22 @@ Each ruleset folder has its own step-by-step `INSTALL.md`. This page is the orie
 
    **Roleplay only — Game mode is genuinely fine without it.** The preset assembler is skipped entirely for game and conversation chats, so those modes keep the older depth-0 injection fallback and their agent output is delivered as it always was. Only roleplay chats hand placement to the preset.
 
-   The **State Mutator** deliberately gets no section: its `[mrr-state: ...]` output is addressed to the extension, which reads it straight from the agent-run history, and feeding raw tag syntax to the narrator invites it to echo tags. If your chat has **no preset selected at all**, Marinara uses no preset sections whatsoever — pick one first, or let the one-click assist attach your default.
+   The **State Mutator** deliberately gets no section, and as of round 25 it cannot take one: it is a `post_processing` agent, so it runs after the narration and its output can never reach the narrator's prompt by any path. It writes the sheet directly — the extension reads its `[mrr-state: ...]` tags straight from the agent-run history. The one-click assist filters it out automatically. If your chat has **no preset selected at all**, Marinara uses no preset sections whatsoever — pick one first, or let the one-click assist attach your default.
 
    **The connection warning is harmless.** If Marinara warns that an MRR agent has no connection configured, that is a **billing/attribution notice, not an error**. Agents without an explicit connection resolve one at generation time and work normally. It is never the cause of missing agent output.
 
-   **Chat tools need the chat's own toggle.** If a ruleset ships custom tools, they only become available when that chat's **enableTools** setting is on — installing a bundle does not turn it on for you.
+6. **Turn on tool use so the GM can roll real dice (recommended)**
+   **Chat Settings → Function Calling → "Enable Tool Use"** — on.
 
-That's all five pieces. The per-ruleset INSTALL files (`rulesets/dnd5e/INSTALL.md`, `rulesets/exalted3e/INSTALL.md`) walk through this in detail with sanity-check rolls.
+   This gives the main GM model Marinara's server-side `roll_dice` tool, which is a true RNG. `roll_dice` is enabled by default once the chat toggle is on; you do not need to grant it separately.
+
+   Why it matters: without a real roll, the narrating model *invents* every random outcome — damage, saves, monster attacks — by picking a plausible-looking number. With the toggle on, the GM agents (which now instruct the model to resolve every random outcome through the tool) narrate numbers that were actually rolled.
+
+   **You do not need to grant `roll_dice` to the MRR agents themselves.** Agent-attached tools require the same chat toggle *plus* a per-agent grant in the Agents UI, and the bundle cannot ship that grant — the agent-import route strips `settings.enabledTools`. It is also unnecessary: the **State Mutator needs no dice at all.** It reads the numbers out of the GM's finished narration and copies them; it never rolls. Granting it dice would only give it a way to disagree with the story.
+
+   Note this is the same chat toggle that gates a ruleset's own **custom tools** — installing a bundle does not turn it on for you.
+
+That's all six pieces. The per-ruleset INSTALL files (`rulesets/dnd5e/INSTALL.md`, `rulesets/exalted3e/INSTALL.md`) walk through this in detail with sanity-check rolls.
 
 ## Switching rulesets
 

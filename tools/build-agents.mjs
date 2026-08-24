@@ -52,12 +52,22 @@ function extractPromptBlock(md) {
    of what the source declared, which silently downgraded parallel-phase agents
    to pre_generation and broke the V7 path. We honor the declaration here;
    anything outside the engine's accepted enum falls back to pre_generation
-   (defensive default — keeps existing seven shared agents unchanged). */
+   (defensive default — keeps existing seven shared agents unchanged).
+
+   Round-25 correction: the ALLOWED set carried `post_generation`, which is
+   NOT a value the engine accepts. The engine's enum is exactly
+   ["pre_generation", "parallel", "post_processing"] — see
+   ~/Marinara-Engine/packages/shared/src/schemas/agent.schema.ts:8 and
+   packages/shared/src/types/agent.ts:20. `post_generation` appears in the
+   engine only as an SSE *event* label (generate.routes.ts:8185), never as a
+   phase. Declaring it would have fallen through to pre_generation here while
+   looking accepted, so the typo was latent-but-real: it blocked the only
+   correct spelling of the post phase. Fixed to mirror the engine enum. */
 function extractPhase(md) {
   const m = md.match(/^\s*\*\*Phase:\*\*\s*`?([a-zA-Z_]+)`?/m);
   if (!m) return "pre_generation";
   const declared = (m[1] || "").trim().toLowerCase();
-  const ALLOWED = new Set(["pre_generation", "post_generation", "parallel"]);
+  const ALLOWED = new Set(["pre_generation", "parallel", "post_processing"]);
   return ALLOWED.has(declared) ? declared : "pre_generation";
 }
 
