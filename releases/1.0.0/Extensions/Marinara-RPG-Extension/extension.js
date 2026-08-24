@@ -1312,6 +1312,16 @@ function installBundle(bundle, progressCb) {
         return addChain;
       });
     }).then(function() {
+      progress("Reconciling agent bindings...");
+      return mrrReconcileAgentBindings({
+        rulesetId,
+        reason: "bundle install",
+        force: true,
+        progressCb
+      }).catch(function() {
+        return null;
+      });
+    }).then(function() {
       progress("Done. Reloading...");
       return {
         rulesetId,
@@ -1525,6 +1535,9 @@ function mrrConfirmChatRuleset(chatId, why) {
     flushSave();
   }
   if (typeof reconcileActiveAgents === "function") reconcileActiveAgents(true);
+  if (typeof mrrReconcileAgentBindings === "function") mrrReconcileAgentBindings({
+    reason: "chat ruleset confirmed"
+  });
 }
 
 function mrrResetRulesetLatch() {
@@ -1535,6 +1548,8 @@ function mrrResetRulesetLatch() {
   mrrStampHeldChatId = null;
   mrrStampWarnedChatId = null;
   mrrStampFetchWarnedChatId = null;
+  mrrStampDeriveTriedChatId = null;
+  mrrPresetWatchTs = 0;
 }
 
 function mrrReadAutoswitchGuard() {
@@ -11890,6 +11905,317 @@ function reconcileActiveAgents(rebind) {
   });
 }
 
+var MRR_TYPE_SUFFIX_RE = /^[A-Za-z0-9_-]{1,8}(?:-[0-9]+)?$/;
+
+var MRR_PRESET_WATCH_MS = 6e4;
+
+var mrrReconcileDoneKey = null;
+
+var mrrReconcilePromise = null;
+
+var mrrReconcileNoPresetLoggedChatId = null;
+
+var mrrReconcileStockPresetWarnedId = null;
+
+var mrrManagedAgentSig = Object.create(null);
+
+var mrrAppliedChatPresetSeen = Object.create(null);
+
+var mrrStampDeriveTriedChatId = null;
+
+var mrrPresetWatchTs = 0;
+
+var mrrPresetWatchInFlight = false;
+
+var mrrPresetWatchWarned = false;
+
+function mrrChatMeta(chat) {
+  if (chat && typeof chat.metadata === "string") return safeParse(chat.metadata) || {};
+  return chat && chat.metadata || {};
+}
+
+function mrrManagedRoleTypes(agents, rulesetId) {
+  var map = Object.create(null);
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    if (!a || typeof a.type !== "string" || !a.type) continue;
+    var s = parseAgentSettings(a);
+    if (!s || s.mrrManaged !== true || s.mrrRulesetId !== rulesetId) continue;
+    var role = typeof s.mrrAgentRole === "string" && s.mrrAgentRole ? s.mrrAgentRole : "main";
+    if (!map[role]) map[role] = a.type;
+  }
+  return map;
+}
+
+function mrrLiveAgentTypes(agents) {
+  var set = Object.create(null);
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var t = list[i] && list[i].type;
+    if (typeof t === "string" && t) set[t] = true;
+  }
+  return set;
+}
+
+function mrrRoleForOrphanType(orphanType, roleTypes) {
+  if (typeof orphanType !== "string" || !orphanType) return null;
+  if (orphanType.indexOf(MRR_AGENT_TYPE) !== 0) return null;
+  var best = null;
+  var bestLen = -1;
+  for (var role in roleTypes) {
+    if (!Object.prototype.hasOwnProperty.call(roleTypes, role)) continue;
+    var base = mrrAgentTypeForRole(role);
+    var rest = null;
+    if (orphanType === base) rest = ""; else if (orphanType.indexOf(base + "-") === 0) rest = orphanType.slice(base.length + 1); else continue;
+    if (rest && !MRR_TYPE_SUFFIX_RE.test(rest)) continue;
+    if (base.length > bestLen) {
+      bestLen = base.length;
+      best = role;
+    }
+  }
+  return best;
+}
+
+function mrrManagedAgentSignatureFor(agents, rulesetId) {
+  var parts = [];
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    if (!a) continue;
+    var s = parseAgentSettings(a);
+    if (!s || s.mrrManaged !== true || s.mrrRulesetId !== rulesetId) continue;
+    parts.push(String(a.id) + ":" + String(a.type));
+  }
+  parts.sort();
+  return parts.join(",");
+}
+
+function mrrInvalidateMutatorCache(why) {
+  if (mrrMutatorConfigIdRulesetId === undefined && mrrMutatorConfigId === null) return;
+  mrrMutatorConfigId = null;
+  mrrMutatorConfigIdRulesetId = undefined;
+  mrrMutatorFilterWarned = false;
+  log("reconcile: cleared the state-mutator config-id cache — " + why);
+}
+
+function mrrDeriveRulesetFromChatAgents(meta, agents) {
+  var active = Array.isArray(meta && meta.activeAgentIds) ? meta.activeAgentIds : [];
+  if (!active.length) return null;
+  var owner = Object.create(null);
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    if (!a) continue;
+    var s = parseAgentSettings(a);
+    if (!s || s.mrrManaged !== true || typeof s.mrrRulesetId !== "string" || !s.mrrRulesetId) continue;
+    if (typeof a.type === "string" && a.type) owner[a.type] = s.mrrRulesetId;
+    if (typeof a.id === "string" && a.id) owner[a.id] = s.mrrRulesetId;
+  }
+  var found = null;
+  for (var j = 0; j < active.length; j++) {
+    var rid = owner[active[j]];
+    if (!rid) continue;
+    if (found && found !== rid) return null;
+    found = rid;
+  }
+  return found;
+}
+
+function mrrDeriveAndRestampChat(chatId, meta, opts) {
+  opts = opts || {};
+  if (!opts.force && mrrStampDeriveTriedChatId === chatId) return Promise.resolve(null);
+  mrrStampDeriveTriedChatId = chatId;
+  if (!Array.isArray(meta && meta.activeAgentIds) || !meta.activeAgentIds.length) return Promise.resolve(null);
+  var agentsP = opts.agents ? Promise.resolve(opts.agents) : apiFetch("/agents");
+  return agentsP.then(function(agents) {
+    var derived = mrrDeriveRulesetFromChatAgents(meta, agents);
+    if (!derived) return null;
+    return apiFetch("/chats/" + encodeURIComponent(chatId) + "/metadata", {
+      method: "PATCH",
+      body: JSON.stringify({
+        mrrChatRulesetId: derived
+      })
+    }).then(function() {
+      log("re-derived chat ruleset stamp '" + derived + "' from managed agents (preset apply likely wiped it) — chat " + chatId);
+      return derived;
+    });
+  }).catch(function(e) {
+    warn("stamp re-derivation failed for chat " + chatId + " (" + (e && e.message ? e.message : e) + ") — treating the chat as unstamped");
+    return null;
+  });
+}
+
+function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progress) {
+  var presetId = chat && chat.promptPresetId;
+  if (!presetId) {
+    if (mrrReconcileNoPresetLoggedChatId !== chatId) {
+      mrrReconcileNoPresetLoggedChatId = chatId;
+      log("reconcile: chat " + chatId + " has no prompt preset — no agent marker sections to reconcile");
+    }
+    return Promise.resolve();
+  }
+  var roleTypes = mrrManagedRoleTypes(agents, rulesetId);
+  var roleCount = 0;
+  for (var k in roleTypes) {
+    if (Object.prototype.hasOwnProperty.call(roleTypes, k)) roleCount++;
+  }
+  if (!roleCount) return Promise.resolve();
+  var live = mrrLiveAgentTypes(agents);
+  return apiFetch("/prompts/" + encodeURIComponent(presetId) + "/full").then(function(full) {
+    var sections = full && Array.isArray(full.sections) ? full.sections : [];
+    var presetName = full && full.preset && full.preset.name || presetId;
+    var claimed = mrrExistingAgentSectionTypes(sections);
+    var work = [];
+    for (var i = 0; i < sections.length; i++) {
+      var sec = sections[i];
+      if (!sec || !sec.id || !sec.markerConfig) continue;
+      var mc = sec.markerConfig;
+      if (typeof mc === "string") mc = safeParse(mc);
+      if (!mc || typeof mc !== "object" || mc.type !== "agent_data") continue;
+      var t = mc.agentType;
+      if (typeof t !== "string" || !t) continue;
+      if (live[t]) continue;
+      var role = mrrRoleForOrphanType(t, roleTypes);
+      if (!role) continue;
+      var target = roleTypes[role];
+      if (!target || target === t) continue;
+      if (claimed[target]) {
+        log("reconcile: orphaned marker '" + t + "' maps to role '" + role + "', whose live type '" + target + "' already has a section — leaving the orphan alone (delete it by hand if it is stale)");
+        continue;
+      }
+      claimed[target] = true;
+      work.push({
+        id: sec.id,
+        from: t,
+        to: target,
+        role
+      });
+    }
+    if (!work.length) return;
+    progress("Repointing " + work.length + " agent marker section(s)...");
+    return work.reduce(function(c, w) {
+      return c.then(function() {
+        return apiFetch("/prompts/" + encodeURIComponent(presetId) + "/sections/" + encodeURIComponent(w.id), {
+          method: "PATCH",
+          body: JSON.stringify({
+            content: "{{agent::" + w.to + "}}",
+            markerConfig: {
+              type: "agent_data",
+              agentType: w.to
+            }
+          })
+        }).then(function() {
+          out.rewritten++;
+          log("reconcile: repointed the '" + w.role + "' agent marker from dead type '" + w.from + "' to '" + w.to + "'");
+        });
+      });
+    }, Promise.resolve()).then(function() {
+      if (out.rewritten > 0) {
+        log("reconciled " + out.rewritten + ' orphaned agent marker(s) after reinstall — preset "' + presetName + '" now points at the live agent types');
+      }
+    });
+  }).catch(function(e) {
+    if (e && e.status === 409) {
+      if (mrrReconcileStockPresetWarnedId !== presetId) {
+        mrrReconcileStockPresetWarnedId = presetId;
+        warn('reconcile: preset is read-only (the stock "Marinara Universal" preset refuses every mutation) — ' + "its orphaned agent markers cannot be repaired. Save a copy, select it for this chat, and re-run the install.");
+      }
+      return;
+    }
+    warn("reconcile: preset marker pass failed: " + (e && e.message ? e.message : e));
+  });
+}
+
+function mrrReconcileAgentBindings(opts) {
+  opts = opts || {};
+  var rulesetId = opts.rulesetId || state.ruleset && state.ruleset.id;
+  var chatId = opts.chatId || state.chatId;
+  var reason = opts.reason || "unspecified";
+  function progress(m) {
+    if (opts.progressCb) opts.progressCb(m);
+  }
+  var out = {
+    rewritten: 0,
+    restamped: null
+  };
+  if (!rulesetId || !chatId) return Promise.resolve(out);
+  var key = chatId + "|" + rulesetId;
+  if (!opts.force && mrrReconcileDoneKey === key) return Promise.resolve(out);
+  if (mrrReconcilePromise) return mrrReconcilePromise;
+  mrrReconcileDoneKey = key;
+  mrrReconcilePromise = Promise.all([ apiFetch("/chats/" + encodeURIComponent(chatId)), apiFetch("/agents") ]).then(function(r) {
+    var chat = r[0];
+    var agents = r[1];
+    if (state.chatId !== chatId && !opts.force) return out;
+    var meta = mrrChatMeta(chat);
+    mrrAppliedChatPresetSeen[chatId] = typeof meta.appliedChatPresetId === "string" ? meta.appliedChatPresetId : null;
+    var sig = mrrManagedAgentSignatureFor(agents, rulesetId);
+    var prevSig = mrrManagedAgentSig[rulesetId];
+    if (opts.force || prevSig !== undefined && prevSig !== sig) {
+      mrrInvalidateMutatorCache("managed agent rows changed for ruleset '" + rulesetId + "' (" + reason + ")");
+    }
+    mrrManagedAgentSig[rulesetId] = sig;
+    var stampChain = opts.rederiveStamp && !meta.mrrChatRulesetId ? mrrDeriveAndRestampChat(chatId, meta, {
+      force: true,
+      agents
+    }).then(function(d) {
+      out.restamped = d;
+    }) : Promise.resolve();
+    return stampChain.then(function() {
+      return mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progress);
+    }).then(function() {
+      return out;
+    });
+  }).catch(function(e) {
+    mrrReconcileDoneKey = null;
+    warn("mrrReconcileAgentBindings failed (" + reason + "): " + (e && e.message ? e.message : e));
+    return out;
+  }).then(function(res) {
+    mrrReconcilePromise = null;
+    return res;
+  });
+  return mrrReconcilePromise;
+}
+
+function mrrWatchAppliedChatPreset(chatId) {
+  if (!chatId) return;
+  if (!state.ruleset || !state.ruleset.id) return;
+  if (state.installing) return;
+  if (mrrRulesetConfirmedChatId !== chatId) return;
+  if (mrrPresetWatchInFlight) return;
+  var now = Date.now();
+  if (now - mrrPresetWatchTs < MRR_PRESET_WATCH_MS) return;
+  mrrPresetWatchTs = now;
+  mrrPresetWatchInFlight = true;
+  apiFetch("/chats/" + encodeURIComponent(chatId)).then(function(chat) {
+    mrrPresetWatchInFlight = false;
+    if (state.chatId !== chatId) return;
+    var meta = mrrChatMeta(chat);
+    var applied = typeof meta.appliedChatPresetId === "string" ? meta.appliedChatPresetId : null;
+    var had = Object.prototype.hasOwnProperty.call(mrrAppliedChatPresetSeen, chatId);
+    var prev = had ? mrrAppliedChatPresetSeen[chatId] : undefined;
+    mrrAppliedChatPresetSeen[chatId] = applied;
+    if (!had || prev === applied) return;
+    log("chat " + chatId + " had a chat-preset applied (appliedChatPresetId " + (prev || "(none)") + " -> " + (applied || "(none)") + ") — an apply replaces chat metadata wholesale, so re-running the binding reconciliation");
+    mrrStampDeriveTriedChatId = null;
+    mrrReconcileAgentBindings({
+      chatId,
+      reason: "chat-preset applied",
+      force: true,
+      rederiveStamp: true
+    }).then(function() {
+      if (typeof reconcileActiveAgents === "function") reconcileActiveAgents();
+    });
+  }).catch(function(e) {
+    mrrPresetWatchInFlight = false;
+    if (!mrrPresetWatchWarned) {
+      mrrPresetWatchWarned = true;
+      warn("mrrWatchAppliedChatPreset: could not read chat " + chatId + " (" + (e && e.message ? e.message : e) + ") — a chat-preset apply may go unnoticed until the next chat switch");
+    }
+  });
+}
+
 function mrrCheckChatRulesetStamp(chatId) {
   if (!chatId) return;
   if (!state.ruleset || !state.ruleset.id) return;
@@ -11899,12 +12225,38 @@ function mrrCheckChatRulesetStamp(chatId) {
   var activeId = state.ruleset.id;
   mrrStampCheckInFlightChatId = chatId;
   apiFetch("/chats/" + chatId).then(function(chat) {
-    mrrStampCheckInFlightChatId = null;
-    if (state.chatId !== chatId) return;
+    if (state.chatId !== chatId) {
+      mrrStampCheckInFlightChatId = null;
+      return;
+    }
     var meta = chat && typeof chat.metadata === "string" ? safeParse(chat.metadata) || {} : chat && chat.metadata || {};
     var stamp = meta.mrrChatRulesetId;
-    if (!stamp || stamp === activeId) {
-      mrrConfirmChatRuleset(chatId, stamp ? "chat stamp '" + stamp + "' matches the active ruleset" : "chat carries no ruleset stamp (nothing to disagree with)");
+    mrrAppliedChatPresetSeen[chatId] = typeof meta.appliedChatPresetId === "string" ? meta.appliedChatPresetId : null;
+    if (stamp) {
+      mrrStampCheckInFlightChatId = null;
+      decide(stamp);
+      return;
+    }
+    mrrDeriveAndRestampChat(chatId, meta).then(function(derived) {
+      mrrStampCheckInFlightChatId = null;
+      if (state.chatId !== chatId) return;
+      if (derived) {
+        decide(derived);
+        return;
+      }
+      mrrConfirmChatRuleset(chatId, "chat carries no ruleset stamp (nothing to disagree with)");
+    });
+    return;
+  }).catch(function(e) {
+    mrrStampCheckInFlightChatId = null;
+    if (mrrStampFetchWarnedChatId !== chatId) {
+      mrrStampFetchWarnedChatId = chatId;
+      warn("mrrCheckChatRulesetStamp: could not read chat " + chatId + "'s metadata (" + (e && e.message ? e.message : e) + ") — sheet writes stay latched shut and the check retries on the next route-poll tick");
+    }
+  });
+  function decide(stamp) {
+    if (stamp === activeId) {
+      mrrConfirmChatRuleset(chatId, "chat stamp '" + stamp + "' matches the active ruleset");
       return;
     }
     if (mrrConsumeDeliberateSwitchIntent(activeId)) {
@@ -11931,13 +12283,7 @@ function mrrCheckChatRulesetStamp(chatId) {
       mrrStampWarnedChatId = chatId;
       warn("chat " + chatId + " is stamped '" + stamp + "' but that ruleset is not in the library — sheet is held to prevent bleed; activate '" + stamp + "' manually (Ruleset > Library, or import its bundle) to use this chat.");
     }
-  }).catch(function(e) {
-    mrrStampCheckInFlightChatId = null;
-    if (mrrStampFetchWarnedChatId !== chatId) {
-      mrrStampFetchWarnedChatId = chatId;
-      warn("mrrCheckChatRulesetStamp: could not read chat " + chatId + "'s metadata (" + (e && e.message ? e.message : e) + ") — sheet writes stay latched shut and the check retries on the next route-poll tick");
-    }
-  });
+  }
 }
 
 var autoSyncTimer = null;
@@ -13949,6 +14295,7 @@ function watchRouteChanges() {
   marinara.setInterval(function() {
     pollCustomAgentRuns(state.chatId);
     mrrCheckChatRulesetStamp(state.chatId);
+    mrrWatchAppliedChatPreset(state.chatId);
     var newId = getChatId();
     if (newId === lastSeenChatId) return;
     lastSeenChatId = newId;
