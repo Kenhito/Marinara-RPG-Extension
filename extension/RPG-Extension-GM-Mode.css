@@ -1229,15 +1229,6 @@
 }
 
 
-/*  ─────  state-mutator tag visual hiding  ───── */
-/* The state-mutator agent instructs the main model to emit
-   [mrr-state: ...] tags inline at paragraph ends. The extension's
-   chat observer parses + applies them, then wraps each tag in a
-   span.mrr-state-tag for this CSS rule to hide visually. The state
-   change itself has already been applied to localStorage; the tag
-   is purely a wire-format artifact and should not appear in chat. */
-.mrr-state-tag { display: none; }
-
 /*  ─────  state mutation confirmation toast  ───── */
 /* Top-right floating stack of brief notifications shown when the
    state-mutator agent's tags fire. Each toast confirms one mutation:
