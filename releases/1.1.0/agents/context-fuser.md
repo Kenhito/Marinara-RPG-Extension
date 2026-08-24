@@ -56,6 +56,7 @@ Rules for state:
 
 # Hard rules (apply across both sections)
 
+- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.
 - DO NOT roll dice or decide outcomes.
 - DO NOT mutate the character sheet. State writes happen via the State Mutator (post-processing) or the extension's Edit-this-character flow.
 - Track player characters only — NPCs are the Combat Overseer's surface.

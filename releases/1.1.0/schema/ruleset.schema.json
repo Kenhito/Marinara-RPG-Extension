@@ -94,7 +94,8 @@
             "attackProficiencyFormula": {
               "type": "string",
               "description": "Optional formula for the proficiency contribution to weapon attack rolls when an item is marked attackProficient. When set, the sheet's `atk` button evaluates this formula and pre-fills the dice widget's Proficiency input. When omitted, attacks contribute zero proficiency and the player can type a value manually. The core extension knows no system's proficiency convention by default. Examples: D&D 5e \"{Proficiency Bonus}\"; PF2e (trained tier) \"{Level} + 2\"."
-            }
+            },
+            "additionalModes": { "$ref": "#/$defs/additionalModesArray" }
           },
           "additionalProperties": false
         },
@@ -134,7 +135,8 @@
                   "description": "How a botch is detected: any 1 with no successes, more 1s than successes, or any roll of the face."
                 }
               }
-            }
+            },
+            "additionalModes": { "$ref": "#/$defs/additionalModesArray" }
           },
           "additionalProperties": false
         },
@@ -145,7 +147,78 @@
             "skillFormula": {
               "type": "string",
               "description": "Plain-language formula (e.g. \"Roll 1d100 under skill_value\")."
-            }
+            },
+            "direction": {
+              "type": "string",
+              "enum": ["under", "high"],
+              "default": "under",
+              "description": "Comparison direction. 'under' (default, back-compatible): success when the roll is at or under the target. 'high': success when roll + bonus meets or beats the target; the widget reports a total rather than a pass/fail against a percentile cap. Rolemaster and other roll-high d100 systems use 'high'."
+            },
+            "bonusFormula": {
+              "type": "string",
+              "description": "Plain-language description of what the player adds to a 'high' roll (e.g. 'skill bonus + stat bonus + item bonus'). Descriptive only — the widget takes the bonus as a numeric input; it does not parse this string."
+            },
+            "openEnded": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Open-ended (exploding, and optionally imploding) d100. Absent = feature off. Mirrors the dice-pool-sum wildDie explode pattern.",
+              "properties": {
+                "high": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "threshold": {
+                      "type": "integer",
+                      "minimum": 2,
+                      "maximum": 100,
+                      "default": 96,
+                      "description": "Roll at or above this face re-rolls and ADDS. RMSS: 96 (inclusive of 100)."
+                    },
+                    "cascadeCap": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "default": 0,
+                      "description": "Max chained re-rolls. 0 = uncapped. Mirrors wildDie.explodeCap."
+                    }
+                  }
+                },
+                "low": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "threshold": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 99,
+                      "default": 5,
+                      "description": "Roll at or below this face triggers the low chain. RMSS: 5."
+                    },
+                    "subtract": {
+                      "type": "boolean",
+                      "default": true,
+                      "description": "Whether the low chain subtracts from the first roll."
+                    },
+                    "continueOn": {
+                      "type": "string",
+                      "enum": ["high", "low"],
+                      "default": "high",
+                      "description": "Which follow-up faces extend the low chain. RMSS is asymmetric: the low chain continues while each new roll is at or above openEnded.high.threshold, NOT while it is low. 'low' is provided for systems that mirror the high rule."
+                    },
+                    "cascadeCap": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "default": 0
+                    }
+                  }
+                },
+                "unusualFaces": {
+                  "type": "array",
+                  "items": { "type": "integer", "minimum": 1, "maximum": 100 },
+                  "description": "Round-9 fix 5f. Optional list of UNMODIFIED-first-roll face values that flag an `um=<face>` tag on the roll — e.g. Rolemaster's [66, 100] (unusual event / unusual success table rows). No default: absent or empty means the roller never emits `um=`, closing the round-9 finding that every roll-high d100 ruleset got a spurious um= flag on ANY natural 66 or 100 whether or not that ruleset's rules actually assign meaning to those faces. The widget only ever surfaces the flag — it never picks a table row itself."
+                }
+              }
+            },
+            "additionalModes": { "$ref": "#/$defs/additionalModesArray" }
           },
           "additionalProperties": false
         },
@@ -168,7 +241,8 @@
                   "description": { "type": "string" }
                 }
               }
-            }
+            },
+            "additionalModes": { "$ref": "#/$defs/additionalModesArray" }
           },
           "additionalProperties": false
         },
@@ -197,7 +271,8 @@
             "criticalFailureFormula": {
               "type": "string",
               "description": "Optional formula alternative to criticalFailureThreshold. Evaluated against the resolved target; when the rolled total is >= the evaluated number the result is flagged as a fumble. Token {target} resolves to the effective target value, {margin} resolves to (target - total). Used by GURPS where fumble depends on margin. When neither this field nor criticalFailureThreshold is set, no fumble band applies."
-            }
+            },
+            "additionalModes": { "$ref": "#/$defs/additionalModesArray" }
           },
           "additionalProperties": false
         },
@@ -227,7 +302,8 @@
               "type": "integer",
               "minimum": 1,
               "description": "The minimum positive margin (rolled total - target) that counts as 'success with style' (Fate Core: 3)."
-            }
+            },
+            "additionalModes": { "$ref": "#/$defs/additionalModesArray" }
           },
           "additionalProperties": false
         },
@@ -357,7 +433,8 @@
                   }
                 }
               }
-            }
+            },
+            "additionalModes": { "$ref": "#/$defs/additionalModesArray" }
           },
           "additionalProperties": false
         },
@@ -413,7 +490,8 @@
                   "description": "Maximum chained explosions. 0 means uncapped (canon OpenD6). Set to N to cap at N chained explodes — useful for sanity-bounded pathological streaks."
                 }
               }
-            }
+            },
+            "additionalModes": { "$ref": "#/$defs/additionalModesArray" }
           },
           "additionalProperties": false
         },
@@ -429,7 +507,8 @@
             "noticeText": {
               "type": "string",
               "description": "Optional banner text shown above the manual NdX widget (e.g. 'This ruleset uses narrative resolution — see the gm-agent prompt for adjudication rules.'). Defaults to a generic notice when omitted."
-            }
+            },
+            "additionalModes": { "$ref": "#/$defs/additionalModesArray" }
           },
           "additionalProperties": false
         }
@@ -554,6 +633,10 @@
                 "description": "Name of the sheet sub-field carrying the pip count (defaults to 'pips')."
               }
             }
+          },
+          "resolutionId": {
+            "type": "string",
+            "description": "B18 — optional id of a `resolution.additionalModes[]` entry this skill's roll button routes to instead of the primary `resolution.mode` (e.g. OSE's \"Open Locks\" binds to a `thief-skills` roll-under mechanic while attacks stay on primary d20). Must match an additionalModes id, or be the literal \"primary\" (equivalent to omitting the field). Cross-referential validity (does the id actually exist in additionalModes) is enforced by tools/validate-ruleset.mjs, not by this schema alone."
           }
         }
       }
@@ -765,6 +848,10 @@
             "type": "string",
             "enum": ["bar", "value", "track"],
             "default": "value"
+          },
+          "resolutionId": {
+            "type": "string",
+            "description": "B18 — optional id of a `resolution.additionalModes[]` entry this derived stat's roll button (rollFormula) routes to instead of the primary `resolution.mode`. Must match an additionalModes id, or be the literal \"primary\" (equivalent to omitting the field). Cross-referential validity is enforced by tools/validate-ruleset.mjs."
           },
           "effects": {
             "type": "object",
@@ -1207,6 +1294,112 @@
             "type": "string",
             "description": "Optional formula describing how this counter penalizes rolls (e.g. '-(N - 1) dice' for OpenD6's multi-action penalty). Reference for the gm-agent / dice widget; v0.4.2 surfaces this as text only — auto-apply to roll pools deferred to Task #5."
           }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "additionalModesArray": {
+      "type": "array",
+      "$comment": "B18 (2026-08-23), RESTRICTED round 9 (finding 5/6/17 — honesty fix). Only TWO of the nine resolution modes are wired here: `dice-pool` and `roll-under`. A mode qualifies only when it is BOTH (a) tag-covered — its roller's chat tag literally starts with the exact string \"[dice: \" that finalizeRoll's mode=<id> injection guards on — AND (b) actually parameterized by mrrActiveResolutionConfig() in BOTH its build*Widget AND roll* functions, not just claimed. Verified against the live loader, not assumed: `single-roll` (rollSingleRoll) and `2d6-stat`/`fate-ladder` (rollPbta/rollFate) are neither tag-covered in the right format nor config-converted. `d100-percentile`, `dice-pool-sum`, and `stance-modal-pool` ARE config-converted but tag under \"[d100: \"/\"[mrr-roll: \" — NOT \"[dice: \" — so even if wired as an additionalMode, their rolls would silently never carry a mode=<id> tag; round 8 claimed all nine were eligible, which was wrong. `narrative-handled` has no roller at all. Convert-or-restrict: this round restricts to the honest set rather than converting more rollers. `resolution` itself still has no $defs/definitions section (all nine mode configs stay inlined in `resolution.oneOf` above, unchanged) — the two `resolutionConfig*` bodies below remain an HONEST, DELIBERATE DUPLICATION of their `resolution.oneOf` counterpart's field set, kept in sync BY HAND.",
+      "description": "B18 — named, self-contained alternate resolution mechanics a ruleset offers alongside its primary `resolution.mode`, RESTRICTED to `dice-pool` and `roll-under` (the two modes whose tag format and widget code actually honor an additionalMode selection — see $comment). OSE (`rulesets/ose/`) is the shipped pilot: primary `single-roll` (d20, unaffected) plus two `roll-under` additionalModes. Each entry's `config` carries the same per-mode field set `resolution` itself uses for that `mode`, minus the `mode` discriminator (already present as this entry's sibling `mode` property). `skills[].resolutionId` / `derivedStats[].resolutionId` bind a sheet roll button to an entry by `id`; the dice widget's mechanic selector lists `label` for each; `whenToUse` (optional) is auto-taught to the GM agent's prompt as routing guidance.",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/additionalModeDicePool" },
+          { "$ref": "#/$defs/additionalModeRollUnder" }
+        ]
+      }
+    },
+    "additionalModeDicePool": {
+      "type": "object",
+      "required": ["id", "label", "mode", "config"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+        "label": { "type": "string", "minLength": 1 },
+        "mode": { "const": "dice-pool" },
+        "config": { "$ref": "#/$defs/resolutionConfigDicePool" },
+        "whenToUse": { "type": "string" }
+      }
+    },
+    "additionalModeRollUnder": {
+      "type": "object",
+      "required": ["id", "label", "mode", "config"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+        "label": { "type": "string", "minLength": 1 },
+        "mode": { "const": "roll-under" },
+        "config": { "$ref": "#/$defs/resolutionConfigRollUnder" },
+        "whenToUse": { "type": "string" }
+      }
+    },
+    "resolutionConfigDicePool": {
+      "type": "object",
+      "required": ["poolFormula", "target", "doubles", "botches"],
+      "additionalProperties": false,
+      "properties": {
+        "poolFormula": {
+          "type": "string",
+          "description": "Plain-language formula for pool size (e.g. \"Attribute + Ability\")."
+        },
+        "target": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 20,
+          "description": "Face value at which a die counts as a success (Exalted: 7)."
+        },
+        "doubles": {
+          "type": "object",
+          "required": ["face", "successes"],
+          "additionalProperties": false,
+          "description": "Rule for dice that count as more than one success.",
+          "properties": {
+            "face": { "type": "integer", "minimum": 2, "maximum": 20 },
+            "successes": { "type": "integer", "minimum": 1, "maximum": 3 }
+          }
+        },
+        "botches": {
+          "type": "object",
+          "required": ["onFace", "trigger"],
+          "additionalProperties": false,
+          "properties": {
+            "onFace": { "type": "integer", "minimum": 1, "maximum": 10 },
+            "trigger": {
+              "type": "string",
+              "enum": ["any-on-zero-successes", "majority", "always-on-face"],
+              "description": "How a botch is detected: any 1 with no successes, more 1s than successes, or any roll of the face."
+            }
+          }
+        }
+      }
+    },
+    "resolutionConfigRollUnder": {
+      "type": "object",
+      "required": ["diceFormula"],
+      "additionalProperties": false,
+      "properties": {
+        "diceFormula": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*d[1-9][0-9]*$",
+          "description": "Standard XdY dice notation for the roll that is summed and compared against the target. Percentile roll-under (Call of Cthulhu, BRP, Runequest, Pendragon) uses \"1d100\"; stat-vs-XdY roll-under (GURPS, traditional BRP) uses \"3d6\"; a d6-in-X door/listen check (Old School Essentials) uses \"1d6\". The dice are summed and the total must be <= target for success."
+        },
+        "skillBonusFormula": {
+          "type": "string",
+          "description": "Optional formula that resolves a check's TARGET from the skill row's stored value and other stats. Tokens: {skill} resolves to the skill's stored value, {StatName} resolves to attribute/derived values, {Level} resolves to character level. Defaults to \"{skill}\" when omitted (raw skill value = target, the BRP/CoC convention)."
+        },
+        "criticalSuccessFormula": {
+          "type": "string",
+          "description": "Optional formula evaluated against the resolved target. When the rolled total is <= this evaluated number, the result is flagged as a critical success. Token {target} resolves to the effective target value. Examples: Call of Cthulhu 7e \"{target} / 5\"; GURPS literal constant \"4\". When omitted, no critical success band applies."
+        },
+        "criticalFailureThreshold": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Optional integer threshold. When the rolled total is >= this value, the result is flagged as a fumble. Call of Cthulhu 7e: 96 (rolls of 96-100 fumble). Cannot be combined with criticalFailureFormula. When neither field is set, no fumble band applies."
+        },
+        "criticalFailureFormula": {
+          "type": "string",
+          "description": "Optional formula alternative to criticalFailureThreshold. Evaluated against the resolved target; when the rolled total is >= the evaluated number the result is flagged as a fumble. Token {target} resolves to the effective target value, {margin} resolves to (target - total). Used by GURPS where fumble depends on margin. When neither this field nor criticalFailureThreshold is set, no fumble band applies."
         }
       }
     }

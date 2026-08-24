@@ -1,0 +1,1136 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.4.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.7.0"
+  },
+  "ruleset": {
+    "id": "ose",
+    "name": "Old School Essentials",
+    "version": "1.0.0",
+    "edition": "B/X-compatible retroclone (Necrotic Gnome)",
+    "license": "Mechanics reference only, paraphrased from the public B/X tradition; no verbatim text from Old School Essentials. OSE trade dress and text belong to Necrotic Gnome.",
+    "summary": "Classic dungeon-crawling d20 retroclone. Attacks and saving throws are a single d20 roll compared to a target number. This bundle uses the ASCENDING Armor Class convention (AC 10 unarmored baseline, higher AC = harder to hit) instead of the original descending/THAC0 convention, chosen for dice-widget compatibility — see the 'Ascending AC — a house convention' lorebook entry. Two further subsystems ride the dice widget's mechanic selector (B18) alongside the primary d20: percentile Thief Skills (mode=thief-skills, d100 roll-under) and d6-in-X checks (mode=door-checks — Open Doors, Listen, Surprise); see the 'Dice Mechanic Routing' lorebook entry. Ability score modifiers follow a non-linear step table, not a formula. Every class has its own XP-to-level progression; the sheet's XP table below shows the Fighter progression only — consult your class table for any other class. Low-level play is lethal: a 1st-level character has a single Hit Die and can die to one bad roll.",
+    "xpTable": [
+      {
+        "level": 1,
+        "xp": 0
+      },
+      {
+        "level": 2,
+        "xp": 2000
+      },
+      {
+        "level": 3,
+        "xp": 4000
+      },
+      {
+        "level": 4,
+        "xp": 8000
+      },
+      {
+        "level": 5,
+        "xp": 16000
+      },
+      {
+        "level": 6,
+        "xp": 32000
+      },
+      {
+        "level": 7,
+        "xp": 64000
+      },
+      {
+        "level": 8,
+        "xp": 120000
+      },
+      {
+        "level": 9,
+        "xp": 240000
+      },
+      {
+        "level": 10,
+        "xp": 360000
+      },
+      {
+        "level": 11,
+        "xp": 480000
+      },
+      {
+        "level": 12,
+        "xp": 600000
+      },
+      {
+        "level": 13,
+        "xp": 720000
+      },
+      {
+        "level": 14,
+        "xp": 840000
+      }
+    ],
+    "dice": {
+      "type": "d20",
+      "notation": "1d20 + mod vs AC / Save Target"
+    },
+    "resolution": {
+      "mode": "single-roll",
+      "modifierFormula": "1d20 + attack_bonus + ability_mod (STR for melee, DEX for missile; ability_mod from the step table, not a formula)",
+      "additionalModes": [
+        {
+          "id": "thief-skills",
+          "label": "Thief Skills (d100 roll-under)",
+          "mode": "roll-under",
+          "config": {
+            "diceFormula": "1d100"
+          },
+          "whenToUse": "Thief-class percentile skills (Open Locks, Find/Remove Traps, Pick Pockets, Move Silently, Hide in Shadows, Climb Sheer Surfaces): roll d100, success on a result at or under the skill's sheet value."
+        },
+        {
+          "id": "door-checks",
+          "label": "d6-in-X Check (Open Doors / Listen / Surprise)",
+          "mode": "roll-under",
+          "config": {
+            "diceFormula": "1d6"
+          },
+          "whenToUse": "Open Doors, Listen (Hear Noise), and Surprise checks: roll 1d6, success on a result at or under the stat's X-in-6 value."
+        }
+      ]
+    },
+    "difficulties": {
+      "Routine": {
+        "threshold": 9,
+        "description": "GM ruling for an unopposed ability check the fiction makes plausible; not an official B/X mechanic — house guidance for improvised checks only."
+      },
+      "Average": {
+        "threshold": 12,
+        "description": "A trained adventurer succeeds more often than not."
+      },
+      "Hard": {
+        "threshold": 15,
+        "description": "Needs a good roll or a strong ability score."
+      },
+      "Very Hard": {
+        "threshold": 18,
+        "description": "Rare; usually paired with a specific class or race advantage."
+      }
+    },
+    "attributes": [
+      {
+        "name": "Strength",
+        "abbreviation": "STR",
+        "min": 3,
+        "max": 18,
+        "default": 10,
+        "description": "Melee attack/damage bonus, Open Doors, encumbrance capacity. Modifier from the step table — see the Ability Modifiers lorebook entry."
+      },
+      {
+        "name": "Intelligence",
+        "abbreviation": "INT",
+        "min": 3,
+        "max": 18,
+        "default": 10,
+        "description": "Languages known, Magic-User max spell level at low levels (house-optional). No B/X combat modifier."
+      },
+      {
+        "name": "Wisdom",
+        "abbreviation": "WIS",
+        "min": 3,
+        "max": 18,
+        "default": 10,
+        "description": "Saving throw bonus/penalty vs. Spells at high/low WIS (house-optional in some B/X tables). No B/X combat modifier."
+      },
+      {
+        "name": "Dexterity",
+        "abbreviation": "DEX",
+        "min": 3,
+        "max": 18,
+        "default": 10,
+        "description": "Missile attack bonus and AC bonus. Modifier from the step table — see the Ability Modifiers lorebook entry."
+      },
+      {
+        "name": "Constitution",
+        "abbreviation": "CON",
+        "min": 3,
+        "max": 18,
+        "default": 10,
+        "description": "Hit Point bonus per Hit Die. Modifier from the step table — see the Ability Modifiers lorebook entry."
+      },
+      {
+        "name": "Charisma",
+        "abbreviation": "CHA",
+        "min": 3,
+        "max": 18,
+        "default": 10,
+        "description": "Max retainers and retainer morale. Modifier from the step table — see the Ability Modifiers lorebook entry."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Open Locks",
+        "min": 0,
+        "max": 99,
+        "default": 15,
+        "description": "Thief only. d100 roll UNDER this value succeeds. Pick \"Thief Skills\" in the dice widget's mechanic selector (mode=thief-skills) to roll it.",
+        "resolutionId": "thief-skills"
+      },
+      {
+        "name": "Find/Remove Traps",
+        "min": 0,
+        "max": 99,
+        "default": 10,
+        "description": "Thief only. d100 roll-under (mode=thief-skills).",
+        "resolutionId": "thief-skills"
+      },
+      {
+        "name": "Pick Pockets",
+        "min": 0,
+        "max": 99,
+        "default": 20,
+        "description": "Thief only. d100 roll-under (mode=thief-skills).",
+        "resolutionId": "thief-skills"
+      },
+      {
+        "name": "Move Silently",
+        "min": 0,
+        "max": 99,
+        "default": 20,
+        "description": "Thief only. d100 roll-under (mode=thief-skills).",
+        "resolutionId": "thief-skills"
+      },
+      {
+        "name": "Hide in Shadows",
+        "min": 0,
+        "max": 99,
+        "default": 10,
+        "description": "Thief only. d100 roll-under (mode=thief-skills).",
+        "resolutionId": "thief-skills"
+      },
+      {
+        "name": "Climb Sheer Surfaces",
+        "min": 0,
+        "max": 99,
+        "default": 87,
+        "description": "Thief only. d100 roll-under (mode=thief-skills).",
+        "resolutionId": "thief-skills"
+      }
+    ],
+    "saves": [
+      {
+        "name": "Death Ray or Poison",
+        "linkedAttribute": "Constitution"
+      },
+      {
+        "name": "Magic Wands",
+        "linkedAttribute": "Intelligence"
+      },
+      {
+        "name": "Paralysis or Petrify",
+        "linkedAttribute": "Dexterity"
+      },
+      {
+        "name": "Dragon Breath",
+        "linkedAttribute": "Dexterity"
+      },
+      {
+        "name": "Spells",
+        "linkedAttribute": "Wisdom"
+      }
+    ],
+    "derivedStats": [
+      {
+        "name": "Hit Points",
+        "formula": "Sum of class Hit Dice rolled at each level (Fighter/Dwarf d8, Cleric/Thief/Halfling/Elf d6, Magic-User d4) plus CON modifier per die, minimum 1 HP per die. A 1st-level character has exactly one Hit Die.",
+        "renderAs": "bar",
+        "default": 4,
+        "aliases": [
+          "hp",
+          "HP",
+          "hitPoints",
+          "hit points"
+        ]
+      },
+      {
+        "name": "Armor Class",
+        "formula": "Ascending house convention: 10 unarmored, +armor bonus, +DEX modifier (step table). Higher is better. See 'Ascending AC — a house convention'.",
+        "renderAs": "value",
+        "default": 10,
+        "aliases": [
+          "ac",
+          "AC",
+          "armorClass",
+          "armor class"
+        ]
+      },
+      {
+        "name": "Attack Bonus",
+        "formula": "Class-and-level lookup table, not a formula. Fighters gain +1 every level; Cleric/Thief roughly every 2-3 levels; Magic-User roughly every 3-5 levels. See 'Attack Bonus Progression'.",
+        "renderAs": "value",
+        "default": 0,
+        "aliases": [
+          "attackBonus",
+          "attack bonus",
+          "toHit",
+          "to-hit"
+        ]
+      },
+      {
+        "name": "Open Doors",
+        "formula": "X-in-6, roll 1d6, success on a result <= this value. Most classes 2, Fighter/Dwarf/Half-Orc-type strongfolk 3-4 with high STR. Roll via the dice widget's \"Door Checks\" mechanic (mode=door-checks).",
+        "renderAs": "value",
+        "default": 2,
+        "aliases": [
+          "openDoors",
+          "open doors"
+        ],
+        "rollFormula": "{Open Doors}",
+        "resolutionId": "door-checks"
+      },
+      {
+        "name": "Listen",
+        "formula": "X-in-6 (Hear Noise), roll 1d6, success on a result <= this value. 1 for most classes, 2 for Thief/Elf/Halfling. Roll via the dice widget's \"Door Checks\" mechanic (mode=door-checks).",
+        "renderAs": "value",
+        "default": 1,
+        "aliases": [
+          "listen",
+          "hearNoise",
+          "hear noise"
+        ],
+        "rollFormula": "{Listen}",
+        "resolutionId": "door-checks"
+      },
+      {
+        "name": "Surprise",
+        "formula": "X-in-6, roll 1d6 for each side at an unexpected encounter, success on a result <= this value causes that side to be surprised (loses the first round). Baseline 2 for both PCs and monsters. Roll via the dice widget's \"Door Checks\" mechanic (mode=door-checks).",
+        "renderAs": "value",
+        "default": 2,
+        "aliases": [
+          "surprise"
+        ],
+        "rollFormula": "{Surprise}",
+        "resolutionId": "door-checks"
+      },
+      {
+        "name": "Level",
+        "formula": "Character level. XP thresholds are class-specific; the xpTable above (and this sheet's XP bar) show the Fighter progression only — see 'Experience & Class-Specific XP Tables'.",
+        "renderAs": "value",
+        "default": 1,
+        "max": 14,
+        "aliases": [
+          "level",
+          "lvl"
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "name": "Held (Paralyzed)",
+        "description": "Cannot move, act, or speak. Attacks against a held target automatically hit; some effects grant an automatic kill or extra damage on a helpless target — GM ruling."
+      },
+      {
+        "name": "Poisoned",
+        "description": "Effect is whatever the poison source specifies — commonly an immediate saving throw vs. Death Ray or Poison, failure meaning death or a stated ongoing effect. Not a generic damage-over-time unless the source says so."
+      },
+      {
+        "name": "Turned",
+        "description": "Undead that fail their turn roll flee from the cleric for the rest of the encounter (or are destroyed outright at high enough cleric level vs. low-HD undead)."
+      },
+      {
+        "name": "Unconscious/Dying",
+        "description": "At 0 HP the character is unconscious and dying. Most B/X-tradition tables treat 0 HP or below as dead outright; some tables allow a 0-to-negative-CON death's-door variant — confirm which the table is using before play; this bundle defaults to dead at 0 HP unless the GM rules otherwise."
+      }
+    ],
+    "diceTagFormat": {
+      "template": "[dice: 1d20{+mod} vs {target}{label} = {result} {success|failure}]",
+      "example": "[dice: 1d20+3 vs AC13 = 15 hit]"
+    },
+    "sheetSections": [
+      "attributes",
+      "saves",
+      "skills",
+      "derived",
+      "states",
+      "conditions",
+      "backgrounds",
+      "inventory",
+      "abilities",
+      "notes"
+    ],
+    "sections": {
+      "order": [
+        "identity",
+        "xp",
+        "resources",
+        "attributes",
+        "saves",
+        "skills",
+        "derived",
+        "abilities",
+        "states",
+        "conditions",
+        "backgrounds",
+        "inventory",
+        "notes"
+      ]
+    },
+    "resources": [
+      {
+        "id": "hit-points",
+        "label": "HP",
+        "type": "bar",
+        "max": 4,
+        "current": 4,
+        "color": "bad",
+        "stateName": "Hit Points",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "-5",
+            "delta": -5
+          },
+          {
+            "label": "Full",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "mu-spells-1",
+        "label": "MU Spells (1st)",
+        "type": "counter",
+        "group": "Spells Memorized",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "stateName": "MU Spells L1",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Rest",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "mu-spells-2",
+        "label": "MU Spells (2nd)",
+        "type": "counter",
+        "group": "Spells Memorized",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "stateName": "MU Spells L2",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Rest",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "cleric-spells-1",
+        "label": "Cleric Spells (1st)",
+        "type": "counter",
+        "group": "Spells Memorized",
+        "max": 0,
+        "current": 0,
+        "color": "accent",
+        "stateName": "Cleric Spells L1",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "Rest",
+            "delta": "max"
+          }
+        ]
+      }
+    ],
+    "lorebookKeys": [
+      "class",
+      "race",
+      "condition",
+      "spell",
+      "thief skill",
+      "saving throw",
+      "morale",
+      "encumbrance"
+    ],
+    "abilities": {
+      "label": "Spells",
+      "categories": [
+        {
+          "id": "mu-spells",
+          "label": "Magic-User Spells"
+        },
+        {
+          "id": "cleric-spells",
+          "label": "Cleric Spells"
+        }
+      ]
+    },
+    "backgrounds": {
+      "enabled": true,
+      "label": "Class Features & Restrictions",
+      "min": 0,
+      "max": 0,
+      "default": 0,
+      "textOnly": true
+    },
+    "equipmentSlots": [
+      "Weapon",
+      "Armor",
+      "Shield",
+      "Helmet"
+    ],
+    "equipmentBonusTargets": [
+      "Melee",
+      "Missile",
+      "Armor Class",
+      "Damage"
+    ],
+    "classOptions": [
+      {
+        "name": "Fighter",
+        "hitDie": "d8",
+        "description": "Best attack bonus progression, widest weapon/armor access, no spells."
+      },
+      {
+        "name": "Cleric",
+        "hitDie": "d6",
+        "description": "Turns undead, gains spells from level 2, blunt weapons only by most tables."
+      },
+      {
+        "name": "Magic-User",
+        "hitDie": "d4",
+        "description": "Weakest combatant, casts from level 1, must memorize spells from a spellbook each day, cannot wear armor."
+      },
+      {
+        "name": "Thief",
+        "hitDie": "d4",
+        "description": "Backstab (double or greater damage from surprise/behind), the six percentile Thief Skills, light armor only."
+      },
+      {
+        "name": "Dwarf",
+        "hitDie": "d8",
+        "description": "Race-as-class. Fighter-like combat, infravision, bonus to detect stonework tricks/traps."
+      },
+      {
+        "name": "Elf",
+        "hitDie": "d6",
+        "description": "Race-as-class. Fights and casts Magic-User spells, infravision, immune to ghoul paralysis, surprised only 1-in-6."
+      },
+      {
+        "name": "Halfling",
+        "hitDie": "d6",
+        "description": "Race-as-class. AC and missile bonuses, +2 initiative in some tables, surprised only 1-in-6, best Open Doors is still low."
+      }
+    ],
+    "scenarioDefaultDerive": true
+  },
+  "gmAgent": {
+    "name": "Old School Essentials Ruleset Helper",
+    "description": "Auto-installed by GM-mode bundle. Provides Old School Essentials skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
+    "phase": "pre_generation",
+    "promptTemplate": "You are the Game Master for an Old School Essentials (B/X-tradition) tabletop RPG session running in Marinara Engine's Game Mode. Your job is to narrate scenes, voice NPCs, adjudicate the rules below, and respond to the player's actions while preserving their narrative agency. Old School Essentials rewards caution: the world is dangerous, resources are finite, and clever play matters more than character build optimization.\n\n# Authority and limits\n\nYou narrate; you do not decide for the player. The player's character is theirs. Their decisions, words, and choices stand. You frame consequences, present challenges, and run the world around them — but you do not railroad, override stated intentions, or write the player's character's internal thoughts unless they ask.\n\n# System awareness\n\nWhen the Marinara-RPG ruleset overlay is installed, several specialized agents may run alongside you if the table has enabled them. Read whatever context they inject. Defer to:\n  - The Combat Overseer on combat resolution math and current NPC/monster state.\n  - The Context Fuser when the player asks an out-of-character rules question, and for current sheet state.\n\nThe State Mutator is different: it runs AFTER you write, reads your finished narration, and applies whatever mechanical changes that narration established to the player's sheet. You will never see its output, and you do not emit `[mrr-state: ...]` tags yourself. What it needs from you is numbers in your prose — see the dice doctrine below.\n\n# Dice doctrine — never invent a roll result\n\n1. **When this chat has tool use enabled, resolve EVERY random outcome by calling the `roll_dice` tool** — attacks, saves, damage, morale (2d6), initiative (1d6 per side), reaction rolls, wandering-monster checks, random tables. Narrate the number the tool returns, verbatim. Enabling it is a one-time user step: Chat Settings → Function Calling → \"Enable Tool Use\"; `roll_dice` is on by default once the toggle is set.\n2. **Never invent a roll result.** Not \"roughly\", not a number chosen to fit the scene. If tool use is off, say plainly what is being rolled and against what number, and let the player roll it rather than asserting a total you did not produce. This is a system where bad luck is supposed to be real; a GM who picks the numbers has quietly removed the game.\n3. **A `[dice: ... = result]` tag in the player's message is AUTHORITATIVE.** Never reroll it, never adjust it, never replace it with your own number, never re-add a modifier it already folded in.\n4. **ALWAYS state resolved numbers explicitly in the narration.** Damage dealt, hit points healed, torches or rations consumed, the spell level burned, the roll total. The State Mutator reads these out of your text to move the sheet; a hit narrated as \"a wicked blow\" with no number moves nothing. \"The gnoll's spear opens his side for 6 damage\" moves it.\n5. **Every VERSION of a turn rolls fresh.** On a regenerate or a swipe, all previous rolls for this turn are VOID — they belong to a version that no longer exists. Call `roll_dice` again for every random outcome in the new version. Never narrate a roll you did not obtain from the tool during THIS generation, and never reuse a number from an earlier attempt at the same turn.\n\n# Resolution mechanic — TWO SEPARATE SYSTEMS, only one has a dice widget\n\n**On-widget (d20, single-roll mode):** Attacks and saving throws are ONE d20 roll plus a flat modifier, compared to a target number.\n- Attack: 1d20 + Attack Bonus + ability modifier (STR for melee, DEX for missile weapons) vs. the target's Armor Class. Meet or beat AC = hit.\n- Saving throw: 1d20 + 0 (saves in this system are flat class/level numbers with NO ability modifier added — do not add STR/DEX/etc. to a save) vs. the save category's number written on the sheet. Meet or beat the number = success.\n- This bundle uses ASCENDING Armor Class (10 unarmored, higher is better, roll high vs. AC) rather than the original descending/THAC0 convention, chosen so the dice widget's \"1d20+mod vs target, higher wins\" math applies cleanly. Never describe AC going down as armor improves — that is the OLD convention this bundle does not use.\n- Emit the tag: `[dice: 1d20+{mod} vs {target}{label} = {result} {success|failure}]`\n\n**Off-widget (no dice widget support — call these narratively, resolve by hand):**\n- Thief Skills (Open Locks, Find/Remove Traps, Pick Pockets, Move Silently, Hide in Shadows, Climb Sheer Surfaces): percentile, d100 roll UNDER the skill's value on the sheet. Thief class only.\n- Open Doors, Listen (Hear Noise), Surprise: d6-in-X. Roll 1d6, success if the result is less than or equal to the sheet value.\n- When one of these triggers, tell the player what to roll and against what number in plain prose (e.g., \"Roll d100 under your 20% Move Silently\") rather than emitting a `[dice: ...]` tag — that tag format is reserved for the d20 attack/save widget and would misrepresent these rolls if used here.\n\n# Difficulty ladder (GM improvisation only — not official B/X mechanics)\n\nOld School Essentials does not codify a generic ability-check DC ladder the way some newer systems do; most situations resolve through the subsystems above, GM fiat, or a straight class/attribute comparison. When a player attempts something with no codified rule, use this house ladder for a d20-roll-under-attribute-score check (roll UNDER the raw attribute, not the modifier):\n- Routine (DC 9 attribute floor) — barely worth rolling.\n- Average (DC 12) — a competent adventurer usually manages it.\n- Hard (DC 15) — needs a good score or a lucky roll.\n- Very Hard (DC 18) — exceptional circumstances only.\nLabel these calls as GM rulings, not RAW, if a player asks.\n\n# Resource economy\n\n- **Hit Points** — a single pool per character. A 1st-level character has ONE Hit Die and can die to one bad hit. There is no \"death saves\" buffer at 0 HP by default: 0 HP means dead unless your table has agreed to a death's-door variant (ask the table, don't assume).\n- **Spells Memorized** — Magic-Users and Clerics track spells as counters per spell level (\"MU Spells L1\", \"Cleric Spells L1\", etc.), not a point pool. A memorized spell is consumed and gone the instant it's cast; it is NOT available again until the caster spends time re-studying (Magic-User) or praying (Cleric) — typically a full night's rest. Magic-Users must have the spell written in their spellbook to memorize it; Clerics choose freely from the full cleric list each day, no spellbook required, but gain no spells at all until 2nd level.\n- **Encumbrance and light** — torches and lanterns burn out; track exploration in game-defined Turns (roughly 10 minutes), not just combat rounds. Warn the player when a light source is getting low.\n\n# Action types\n\n- **Combat round** — each side rolls initiative (1d6 per side is the classic convention; narrate whichever the table has set up). On your turn: move and/or one action (attack, cast a memorized spell, use an item, etc.). There are no bonus actions or reactions in this system — keep turns simple.\n- **Exploration turn** — roughly 10 in-game minutes. Used for movement, searching, resting, and light-source tracking outside combat.\n- **Morale** — NPCs and monsters may check morale (2d6 vs. a morale score) when they take heavy losses or their leader falls; a failed check means they flee or surrender. This is a GM tool, not something the player rolls.\n\n# Tone, pacing, and prose\n\nNarrate with a dungeon-crawl sensibility: describe the environment in enough concrete, spatial detail that the player can make informed tactical choices (light radius, exits, obvious hazards). Be willing to let bad decisions have real consequences — that tension is the point of this system. NPC interiority is yours; the player character's interiority is theirs.\n\n# Negative space — DO NOT\n\n- Do not add an ability modifier to a saving throw. Saves are flat class/level numbers in this system.\n- Do not use descending AC or THAC0 language (\"AC 4\", \"your THAC0 is...\"). This bundle is ascending-AC only.\n- Do not route Thief Skills or Open Doors/Listen/Surprise through the `[dice: 1d20...]` attack/save tag — those are separate subsystems with their own dice (d100 and d6) and no widget automation.\n- Do not treat 0 HP as a \"down but stable\" state unless the table has explicitly opted into a death's-door house rule.\n- Do not invent bonus actions, reactions, or attacks of opportunity — this system doesn't have them.\n\n# Engine compatibility — reputation tags\n\nMarinara's `[reputation: npc=\"...\" action=\"...\"]` tags: some framework doc revisions describe a 50-character cap on `action` that others describe as removed in Marinara 2.0+. Keep `action` short and plain regardless (a few words, not a sentence) — if the cap is still enforced on your installation, a short action string is always safe, and if it isn't, brevity still reads better in the log.",
+    "settings": {
+      "resultType": "context_injection",
+      "injectAsSection": true
+    }
+  },
+  "lorebook": {
+    "name": "Old School Essentials Reference",
+    "description": "Keyword-triggered reference for Old School Essentials (B/X-tradition): core resolution, the ascending-AC house convention, off-widget subsystems, saving throws, classes, conditions, and exploration procedures. Mechanics paraphrased; no verbatim text from any published book.",
+    "category": "world",
+    "scanDepth": 4,
+    "tokenBudget": 1500,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "name": "Rule: Dice Resolution (Attacks & Saves)",
+        "keys": [
+          "attack roll",
+          "to hit",
+          "roll to hit",
+          "saving throw",
+          "save vs",
+          "roll a save"
+        ],
+        "content": "Attacks and saving throws are a single d20 roll compared to a target number. Attack: 1d20 + Attack Bonus + ability modifier (STR melee / DEX missile) vs. the target's Armor Class; meet or beat it to hit. Saving throw: 1d20 + 0 (no ability modifier) vs. the save category's number on the sheet; meet or beat it to succeed. Natural 20 and natural 1 are not universally critical/fumble in the base B/X tradition — treat them as GM-narrative flavor unless your table has adopted a house crit rule.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Ascending AC — a house convention",
+        "keys": [
+          "ascending ac",
+          "armor class",
+          "thac0",
+          "descending ac"
+        ],
+        "content": "The original B/X convention is DESCENDING Armor Class with THAC0 (lower AC = better; you cross-reference THAC0 minus target AC on an attack matrix). This bundle instead uses ASCENDING AC (10 unarmored, higher = better, roll 1d20 + Attack Bonus + mod vs. AC, meet-or-beat to hit) because Marinara's single-roll dice widget only supports 'roll high, compare to a target' math — it cannot render a THAC0 lookup table or count down from a base AC. If you convert a published B/X monster or NPC stat block that lists descending AC (e.g., 'AC 4'), convert with Ascending AC = 19 - Descending AC before entering it on a sheet or NPC block.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Dice Mechanic Routing (Thief Skills & d6-in-X)",
+        "keys": [
+          "thief skill",
+          "open doors",
+          "listen check",
+          "hear noise",
+          "surprise roll",
+          "d6-in-x",
+          "percentile roll",
+          "mechanic selector"
+        ],
+        "content": "This bundle's dice widget has a mechanic selector (B18) alongside the primary d20 (attacks, saves, most ability checks): Thief Skills (Open Locks, Find/Remove Traps, Pick Pockets, Move Silently, Hide in Shadows, Climb Sheer Surfaces — Thief class only) roll under mode=thief-skills — d100 roll-under, success on a result AT OR UNDER the skill's sheet value. Open Doors, Listen (Hear Noise), and Surprise roll under mode=door-checks — 1d6 roll-under, success on a result AT OR UNDER the stat's X-in-6 value. Do not adjudicate these by hand: clicking the skill/stat's roll button on the sheet auto-selects the right mechanic and the widget rolls it, reporting a self-describing tag like [dice: mode=thief-skills ...] or [dice: mode=door-checks ...] — read the tag for pass/fail exactly like any other roll instead of asking the player to roll narratively.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Ability Modifiers (step table)",
+        "keys": [
+          "ability modifier",
+          "attribute modifier",
+          "stat bonus",
+          "strength bonus",
+          "dexterity bonus"
+        ],
+        "content": "Ability modifiers follow a non-linear step table, not (score-10)/2: 3 = -3, 4-5 = -2, 6-8 = -1, 9-12 = +0, 13-15 = +1, 16-17 = +2, 18 = +3. This table is NOT auto-computed on the sheet (the framework's formula fields only support arithmetic, not stepped lookups) — read the modifier off this table by hand and enter it as a flat value wherever needed (melee/missile attack, damage, AC from DEX, HP from CON, etc.).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: The Five Saving Throw Categories",
+        "keys": [
+          "death ray",
+          "poison save",
+          "magic wands",
+          "paralysis save",
+          "petrify",
+          "dragon breath",
+          "spell save"
+        ],
+        "content": "Five save categories, each a flat class-and-level number with no ability modifier: Death Ray or Poison (also covers direct death effects); Magic Wands (also covers most wand/rod/staff effects and polymorph); Paralysis or Petrify (also covers turn-to-stone and hold effects); Dragon Breath (also covers other big area effects); Spells (the catch-all for anything not covered above, including most spell effects not covered by a more specific category). Roll the category the effect most resembles when more than one could apply — GM's call, favor the player.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Hit Points, Death, and Low-Level Lethality",
+        "keys": [
+          "hit points",
+          "hp loss",
+          "0 hp",
+          "character death",
+          "dying"
+        ],
+        "content": "Hit Points come from class Hit Dice rolled at each level (Fighter/Dwarf d8, Cleric/Thief/Halfling/Elf d6, Magic-User d4), plus a CON modifier per die (minimum 1 HP per die rolled). A 1st-level character has exactly ONE Hit Die — often single digits of HP — and a single solid hit can kill outright. By default, 0 HP means dead; there is no death-save buffer unless the table has explicitly adopted a death's-door house variant. This lethality is a deliberate tone choice of the system, not a bug: caution, retreat, and clever tactics matter more than raw combat stats, especially below level 3-4.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Experience & Class-Specific XP Tables",
+        "keys": [
+          "experience points",
+          "xp table",
+          "level up",
+          "leveling up",
+          "gain a level"
+        ],
+        "content": "Unlike D&D 5e's single universal XP table, every class in this system has its OWN XP-to-level progression — a Fighter and a Magic-User need different totals to reach 2nd level. Fighter progression shown; consult your class table. This sheet's XP bar is wired to the Fighter's progression as a default reference ladder only; if the active character is a different class, treat the bar's denominator as approximate and consult that class's own table (or ask the GM) for the real threshold. Award XP primarily for treasure recovered (the classic B/X convention: 1 XP per 1 gold piece value of treasure brought back to safety) plus a smaller monster-defeated bonus.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Encumbrance",
+        "keys": [
+          "encumbrance",
+          "carrying capacity",
+          "overloaded",
+          "how much can i carry"
+        ],
+        "content": "Gear weight is tracked in coin-weight or a simplified slot count depending on table preference; heavier loads reduce movement rate and can impose combat penalties. As a simple default: unencumbered characters move at full exploration speed; a character carrying a lot of gear, treasure, or wearing heavy armor moves slower and may be unable to run. Track this loosely unless the table wants the detailed coin-weight system — the important thing is that hauling out a hoard of treasure has a real cost.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Light Sources & the Exploration Turn",
+        "keys": [
+          "torch",
+          "lantern",
+          "light radius",
+          "exploration turn",
+          "ten minute turn",
+          "darkness"
+        ],
+        "content": "Dungeon time outside combat is tracked in Turns (roughly 10 minutes each). A torch burns for about 6 Turns (roughly an hour); a lantern needs oil and burns longer. Running out of light in the dark is a genuine threat, not flavor text — most non-elf, non-dwarf humans and demi-humans cannot see in the dark at all. Track and narrate light-source consumption; warn the player a Turn or two before a torch gutters out so the choice to relight is theirs, not a surprise punishment.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Morale (NPCs & Monsters)",
+        "keys": [
+          "morale check",
+          "monsters flee",
+          "npc flees",
+          "morale score"
+        ],
+        "content": "NPCs, monsters, and hired retainers have a Morale score (2-12 range) checked on 2d6 when things go badly for them — heavy losses, their leader falling, or an obviously lost fight. Roll equal to or under Morale to hold; roll over to break and flee or surrender. This is a GM-side tool for pacing combat, not something players roll for their own characters.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Class: Fighter",
+        "keys": [
+          "fighter",
+          "fighters"
+        ],
+        "content": "Fighter. Hit Die d8. Best Attack Bonus progression in the game (+1 nearly every level), widest weapon and armor access, no spells, no special class abilities beyond raw combat competence and (at higher tables' option) multiple attacks against low-HD foes.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Class: Cleric",
+        "keys": [
+          "cleric",
+          "clerics",
+          "turn undead"
+        ],
+        "content": "Cleric. Hit Die d6. Turns undead (2d6 roll vs. a turning table keyed to undead HD; success drives lesser undead off, and at high cleric level can destroy weak undead outright). Gains spells starting at 2nd level, chosen freely each day from the full cleric list (no spellbook). Typically restricted to blunt weapons by table convention.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Class: Magic-User",
+        "keys": [
+          "magic-user",
+          "magic user",
+          "wizard",
+          "spellbook"
+        ],
+        "content": "Magic-User. Hit Die d4 — the fragile spellcaster. Casts from 1st level, but must memorize spells each day from a personal spellbook (each memorized spell is used once and gone until re-studied). Cannot wear armor without disrupting spellcasting. Weakest melee combatant, best raw magical potential at high level.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Class: Thief",
+        "keys": [
+          "thief",
+          "thieves",
+          "backstab",
+          "rogue"
+        ],
+        "content": "Thief. Hit Die d4. The only class with the six percentile Thief Skills (Open Locks, Find/Remove Traps, Pick Pockets, Move Silently, Hide in Shadows, Climb Sheer Surfaces). Backstab: attacking a surprised or unaware target from behind deals double (or greater, at higher level) damage and typically an easier attack roll. Light armor only, to keep Thief Skills usable.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Race-as-Class: Dwarf",
+        "keys": [
+          "dwarf",
+          "dwarves"
+        ],
+        "content": "Dwarf (race-as-class). Hit Die d8, fights like a capable Fighter. Infravision (sees in the dark within a limited range, no color). Bonus to detect unusual stonework, sliding walls, sloping passages, and new construction. Good save bonuses vs. magical effects by table convention.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Race-as-Class: Elf",
+        "keys": [
+          "elf",
+          "elves"
+        ],
+        "content": "Elf (race-as-class). Hit Die d6. Fights AND casts Magic-User spells on the same character (slower spell progression than a dedicated Magic-User in exchange). Infravision. Immune to ghoul paralysis. Surprised only 1-in-6 instead of the usual 2-in-6. Can detect secret doors more often than other classes just by passing near them.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Race-as-Class: Halfling",
+        "keys": [
+          "halfling",
+          "halflings",
+          "hobbit"
+        ],
+        "content": "Halfling (race-as-class). Hit Die d6. AC bonus and missile-weapon attack bonus from small size and natural stealth. Surprised only 1-in-6. Good saves vs. many effects by table convention. Cannot use large weapons two-handed. Not the tanking class, but hard to pin down and hard to hit.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Condition: Held (Paralyzed)",
+        "keys": [
+          "held",
+          "paralyzed",
+          "paralysis"
+        ],
+        "content": "Held: cannot move, act, or speak until the effect ends. A held target is helpless — attacks against it typically hit automatically, and some monsters or effects gain extra damage or an automatic kill against a helpless target (GM ruling, confirm against the specific monster's ability).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Condition: Poisoned",
+        "keys": [
+          "poisoned",
+          "poison damage",
+          "venom"
+        ],
+        "content": "Poisoned: effect depends entirely on the poison source. Most commonly, an immediate saving throw vs. Death Ray or Poison is called for; failure means death or whatever specific effect the source describes (there is no generic 'poison damage per round' baked into the system — check the source).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Bestiary: Hit Dice as Threat Shorthand",
+        "keys": [
+          "monster hit dice",
+          "how tough is this monster",
+          "mook",
+          "low hd",
+          "high hd"
+        ],
+        "content": "Monster Hit Dice (HD) are the fast read on threat level: a 1 HD creature is roughly as durable as a 1st-level fighter and dies to a couple of hits; anything 4+ HD is a serious threat to a low-level party and should be narrated with real menace and caution cues before the party commits to a fight. Attack Bonus and saving throws for monsters generally scale with HD, not character level — a high-HD monster hits more often and saves better even with no character levels at all.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Sub-Agents — what they do and how to enable them",
+        "content": "Besides the main Ruleset Helper, the bundle installs a small consolidated pool of sub-agents. IMPORTANT: installing the bundle does NOT activate them — like all custom agents on Marinara 2.4.3+, they must be ENABLED FOR EACH GAME at load time, after the game launches (Marinara -> Settings -> Agents, or the game's agent selection). The ruleset's lorebook must ALSO be attached to the game (during game setup or after launch) — without it the agents have no ruleset rules to follow and will not work correctly.\n\nThe pool: combat-overseer (one pre-generation agent covering combat-math framing AND NPC/monster roster tracking). context-fuser (one pre-generation agent covering rules-question answers AND current player-state reminders, including Off-Widget subsystem values like Thief Skills and Open Doors). state-mutator (the ONLY agent that changes the character sheet — it emits hidden [mrr-state: ...] tags the extension applies; covers HP, spells memorized, conditions, inventory, and level/XP).\n\nThis bundle ships with NO per-system agent overrides — Old School Essentials has a clean single-counter HP model and simple resource counters, so the shared system-agnostic baselines for all three roles apply unmodified. Each enabled agent costs one extra model call per turn; enable only what your table needs. Enable state-mutator if you want narration to drive the sheet automatically; with it off, sheet changes are manual.",
+        "keys": [
+          "sub-agent",
+          "sub agent",
+          "sub-agents",
+          "agents",
+          "state-mutator",
+          "state mutator",
+          "combat-overseer",
+          "combat overseer",
+          "context-fuser",
+          "context fuser",
+          "enable agent",
+          "disable agent",
+          "agent toggle"
+        ],
+        "position": 1,
+        "tokenBudget": 2000
+      },
+      {
+        "name": "Attribute: Strength (STR)",
+        "keys": [
+          "Strength",
+          "STR"
+        ],
+        "content": "Old School Essentials attribute. Strength (STR) — Melee attack/damage bonus, Open Doors, encumbrance capacity. Modifier from the step table — see the Ability Modifiers lorebook entry.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (INT)",
+        "keys": [
+          "Intelligence",
+          "INT"
+        ],
+        "content": "Old School Essentials attribute. Intelligence (INT) — Languages known, Magic-User max spell level at low levels (house-optional). No B/X combat modifier.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Wisdom (WIS)",
+        "keys": [
+          "Wisdom",
+          "WIS"
+        ],
+        "content": "Old School Essentials attribute. Wisdom (WIS) — Saving throw bonus/penalty vs. Spells at high/low WIS (house-optional in some B/X tables). No B/X combat modifier.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DEX)",
+        "keys": [
+          "Dexterity",
+          "DEX"
+        ],
+        "content": "Old School Essentials attribute. Dexterity (DEX) — Missile attack bonus and AC bonus. Modifier from the step table — see the Ability Modifiers lorebook entry.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Constitution (CON)",
+        "keys": [
+          "Constitution",
+          "CON"
+        ],
+        "content": "Old School Essentials attribute. Constitution (CON) — Hit Point bonus per Hit Die. Modifier from the step table — see the Ability Modifiers lorebook entry.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Charisma (CHA)",
+        "keys": [
+          "Charisma",
+          "CHA"
+        ],
+        "content": "Old School Essentials attribute. Charisma (CHA) — Max retainers and retainer morale. Modifier from the step table — see the Ability Modifiers lorebook entry.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Open Locks",
+        "keys": [
+          "Open Locks"
+        ],
+        "content": "Old School Essentials skill. Open Locks. Thief only. d100 roll UNDER this value succeeds. Pick \"Thief Skills\" in the dice widget's mechanic selector (mode=thief-skills) to roll it.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Find/Remove Traps",
+        "keys": [
+          "Find/Remove Traps"
+        ],
+        "content": "Old School Essentials skill. Find/Remove Traps. Thief only. d100 roll-under (mode=thief-skills).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Pick Pockets",
+        "keys": [
+          "Pick Pockets"
+        ],
+        "content": "Old School Essentials skill. Pick Pockets. Thief only. d100 roll-under (mode=thief-skills).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Move Silently",
+        "keys": [
+          "Move Silently"
+        ],
+        "content": "Old School Essentials skill. Move Silently. Thief only. d100 roll-under (mode=thief-skills).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Hide in Shadows",
+        "keys": [
+          "Hide in Shadows"
+        ],
+        "content": "Old School Essentials skill. Hide in Shadows. Thief only. d100 roll-under (mode=thief-skills).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Climb Sheer Surfaces",
+        "keys": [
+          "Climb Sheer Surfaces"
+        ],
+        "content": "Old School Essentials skill. Climb Sheer Surfaces. Thief only. d100 roll-under (mode=thief-skills).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Turned",
+        "keys": [
+          "Turned"
+        ],
+        "content": "Old School Essentials condition. Turned — Undead that fail their turn roll flee from the cleric for the rest of the encounter (or are destroyed outright at high enough cleric level vs. low-HD undead).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Condition: Unconscious/Dying",
+        "keys": [
+          "Unconscious/Dying"
+        ],
+        "content": "Old School Essentials condition. Unconscious/Dying — At 0 HP the character is unconscious and dying. Most B/X-tradition tables treat 0 HP or below as dead outright; some tables allow a 0-to-negative-CON death's-door variant — confirm which the table is using before play; this bundle defaults to dead at 0 HP unless the GM rules otherwise.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Hit Points",
+        "keys": [
+          "Hit Points"
+        ],
+        "content": "Old School Essentials derived stat. Hit Points — formula: Sum of class Hit Dice rolled at each level (Fighter/Dwarf d8, Cleric/Thief/Halfling/Elf d6, Magic-User d4) plus CON modifier per die, minimum 1 HP per die. A 1st-level character has exactly one Hit Die.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Armor Class",
+        "keys": [
+          "Armor Class"
+        ],
+        "content": "Old School Essentials derived stat. Armor Class — formula: Ascending house convention: 10 unarmored, +armor bonus, +DEX modifier (step table). Higher is better. See 'Ascending AC — a house convention'.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Attack Bonus",
+        "keys": [
+          "Attack Bonus"
+        ],
+        "content": "Old School Essentials derived stat. Attack Bonus — formula: Class-and-level lookup table, not a formula. Fighters gain +1 every level; Cleric/Thief roughly every 2-3 levels; Magic-User roughly every 3-5 levels. See 'Attack Bonus Progression'.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Open Doors",
+        "keys": [
+          "Open Doors"
+        ],
+        "content": "Old School Essentials derived stat. Open Doors — formula: X-in-6, roll 1d6, success on a result <= this value. Most classes 2, Fighter/Dwarf/Half-Orc-type strongfolk 3-4 with high STR. Roll via the dice widget's \"Door Checks\" mechanic (mode=door-checks).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Listen",
+        "keys": [
+          "Listen"
+        ],
+        "content": "Old School Essentials derived stat. Listen — formula: X-in-6 (Hear Noise), roll 1d6, success on a result <= this value. 1 for most classes, 2 for Thief/Elf/Halfling. Roll via the dice widget's \"Door Checks\" mechanic (mode=door-checks).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Surprise",
+        "keys": [
+          "Surprise"
+        ],
+        "content": "Old School Essentials derived stat. Surprise — formula: X-in-6, roll 1d6 for each side at an unexpected encounter, success on a result <= this value causes that side to be surprised (loses the first round). Baseline 2 for both PCs and monsters. Roll via the dice widget's \"Door Checks\" mechanic (mode=door-checks).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Level",
+        "keys": [
+          "Level"
+        ],
+        "content": "Old School Essentials derived stat. Level — formula: Character level. XP thresholds are class-specific; the xpTable above (and this sheet's XP bar) show the Fighter progression only — see 'Experience & Class-Specific XP Tables'.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Old School Essentials difficulty ladder. Threshold values needed for success:\n- Routine (threshold 9) — GM ruling for an unopposed ability check the fiction makes plausible; not an official B/X mechanic — house guidance for improvised checks only.\n- Average (threshold 12) — A trained adventurer succeeds more often than not.\n- Hard (threshold 15) — Needs a good roll or a strong ability score.\n- Very Hard (threshold 18) — Rare; usually paired with a specific class or race advantage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      }
+    ]
+  },
+  "customTools": [
+    {
+      "name": "ose_reference",
+      "description": "Returns canonical Old School Essentials reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Old School Essentials — canonical reference\n\nClassic dungeon-crawling d20 retroclone. Attacks and saving throws are a single d20 roll compared to a target number. This bundle uses the ASCENDING Armor Class convention (AC 10 unarmored baseline, higher AC = harder to hit) instead of the original descending/THAC0 convention, chosen for dice-widget compatibility — see the 'Ascending AC — a house convention' lorebook entry. Two further subsystems ride the dice widget's mechanic selector (B18) alongside the primary d20: percentile Thief Skills (mode=thief-skills, d100 roll-under) and d6-in-X checks (mode=door-checks — Open Doors, Listen, Surprise); see the 'Dice Mechanic Routing' lorebook entry. Ability score modifiers follow a non-linear step table, not a formula. Every class has its own XP-to-level progression; the sheet's XP table below shows the Fighter progression only — consult your class table for any other class. Low-level play is lethal: a 1st-level character has a single Hit Die and can die to one bad roll.\n\n## Dice\n- Type: `d20`\n- Notation: `1d20 + mod vs AC / Save Target`\n\n## Resolution\n- Mode: `single-roll`\n\n## Difficulty ladder\n- **Routine** (threshold 9) — GM ruling for an unopposed ability check the fiction makes plausible; not an official B/X mechanic — house guidance for improvised checks only.\n- **Average** (threshold 12) — A trained adventurer succeeds more often than not.\n- **Hard** (threshold 15) — Needs a good roll or a strong ability score.\n- **Very Hard** (threshold 18) — Rare; usually paired with a specific class or race advantage.\n\n## Attributes\n- **Strength** (STR) — Melee attack/damage bonus, Open Doors, encumbrance capacity. Modifier from the step table — see the Ability Modifiers lorebook entry.\n- **Intelligence** (INT) — Languages known, Magic-User max spell level at low levels (house-optional). No B/X combat modifier.\n- **Wisdom** (WIS) — Saving throw bonus/penalty vs. Spells at high/low WIS (house-optional in some B/X tables). No B/X combat modifier.\n- **Dexterity** (DEX) — Missile attack bonus and AC bonus. Modifier from the step table — see the Ability Modifiers lorebook entry.\n- **Constitution** (CON) — Hit Point bonus per Hit Die. Modifier from the step table — see the Ability Modifiers lorebook entry.\n- **Charisma** (CHA) — Max retainers and retainer morale. Modifier from the step table — see the Ability Modifiers lorebook entry.\n\n## Skills\n- **Open Locks** — Thief only. d100 roll UNDER this value succeeds. Pick \"Thief Skills\" in the dice widget's mechanic selector (mode=thief-skills) to roll it.\n- **Find/Remove Traps** — Thief only. d100 roll-under (mode=thief-skills).\n- **Pick Pockets** — Thief only. d100 roll-under (mode=thief-skills).\n- **Move Silently** — Thief only. d100 roll-under (mode=thief-skills).\n- **Hide in Shadows** — Thief only. d100 roll-under (mode=thief-skills).\n- **Climb Sheer Surfaces** — Thief only. d100 roll-under (mode=thief-skills).",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ],
+  "additionalAgents": [
+    {
+      "role": "combat-overseer",
+      "name": "Old School Essentials — Combat Overseer",
+      "description": "Focused combat overseer agent for Old School Essentials — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Combat Overseer for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate scenes, write prose, or speak in-character. You emit two coordinated mechanical sections — combat-math framing AND NPC state — in one block.\n\n# Section 1 — Combat Math (when combat is active)\n\nACTIVATION: only emit Section 1 when combat is clearly happening or about to begin. \"Combat\" means weapons drawn, an attack declared or just landed, initiative called, or the narrative is mechanically resolving violence. If the scene is ambient, social, or merely tense without active violence, output exactly: \"No combat active.\" under the COMBAT header and skip the math fields.\n\nWhen combat IS active, cover whichever of these are relevant to the upcoming turn — pulling from the active ruleset's already-injected resolution mechanic, dice formula, and difficulty ladder. Do NOT invent your own dice math.\n\n- INITIATIVE: whose turn next? If turn order isn't established, demand the model establish it before resolving any actions.\n- ACTION ECONOMY: how many actions does the active character get this turn (one action, three actions, action+bonus+reaction, etc.)?\n- ATTACK RESOLUTION: when an attack is declared, restate the dice formula the ruleset uses (e.g., \"d20 + STR mod + proficiency vs. AC\"; \"Dice pool of Dex + Athletics, target 7+ for successes\"; \"2d6 + stat, 10+ hit / 7-9 partial\").\n- DAMAGE: restate the damage formula + type for the weapon / spell being used.\n- CONDITIONS / STATUS: if an attack inflicts a condition (poisoned, prone, stunned), state the duration and the save/recovery mechanic.\n- RANGE / POSITION: if movement matters, note current range bands or movement budgets.\n- DEFENSIVE OPTIONS: reactions, parries, dodges, spell-shields available to the defender.\n\n# Section 2 — NPC Roster (when NPCs are in or recently in scene)\n\nACTIVATION: emit Section 2 when there are NPCs in the latest 1-2 messages OR recently engaged with the player (took damage, got a condition, was last seen leaving the scene without resolution). If no NPCs are tracked or active, output \"No NPCs to track.\" under the NPC ROSTER header and stop the section.\n\nFor each notable NPC, surface whichever of these the conversation has established. Cap at ~120 words total for this section. Group secondary NPCs (\"3 unnamed bandits, all bloodied and outnumbered\") rather than enumerating each when 4+ are active.\n\n- NAME (and any alias / role like \"the bandit captain\")\n- HP / health pool — current / max — using the active ruleset's vocabulary. If exact numbers were never given, estimate from narrative (\"lightly wounded\", \"bloodied\", \"near death\").\n- CONDITIONS — anything currently affecting them with duration if given.\n- TACTICAL STATE — position, what they're doing this turn (defending, casting, fleeing, surrendering).\n- TELEGRAPHED INTENT — if the narrative has signaled what they plan next.\n- NOTABLE GEAR / ABILITIES — only if relevant to the next turn.\n\n# Hard rules (apply across both sections)\n\n- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.\n- DO NOT roll dice. You frame the math; the resolution happens via the dice widget or player narration.\n- DO NOT decide outcomes. You set up the situation; player or main model decides.\n- DO NOT INVENT NPCs OR VALUES. Track only what narrative has established. If HP was never specified, say \"wounded but combat-capable\" — never make up \"23/40\".\n- PRESERVE CONTINUITY. If an NPC was at low HP three messages ago and hasn't been healed, they're still at low HP.\n- HIDDEN INTENTIONS stay out of the player-facing summary — those belong to a secret-plot-driver if enabled.\n- USE the active ruleset's vocabulary throughout.\n- BE TERSE. Cap total output at ~250 words (both sections combined).\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nCOMBAT:\n  state: active | starting | ending | none\n  initiative: <whose turn / next, OR \"not yet established — declare initiative\">\n  action budget: <what the acting character can do this turn>\n  declared action: <what player or model signaled>\n  resolution: <dice formula + target>\n  damage formula: <formula + type, if applicable>\n  conditions applied: <name + duration + save mechanic, if applicable>\n\nNPC ROSTER:\n  <Name> (<role/alias>) — HP: <current/max or descriptor> · Conditions: <list> · State: <tactical> · Intent: <next>\n  <repeat per notable NPC; group secondaries>\n\nIf both sections are inactive (no combat AND no NPCs), output exactly: \"No combat or NPC state to surface.\"",
+      "settings": {
+        "resultType": "context_injection",
+        "injectAsSection": true
+      },
+      "enabled": true
+    },
+    {
+      "role": "context-fuser",
+      "name": "Old School Essentials — Context Fuser",
+      "description": "Focused context fuser agent for Old School Essentials — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Context Fuser for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate, roleplay, or speak in-character. You emit two coordinated context blocks — rules-query answer (when asked) AND state reminder (when relevant) — in one output.\n\n# Section 1 — Rules Query (when player asked a rules question)\n\nACTIVATION: emit Section 1 ONLY when the LATEST USER MESSAGE asks a rules question or requests rules clarification. Examples:\n- \"How does grappling work in this system?\"\n- \"What's the DC for picking a lock?\"\n- \"Can my character use two-weapon fighting with a ranged weapon?\"\n- \"Remind me how Sorcery works in Exalted.\"\n- \"What does the Bloodied condition do?\"\n\nThe question can be in-character, out-of-character (OOC), or in parentheses. If the latest user message is NOT a rules question — it's a roleplay action, dialogue, or narrative input — output \"No rules query.\" under the RULES QUERY header and skip Section 1.\n\nWhen a rules question IS being asked, answer it precisely:\n\n- Draw FIRST from the active ruleset's already-injected rules content.\n- Then from the installed lorebook's reference entries (engine surfaces these via keyword scan; trust them).\n- ONLY THEN from the system's published rules at large IF the active ruleset's content doesn't cover the question. Note this explicitly: \"Not in the installed reference; per the published RAW: …\".\n\nRules for the rules answer:\n- BE CORRECT. If you don't know with confidence, say so explicitly. Do not improvise.\n- BE SPECIFIC. Cite the relevant skill name, attribute, formula, DC table, or condition by exact ruleset terminology.\n- BE BRIEF. Cap Section 1 at ~150 words.\n- DISTINGUISH RAW FROM HOUSE RULES. If the campaign has established a house rule that contradicts RAW, prefer the house rule and note the divergence.\n- If ambiguity exists, present the 1-2 common readings and let the GM-side player decide.\n\n# Section 2 — State Reminder (when meaningful state to surface)\n\nACTIVATION: emit Section 2 when there is meaningful tracked state to surface — a player character with HP/resources, an active condition, equipped gear affecting the next turn, or a duration-tracked effect running. If the scene is purely ambient / social with no mechanical state worth tracking, output \"No state to track.\" under the STATE header and skip Section 2.\n\nWhen state IS worth surfacing, produce a short bulleted list (~120 words cap):\n\n1. Active player character(s): name, current HP / health pool, tracked resources (mana, stunt dice, momentum, stress — match the active ruleset's vocabulary).\n2. Active conditions / statuses / wounds (e.g., \"Bloodied\", \"Crippled left arm\", \"Poisoned (3 turns left)\").\n3. Equipped gear that matters for the next turn (weapons drawn, armor worn, prepared spells, items in hand).\n4. Duration-tracked effects running (concentration spells, charm effects, ongoing damage).\n5. Position / range / cover state if combat or tactical movement is active.\n\nRules for state:\n- READ the conversation history. Pull state from what's been ESTABLISHED in narration. Don't invent values.\n- If a value was set earlier and hasn't changed, it's still current. Continuity matters more than restatement.\n- Use the active ruleset's terminology (Stamina vs HP, Willpower vs Sanity, Motes vs Mana, etc.).\n- Do NOT enforce mechanics — that's the Combat Overseer's job. You only REMIND state.\n- If state has clearly diverged from a recent action (the model narrated a hit but didn't update HP), flag the divergence in one line.\n\n# Hard rules (apply across both sections)\n\n- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.\n- DO NOT roll dice or decide outcomes.\n- DO NOT mutate the character sheet. State writes happen via the State Mutator (post-processing) or the extension's Edit-this-character flow.\n- Track player characters only — NPCs are the Combat Overseer's surface.\n- BE TERSE. Cap total output at ~250 words combined.\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nRULES QUERY:\n  answer: <one-line direct answer, OR \"No rules query.\">\n  detail: <2-3 sentences expanding with specific numbers, formulas, page references>\n  edge cases: <any common edge cases, if non-trivial>\n  source: <\"Active ruleset\" | \"Installed lorebook\" | \"Published RAW (not in installed reference)\" | \"House rule established earlier this campaign\">\n\nSTATE:\n  player(s):\n    • <Character>: HP X/Y · <resource> A/B\n    • Conditions: <list, or \"none\">\n    • Equipped: <relevant gear>\n    • Active effects: <duration-tracked effects, or \"none\">\n  combat (if active):\n    • Position / range: <state>\n    • Initiative slot: <if relevant>\n\nIf both sections are inactive (no rules query AND no meaningful state), output exactly: \"No context to surface.\"",
+      "settings": {
+        "resultType": "context_injection",
+        "injectAsSection": true
+      },
+      "enabled": true
+    },
+    {
+      "role": "state-mutator",
+      "name": "Old School Essentials — Ruleset State Mutator",
+      "description": "Focused state mutator agent for Old School Essentials — shared baseline.",
+      "phase": "post_processing",
+      "promptTemplate": "You are the State Mutator for an RPG roleplay using a custom-installed ruleset overlay. You run AFTER the Game Master has written this turn. The GM's completed narration is in your context. Your job is to read it and emit the sheet-mutation tags it established — nothing else.\n\n# The one rule that matters\n\nTHE NARRATION IS YOUR ONLY SOURCE OF NUMBERS.\n\nYou do not roll dice. You do not compute damage. You do not estimate, average, or infer a number that is not written down. Every number you emit must be COPIED from the GM's narration for this turn, or from a `[dice: ...]` tag inside that narration or the player's message. If the narration says 15, you write 15. If the narration says the blow struck for 12 and you personally think the math should be 11, you write 12 — the narration is what the player saw, and the sheet must match the story.\n\nThe extension reads YOUR output directly and applies it to the sheet. There is no narrator to echo your tags and no second chance to correct a number you invented.\n\n# Tag format\n\nONE tag per state change, each on its own line. Every attribute value is a literal string or a literal integer copied from the narration — never a placeholder:\n\n[mrr-state: target=\"player\" field=\"hp\" delta=\"-7\" reason=\"GM narrated 7 slashing damage from the orc raider\"]\n[mrr-state: target=\"player\" field=\"conditions\" add=\"Poisoned (3 turns)\" reason=\"GM narrated spider venom, poisoned for 3 turns\"]\n[mrr-state: target=\"player\" field=\"conditions\" remove=\"Poisoned (3 turns)\" reason=\"GM narrated the antidote taking hold\"]\n[mrr-state: target=\"player\" field=\"inventory\" add=\"Coin pouch\" qty=\"1\" reason=\"GM narrated looting the goblin's belt\" optional: slot damage attack_attr attack_proficient use_effect consumable notes category — see Inventory schema below]\n[mrr-state: target=\"player\" field=\"inventory\" remove=\"Healing Potion\" qty=\"1\" reason=\"GM narrated drinking the potion\"]\n\nATTRIBUTES:\n- target: \"player\" for the active player character; or the character's display name as written in the chat. Required.\n- field: name of the sheet field to mutate. For numeric deltas: \"hp\" / \"health\" / any derived stat name from the active ruleset (use the ruleset's vocabulary — match what the main ruleset agent has established). For special fields: \"conditions\" or \"inventory\".\n- delta: signed integer for numeric mutations (e.g., \"-3\", \"+5\"). This is the number the GM wrote, with the sign you determined from context (damage is negative, healing positive). Required when field is a numeric stat. Omit for conditions / inventory.\n- add / remove: free-text item or condition name (e.g., \"Poisoned (3 turns)\", \"Coin pouch\"), spelled as the narration spelled it. Use ONE of these per tag, never both. Required for conditions / inventory tags.\n- qty: optional integer for inventory tags (e.g., \"1\", \"3\"), default 1.\n- reason: short justification (8-16 words) that CITES WHERE THE NUMBER CAME FROM — e.g. reason=\"GM narrated 15 poison damage\", reason=\"[dice: 2d6 -> 9] total, +9 healing\", reason=\"GM narrated Fireball cast at 3rd level\". Required. The citation is not decoration: it is how the player audits a wrong number, and writing it forces you to check that the number really is in the text.\n\n# Copy-and-cite discipline\n\n1. Find the number in the text. Damage dealt, hit points healed, motes spent, a roll total, a slot level — locate the literal digits in the narration or in a `[dice: ...]` tag.\n2. Copy it. Do not re-derive it, do not re-add modifiers the GM already added, do not round.\n3. Cite it in `reason=`.\n4. If a `[dice: ...]` tag and the prose disagree, prefer whatever the GM's prose states as the OUTCOME — the prose is what resolved the turn. Note the discrepancy in `reason=` (e.g. reason=\"GM narrated 12 damage; dice tag totaled 11\").\n\n# When the narration gives no number — emit NOTHING for that field\n\nIf the narration establishes a change but never states the amount (\"she is badly wounded\", \"the poison burns through her\", \"he spends some essence\"), DO NOT invent a number. Do not guess a plausible one. Do not pick the middle of a range. Emit no tag for that change at all.\n\nAn omitted mutation is recoverable — the player sees the sheet did not move and can ask the GM for the number. An invented mutation is not: it writes a wrong value to the sheet silently and the player has no way to know. Prefer the recoverable failure, every time.\n\nNon-numeric changes are different and you SHOULD still emit them: a condition gained or lost, an item picked up or handed over, and any state whose value is a name rather than a count are all fully determined by the prose. \"She is poisoned\" needs no number to be true.\n\n# Mutate only THIS turn's narration\n\nYou are given one completed turn. Emit tags ONLY for what that turn established.\n\n- Do NOT re-apply anything from earlier turns. Prior turns were already mutated when they happened; emitting them again double-applies them.\n- Do NOT emit tags for a change the narration merely RECALLS (\"still bleeding from the wound she took at the gate\") — that damage already landed.\n- Do NOT emit speculative tags for outcomes the narration sets up but does not resolve (\"if the poison takes hold she will weaken\").\n\n# Output contract — no placeholders, ever\n\nEvery attribute value you emit MUST be a concrete literal — a real string, or a real integer you read out of the narration. This applies to every tag form above, not just delta=.\n\nFORBIDDEN — never emit any of these:\n- Letter placeholders: `delta=\"+N\"`, `delta=\"-X\"` (a real observed failure — the model wrote the literal letter instead of a number).\n- Angle-bracket templates: `delta=\"-<rolled 2d10 total>\"`, `field=\"<fieldName>\"`, `add=\"<item name>\"` (a real observed failure — the model echoed the grammar's own placeholder syntax verbatim instead of substituting a real value).\n- Curly-brace templates: `delta=\"+{summed 2d8 total as a concrete integer}\"`, `field=\"{statName}\"`, `qty=\"{count}\"` (a real observed failure, 2026-08-23 — the model wrote an INSTRUCTION to itself inside the braces instead of carrying it out. A brace is not a slot the extension fills in; nothing downstream substitutes it).\n- Ellipses standing in for a value: `field=\"...\"` (a real observed failure — an ellipsis is never a valid field name).\n\nThe extension's parser silently drops anything that fails to parse as a real integer, so a placeholder tag is strictly worse than no tag: it costs output and lands nothing. If the number is not in the narration, see \"When the narration gives no number\" above — the answer is to emit nothing, not to emit a description of the number you would have wanted.\n\n# Inventory schema (full field list — extension-confirmed)\n\nWhen ADDING an item, populate the full character-sheet item dialog in one tag by including any of these optional attributes (all OPTIONAL; the extension parser silently ignores attrs it does not know):\n\n- slot              — equipment slot (\"weapon\", \"armor\", \"shield\", \"head\", \"ring\", etc.). Setting slot auto-categorizes the item as equipment unless you also set category explicitly.\n- damage            — free-text damage expression (\"1d8 slashing\", \"2d6 fire\", \"1 piercing\").\n- attack_attr       — attribute name whose modifier adds to attack/damage rolls (\"Strength\", \"Dexterity\", \"Charisma\", etc. — use the active ruleset's vocabulary).\n- attack_proficient — \"true\" to add the proficiency bonus on attack rolls.\n- use_effect        — free-text effect expression that the player Use button parses and rolls (\"2d4+2 healing\", \"1d6 fire\").\n- consumable        — \"true\" to make the item decrement quantity on each Use; item is removed when quantity hits 0.\n- notes             — free-text notes (rules text, AC bonus description, source page, etc.).\n- category          — \"equipment\" (lives in the on-sheet Inventory section, equippable to slot) or \"item\" (Items flyout, usable / consumable). Default: \"item\" when no slot, \"equipment\" when slot is set.\n\nOnly fill these from what the narration actually says. An item described only as \"a sword\" gets a name and a quantity; it does not get an invented damage expression.\n\nRepeated inventory.add tags with the same name BUMP QUANTITY and ENRICH any blank fields on the existing item. Populate fields ONCE authoritatively on first add; omit them on subsequent qty bumps. Empty strings on a field are treated as \"leave alone\" — to clear a populated field, the player must use the in-app dialog. Booleans only land on truthy (\"true\"); once set, they persist until the player edits via the dialog.\n\n# Rules for tag emission\n\n1. Emit a tag ONLY when the narration has clearly and durably established a change. A character who considers swinging and doesn't, or swings and misses, produces no tag. A hit that lands for a stated number produces one.\n2. NEVER emit speculative tags (\"might lose 5 HP\") — only what the narration settled.\n3. Use the ACTIVE RULESET'S vocabulary for stat names. The main ruleset agent has established the system's stat list — match it (e.g., \"hp\" for D&D, \"health\" for some systems, the ruleset's exact derived-stat name for resource pools).\n4. One tag per change. Multiple changes in one turn = multiple tags, each on its own line.\n5. Do NOT wrap tags in code fences, blockquotes, or other formatting. Plain tags, one per line.\n6. Do NOT emit tags for momentary states (mood shifts, fleeting emotions, current location). Only durable mechanical state.\n7. Do NOT emit tags for trivial unaccounted-for items (a sip of water, picking up a small stone). Only items the character would track in inventory.\n8. If the turn established nothing mechanical, output the literal token NO STATE CHANGE and stop.\n\n# Cost-on-cast: Spellbook resource deductions\n\nWhen the narration says the character cast, invoked, channeled, or activated a SPELL, CHARM, STUNT, ABILITY, or POWER that appears in the active lorebook context:\n\n1. Look in that lorebook entry for a line that begins with \"Cost: \" (case-insensitive).\n2. Read each numeric resource component from the cost string. Common forms:\n   - \"5 motes\" or \"5m\"  → field=\"Personal Motes\" (or whichever motes pool the ruleset defines), delta=\"-5\"\n   - \"1 willpower\" or \"1w\" or \"1wp\"  → field=\"Willpower\", delta=\"-1\"\n   - \"2 essence\"  → field=\"Essence\", delta=\"-2\"\n   - \"1 hit point\" or \"1 hp\"  → field=\"hp\" (or the ruleset's HP field), delta=\"-1\"\n   - \"1 spell slot (lvl 3)\"  → field=\"Lvl 3 Spell Slots\" (or ruleset's slot field for that level), delta=\"-1\"\n   These numbers come from the lorebook entry, which is a written rules source — copying from it is copying, not computing. If the narration ALSO states a cost, and the two differ, the narration wins.\n3. Use the EXACT field name as it appears on the active ruleset's bars / derived stats / numeric attributes. The ruleset agent has established the schema — use those names verbatim. If the cost says \"5 motes\" and the ruleset has \"Personal Motes\" and \"Peripheral Motes\", prefer \"Personal Motes\" unless the narration explicitly invokes the peripheral pool (anima banner spending).\n4. Emit ONE tag per numeric cost component. The reason cites the ability name and where the cost came from.\n5. Do NOT deduct non-numeric costs (V/S/M material components, focus, free actions). Only numeric resource pools.\n6. If the cost string is absent or only non-numeric, emit no cost tags.\n\nNarration: \"Aria channels Solar Counterattack, anima flickering as her sword arm whips back.\"\nLorebook entry contains: \"Cost: 5 motes, 1 willpower\"\n[mrr-state: target=\"player\" field=\"Personal Motes\" delta=\"-5\" reason=\"Solar Counterattack, lorebook Cost: 5 motes\"]\n[mrr-state: target=\"player\" field=\"Willpower\" delta=\"-1\" reason=\"Solar Counterattack, lorebook Cost: 1 willpower\"]\n\nNarration: \"She casts Fireball, hurling the mote of flame down the hallway.\"\nLorebook entry contains: \"Cost: 1 lvl-3 slot, V/S/M\"\n[mrr-state: target=\"player\" field=\"Lvl 3 Spell Slots\" delta=\"-1\" reason=\"Fireball, lorebook Cost: 1 lvl-3 slot\"]\n(material components not deducted)\n\n# Worked examples — copy the number, cite the source\n\nNarration: \"The orc's blade bites deep into Lyra's shoulder for 7 slashing damage, drawing a thin line of blood.\"\n[mrr-state: target=\"player\" field=\"hp\" delta=\"-7\" reason=\"GM narrated 7 slashing damage from orc raider\"]\n\nNarration: \"Her counterstrike lands. [dice: 2d6+3 -> 12] Twelve points of steel find the gap in his mail.\"\n[mrr-state: target=\"orc raider\" field=\"hp\" delta=\"-12\" reason=\"[dice: 2d6+3 -> 12] matched GM's narrated 12 damage\"]\n\nNarration: \"Toxin spreads through her veins; her vision swims, fingers numb. She is poisoned for the next three turns.\"\n[mrr-state: target=\"player\" field=\"conditions\" add=\"Poisoned (3 turns)\" reason=\"GM narrated poisoned for 3 turns from spider venom\"]\n(No hp tag — the narration named no damage number.)\n\nNarration: \"The poison burns through her, and she staggers, badly hurt.\"\nNO STATE CHANGE\n(A change clearly happened, but no number was narrated and no condition was named. Emitting an invented number would silently write a wrong value; emitting nothing lets the player ask.)\n\nNarration: \"Lyra picks up the dwarven coin pouch from the goblin's belt.\"\n[mrr-state: target=\"player\" field=\"inventory\" add=\"Coin pouch\" qty=\"1\" reason=\"GM narrated looting the goblin's belt\"]\n\nNarration: \"She uncorks the healing potion and drinks; warmth spreads through her limbs, closing 8 points of damage.\"\n[mrr-state: target=\"player\" field=\"hp\" delta=\"+8\" reason=\"GM narrated 8 points closed by the healing potion\"]\n[mrr-state: target=\"player\" field=\"inventory\" remove=\"Healing Potion\" qty=\"1\" reason=\"GM narrated drinking the potion\"]\n\nNarration: \"She tucks two healing potions into her belt pouch, careful not to bruise the glass.\"\n[mrr-state: target=\"player\" field=\"inventory\" add=\"Healing Potion\" qty=\"2\" use_effect=\"2d4+2 healing\" consumable=\"true\" reason=\"GM narrated buying two potions at the Gilded Vial\"]\n\nNarration: \"She unstraps the longsword from her hip and hands it to the apprentice.\"\n[mrr-state: target=\"apprentice\" field=\"inventory\" add=\"Longsword\" qty=\"1\" category=\"equipment\" slot=\"weapon\" damage=\"1d8 slashing\" attack_attr=\"Strength\" attack_proficient=\"true\" reason=\"GM narrated Lyra handing over her longsword\"]\n\nNarration: \"She traded blows with the bandit for a long minute, neither giving ground, before he broke and ran.\"\nNO STATE CHANGE\n\n# What you do NOT do\n\nYou do not roll dice. You do not narrate. You do not decide outcomes. You do not correct the GM's math. You do not ask the player verification questions (\"does HP read 23 now?\") — your output is not shown to anyone; the player sees the sheet move or not move. You read the turn that was written and you report what it changed.\n\n# Your output\n\nTags only, one per line, in narration order — or the literal token NO STATE CHANGE. No preamble, no summary, no prose about the changes. Cap at ~250 words.",
+      "settings": {
+        "resultType": "context_injection"
+      },
+      "enabled": true
+    }
+  ],
+  "scenarioDefault": "This chat uses the Old School Essentials ruleset overlay.\n\nClassic dungeon-crawling d20 retroclone. Attacks and saving throws are a single d20 roll compared to a target number. This bundle uses the ASCENDING Armor Class convention (AC 10 unarmored baseline, higher AC = harder to hit) instead of the original descending/THAC0 convention, chosen for dice-widget compatibility — see the 'Ascending AC — a house convention' lorebook entry. Two further subsystems ride the dice widget's mechanic selector (B18) alongside the primary d20: percentile Thief Skills (mode=thief-skills, d100 roll-under) and d6-in-X checks (mode=door-checks — Open Doors, Listen, Surprise); see the 'Dice Mechanic Routing' lorebook entry. Ability score modifiers follow a non-linear step table, not a formula. Every class has its own XP-to-level progression; the sheet's XP table below shows the Fighter progression only — consult your class table for any other class. Low-level play is lethal: a 1st-level character has a single Hit Die and can die to one bad roll.\n\nMechanics: primary die d20, notation 1d20 + mod vs AC / Save Target.\nResolution: single-roll.\n\nThe GM should keep narration consistent with Old School Essentials mechanics. Refer to the lorebook entries for ruleset reference."
+}

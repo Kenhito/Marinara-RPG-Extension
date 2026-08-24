@@ -26,6 +26,22 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 
 function extractPromptBlock(md) {
+  /* Round-12 F3 finding: a plain 3-backtick outer fence cannot safely
+     contain an illustrative 3-backtick example block of its own — the
+     first match wins (non-greedy), silently truncating extraction at the
+     INNER closing fence instead of the real outer one. Confirmed live
+     impact: rulesets/exalted3e/agents/state-mutator.md's "Output format
+     you MUST produce" nested example cut its shipped promptTemplate from
+     ~19.5KB of source down to 1429 chars — the FORBIDDEN field names
+     list, field vocabulary, entire Sorcery workflow, conditions
+     vocabulary, and every worked example never reached the live agent.
+     Fix: prefer a 4-backtick outer fence when present (CommonMark rule —
+     a fence can only be closed by a fence of the same character and >=
+     length, so a shorter 3-backtick fence nested inside is just literal
+     text), falling back to the original 3-backtick match for every other
+     file unchanged. */
+  const fenced4 = md.match(/````text\s*\n([\s\S]*?)\n````/);
+  if (fenced4) return fenced4[1].trim();
   const fenced = md.match(/```text\s*\n([\s\S]*?)\n```/);
   if (fenced) return fenced[1].trim();
   const sep = md.match(/^---\s*$/m);
@@ -67,7 +83,9 @@ function extractPhase(md) {
   const m = md.match(/^\s*\*\*Phase:\*\*\s*`?([a-zA-Z_]+)`?/m);
   if (!m) return "pre_generation";
   const declared = (m[1] || "").trim().toLowerCase();
-  const ALLOWED = new Set(["pre_generation", "post_generation", "parallel"]);
+  /* Round-25: mirrors the engine enum exactly — see build-agents.mjs's
+     extractPhase comment for why `post_generation` was wrong and removed. */
+  const ALLOWED = new Set(["pre_generation", "parallel", "post_processing"]);
   return ALLOWED.has(declared) ? declared : "pre_generation";
 }
 
@@ -107,9 +125,78 @@ function loadAdditionalAgents(rulesetName, rulesetDir) {
       description: "Focused " + role.replace(/-/g, " ") + " agent for " + rulesetName + tunedNote + ".",
       phase,
       promptTemplate,
-      settings: {}
+      settings: mrrInjectionSettings(role, phase)
     };
   });
+}
+
+/* ─── Round-20 F2: injection-eligibility settings ────────────────────────
+   Engine v2.4.0+ makes an RP preset OWN agent placement. For a
+   pre_generation agent's output to reach the narrator at all, three things
+   must line up (all verified against ~/Marinara-Engine):
+
+     1. the agent's TYPE is in chatMeta.activeAgentIds
+        (runtime-agent-sections.ts:118 `activeAgentIds.has(agent.type)`),
+     2. phase === "pre_generation"        (:120),
+     3. resolveAgentResultType(...) === "context_injection"   (:122).
+
+   `resultType` is therefore RUNTIME-CRITICAL and is stamped explicitly here
+   rather than left to inference. `injectAsSection` is the separate,
+   CLIENT-side flag that makes an agent show up in Preset Editor → Add
+   Section → Agent Sections — without it the user cannot add the marker the
+   runtime then needs, so the two travel together.
+
+   Two roles are deliberately NOT narrator-facing:
+
+     · state-mutator — its output is `[mrr-state: ...]` tags addressed to
+       THIS EXTENSION, not to the narrator. The extension reads it through
+       the runs poller (GET /agents/runs/:chatId/custom), which is entirely
+       independent of preset placement, so injecting it buys the read path
+       nothing. It also carries real risk: feeding raw tag syntax into the
+       narrator's context invites the narrator to echo tags, and that is not
+       hypothetical — round 11 diagnosed a live triple-apply (−15 instead of
+       −5) caused by non-mutator agents echoing tag text, which is why the
+       sole-writer filter exists. As of round 25 the mutator is a
+       post_processing agent, so the question is moot at the runtime level
+       too — a post-phase agent's output can never reach the narrator's
+       prompt by any path. injectAsSection is therefore not emitted at all
+       for it (see mrrInjectionSettings below).
+     · pre-input-transformer — transforms the USER's input; its result is
+       not a narrator context injection.
+
+   Parallel-phase overlays (e.g. exalted3e's anima-banner-monitor) are also
+   left alone: :120 rejects any phase other than pre_generation, so marking
+   them injectable would be a lie the runtime silently ignores. */
+const MRR_NON_INJECTING_ROLES = new Set(["state-mutator", "pre-input-transformer"]);
+
+function mrrInjectionSettings(role, phase) {
+  if (phase !== "pre_generation") {
+    /* Round-25. A post_processing / parallel agent gets NO injectAsSection —
+       the flag only ever gated the pre-gen preset-marker path, and the
+       loader's own eligibility filter rejects any phase !== "pre_generation"
+       before it ever looks at the flag (RPG-Extension-GM-Mode.js
+       mrrInjectableManagedAgents, mirroring runtime-agent-sections.ts:120).
+       Shipping it would be a claim the runtime cannot honor.
+
+       resultType, however, STILL matters off the pre-gen path and is stamped
+       explicitly: resolveAgentResultType (agent-executor.ts:3171-3179) reads
+       settings.resultType first and only then falls back to a per-type map.
+       For a post_processing agent the value it lands on decides real
+       behavior — "text_rewrite" would make the engine REWRITE the narrator's
+       message with the agent's output (agent-pipeline.ts:150,
+       generate.routes.ts:4764). Custom types miss the map and default to
+       context_injection, which is what we want and what the runs poller
+       reads (`resultData.text`), but "what we want by default" is not a
+       contract. State it. */
+    return { resultType: "context_injection" };
+  }
+  if (role && MRR_NON_INJECTING_ROLES.has(role)) {
+    /* Explicit false, not merely absent — the role IS a context_injection
+       run type (that is how the poller reads it), so we state the UI intent
+       rather than letting it be inferred. */
+    return { resultType: "context_injection", injectAsSection: false };
+  }
+  return { resultType: "context_injection", injectAsSection: true };
 }
 
 function buildBundle(dir) {
@@ -162,7 +249,7 @@ function buildBundle(dir) {
       description: "Auto-installed by GM-mode bundle. Provides " + ruleset.name + " skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
       phase: "pre_generation",
       promptTemplate: mainPromptTemplate,
-      settings: {}
+      settings: mrrInjectionSettings("main", "pre_generation")
     },
     lorebook: {
       name: lb.name,
@@ -206,7 +293,17 @@ function buildBundle(dir) {
   const transformerAgent = buildPreInputTransformer(ruleset);
   if (transformerAgent && typeof transformerAgent === "object") {
     if (!Array.isArray(bundle.additionalAgents)) bundle.additionalAgents = [];
-    bundle.additionalAgents.push(Object.assign({}, transformerAgent, { enabled: true }));
+    /* Round-20 F2: the transformer is a non-injecting role (it rewrites the
+       USER's input, not the narrator's context) — stamped explicitly so the
+       built bundle states the intent rather than leaving it inferred. */
+    bundle.additionalAgents.push(Object.assign({}, transformerAgent, {
+      enabled: true,
+      settings: Object.assign(
+        {},
+        transformerAgent.settings || {},
+        mrrInjectionSettings("pre-input-transformer", transformerAgent.phase || "pre_generation")
+      )
+    }));
   }
 
   /* Vector 8: scenario default (NON-persona). When present the engine

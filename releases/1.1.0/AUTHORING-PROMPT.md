@@ -1,10 +1,6 @@
 # Authoring Prompt — Build a Marinara-RPG-Extension Ruleset Bundle
 
-> **CURRENT (Phase 5 / 6 / 7):** for the live schema — Resources cluster, sections.order / sections.hidden, autocalc derived stats with valueFormula / tooltipFormula / formulaShort, commitmentModel + commitmentPool, state-banner resource type, the **nine resolution modes** (single-roll, dice-pool, d100-percentile, 2d6-stat, fate-ladder, roll-under, stance-modal-pool, dice-pool-sum with Wild Die, narrative-handled), the item.hardness / item.moteCommitment + item.motePool auto-inheritance, **pipGranularity** (OpenD6 sub-die precision), **effects.onSpend** (Character-Points style spend-driven bonuses), **roundCounters[]** (per-round combat penalties), **penaltyKind** flat/dice on track cells, **abilities.groups[]** (V20 Talents/Skills/Knowledges trinity), and the **meritsFlaws** section type — see **[`docs/AUTHORING-PHASE-6.md`](docs/AUTHORING-PHASE-6.md)**. Paste that file into your chat AI's context alongside the prompt block below when authoring a new bundle.
->
-> **v0.4 reference:** the AI-authoring documentation at [`releases/1.1.0/docs-for-ai/`](releases/1.1.0/docs-for-ai/) covers the pre-Phase-5 surface (system-agnostic agent architecture, typed damage, sorcery/multi-turn casting, the build pipeline). Read it AFTER `docs/AUTHORING-PHASE-6.md` if you want the deeper agent and pipeline context.
->
-> This file remains as a pre-v0.4 single-paste template. It still produces a working v0.3-style bundle but doesn't cover v0.4 features (typed damage, sorcery, agents.json separation) or Phase 5/6/7 features (Resources cluster, commitment reconciler, card grid, OpenD6 pip granularity, V20 trinity, meritsFlaws). For a fully-current schema-aware bundle, paste the prompt block below PLUS `docs/AUTHORING-PHASE-6.md` into your chat AI; both fit comfortably in a single context window.
+> **This is the canonical entry point for authoring a new ruleset.** The prompt block below tells your chat AI to read the full current doc set itself — the system-agnostic architecture at [`releases/1.1.0/docs-for-ai/`](releases/1.1.0/docs-for-ai/) (agent architecture, ruleset schema, lorebook format, build pipeline) plus the newer schema surface at [`docs/AUTHORING-PHASE-6.md`](docs/AUTHORING-PHASE-6.md) — Resources cluster, sections.order / sections.hidden, autocalc derived stats with valueFormula / tooltipFormula / formulaShort, commitmentModel + commitmentPool, state-banner resource type, the **nine resolution modes** (single-roll, dice-pool, d100-percentile, 2d6-stat, fate-ladder, roll-under, stance-modal-pool, dice-pool-sum with Wild Die, narrative-handled — docs-for-ai only documents the first five), the item.hardness / item.moteCommitment + item.motePool auto-inheritance, **pipGranularity** (OpenD6 sub-die precision), **effects.onSpend** (Character-Points style spend-driven bonuses), **roundCounters[]** (per-round combat penalties), **penaltyKind** flat/dice on track cells, **abilities.groups[]** (V20 Talents/Skills/Knowledges trinity), and the **meritsFlaws** section type. You don't need to paste anything extra alongside the prompt block below — it names every file the AI needs to fetch (or, for file-upload-only AIs, the note further down lists exactly what to upload instead).
 
 > ## ⚠️ Before authoring: does the schema support your system's dice mechanic?
 >
@@ -25,8 +21,9 @@ Marinara-RPG-Extension's ruleset dialog.
 
 ## How this works
 
-1. The AI reads three reference docs in this repo:
-   - [`AGENTS.md`](./AGENTS.md) — full schema, mechanics, and authoring patterns
+1. The AI reads the reference docs named in the prompt below:
+   - [`releases/1.1.0/docs-for-ai/`](releases/1.1.0/docs-for-ai/) (01 through 07) — full schema, agent architecture, and authoring patterns
+   - [`docs/AUTHORING-PHASE-6.md`](docs/AUTHORING-PHASE-6.md) — the newer schema fields docs-for-ai doesn't cover yet
    - [`schema/bundle.schema.json`](./schema/bundle.schema.json) — the bundle envelope
    - One or more reference bundles (D&D, Fate, Exalted) so it has worked examples
 2. The AI produces a `bundle.json` matching the schema.
@@ -49,17 +46,22 @@ overlay that lets players run any tabletop RPG inside Marinara's Game Mode.
 
 The system I want is: **<<YOUR SYSTEM>>**.
 
-Read these three files in the GitHub repo `Kenhito/Marinara-RPG-Extension`:
+Read these files in the GitHub repo `Kenhito/Marinara-RPG-Extension`:
 
-1. `AGENTS.md` — the full authoring reference. Read all of it. It explains the
-   ruleset schema, the nine resolution modes (single-roll, dice-pool,
-   d100-percentile, 2d6-stat, fate-ladder, roll-under, stance-modal-pool,
-   dice-pool-sum with Wild Die, narrative-handled), how the GM agent prompt is
-   structured, how the lorebook fires, and what the engine does and does NOT
-   support. See `docs/AUTHORING-PHASE-6.md` section 1 for the shape of each
-   mode's full `resolution` block (especially the four added after Phase 5).
-2. `schema/bundle.schema.json` — the JSON Schema for the file you'll produce.
-3. `rulesets/dnd5e/bundle.json`, `rulesets/exalted3e/bundle.json`, and
+1. `releases/1.1.0/docs-for-ai/01-OVERVIEW.md` through
+   `releases/1.1.0/docs-for-ai/07-EXAMPLE-PROMPTS.md` — read all seven, in
+   numeric order. This is the primary authoring reference: the ruleset
+   schema, the system-agnostic agent architecture, the lorebook format, and
+   the build pipeline.
+2. `docs/AUTHORING-PHASE-6.md` — the schema additions that shipped after the
+   docs-for-ai set was written: the **nine resolution modes** (single-roll,
+   dice-pool, d100-percentile, 2d6-stat, fate-ladder, roll-under,
+   stance-modal-pool, dice-pool-sum with Wild Die, narrative-handled — the
+   docs-for-ai set only documents the first five), the Resources cluster,
+   autocalc derived stats, commitmentModel, and the other Phase 5/6/7
+   fields. Section 1 has the full `resolution` block shape for each mode.
+3. `schema/bundle.schema.json` — the JSON Schema for the file you'll produce.
+4. `rulesets/dnd5e/bundle.json`, `rulesets/exalted3e/bundle.json`, and
    `rulesets/fate-core/bundle.json` — three complete worked examples in
    different resolution modes. **Pick whichever is closest to my system as
    your structural template.**
@@ -81,8 +83,13 @@ Then produce **one** valid `bundle.json` for `<<YOUR SYSTEM>>` that:
   conditions/states. Each entry needs a `name`, `content`, `keys` array,
   and `position: 0`.
 - Includes the engine compatibility paragraph from the reference bundles
-  about the 50-character `[reputation: action="..."]` cap, adapted to the
-  vocabulary of `<<YOUR SYSTEM>>`.
+  about the `[reputation: action="..."]` length cap (verified against current
+  engine HEAD at 500 characters via `GAME_REPUTATION_ACTION_MAX_LENGTH` in
+  `packages/server/src/routes/game.routes.ts` — some older reference text in
+  this project describes a since-widened 50-character cap; regardless of
+  which number an installation enforces, tell the model to keep `action` to
+  a short verb phrase, not a sentence), adapted to the vocabulary of
+  `<<YOUR SYSTEM>>`.
 
 When you're done, output the bundle as a single fenced JSON code block. Do
 not split it across multiple responses. Do not add commentary inside the JSON
@@ -91,6 +98,28 @@ not split it across multiple responses. Do not add commentary inside the JSON
 === PROMPT END ===
 
 ---
+
+## If your AI can't browse the web (file-upload only)
+
+Some chat AIs (the free ChatGPT tier, certain enterprise deployments) can't
+fetch the GitHub repo but do accept uploaded files. In that case, before
+pasting the prompt above, upload these files instead of pointing the AI at
+the repo:
+
+- This file, `AUTHORING-PROMPT.md`.
+- All seven files in `releases/1.1.0/docs-for-ai/` (`01-OVERVIEW.md` through
+  `07-EXAMPLE-PROMPTS.md`).
+- `docs/AUTHORING-PHASE-6.md`.
+- `schema/bundle.schema.json`.
+- One or two reference bundles closest to your system, e.g.
+  `rulesets/dnd5e/bundle.json` and `rulesets/exalted3e/bundle.json`.
+
+Then tell the AI: *"I've uploaded the Marinara-RPG-Extension authoring docs
+and reference bundles. Read the docs-for-ai files in order, then
+AUTHORING-PHASE-6.md, then the schema and reference bundles. Now follow the
+instructions in the prompt below."* — followed by the prompt block above
+with the repo-reading step 1 replaced by "read the uploaded docs" and
+`<<YOUR SYSTEM>>` filled in.
 
 ## Sub-agents (`additionalAgents[]`)
 
@@ -109,7 +138,7 @@ Reference prompts for the three universal agents live at `agents/<role>.md`. Dro
 
 **Install posture (GM-mode, Marinara 2.4.3+):** the bundle **installs** the agents; the user **enables** them per game at load time, after the game launches (like any custom agents), and attaches the ruleset's lorebook to the game — without the lorebook the agents have no rules context and fail. The canonical pool above is the ONLY agent architecture — do not invent additional per-turn agents beyond it; a new mechanic should be a section of an existing agent's prompt unless it genuinely cannot be (and per-system `parallel` trackers are capped at one per ruleset).
 
-**Document each sub-agent in the lorebook.** Conventionally, ship one lorebook entry titled "Optional Sub-Agents — what they do and how to enable" that lists each agent's purpose + the Settings → Agents flow. The dnd5e and exalted3e reference bundles in this repo show the canonical content.
+**Document each sub-agent in the lorebook.** Conventionally, ship one lorebook entry titled "Sub-Agents — what they do and how to enable them" that lists each agent's purpose + the Settings → Agents flow. The dnd5e and exalted3e reference bundles in this repo show the canonical content.
 
 ---
 

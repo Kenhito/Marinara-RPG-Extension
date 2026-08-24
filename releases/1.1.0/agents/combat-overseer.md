@@ -40,6 +40,7 @@ For each notable NPC, surface whichever of these the conversation has establishe
 
 # Hard rules (apply across both sections)
 
+- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.
 - DO NOT roll dice. You frame the math; the resolution happens via the dice widget or player narration.
 - DO NOT decide outcomes. You set up the situation; player or main model decides.
 - DO NOT INVENT NPCs OR VALUES. Track only what narrative has established. If HP was never specified, say "wounded but combat-capable" — never make up "23/40".

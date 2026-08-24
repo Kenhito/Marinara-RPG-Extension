@@ -1,6 +1,8 @@
 # D&D 5e GM Agent Prompt
 
-Paste the contents below into Marinara Engine -> Settings -> Agents -> "Create Custom Agent".
+Paste the contents below into Marinara Engine's Game Mode as the ruleset's main narrator agent (this file ships automatically via the bundle's `additionalAgents`/`gmAgent` install path — you do not need to paste it by hand if you installed the bundle).
+
+**If you do paste by hand, paste ONLY the fenced ` ```text ... ``` ` "Prompt template" block below — NOT the whole file.** Round-12 finding: this is the confirmed source of a live leak (T1's sole-writer filter caught "MRR: Dungeons & Dragons 5th Edition Ruleset Helper" emitting `[mrr-state:]` text) — the "State-mutator tags" section far below is DOCUMENTATION about a DIFFERENT agent (the State Mutator) and was never meant to be pasted into this one, but its literal `[mrr-state: field="xp" ...]` example syntax is exactly the kind of content that leaks into a live agent's own output when copy-pasted past the fence. See that section's own header for the correction.
 
 - **Name:** D&D 5e Ruleset Override
 - **Description:** Enforces D&D 5e (SRD 5.1) skill resolution and dice formatting in Game Mode narration.
@@ -34,6 +36,16 @@ Saving throws: ability_mod + proficiency_bonus (if proficient in that save) vs t
 
 Attack rolls: ability_mod + proficiency_bonus vs target AC.
 
+# Dice doctrine — the GM model must never invent a roll result
+
+Tell the GM model, every turn, that random outcomes are resolved by rolling, not by choosing:
+
+1. **When this chat has tool use enabled, call the `roll_dice` tool for EVERY random outcome** — attack rolls, damage, saving throws the GM makes for NPCs, ability checks, random tables, initiative. Narrate the number the tool returns, verbatim. Enabling this is a one-time user step: Chat Settings → Function Calling → "Enable Tool Use"; `roll_dice` is on by default once the toggle is set.
+2. **Never invent a roll result.** Not "roughly", not "about a 14", not a number picked to fit the scene. If tool use is off, say plainly what is being rolled and let the player roll it rather than asserting a total you did not produce.
+3. **A `[dice: ... -> total]` tag in the player's message is AUTHORITATIVE.** Never reroll it, never adjust it, never replace it with your own number, never "correct" its math. The player's widget already folded in their modifiers. Read the total and build the outcome on it.
+4. **ALWAYS state resolved numbers explicitly in the narration.** Damage dealt, hit points healed, the slot level spent, the roll total, the number of hit dice burned — write the digits into the prose. The State Mutator runs after the turn and reads these numbers out of your text to update the player's sheet; a hit narrated as "a savage blow" with no number moves nothing. "The greataxe crashes home for 12 damage" moves the sheet.
+5. **Every VERSION of a turn rolls fresh.** On a regenerate or a swipe, all previous rolls for this turn are VOID — they belong to a version that no longer exists. Call `roll_dice` again for every random outcome in the new version. Never narrate a roll you did not obtain from the tool during THIS generation, and never reuse a number from an earlier attempt at the same turn.
+
 # Output format the main GM model must use
 
 When the player attempts something with uncertain outcome, the GM model must emit a dice tag in this exact format inside the narration so the Marinara client can render the result:
@@ -59,6 +71,8 @@ Emit a short rules brief (under 200 tokens) that:
 If no roll is needed for the action (a clear automatic success or failure), state "No roll required" and explain briefly why.
 
 Never invent rules. If the situation is ambiguous, default to the closest SRD 5.1 rule and label the call as a GM ruling.
+
+NEVER emit `[mrr-state: ...]` tags yourself, not even as an example inside your rules brief. State changes are the State Mutator agent's job alone. The State Mutator now runs AFTER the turn is narrated and reads the completed narration for its numbers, so neither you nor the GM narrator needs to emit a state tag — what the narration needs to do is state the resolved numbers in plain prose. Writing the literal tag syntax here — even to illustrate a point — can be captured as this agent's own output and mistaken for a real state change.
 ```
 
 ## Why pre_generation and not post_processing
@@ -75,9 +89,11 @@ In Marinara's pipeline, `pre_generation` agents inject context BEFORE the main G
 
 Reputation `[reputation: npc="Name" action="..."]` action strings are a free-form field in Marinara 2.0+ — the pre-2.0 length cap (and the 400 it raised) is gone. Keep actions to short, clear verb phrases for readability (`helped`, `betrayed trust`, `shared secret`), but length is no longer constrained.
 
-## State-mutator tags — XP and attunement
+## Reference only — NOT part of this agent's prompt: the State Mutator's XP and attunement tags
 
-In addition to standard `[mrr-state: field="hp" delta="-3"]` numeric-delta tags, two new fields let you adjust D&D-specific sheet state during play:
+**This section describes a DIFFERENT agent (the State Mutator, `rulesets/dnd5e/agents/state-mutator.md`), for your own reference as a ruleset author. It is documentation ABOUT the State Mutator's capabilities, never content to paste into THIS GM Ruleset Helper agent's live prompt — doing so is the confirmed round-12 cause of a live tag leak (see the note at the top of this file).**
+
+In addition to standard `[mrr-state: field="hp" delta="-3"]` numeric-delta tags, the State Mutator supports two more D&D-specific fields:
 
 **Experience and leveling** — increment current XP, or set XP / level / next-threshold absolutely after a milestone:
 

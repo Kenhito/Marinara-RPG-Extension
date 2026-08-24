@@ -7,7 +7,7 @@
  *
  * Usage:
  *   node tools/validate-extension-package.mjs            # validates releases/<package.json version>/
- *   node tools/validate-extension-package.mjs --version 1.0.0
+ *   node tools/validate-extension-package.mjs --version 1.1.0
  * Exit 0 = all checks pass; exit 1 = one or more failures.
  */
 import { readFileSync, existsSync } from "node:fs";
@@ -162,6 +162,29 @@ try {
   }
 } catch (e) {
   fail(`zip verification failed: ${e.message}`);
+}
+
+// 5. Comment-strip sanity (round 27). The packaged loader is the comment-stripped
+//    build of extension/RPG-Extension-GM-Mode.js, so it must come out SMALLER
+//    than the source. This is a WARN, not a FAIL: it is legal (if wasteful) to
+//    build with --no-strip, and a future source that carries no comments would
+//    strip to roughly its own size. Both are worth surfacing, neither is broken.
+//
+//    Note there is deliberately no source-vs-packaged BYTE-PARITY check anywhere
+//    in this file — the strip makes source and package differ by design. The
+//    parity that still holds, and is enforced above in section 2, is
+//    sibling extension.js == inline config.js: both are the same stripped string.
+if (foundManifestPath && existsSync(foundManifestPath)) {
+  const cfg = getManifestConfig(JSON.parse(readFileSync(foundManifestPath, "utf8"))) || {};
+  const srcPath = resolve(root, "extension/RPG-Extension-GM-Mode.js");
+  if (typeof cfg.js === "string" && existsSync(srcPath)) {
+    const packagedBytes = Buffer.byteLength(cfg.js, "utf8");
+    const sourceBytes = Buffer.byteLength(readFileSync(srcPath, "utf8"), "utf8");
+    const headroom = MAX_JS_BYTES - packagedBytes;
+    if (packagedBytes >= sourceBytes)
+      console.warn(`WARN packaged config.js (${packagedBytes} B) is not smaller than the source loader (${sourceBytes} B) — was the comment strip skipped (--no-strip)?`);
+    console.log(`  loader: ${sourceBytes} B source -> ${packagedBytes} B packaged; ${headroom} B headroom under ${MAX_JS_BYTES}`);
+  }
 }
 
 if (errs.length) {

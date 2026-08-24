@@ -1,6 +1,6 @@
 {
   "name": "marinara-rpg-extension",
-  "version": "0.5.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Custom RPG rulesets for Marinara Engine's Game Mode. System-agnostic framework with two complete reference rulesets (D&D 5e, Exalted 3e), AI-feedable build documentation, and a six-agent architecture (main GM + state-mutator, state-reminder, combat-adjudicator, lore-query, npc-bookkeeper). Build a ruleset for any tabletop RPG by writing three source files plus optional per-system agent overrides.",
   "type": "module",
@@ -10,11 +10,21 @@
     "validate-bundles": "node tools/validate-bundle.mjs --all",
     "build-bundles": "node tools/build-bundle.mjs --all",
     "build-agents": "node tools/build-agents.mjs --all",
-    "embed-css": "node tools/embed-css.mjs"
+    "embed-css": "node tools/embed-css.mjs",
+    "build-extension-package": "node tools/build-extension-package.mjs",
+    "validate-extension-package": "node tools/validate-extension-package.mjs",
+    "build-character-card": "node tools/build-character-card.mjs",
+    "preview-custom-tools": "node tools/build-custom-tools.mjs",
+    "preview-lorebook-expansions": "node tools/build-lorebook-expansions.mjs",
+    "preview-pre-input-transformer": "node tools/build-pre-input-transformer.mjs",
+    "preview-regex-scripts": "node tools/build-regex-scripts.mjs",
+    "preview-scenario-default": "node tools/build-scenario-default.mjs",
+    "check:freshness": "node tools/check-freshness.mjs"
   },
   "devDependencies": {
     "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1"
+    "ajv-formats": "^3.0.1",
+    "terser": "^5.50.0"
   },
   "license": "MIT",
   "repository": {
