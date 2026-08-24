@@ -1368,6 +1368,28 @@ function findManagedLorebook(lorebooks, rulesetId) {
    firing every turn. Behaviour is otherwise unchanged: the previous
    single-connection fallback is preserved verbatim, and null remains a
    legitimate result. */
+/* Round-21 C4/F11: entry-limit sizing for a managed lorebook. Engine default
+   is 100 (defaults.ts:91) and the schema accepts 1..1000
+   (lorebook.schema.ts:117-122); books above the limit are silently truncated
+   at scan time and exalted3e ships 133 entries. Floor of 150 plus headroom of
+   20 over the actual count, clamped to the schema max so an oversized book can
+   never 400 the install. Mirrors the engine's own migration sizing
+   (extended-descriptions-migration.ts:312). */
+function mrrLorebookEntryLimit(entries) {
+  var n = Array.isArray(entries) ? entries.length : 0;
+  return Math.min(1000, Math.max(150, n + 20));
+}
+
+/* Round-21 C3/F8: custom-tool `description` is z.string().min(1).max(500)
+   (custom-tool.schema.ts:14). An EMPTY string is still a string, so the old
+   `typeof === "string"` guard let "" through and the POST was a guaranteed
+   400 that failed the entire tool install for any bundle omitting a
+   description. Empty/whitespace now falls back to a generated one-liner. */
+function mrrCustomToolDescription(desc, rulesetLabel) {
+  if (typeof desc === "string" && desc.trim()) return desc.slice(0, 500);
+  return (rulesetLabel || "MRR") + " custom tool";
+}
+
 function pickDefaultConnection() {
   return apiFetch("/connections", {}).then(function (list) {
     if (!Array.isArray(list)) return null;
@@ -1438,7 +1460,25 @@ function installBundle(bundle, progressCb) {
       scanDepth: bundle.lorebook.scanDepth != null ? bundle.lorebook.scanDepth : 4,
       tokenBudget: bundle.lorebook.tokenBudget != null ? bundle.lorebook.tokenBudget : 1500,
       recursiveScanning: !!bundle.lorebook.recursiveScanning,
-      tags: [MRR_TAG_MANAGED, MRR_TAG_RS_PFX + rulesetId]
+      /* Round-21 C4/F11: the engine's `entryLimit` defaults to 100
+         (defaults.ts:91, LOREBOOK_ENTRY_LIMIT_DEFAULT) and is a real,
+         settable field on the lorebook schema — `z.number().int().min(1)
+         .max(1000)` (lorebook.schema.ts:117-122, MIN=1/MAX=1000 at
+         defaults.ts:93/95). Several shipped books exceed the default
+         (exalted3e ships 133 entries), and the excess is silently truncated
+         at scan time. Sized to the book we are actually installing, with
+         headroom for the derived entries a later rebuild may add, and
+         clamped to the schema's own max so an oversized book can never 400
+         the whole install. The engine sets this field the same way in its
+         own migration (`entryLimit: Math.max(100, descriptions.length)`,
+         extended-descriptions-migration.ts:312). Sent on BOTH create and
+         update — `lbBody` feeds each — so a reinstall also lifts a book
+         previously created at the default 100.
+         NOT addressed here: `tokenBudget` can truncate independently of the
+         entry count; that is a sizing question for the replan, not a
+         correction. */
+      entryLimit: mrrLorebookEntryLimit(bundle.lorebook.entries),
+      tags: [MRR_TAG_MANAGED, MRR_TAG_RS_PFX + rulesetId] /* BOOK-level tags — a real field (lorebook.schema.ts:148), read back at findManagedLorebook */
     };
 
     var lbStep = existingLb
@@ -1471,19 +1511,30 @@ function installBundle(bundle, progressCb) {
       progress("Installing " + bundle.lorebook.entries.length + " lorebook entries...");
       /* Per-entry POST mirrors the spellbook write path (upsertAbilityLorebookEntry)
          which is known to work end-to-end. The bulk endpoint was returning
-         200 but landing zero entries — switching to single-entry POSTs and
-         using `tags: [MRR_TAG_MANAGED]` (plural array) instead of
-         `tag: "..."` (singular string) restored the install. */
+         200 but landing zero entries — switching to single-entry POSTs is
+         what restored the install.
+         ROUND-21 CORRECTION (F12): the previous comment here also credited
+         "using `tags: [...]` (plural array) instead of `tag` (singular)".
+         That half was FALSE and the payload was inert. `createLorebookEntrySchema`
+         (lorebook.schema.ts:157-183) has NO `tags` field — the plural array is a
+         BOOK-level field (:148, `lorebooks.tags`); an ENTRY has the singular
+         `tag: z.string()` (:203, `lorebook_entries.tag`). Zod strips unknown
+         keys, so every entry-level `tags` array we have ever sent was silently
+         discarded. Nothing reads them back either (the only tag read in this
+         file is `lb.tags` on the BOOK, ~:11780), so removing the payload is a
+         no-op in behaviour and simply stops lying about what we store.
+         `delete copy.tag` below is deliberately UNCHANGED this round: it drops
+         a bundle-authored singular tag the schema WOULD accept, which is a real
+         (pre-existing) capability gap, but restoring that passthrough is a
+         design change and belongs in the replan, not in a corrections pass. */
       var entries = bundle.lorebook.entries;
       var addChain = Promise.resolve();
       entries.forEach(function (e, i) {
         addChain = addChain.then(function () {
           var copy = {};
           for (var k in e) if (Object.prototype.hasOwnProperty.call(e, k)) copy[k] = e[k];
-          var existingTags = Array.isArray(copy.tags) ? copy.tags.slice() : [];
-          if (existingTags.indexOf(MRR_TAG_MANAGED) === -1) existingTags.push(MRR_TAG_MANAGED);
-          copy.tags = existingTags;
-          delete copy.tag; /* defensive: drop legacy singular field if any */
+          delete copy.tags; /* round-21 F12: entry-level `tags` is not in the entry schema — Zod strips it. Never sent. */
+          delete copy.tag;  /* pre-existing behaviour, unchanged this round — see the correction note above */
           if ((i % 5) === 0) progress("Entry " + (i + 1) + "/" + entries.length + "...");
           return apiFetch("/lorebooks/" + lbId + "/entries", { method: "POST", body: JSON.stringify(copy) });
         });
@@ -1683,7 +1734,13 @@ function installBundle(bundle, progressCb) {
             if (fullName.length > 100) fullName = fullName.slice(0, 100);
             var body = {
               name: fullName,
-              description: typeof t.description === "string" ? t.description.slice(0, 500) : "MRR-managed tool for " + rulesetId,
+              /* Round-21 C3/F8: `description` is `z.string().min(1).max(500)`
+                 (custom-tool.schema.ts:14) — an EMPTY string is still a string,
+                 so the old `typeof === "string"` guard let `""` through and the
+                 POST was a guaranteed 400, failing the whole tool install for a
+                 bundle that simply omitted a description. Treat empty/whitespace
+                 as missing and fall back to the generated one-liner. */
+              description: mrrCustomToolDescription(t.description, (state.ruleset && state.ruleset.name) ? state.ruleset.name : rulesetId),
               parametersSchema: t.parametersSchema && typeof t.parametersSchema === "object" ? t.parametersSchema : {},
               executionType: t.executionType === "webhook" || t.executionType === "script" ? t.executionType : "static",
               webhookUrl: t.webhookUrl != null ? t.webhookUrl : null,
@@ -4373,6 +4430,16 @@ function insertIntoChatInput(text) {
   return true;
 }
 
+/* ⚠️ ROUND-21 C5/F10 — NOTE ONLY, fix deferred to the replan.
+   This selector family and hideBuiltInAttributesPanel below anchor on ENGLISH
+   STRING LITERALS in the engine's rendered UI. The engine has since been
+   internationalised, so on any non-English locale these anchors miss: the
+   sheet falls back to floating unanchored (COUPLINGS row 8's documented
+   degradation) and the built-in Attributes panel is never hidden, so the user
+   sees two attribute panels stacked. No crash, no data loss — a cosmetic and
+   layout degradation confined to non-English locales. A durable fix needs a
+   locale-independent anchor (structural/DOM-shape or a data-attribute the
+   engine exposes) and is a design change, not a correction. */
 function findSheetContainer() {
   var headings = document.querySelectorAll("h1, h2, h3, h4, h5, [role='heading']");
   for (var i = 0; i < headings.length; i++) {
@@ -11851,8 +11918,12 @@ function abilityEntryBody(ability, charId, catId) {
     position: 0,
     matchWholeWords: true,
     enabled: true,
-    role: "system",
-    tags: [MRR_TAG_SPELLBOOK, MRR_TAG_CHAR_PFX + (charId || "unknown"), MRR_TAG_CAT_PFX + (catId || "unknown")]
+    role: "system"
+    /* round-21 F12: entry-level `tags` removed — stripped by
+       createLorebookEntrySchema and never read back (ability entries are
+       matched by name in upsertAbilityLorebookEntry). The SPELLBOOK BOOK
+       still carries its plural `tags`, which IS a real book field and IS
+       read at the findSpellbook call site. */
   };
 }
 
@@ -13529,6 +13600,27 @@ function buildSyncFields(prefix) {
   return fresh;
 }
 
+/* ⚠️ ROUND-21 C1/F1 — THIS FUNCTION IS A CONFIRMED NO-OP AGAINST THE SERVER.
+   Kept, not deleted, per the corrections-pass scope (removal is a design call
+   for the replan, folded into B7/B8).
+
+   `PATCH /chats/:id` parses its body with `createChatSchema.partial().parse(...)`
+   (chats.routes.ts:1001). `createChatSchema` (chat.schema.ts:11-19) declares
+   exactly `{name, mode, characterIds, groupId, personaId, promptPresetId,
+   connectionId}` — there is NO `customTrackerFields` key, and a plain Zod
+   object STRIPS unknown keys rather than rejecting them. So this PATCH returns
+   200, writes nothing, and the field reads back undefined forever. That has
+   been true at every engine version since 2.0.9, which means COUPLINGS row 5's
+   "57-field sheet sync to chat succeeded" was reading an HTTP 200 as a write —
+   it never was one. Row 5 is corrected accordingly.
+
+   The real home for this data is game-state `playerStats` (plan items B7/B8).
+   Until that lands, the sheet reaches the model exclusively through the agent
+   promptTemplate injection, which is why that path is load-bearing.
+
+   The round-19 captured-chatId fix below remains correct and is retained: it
+   closed a genuine cross-chat read-modify-write. It simply now guards a call
+   whose write half the server discards. */
 function syncSheetToChat() {
   if (!state.chatId) { warn("no chat id; cannot sync"); return; }
   var current = state.characters.find(function (c) { return c.id === state.activeCharacterId; });
@@ -14305,8 +14397,12 @@ function syncFieldReferenceToLorebook() {
         position: 0,
         constant: true,
         selective: false,
-        keys: keys,
-        tags: [MRR_TAG_MANAGED, MRR_TAG_RS_PFX + rulesetId, FIELD_REF_TAG]
+        keys: keys
+        /* round-21 F12: an entry-level `tags` array was sent here and silently
+           stripped by createLorebookEntrySchema (entries carry a singular
+           `tag`, books carry plural `tags`). Nothing ever read it back — this
+           entry is located by NAME ("Field Reference (extension-managed)"),
+           not by tag — so dropping the inert payload changes no behaviour. */
       };
       return cleanupChain.then(function () {
         if (existing) {
@@ -14331,7 +14427,7 @@ function syncFieldReferenceToLorebook() {
    prompts the user once (window.confirm), and PATCHes /chats/:id/metadata
    with { groupScenarioText: scenarioDefault }. Endpoint, method, and body
    shape mirror reconcileActiveAgents below — same pass-through metadata
-   merge contract documented in chats.routes.ts:349. "All my chats" is out
+   merge contract documented in chats.routes.ts:1090. "All my chats" is out
    of scope for the first pass; per-chat with explicit confirmation is the
    safer minimum-viable closure. Helper resolves on success, on user cancel,
    on missing-chat, and on PATCH failure — the install pipeline never throws
@@ -14422,7 +14518,7 @@ function reconcileActiveAgents(rebind) {
       : ((chat && chat.metadata) || {});
     var existing = Array.isArray(meta.activeAgentIds) ? meta.activeAgentIds : [];
 
-    /* Chat-scoped ruleset stamp prevents cross-ruleset pollution: if the chat is bound to a different ruleset, skip with a warning instead of mixing agents from multiple rulesets into one chat's active list. Stamp round-trips via the engine's pass-through metadata merge (chats.routes.ts:349). */
+    /* Chat-scoped ruleset stamp prevents cross-ruleset pollution: if the chat is bound to a different ruleset, skip with a warning instead of mixing agents from multiple rulesets into one chat's active list. Stamp round-trips via the engine's pass-through metadata merge (chats.routes.ts:1090). */
     var stamp = meta.mrrChatRulesetId;
     if (stamp && stamp !== rulesetId) {
       if (!rebind) {

@@ -144,8 +144,11 @@ widget — it is NOT a `[mrr-state:]` damage delta.
    - **By hand:** **Preset Editor → Add Section → Agent Sections**, then pick each
      MRR agent in the list.
 
-   Notes: this applies to **roleplay mode only** — Game mode and conversation mode
-   don't use preset sections. The State Mutator deliberately has **no** section: its
+   Notes: this applies to **roleplay mode only**, and Game mode is genuinely fine
+   without it — the preset assembler is skipped entirely for game and
+   conversation chats, so those modes keep the older depth-0 injection
+   fallback and their agent output is delivered as it always was. Only
+   roleplay chats hand placement to the preset. The State Mutator deliberately has **no** section: its
    output is `[mrr-state: ...]` tags meant for the extension, which reads them
    directly from the agent-run history, and feeding raw tag syntax to the narrator
    invites it to echo tags. If your chat has **no preset selected at all**, Marinara

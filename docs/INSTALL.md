@@ -30,7 +30,21 @@ Each ruleset folder has its own step-by-step `INSTALL.md`. This page is the orie
 4. **Enable the agents for your game**
    On Marinara 2.4.3+ the MRR agents behave like any custom agents: installed by the bundle, but enabled per game — **after the game launches, not mid-generation**. Go to **Settings -> Agents** (or the game's agent selection), find the agents named like `MRR: <System> — <Role>`, and enable the ones your table wants. A good minimal set: **Ruleset Helper + State Mutator** (the State Mutator is what makes narration update the character sheet). Each enabled agent costs one model call per turn.
 
-That's all four pieces. The per-ruleset INSTALL files (`rulesets/dnd5e/INSTALL.md`, `rulesets/exalted3e/INSTALL.md`) walk through this in detail with sanity-check rolls.
+5. **Add the MRR agent sections to your roleplay preset (roleplay chats, engine 2.4.0+)**
+   **This step is not optional for roleplay chats, and skipping it fails silently.** Since Marinara 2.4.0 a roleplay preset *owns* agent placement: an agent's output is inserted only where a matching **Agent Data** marker section sits in the preset, and with no matching section the engine **discards that agent's output entirely** — no warning, no fallback. The agents still run, still cost tokens, and still show healthy rows in their run history, while the narrator never sees a word of it. If your agents seem to "do nothing", this is almost always why.
+
+   - **One click (recommended):** open **Manage MRR Agents** → **Add agent sections to active preset**. It names the preset before changing anything, skips agents that already have a section, and never edits a preset without your confirmation.
+   - **By hand:** **Preset Editor → Add Section → Agent Sections**, then pick each MRR agent.
+
+   **Roleplay only — Game mode is genuinely fine without it.** The preset assembler is skipped entirely for game and conversation chats, so those modes keep the older depth-0 injection fallback and their agent output is delivered as it always was. Only roleplay chats hand placement to the preset.
+
+   The **State Mutator** deliberately gets no section: its `[mrr-state: ...]` output is addressed to the extension, which reads it straight from the agent-run history, and feeding raw tag syntax to the narrator invites it to echo tags. If your chat has **no preset selected at all**, Marinara uses no preset sections whatsoever — pick one first, or let the one-click assist attach your default.
+
+   **The connection warning is harmless.** If Marinara warns that an MRR agent has no connection configured, that is a **billing/attribution notice, not an error**. Agents without an explicit connection resolve one at generation time and work normally. It is never the cause of missing agent output.
+
+   **Chat tools need the chat's own toggle.** If a ruleset ships custom tools, they only become available when that chat's **enableTools** setting is on — installing a bundle does not turn it on for you.
+
+That's all five pieces. The per-ruleset INSTALL files (`rulesets/dnd5e/INSTALL.md`, `rulesets/exalted3e/INSTALL.md`) walk through this in detail with sanity-check rolls.
 
 ## Switching rulesets
 
