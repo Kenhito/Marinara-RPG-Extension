@@ -7,6 +7,133 @@ Version numbers follow [Semantic Versioning](https://semver.org/) once a 1.0
 release is cut; pre-1.0 minor bumps may include breaking changes (called out
 explicitly when they do).
 
+## v1.1.0 (2026-08-24)
+
+Everything below is written for people who play with this thing. The
+per-round engineering entries further down are the detail record and stay
+where they are.
+
+**Still requires Marinara Engine 2.4.3 or newer**, and it is still a zip
+import (`releases/1.1.0/Marinara-RPG-Extension.extension.zip`), never a
+loose `.js` file. Updating from 1.0.0 means importing the new zip, clicking
+**Review and Run** on the new code hash, and re-importing your ruleset
+bundle. Your characters come with you.
+
+### The headline four
+
+- **Compatibility fixes for the problems 1.0 shipped with.** Three of them,
+  all engine-2.4.x behavior that 1.0 predated, and all self-healing now.
+  *Preset-owned agent placement:* since engine 2.4.0 a roleplay preset
+  decides where an agent's output goes, and an agent with no matching
+  **Agent Data** section had its output thrown away silently — the agents
+  ran, cost tokens, looked healthy in their run history, and the narrator
+  never saw a word. *Agent type collision on reinstall:* Marinara can never
+  change an existing agent's `type`, so re-importing a bundle created the
+  MRR agents fresh and orphaned every preset section you had added — the
+  same silent discard, arriving the moment you updated. *Chat-preset
+  metadata wipes:* applying a chat preset could erase the chat's ruleset
+  stamp, and the sheet would come back blank. The extension now repoints
+  orphaned agent sections after every bundle import, re-derives a wiped
+  ruleset stamp from the chat's own enabled agents, and logs one line per
+  repair to the browser console. First-time setup still uses **Manage MRR
+  Agents → Add agent sections to active preset**; only the re-run became
+  automatic.
+- **Character sheets now save to the server, not just your browser.** Sheets,
+  the per-chat character roster, the active-character pointer, the active
+  ruleset, and the spellbook cache sync through Marinara's own extension
+  storage on 2.4.x engines, with your browser's local copy kept as an
+  always-written mirror. Every stored value carries a timestamp, and on load
+  the newer of the two sides wins per key — so a browser that saved and then
+  crashed before the upload landed reclaims its own edit instead of losing it
+  to a stale server copy. In practice: clearing site data no longer wipes
+  your characters, and the same characters show up in a second browser. Some
+  things stay deliberately device-local (panel position and size, the ruleset
+  library). If storage degrades — a sheet too large to sync, a failed write —
+  a warning strip appears at the top of the sheet instead of failing quietly.
+- **Chats now remember their character sheets and their ruleset.** Entering a
+  chat activates that chat's ruleset automatically, and the sheet and dice
+  widget follow it. Sheets are held per character rather than smeared across
+  whatever chat you happened to open, with protection against one system's
+  values bleeding into another's game. (One honest residual: the same library
+  character *deliberately* loaded under two different rulesets still shares
+  one record. Accidental bleed is impossible; that deliberate case is known
+  design debt.)
+- **A ruleset can now offer more than one dice mechanic.** A system is no
+  longer locked to a single resolution mode: it can declare named alternate
+  mechanics, bind individual skills to them, and let you pick one from a
+  selector on the dice widget — and the resulting roll tag names the mechanic
+  it used, so the GM reads what actually happened. **Dice-pool and roll-under
+  are the two modes wired end to end**, with Old School Essentials shipping
+  as the pilot (percentile Thief skills and X-in-6 door checks alongside its
+  d20 attacks and saves). This is the foundation; more mechanics get
+  converted in later releases.
+
+### Also worth your attention
+
+- **Real dice, end to end.** With the chat's **Enable Tool Use** toggle on,
+  the GM resolves random outcomes through Marinara's server-side `roll_dice`
+  tool — a true RNG — and narrates the number it returned. A model that
+  invents dice is a biased die, and reliably a kinder one than the real
+  thing. The other half of the chain: the piece that writes to your sheet now
+  runs *after* the narration instead of before it, so it copies numbers out
+  of the story instead of guessing at numbers that did not exist yet, and it
+  cites where each one came from (`reason="GM narrated 15 poison damage"`) so
+  you can audit any value that looks wrong. In 1.0 the sheet and the story
+  disagreed on every random number; they agree now.
+- **Full swipe support.** Each swipe of a reply carries its own state. Swiping
+  away from a variant reverts the changes it made; swiping back reapplies
+  them; regenerating rolls fresh dice rather than reusing the last version's
+  numbers. Save-scumming your way through a bad round is now a supported
+  feature rather than an accident.
+- **The turn-editing buttons work again.** Regenerate, the swipe arrows, and
+  edit had been dead in every chat with the extension installed — a
+  long-standing bug that earlier sessions kept misattributing to whatever
+  else was on fire. They render, click, and work.
+- **Install and reinstall repair themselves** (see the compatibility item
+  above). The one preset the extension cannot repair is the stock read-only
+  **Marinara Universal** — save a copy, select the copy for your chat, and
+  run the one-click assist against that.
+- **Two more systems: Old School Essentials and Rolemaster (RMFRP)**, taking
+  the shipped count from 14 to 16.
+- **A smaller download.** The shipped loader is stripped of its comments at
+  build time — a transform that removes comments and nothing else, with every
+  string, number, and pattern in the file verified identical afterward. The
+  packaged loader drops from 760 KB in 1.0.0 to 623 KB, well clear of the
+  engine's 1 MiB ceiling.
+- **Docs overhaul.** Five rulesets that shipped without an install guide
+  (Call of Cthulhu 7e, GURPS Lite, Pathfinder 2e, The Stewpot, Trophy Dark)
+  have one; all 16 guides now document the **Enable Tool Use** toggle and the
+  preset agent-sections step; and six screenshots walk the install flow —
+  enabling extensions, confirming the import, the permissions the extension
+  asks for, the preset agent-sections dialog, the dice-tool toggle, and the
+  dice widget itself.
+- **Download verification.** Both release-folder guides publish SHA-256
+  hashes for the importable zip and the loose loader, plus the exact code
+  hash Marinara's own **Review and Run** dialog should show you. You are
+  about to grant a file full page access inside your own engine; thirty
+  seconds of checking is worth it.
+
+### Known notes
+
+- **Multi-mechanic dice is wiring and preview, not a finished feature.** Two
+  of the nine resolution modes are converted (dice-pool, roll-under) and one
+  ruleset pilots it (OSE). The remaining seven modes cannot be used as
+  alternate mechanics yet, and the schema rejects them rather than letting
+  them fail silently.
+- **Game mode is untested this release.** The live-fire work behind these
+  fixes ran in roleplay mode. Game mode is expected to work — it skips the
+  preset assembler entirely and keeps the older injection path — but nobody
+  played a session in it before shipping.
+- **Vampire: The Masquerade 20th, Werewolf: The Apocalypse 20th, and Exalted
+  Versus World of Darkness still run the previous-generation state flow.**
+  Their state-writing agent stays on the older pre-narration timing, which
+  means it can still guess at dice results, and their chat transcripts still
+  show raw `[mrr-state: ...]` tags. Each needs its own pass; none of them has
+  had one yet.
+- Historical `releases/1.0.0/...` paths in the per-round entries below are
+  left as written — they record where those files lived at the time. The
+  current release folder is `releases/1.1.0/`.
+
 ### Added (overnight docs+tooling round, 2026-08-24)
 - **Artifact freshness gate (`tools/check-freshness.mjs`, `npm run check:freshness`).** Re-runs the full build pipeline — every ruleset bundle and agents file, the loader's embedded CSS, and the release package — against the current working tree and asserts a zero diff. Clean tree in, clean tree out. Committed sources can no longer silently drift from committed artifacts. Refuses to judge a tree whose artifact paths are already dirty (exit 2; `--allow-dirty` overrides), leaves rebuilt files in place on failure so `git diff` shows the drift, and holds the two non-reproducible values constant (release-zip mtimes excluded — its payload is byte-checked separately; `exportedAt` pinned to the committed value). Verified FRESH at `edd01d4`.
 - **npm scripts for every tool that lacked one** — `build-extension-package`, `validate-extension-package`, `build-character-card`, and the five preview CLIs.
