@@ -86,8 +86,9 @@ their run history, while the narrator never sees a word of it. If your agents se
 
 The **State Mutator** deliberately gets no section: its `[mrr-state: ...]` output is
 addressed to the extension, which reads it straight from the agent-run history, and
-feeding raw tag syntax to the narrator invites it to echo tags. Game mode and
-conversation mode don't use preset sections at all. If your chat has **no preset
+feeding raw tag syntax to the narrator invites it to echo tags. Game mode and conversation mode skip the
+preset assembler entirely, so they keep the older depth-0 injection fallback and are
+unaffected by this step. If your chat has **no preset
 selected**, Marinara uses no sections whatsoever — pick one first, or let the
 one-click assist attach your default.
 
@@ -95,6 +96,10 @@ one-click assist attach your default.
 connection configured, that is a **billing/attribution notice, not an error**. Agents
 without an explicit connection resolve one at generation time and work normally. It is
 never the cause of missing agent output.
+
+**Chat tools need the chat's own toggle.** If a ruleset ships custom tools, they only
+become available when that chat's **enableTools** setting is on — installing a bundle
+does not turn it on for you.
 
 ## Step 5 — Build a character
 
