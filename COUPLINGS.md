@@ -6,6 +6,31 @@ Every place MRR touches a Marinara Engine surface outside the documented, versio
 
 Rows marked `PENDING — live probe` were seeded from the plan's design/static analysis this session (agent-executed, no live engine access) and need a follow-up live probe on Corey's running engine (plan §4.A0.3–A0.5) before they can be marked confirmed.
 
+## Ledger discipline
+
+`confirmed` is a claim about a moment in time, not a property of a coupling. This ledger treats it that way.
+
+**Every `confirmed` row must carry both of these, in the Status cell, or it is not confirmed:**
+
+1. **The verification DATE** — when a human or a probe actually observed the behaviour.
+2. **The engine version it was verified against** — the tag, release, or `HEAD <version>-dev` string. "Latest" is not a version.
+
+A row that names neither is `unverified`, whatever its cell currently says, and must be re-probed before anything is built on it.
+
+**Rows expire on any engine minor bump.** When the engine moves 2.4.x → 2.5.0, every `confirmed` row whose recorded version is older than the new minor drops to `stale-recheck` until someone re-verifies it. This is mechanical and not a judgement call — do not exempt a row because it "obviously still works." Patch bumps (2.4.3 → 2.4.4) do not expire rows on their own, but any row whose probe touches a surface named in that patch's changelog does.
+
+**Why this rule exists — the round-21 truth-pass.** Round 21 re-read the engine source behind rows this file already marked `confirmed` and found **three of them false**:
+
+- Row 2 — "a swipe's fresh generation (regenerate) DOES run agents, same pipeline, no special-casing." False, and false at every version back to 2.0.9: `shouldRunPreGen` is gated on `!input.regenerateMessageId`. A whole feature (B2-R) had been specced against a generation shape that does not occur.
+- Row 3 — "agent `type` can be migrated in place via PATCH." False: `agentsStore.update()` has no `type` field at all; the PATCH is accepted and the type silently ignored.
+- Row 3 — the probe cited as proof of that migration (R20-F1-2) had **never asserted the thing it was cited for**. It passed while the claim it supported was false.
+
+None of those were careless entries. Each was written by someone reading real source, and each was true of some *other* code path, some *other* lane, or some *earlier* version. That is exactly the failure mode a date and a version number catch and that confidence does not: the claim did not rot because it was sloppy, it rotted because the engine moved and nothing in the ledger forced anyone to look again.
+
+**A corollary the same pass earned:** when a row is corrected, retract the old claim *in place* and say so loudly (`⚠️ RETRACTED`), rather than quietly rewriting it. Three of this file's most load-bearing cells carry retractions today, and the retraction is the most useful thing in them — a future reader needs to know the shape of what we believed, or they will re-derive the same wrong thing from the same plausible reading.
+
+**Status legend:** `confirmed <date> — <engine version>` (verified, in date, against a named version) · `stale-recheck` (was confirmed; expired by an engine minor bump, needs re-probe) · `PENDING — live probe` (derived from static analysis only; never observed running) · `unverified` (asserted with no date, no version, or no probe) · `RETRACTED` (proven false; the row keeps the retracted text so the wrong belief stays visible).
+
 | # | Coupling | Class | Where (symbol) | Probe | Fallback / degradation | Status |
 |---|---|---|---|---|---|---|
 | 1 | `marinara` full-page API (fetch/storage/timers/onCleanup/log/extension) | A | compat shim, `extension/RPG-Extension-GM-Mode.js` (top of file, after constants) | `typeof marinara.fetch === "function"` (feature-detects legacy vs 2.4.x host inside the shim) | pre-2.3.4 host object passthrough (shim returns `host` unchanged when `host.addElement` exists) | Confirmed 2026-08-22 — `FullPageExtensionApi` v1 shape verified against engine `v2.4.3` tag (`PersonalExtensionInjector.tsx`) |
