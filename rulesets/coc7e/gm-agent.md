@@ -1,6 +1,6 @@
 # Call of Cthulhu 7e GM Agent Prompt
 
-Paste the contents below into Marinara Engine -> Settings -> Agents -> "Create Custom Agent".
+Paste the contents below into Marinara Engine's Game Mode as the ruleset's main narrator agent (this file ships automatically via the bundle's `additionalAgents`/`gmAgent` install path — you do not need to paste it by hand if you installed the bundle).
 
 - **Name:** Call of Cthulhu 7e Ruleset Override
 - **Description:** Enforces Call of Cthulhu 7th Edition percentile roll-under resolution, the three difficulty bands, pushing-the-roll consequences, sanity erosion, and major-wound handling in roleplay-mode narration.

@@ -1,4 +1,4 @@
-# Marinara RPG Rulesets — Game Mode (v0.4.0)
+# Marinara RPG Rulesets (v1.0.0)
 
 Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara-Engine)'s Game Mode. Run a D10 dice-pool game (Exalted 3e), a d20 game (D&D 5e), a 4dF narrative game (Fate Core), or **author your own ruleset for any tabletop RPG** — without forking Marinara, without writing TypeScript, without waiting for upstream feature requests.
 
@@ -21,15 +21,15 @@ Marinara Engine ships a Game Mode where an AI Game Master runs the table. By def
 
 The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps insert ruleset instructions while a rules lore book will provide Marinara with instructions on how to run the selected system. This allows systems to be created based around existing dice mechanics. Build instructions are present to allow an AI Agent, chat or CLI, to create a ruleset featuring a character sheet, GM Agent Prompt, and Lore book with the core mechanics.
 
-## What's new in v0.4.0
+## What's new in v1.0.0
 
-- **Typed damage** on health-style tracks: declare `damageTypes` and the renderer color-codes each cell, severity-stacks the worst damage leftmost, and gives the state-mutator per-type field names (`field="bashing" delta="+3"`).
-- **Sorcery / multi-turn casting category** in the spellbook. Spells filed under `"sorcery"` get auto-tagged in their lorebook entries, signaling the state-mutator to use multi-turn shape-sorcery flow (declare → accumulate sorcerous motes → unleash with Willpower refund).
-- **Agents decoupled from bundle.** New `tools/build-agents.mjs` produces `agents.json` separately from the bundle. Users import via Marinara's Import Agents dialog (delete-then-replace, no duplicate accumulation). Prompt updates ship without forcing users to reinstall the entire ruleset.
-- **CSP-safe formula evaluator.** The `{StatName}*N+M` parser uses recursive descent instead of `new Function`. Marinara pages with strict CSP that blocks `'unsafe-eval'` now compute bar maxes correctly.
-- **State-mutator field-name normalization** + max-clamp on numeric deltas + persisted dedupe across reloads.
-- **Lorebook install path rewritten** to fix the silent-failure bulk endpoint. Per-entry POST with delete-then-add for clean re-installs.
-- **Self-contained release folder** at `releases/1.0.0/` with seven AI-feedable build docs, two complete reference systems, and drop-in install files.
+- **Marinara Engine 2.4.3 compliance.** The engine deleted its old extension system in v2.3.4 and rebuilt it in v2.4.0; this release runs in the new **Full-page External Extension** lane through a compat layer. **Engines older than 2.4.3 are not supported**, and every earlier release of this extension is broken on a current engine.
+- **One extension, both modes.** The GM-mode and RP-mode extensions are consolidated into this single install (the `mrr-` namespace); it works in Game Mode and Roleplay Mode alike. The separate RP-mode extension is retired.
+- **State mutator runs as a `post_processing` agent, on a real transport.** Agent-emitted `[mrr-state:]` changes are read from the engine's persisted custom-agent run history rather than the chat DOM (which never carries agent output on current engines), with cross-transport dedup and baseline seeding. The GM prompts carry a **dice doctrine**: resolve every random outcome through the engine's `roll_dice` tool, never invent a number, and roll fresh on every regenerate or swipe instead of reusing the previous version's numbers.
+- **Per-chat ruleset stamping and auto-switch.** Each chat remembers the ruleset it belongs to, so switching chats switches the sheet and dice widget with it instead of bleeding one system's rules into another's game.
+- **Preset agent-sections reconcile themselves.** On engine 2.4.0+ a roleplay preset owns agent placement; a bundle reinstall used to orphan the marker sections you had added, silently discarding agent output. The extension now repoints them after every import and re-derives a wiped ruleset stamp on its own.
+- **Comment-stripped packaging.** The shipped `extension.js` is the repo loader put through a comments-only AST round-trip (compress and mangle stay off, so identifiers and control flow are untouched) — about 1.0 MB of comment-heavy source becomes ~620 KB of identical behavior.
+- **Self-contained release folder** at `releases/1.0.0/` with the AI-feedable build docs, reference systems, and drop-in install files for every shipped ruleset.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the full list.
 
@@ -85,17 +85,27 @@ If you just want to use the extension and don't have Node, npm, or git installed
 
 **Step 2 — Extract the zip.** Open your **Downloads** folder. Right-click the zip and choose *Extract All* (Windows), double-click it (macOS), or run `unzip Marinara-RPG-Extension-<version>.zip` (Linux). You'll get a folder named `Marinara-RPG-Extension-<version>/` containing `extension/`, `rulesets/`, `docs/`, and a few other files.
 
-**Step 3 — Import the extension into Marinara.** Switch to your Marinara browser tab, click the **gear icon** in the top-right header to open Settings, switch to the **Extensions** tab on the left, then click **Import Extension (.json, .css, or .js)**. In the file picker, navigate to the folder you extracted in Step 2, open `extension/`, and select `RPG-Extension-GM-Mode.js`. The CSS is embedded inside the JS — there is no separate stylesheet to upload.
+**Step 2b — Verify your download (recommended).** You are about to hand a file to your own engine and approve it to run with full page access, so confirm it is the file that was published and not something altered in transit. Run `sha256sum Marinara-RPG-Extension.extension.zip` (macOS: `shasum -a 256`; Windows: `certutil -hashfile <file> SHA256`), and the same on the loose `RPG-Extension-GM-Mode.js` if you plan to read it. Expected for this release: the zip is `<ZIP_SHA256>` and the loader is `<LOADER_SHA256>`. If a hash doesn't match, re-download instead of importing — Marinara's **Review and Run** pins the hash you approve, but only this check tells you it was the published one.
 
-![Marinara Engine Settings dialog opened to the Extensions tab. The General/Appearance/Themes/Extensions/Import/Advanced tab row sits below the Settings header. A large dashed Import Extension (.json, .css, or .js) button is the primary action; below it the Installed Extensions list shows RPG-Extension-GM-Mode with a green on-toggle and a trash icon.](docs/screenshots/extension-menu.png)
+**Step 3 — Import the extension into Marinara.** MRR loads through the **External Extensions** lane (Full page access), which requires engine 2.4.3+ with two gates already on: `ENABLE_EXTERNAL_EXTENSIONS=true` in the engine host's `.env`, and **Settings → Advanced → Danger Zone → Allow third-party extension imports**. With both on, go to **Settings → Addons → External Extensions → Import** and use ONE of these forms:
 
-After import you should see `RPG-Extension-GM-Mode` listed under **Installed Extensions** with the toggle switched **on** (green). A new **Ruleset** button will appear in the top-right of the chat header next to a small round button with a parchment-scroll icon — that scroll button toggles the floating character sheet on and off.
+- **Zip import (primary).** Import `Marinara-RPG-Extension.extension.zip` from this release folder — it is packaged in Marinara's own canonical export layout (`Extensions/<name>/manifest.json` + `extension.js` + a `marinara-extensions.json` envelope).
+- **Folder import.** Point **Import Folder** at `Extensions/Marinara-RPG-Extension/`.
+- **Manifest-only import.** Import the `manifest.json` from that same folder.
 
-> **If the Ruleset button doesn't show up,** hard-refresh the page (Ctrl + Shift + R on Windows/Linux, Cmd + Shift + R on macOS). If you picked the wrong file, the import will reject it — make sure you selected `RPG-Extension-GM-Mode.js` and not the surrounding `extension/` folder or the `.css` file.
+**Do NOT import the loose single-file `.js`.** At 2.4.3, importing `RPG-Extension-GM-Mode.js` by itself builds a **sandboxed Worker extension** with no DOM and no same-origin API access — it reports success and then does nothing. The loose loader ships here for inspection and hash-verification, not for importing. The CSS is embedded in the JS either way; there is no separate stylesheet to upload.
+
+The import arrives **disabled and unapproved** — open it, inspect the code, and click **Review and Run** to approve its exact hash and enable it. **Every future update repeats this approval step.** You should then see `Marinara-RPG-Extension` in the installed list with its toggle on, and a new **Ruleset** button in the top-right of the chat header next to a small round parchment-scroll button — that scroll button toggles the floating character sheet on and off.
+
+**Permissions.** The extension's settings page lists **Full page access** at the bottom, under its enable toggle. That covers the two things MRR needs and nothing else: **page access**, because the character sheet, dice widget, and Ruleset dialog are real DOM drawn onto the Marinara page; and **same-origin access to the engine's API**, because installing a bundle POSTs the lorebook and agents to your server and the sheet write-back reads the agent-run history back off it. The loose-`.js` route grants neither, which is exactly why it cannot work.
+
+*(Screenshots of these steps are in the repo's `README.md` and `docs/INSTALL.md` — images are not packaged into this release folder.)*
+
+> **If the Ruleset button doesn't show up,** hard-refresh the page (Ctrl + Shift + R on Windows/Linux, Cmd + Shift + R on macOS) and confirm the extension shows enabled and approved under Addons → External Extensions.
 
 **Step 4 — Open the Ruleset dialog and import a bundle.** Click the **Ruleset** button in the chat header. The dialog accepts a `bundle.json` three ways:
 
-![Marinara RPG Ruleset dialog. URL field at the top with a raw GitHub URL example, then a multi-line textarea for the bundle or ruleset JSON. Buttons in order: Fetch URL, Choose file..., Clear, Uninstall server data, Save and reload (highlighted as the primary action). Below that a Library section listing previously installed rulesets.](docs/screenshots/ruleset-ui.png)
+The dialog has a URL field at the top, a textarea for pasting bundle JSON below it, and a button row: Fetch URL, Choose file…, Clear, Uninstall server data, and **Save and reload** as the primary action. A Library section at the bottom lists rulesets you have already installed. *(Screenshot in the repo's `README.md`.)*
 
 - **Choose file…** — browse to the folder you extracted in Step 2, navigate to `rulesets/<system>/bundle.json` (one of `dnd5e`, `exalted3e`, `fate-core`, or `pathfinder2e`), and select it. Best for offline installs and the simplest path.
 - **Fetch URL** — paste a raw GitHub URL like `https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/exalted3e/bundle.json` into the URL field, then click **Fetch URL**. To get a raw URL for any file on GitHub, open the file's page on github.com and click the **Raw** button at the top-right of the file viewer — that URL is what you paste here. Best when you'd rather not keep the extracted zip around.
@@ -153,9 +163,7 @@ The client extension is shared across rulesets — install it once, switch rules
 
 ## Character data persistence
 
-![Character save controls](docs/screenshots/character-save-controls.png)
-
-Character sheets are stored in your **browser's localStorage**, keyed to the chat ID + character ID. The bar at the top of every sheet (shown above) is how you manage characters and their saves. From left to right:
+Character sheets are stored in your **browser's localStorage**, keyed to the chat ID + character ID. The bar at the top of every sheet is how you manage characters and their saves *(screenshot in the repo's `README.md`)*. From left to right:
 
 | Control | What it does |
 |---------|--------------|
@@ -215,8 +223,8 @@ Hard requirements your AI's output MUST hit:
 - **`gmAgent.promptTemplate` ≥ 50 characters** (schema minimum). Realistically aim for 800+ words covering: system identity, dice mechanic, skill list, derived stats, dice-tag format, what to emit each turn.
 - **Integer `position` 0 | 1 | 2** on every lorebook entry (not strings like `"before_an"` — that was the v0.2 footgun, fixed in v0.3).
 - **`schema: "mrr-bundle"`** discriminator literal.
-- **For Game-Mode chats specifically:** keep the 50-character reputation tag action-string cap workaround paragraph in your `gmAgent.promptTemplate` — Marinara validates `[reputation: …]` action strings at 50 chars and silently fails longer ones.
-- **Sub-agents install disabled by default** as of v0.3+. If your bundle ships sub-agents in `additionalAgents[]` that you genuinely want enabled on install, set `"enabled": true` on that item explicitly. Otherwise the user toggles them on per-agent in Settings → Agents.
+- **Reputation tags are free-form.** Do NOT add a length-cap workaround paragraph to `gmAgent.promptTemplate`. The old 50-character `[reputation: …]` action cap was accurate for engine v1.5.6 and has since been widened — verified at 500 on engine 2.4.4 — so encode neither number as fact; just keep action text short.
+- **Sub-agents are installed by the bundle and enabled by the user per game.** The installer sets each row's `enabled` from `"enabled": true` on that `additionalAgents[]` item (omit the flag and the row installs disabled), and every shipped bundle sets it. On 2.4.3+ that row flag is not what puts an agent at your table anyway: agents are enabled **per game, after the game launches**, in Settings → Agents. Each enabled agent costs one model call per turn.
 - **Character cards:** if you ship one, use the V2 spec (`spec: "chara_card_v2"`, `spec_version: "2.0"`, `data` envelope).
 
 Run `node tools/validate-bundle.mjs rulesets/your-system/bundle.json` after the AI hands back the result to catch shape errors. The validator emits `path/expected/got/hint` records — paste any errors back to the AI for a corrected bundle.
@@ -265,4 +273,4 @@ Marinara Engine itself is AGPL-3.0 — but this repo is an **overlay** (it does 
 
 ## Status
 
-v0.3 — four reference rulesets (D&D 5e, Exalted 3e, Fate Core, Pathfinder 2e), validating schema with five resolution modes, single-file `bundle.json` install, embedded-CSS framework JS, multi-ruleset library, JSON character save/load, inventory + equipment-bonus system, resizable + collapsible floating character sheet, and a no-developer-tools install path. Built and tested against Marinara Engine v1.5.6. Bug reports welcome; PRs more so. If you build a bundle for Blades in the Dark, Lancer, Mörk Borg, GURPS, Vampire 5e, Cyberpunk RED, or any other system, please open a PR — the framework is meant to support more.
+v1.0.0 — sixteen shipped rulesets, a validating schema with nine resolution modes, single-file `bundle.json` install, embedded-CSS framework JS, multi-ruleset library, JSON character save/load, inventory + equipment-bonus system, resizable + collapsible floating character sheet, and a no-developer-tools install path. Built and live-tested against Marinara Engine v2.4.3; older engines are not supported. Bug reports welcome; PRs more so. If you build a bundle for Blades in the Dark, Lancer, Mörk Borg, GURPS, Vampire 5e, Cyberpunk RED, or any other system, please open a PR — the framework is meant to support more.

@@ -24,6 +24,26 @@ Marinara gates third-party extensions behind two deliberate safety switches. Bot
 
 2. **In the Marinara UI:** **Settings → Advanced → Danger Zone → Allow third-party extension imports** — toggle it on.
 
+## Step 1b — Verify your download (recommended)
+
+You are about to hand a file to your own engine and approve it to run with full page access, so it is worth thirty seconds to confirm the file is the one that was published and not something altered in transit or swapped in a re-upload.
+
+Check the importable package, and the loose loader too if you plan to read it:
+
+```sh
+sha256sum Marinara-RPG-Extension.extension.zip
+sha256sum RPG-Extension-GM-Mode.js
+```
+
+On macOS use `shasum -a 256 <file>`; on Windows, `certutil -hashfile <file> SHA256`.
+
+Expected values for this release:
+
+- `Marinara-RPG-Extension.extension.zip` — `<ZIP_SHA256>`
+- `RPG-Extension-GM-Mode.js` — `<LOADER_SHA256>`
+
+If a hash does not match, stop and re-download rather than importing. (Marinara's own **Review and Run** step approves the code's hash separately, on the engine side — that pins what you approved, but only this check tells you the file was the published one to begin with.)
+
 ## Step 2 — Import and approve the extension (one time)
 
 1. Go to **Settings → Addons → External Extensions → Import** and pick `Marinara-RPG-Extension.extension.zip` from this release folder.

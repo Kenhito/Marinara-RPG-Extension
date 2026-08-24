@@ -110,6 +110,10 @@ A `bundle.json` wraps the three per-ruleset files (ruleset, GM agent prompt, lor
 
 The extension also gives you a floating dice widget that rolls correctly for your system, a resizable character sheet, and a save/load pair of buttons that exports all characters in the active chat as a portable JSON file.
 
+![The extension's floating dice widget, configured for the active ruleset — inputs for the roll's stat, modifier, and target, a roll button, and the resulting dice tag with the individual die faces shown. A Send to chat control drops that tag into your message box.](docs/screenshots/sheet_dice_widget.png)
+
+**Player rolls and GM rolls come from two different places, on purpose.** The widget above is *yours*: you roll it, it produces a dice tag with the actual faces in it, and **Send to chat** puts that tag into your own message — where it is authoritative. The GM reads your result and narrates from it; it never re-rolls a number you sent. The GM's own rolls are the other half, and they come from the engine's server-side `roll_dice` tool, which is why the chat's **Enable Tool Use** toggle matters (Step 6c below). Widget for your dice, engine tool for the GM's.
+
 Four systems ship as reference rulesets: **D&D 5e**, **Exalted 3e**, **Fate Core**, and **Pathfinder 2e**. They cover the most common dice mechanics — d20-and-modifier (D&D, PF2e), d10 dice pool with successes (Exalted), and 4dF on a verbal ladder (Fate). Add a fifth system by copying one of the four folders and editing the data, GM prompt, and lorebook to match your system. About 2 hours for a rules-light system, a day for a mid-weight one. Or use the AI-authoring path in [`AUTHORING-PROMPT.md`](AUTHORING-PROMPT.md) to skip writing files by hand entirely — that's how the Pathfinder 2e bundle was authored.
 
 If you want an AI to do the authoring for you, point it at [`AGENTS.md`](AGENTS.md) — a standalone reference dense enough that a coding agent can build a new ruleset (or extend the framework) without reading anything else first.
@@ -156,9 +160,17 @@ If you just want to use the extension and don't have Node, npm, or git installed
 
 Either way you end up with one installed extension that works in **both Game Mode and Roleplay Mode** chats — Marinara made custom agents mode-agnostic, so a single install serves both.
 
-![Marinara Engine Settings dialog opened to the Extensions tab. The General/Appearance/Themes/Extensions/Import/Advanced tab row sits below the Settings header. A large dashed Import Extension (.json, .css, or .js) button is the primary action; below it the Installed Extensions list shows RPG-Extension-GM-Mode with a green on-toggle and a trash icon.](docs/screenshots/extension-menu.png)
+![Marinara Engine's Settings dialog open on the Extensions screen, showing where third-party extensions are installed and enabled. The External Extensions area carries the Import control used to bring in the packaged extension, with the surrounding settings navigation visible for context.](docs/screenshots/enable_extensions.png)
 
-After import the extension arrives **disabled and unapproved** — open it, inspect the code, and click **Review and Run** to approve its exact hash and enable it. **Every future update re-requires this approval step.** You should then see `RPG-Extension-GM-Mode` listed with the toggle switched **on** (green). A new **Ruleset** button will appear in the top-right of the chat header next to a small round button with a parchment-scroll icon — that scroll button toggles the floating character sheet on and off.
+After import the extension arrives **disabled and unapproved** — open it, inspect the code, and click **Review and Run** to approve its exact hash and enable it. **Every future update re-requires this approval step.** You should then see `Marinara-RPG-Extension` listed with its toggle switched **on**.
+
+![The installed-extensions list after a successful import, with Marinara-RPG-Extension present and its enable toggle switched on. This is the state to confirm before moving on — an extension that imported but was never approved and enabled shows here without the toggle lit.](docs/screenshots/extensions_enabled_installed.png)
+
+A new **Ruleset** button will appear in the top-right of the chat header next to a small round button with a parchment-scroll icon — that scroll button toggles the floating character sheet on and off.
+
+**Permissions — what the extension needs and why.** MRR runs in Marinara's **Full page access** lane, which is the permission the extension's settings page shows at the bottom, under the enable toggle at the top. It needs two things and nothing more. **Page access:** the character sheet, the floating dice widget, and the Ruleset dialog are all real DOM the extension draws onto the Marinara page — a sandboxed extension has no page to draw on. **Same-origin access to the engine's own API:** installing a bundle POSTs the lorebook and the agents to your Marinara server, and reading state back (the agent-run history the State Mutator writes through) is the same API. Both are inherent to the Full-page lane rather than separately-named toggles you grant one at a time. This is exactly why the loose `.js` import fails: at 2.4.3 that path builds a Worker extension with `capabilities: []` — no DOM and no same-origin API — so MRR imports "successfully" and then cannot do anything.
+
+![The extension's own settings page inside Marinara. The enable toggle sits at the top of the page; the required permissions are listed at the bottom, showing the Full page access grant that lets the extension render its UI on the Marinara page and call the engine's API on the same origin.](docs/screenshots/extension_installed_permissions.png)
 
 > **If the Ruleset button doesn't show up,** hard-refresh the page (Ctrl + Shift + R on Windows/Linux, Cmd + Shift + R on macOS) and confirm the extension shows enabled (approved) in Addons -> External Extensions.
 
@@ -182,7 +194,7 @@ After import the extension arrives **disabled and unapproved** — open it, insp
 
 **Step 6c — Turn on tool use so the GM rolls real dice (recommended).** **Chat Settings → Function Calling → "Enable Tool Use"** — on. This is what gives you proper dice probabilities: it hands the main GM model Marinara's server-side `roll_dice` tool, a true RNG, so the GM rolls real dice instead of inventing numbers. `roll_dice` is enabled by default once the chat toggle is on; there's no separate grant to make. Leave the toggle off and the narrating model *makes up* every attack roll, save, and reaction check by picking a plausible-looking number — and a model guessing at dice is a biased die, reliably kinder than the real thing. It's the same toggle that gates a ruleset's own custom tools. You do **not** need to grant `roll_dice` to the MRR agents themselves: agent-attached tools need a per-agent grant the bundle can't ship, and the State Mutator never rolls anyway — it copies the numbers out of the GM's finished narration.
 
-![The chat's Settings panel scrolled to the Function Calling section. A single "Enable Tool Use" switch sits at the top of the section, toggled on (green), with the available tools — including Marinara's built-in roll_dice — listed beneath it.](docs/screenshots/chat-tool-use-toggle.png)
+![The chat's Settings panel open on the Function Calling section, with the "Enable Tool Use" switch turned on. This is the single toggle that hands the GM model Marinara's server-side roll_dice tool; it is set per chat, not per ruleset, and installing a bundle does not set it for you.](docs/screenshots/enable_dice_tool.png)
 
 **Switching rulesets.** Saved rulesets show up in the **Library** section at the bottom of the Ruleset dialog with a *Switch* button next to each. Switching is a one-click reload-into-the-other-ruleset; both lorebooks and GM agents stay registered with your Marinara server, so swapping back is instant.
 

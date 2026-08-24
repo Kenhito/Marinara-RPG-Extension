@@ -17,9 +17,17 @@ Each ruleset folder has its own step-by-step `INSTALL.md`. This page is the orie
 
    **Do not import the loose `RPG-Extension-GM-Mode.js` file by itself.** At 2.4.3 a loose-`.js` import silently becomes a **sandboxed Worker extension** — no DOM, no same-origin API access — where MRR cannot function. It "succeeds" but does nothing. Only the zip/folder/manifest forms route into the Full-page review flow MRR needs.
 
+   ![Marinara Engine's Settings dialog open on the Extensions screen, showing where third-party extensions are installed and enabled. The External Extensions area carries the Import control used to bring in the packaged extension, with the surrounding settings navigation visible for context.](screenshots/enable_extensions.png)
+
    The import arrives **disabled and unapproved**. Open it, inspect the code, and click **Review and Run** to approve its exact SHA-256 hash and enable it. The extension starts in dormant mode (no ruleset selected) — it adds a "Ruleset" button to the chat header but otherwise leaves Marinara untouched.
 
+   ![The installed-extensions list after a successful import, with Marinara-RPG-Extension present and its enable toggle switched on. This is the state to confirm before moving on — an extension that imported but was never approved and enabled shows here without the toggle lit.](screenshots/extensions_enabled_installed.png)
+
    **Every subsequent update re-requires this approval step** — any edit to the extension's code or CSS invalidates the prior hash.
+
+   **Permissions — what it needs and why.** MRR runs in the **Full page access** lane, which is the permission shown at the bottom of the extension's own settings page, below the enable toggle at the top. Two capabilities, both inherent to that lane rather than separately-granted toggles. **Page access:** the character sheet, the floating dice widget, and the Ruleset dialog are DOM the extension draws onto the Marinara page. **Same-origin access to the engine API:** installing a bundle POSTs the lorebook and agents to your server, and the state write-back path reads the agent-run history back off it. That pairing is precisely what the loose-`.js` route does not get — at 2.4.3 it builds a Worker extension with `capabilities: []`, no DOM and no same-origin `/api`, which is why it imports "successfully" and then does nothing.
+
+   ![The extension's own settings page inside Marinara. The enable toggle sits at the top of the page; the required permissions are listed at the bottom, showing the Full page access grant that lets the extension render its UI on the Marinara page and call the engine's API on the same origin.](screenshots/extension_installed_permissions.png)
 
 2. **Import a ruleset bundle**
    Click the **Ruleset** button. Use **Choose file…** to pick the ruleset's `bundle.json` (or **Fetch URL** with a raw GitHub link to one). Click **Save and reload**. This one import installs the ruleset (sheet + dice widget), the lorebook, the main GM agent, and the sub-agents — bundles are data, so no extension re-approval is triggered. The page reloads with the ruleset active.
@@ -30,15 +38,13 @@ Each ruleset folder has its own step-by-step `INSTALL.md`. This page is the orie
 4. **Enable the agents for your game**
    On Marinara 2.4.3+ the MRR agents behave like any custom agents: installed by the bundle, but enabled per game — **after the game launches, not mid-generation**. Go to **Settings -> Agents** (or the game's agent selection), find the agents named like `MRR: <System> — <Role>`, and enable the ones your table wants. A good minimal set: **Ruleset Helper + State Mutator** (the State Mutator is what makes narration update the character sheet). Each enabled agent costs one model call per turn.
 
-   ![Marinara's Agents panel for a launched game, listing the installed MRR agents by their `MRR: <System> — <Role>` names — Ruleset Helper, State Mutator, Combat Overseer, Context Fuser — each with an enable toggle at the right. The Ruleset Helper and State Mutator toggles are switched on (green); the rest are off.](screenshots/agents-enable-panel.png)
-
 5. **Add the MRR agent sections to your roleplay preset (roleplay chats, engine 2.4.0+)**
    **This step is not optional for roleplay chats, and skipping it fails silently.** Since Marinara 2.4.0 a roleplay preset *owns* agent placement: an agent's output is inserted only where a matching **Agent Data** marker section sits in the preset, and with no matching section the engine **discards that agent's output entirely** — no warning, no fallback. The agents still run, still cost tokens, and still show healthy rows in their run history, while the narrator never sees a word of it. If your agents seem to "do nothing", this is almost always why.
 
    - **One click (recommended):** open **Manage MRR Agents** → **Add agent sections to active preset**. It names the preset before changing anything, skips agents that already have a section, and never edits a preset without your confirmation.
    - **By hand:** **Preset Editor → Add Section → Agent Sections**, then pick each MRR agent.
 
-   ![The Marinara preset editor with the MRR agent sections in place. The section list shows one Agent Data marker per MRR agent — Ruleset Helper, Combat Overseer, Context Fuser, Pre-Input Transformer — sitting among the preset's ordinary sections, each labelled with the agent it carries. The State Mutator is deliberately absent from the list.](screenshots/preset-agent-sections.png)
+   ![The preset dialog with the MRR Agent Data sections being added. Each MRR agent gets its own marker section in the preset's section list, which is what tells the engine where that agent's output belongs in the assembled prompt. The State Mutator is deliberately not among them.](screenshots/import_agents_preset.png)
 
    **You only have to do this once — reinstalls repair themselves now.** Marinara can never change an existing agent's `type`, so re-importing a bundle recreates the agents under *new* types, and the marker sections you added would be left pointing at agents that no longer exist (agents run, output is discarded, no warning). Since round 28 the extension reconciles that automatically: after every bundle import — and whenever a chat's ruleset is confirmed — it repoints your existing MRR agent sections at the live agents and logs one line per section it fixed (`reconciled N orphaned agent marker(s)` in the browser console). The same pass re-derives a chat's ruleset stamp from the chat's own enabled MRR agents when applying a chat-preset wiped it. Sections you added for non-MRR agents are never touched. **First-time setup still uses the button above** — only the re-run after a reinstall became automatic. The one case it cannot fix is the stock read-only **"Marinara Universal"** preset, which refuses every edit: save a copy, select the copy for the chat, and re-run the one-click assist.
 
@@ -51,7 +57,7 @@ Each ruleset folder has its own step-by-step `INSTALL.md`. This page is the orie
 6. **Turn on tool use so the GM can roll real dice (recommended)**
    **Chat Settings → Function Calling → "Enable Tool Use"** — on.
 
-   ![The chat's Settings panel scrolled to the Function Calling section. A single "Enable Tool Use" switch sits at the top of the section, toggled on (green), with the available tools — including Marinara's built-in roll_dice — listed beneath it.](screenshots/chat-tool-use-toggle.png)
+   ![The chat's Settings panel open on the Function Calling section, with the "Enable Tool Use" switch turned on. This is the single toggle that hands the GM model Marinara's server-side roll_dice tool; it is set per chat, not per ruleset, and installing a bundle does not set it for you.](screenshots/enable_dice_tool.png)
 
    This gives the main GM model Marinara's server-side `roll_dice` tool, which is a true RNG. `roll_dice` is enabled by default once the chat toggle is on; you do not need to grant it separately.
 
@@ -60,6 +66,10 @@ Each ruleset folder has its own step-by-step `INSTALL.md`. This page is the orie
    **You do not need to grant `roll_dice` to the MRR agents themselves.** Agent-attached tools require the same chat toggle *plus* a per-agent grant in the Agents UI, and the bundle cannot ship that grant — the agent-import route strips `settings.enabledTools`. It is also unnecessary: the **State Mutator needs no dice at all.** It reads the numbers out of the GM's finished narration and copies them; it never rolls. Granting it dice would only give it a way to disagree with the story.
 
    Note this is the same chat toggle that gates a ruleset's own **custom tools** — installing a bundle does not turn it on for you.
+
+   **Your dice are separate from the GM's, deliberately.** This toggle governs the *GM's* rolls only. Your own rolls come from the extension's floating dice widget: you roll it, it emits a dice tag carrying the actual faces, and **Send to chat** drops that tag into your message — where it is authoritative. The GM narrates from the number you sent and never re-rolls it. Widget for your dice, engine tool for the GM's.
+
+   ![The extension's floating dice widget, configured for the active ruleset — inputs for the roll's stat, modifier, and target, a roll button, and the resulting dice tag with the individual die faces shown. A Send to chat control drops that tag into your message box.](screenshots/sheet_dice_widget.png)
 
 That's all six pieces. The per-ruleset INSTALL files (`rulesets/dnd5e/INSTALL.md`, `rulesets/exalted3e/INSTALL.md`) walk through this in detail with sanity-check rolls.
 

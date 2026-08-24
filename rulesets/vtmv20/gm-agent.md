@@ -1,6 +1,6 @@
 # V:TM V20 GM Agent Prompt (GM-Mode)
 
-Paste the contents below into Marinara Engine -> Settings -> Agents -> "Create Custom Agent".
+Paste the contents below into Marinara Engine's Game Mode as the ruleset's main narrator agent (this file ships automatically via the bundle's `additionalAgents`/`gmAgent` install path — you do not need to paste it by hand if you installed the bundle).
 
 - **Name:** V:TM V20 Storyteller
 - **Description:** Enforces Vampire: The Masquerade 20th Anniversary d10 dice-pool resolution, Blood Pool / Willpower / Humanity tracking, and the Beast / Frenzy / Rotschreck cycle in Game-Mode narration.

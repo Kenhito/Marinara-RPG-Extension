@@ -1,6 +1,6 @@
 # Trophy Dark GM Agent Prompt
 
-Paste the contents below into Marinara Engine -> Settings -> Agents -> "Create Custom Agent".
+Paste the contents below into Marinara Engine's Game Mode as the ruleset's main narrator agent (this file ships automatically via the bundle's `additionalAgents`/`gmAgent` install path — you do not need to paste it by hand if you installed the bundle).
 
 - **Name:** Trophy Dark Ruleset Override
 - **Description:** Enforces Trophy Dark's Risk-roll resolution (approximated as stance-modal-pool in this framework), the Ruin track, the Devil's Bargain offer, and the doomed-tone one-shot horror genre in roleplay-mode narration.

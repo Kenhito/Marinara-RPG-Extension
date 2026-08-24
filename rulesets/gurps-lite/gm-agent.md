@@ -1,6 +1,6 @@
 # GURPS Lite GM Agent Prompt
 
-Paste the contents below into Marinara Engine -> Settings -> Agents -> "Create Custom Agent".
+Paste the contents below into Marinara Engine's Game Mode as the ruleset's main narrator agent (this file ships automatically via the bundle's `additionalAgents`/`gmAgent` install path — you do not need to paste it by hand if you installed the bundle).
 
 - **Name:** GURPS Lite Ruleset Override
 - **Description:** Enforces GURPS Lite (4th Edition) stat-vs-3d6 roll-under resolution, the maneuver-driven combat turn, active defenses, and HP / FP / DR bookkeeping in roleplay-mode narration.

@@ -1,6 +1,6 @@
 # Pathfinder 2e GM Agent Prompt
 
-Paste the contents below into Marinara Engine -> Settings -> Agents -> "Create Custom Agent".
+Paste the contents below into Marinara Engine's Game Mode as the ruleset's main narrator agent (this file ships automatically via the bundle's `additionalAgents`/`gmAgent` install path — you do not need to paste it by hand if you installed the bundle).
 
 - **Name:** Pathfinder 2e Ruleset Override
 - **Description:** Enforces Pathfinder 2nd Edition (Remaster) d20-vs-DC resolution, the three-action economy, the four-band degrees-of-success ladder, and proficiency-tier math in roleplay-mode narration.

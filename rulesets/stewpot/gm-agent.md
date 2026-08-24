@@ -1,6 +1,6 @@
 # The Stewpot GM Agent Prompt
 
-Paste the contents below into Marinara Engine -> Settings -> Agents -> "Create Custom Agent".
+Paste the contents below into Marinara Engine's Game Mode as the ruleset's main narrator agent (this file ships automatically via the bundle's `additionalAgents`/`gmAgent` install path — you do not need to paste it by hand if you installed the bundle).
 
 - **Name:** The Stewpot Ruleset Override
 - **Description:** Enforces The Stewpot's slow-life stance-modal-pool resolution (Stillness vs Action), Perfect Days, Hearth tracking, and the cozy-village genre frame in roleplay-mode narration.
