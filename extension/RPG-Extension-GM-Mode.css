@@ -14,7 +14,9 @@
    * Ported from ~/projects/claude-design-updates/styles.css. Token NAMES preserved
    * so existing rules resolve unchanged. New tokens (h/c/l, *-soft, *-line, *-app,
    * *-input, hairline, hairline-strong, *-text-faint, *-sans) added per prototype.
-   * Tracked in tools/token-migration-map.json. */
+   * The old-value/new-value mapping lived in tools/token-migration-map.json,
+   * a one-off migration record deleted in round 27 once the migration closed;
+   * the CHANGELOG entry for the Phase-4 token pass retains its summary. */
 
   /* tweakable accent (purple, port of prototype --accent-h/c/l) */
   --mrr-accent-h: 280;

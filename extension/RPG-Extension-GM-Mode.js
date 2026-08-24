@@ -114,7 +114,7 @@ var MRR_TOOL_NAME_PFX = "mrr_"; /* Vector 3: prefix for engine-native custom too
 var EMBED_STYLE_ID   = "mrr-embedded-style";
 
 /* EMBEDDED_CSS_BEGIN */
-var EMBEDDED_CSS = "/*\n * Marinara-RPG-Extension — RPG-Extension-GM-Mode.css\n * Companion stylesheet for RPG-Extension-GM-Mode.js. This file is bundled into\n * the loader automatically via tools/embed-css.mjs — you do not paste it by hand.\n * Install the extension by importing the folder/manifest (or the single .js file)\n * in Marinara Engine -> Settings -> Extensions.\n *\n * License: MIT\n * Source:  https://github.com/Kenhito/Marinara-RPG-Extension\n */\n\n:root {\n  /* Phase 4 — design-token migration: oklch palette + Geist font stack\n   * Ported from ~/projects/claude-design-updates/styles.css. Token NAMES preserved\n   * so existing rules resolve unchanged. New tokens (h/c/l, *-soft, *-line, *-app,\n   * *-input, hairline, hairline-strong, *-text-faint, *-sans) added per prototype.\n   * Tracked in tools/token-migration-map.json. */\n\n  /* tweakable accent (purple, port of prototype --accent-h/c/l) */\n  --mrr-accent-h: 280;\n  --mrr-accent-c: 0.12;\n  --mrr-accent-l: 0.78;\n\n  /* derived accent — original token names preserved */\n  --mrr-accent:       oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h));\n  --mrr-accent-soft:  oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.18);\n  --mrr-accent-line:  oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.32);\n  --mrr-accent-dim:   oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.30);\n  --mrr-on-accent:    oklch(0.18 0.04 var(--mrr-accent-h));\n\n  /* surfaces — purple/dark mood per prototype --bg-app/--bg/--bg-elev/--bg-input */\n  --mrr-bg:           oklch(0.21 0.025 285 / 0.96);\n  --mrr-bg-elev:      oklch(0.26 0.03 285 / 0.92);\n  --mrr-bg-app:       oklch(0.16 0.02 285);\n  --mrr-bg-input:     oklch(0.18 0.02 285);\n\n  /* hairlines (NEW) and borders (NAMES retained) */\n  --mrr-hairline:        oklch(1 0 0 / 0.07);\n  --mrr-hairline-strong: oklch(1 0 0 / 0.14);\n  --mrr-border:          oklch(1 0 0 / 0.10);\n  --mrr-border-strong:   oklch(1 0 0 / 0.20);\n\n  /* tints — port of prototype --tint/--tint-2 (--tint-strong retained) */\n  --mrr-tint-1:       oklch(1 0 0 / 0.04);\n  --mrr-tint-2:       oklch(1 0 0 / 0.07);\n  --mrr-tint-strong:  oklch(1 0 0 / 0.20);\n\n  /* text — three tiers per prototype --text/--text-dim/--text-faint */\n  --mrr-text:        oklch(0.97 0.005 285);\n  --mrr-text-dim:    oklch(0.72 0.01 285);\n  --mrr-text-faint:  oklch(0.55 0.012 285);\n\n  /* status — port of prototype --ok/--warn/--bad */\n  --mrr-success:    oklch(0.82 0.13 155);\n  --mrr-warning:    oklch(0.84 0.14 85);\n  --mrr-fail:       oklch(0.72 0.16 25);\n  --mrr-on-fail:    oklch(0.18 0.02 25);\n\n  /* radii / spacing — preserved (density toggle deferred to step 4.4) */\n  --mrr-radius:     8px;\n  --mrr-radius-sm:  4px;\n  --mrr-pad:        10px;\n  --mrr-gap:        6px;\n\n  /* shadow — ported from prototype --shadow (richer drop) */\n  --mrr-shadow:     0 24px 60px -20px rgba(0, 0, 0, 0.6), 0 6px 16px -8px rgba(0, 0, 0, 0.5);\n\n  /* typography — ported from prototype --sans/--mono (Geist-first stack) */\n  --mrr-sans:       \"Geist\", \"Inter\", system-ui, -apple-system, \"Segoe UI\", sans-serif;\n  --mrr-mono:       \"Geist Mono\", ui-monospace, \"JetBrains Mono\", \"SF Mono\", Menlo, monospace;\n\n  /* layering — preserved */\n  --mrr-z-sheet:    9997;\n  --mrr-z-dice:     9998;\n  --mrr-z-dialog:   9999;\n\n  /* Phase 5 step 5.5 — density toggle (cozy preset defaults; branched per\n   * .mrr-sheet[data-density=\"…\"] at end of file). Drives padding, gap,\n   * row height, and body font-size across density-aware components. */\n  --mrr-density-pad-x: 12px;\n  --mrr-density-pad-y: 12px;\n  --mrr-density-gap:    6px;\n  --mrr-density-row-h: 28px;\n  --mrr-density-fs:    13px;\n}\n\n.mrr-hidden { display: none !important; }\n.mrr-msg--hidden,\n.mrr-dice__result--hidden { display: none; }\n\n/*  ─────  Sheet panel (replaces the hidden built-in attribute panel) ───── */\n\n.mrr-sheet {\n  display: flex;\n  flex-direction: column;\n  gap: var(--mrr-gap);\n  background: var(--mrr-bg);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  margin: var(--mrr-gap) 0;\n  color: var(--mrr-text);\n  font-family: var(--mrr-sans);\n  font-size: var(--mrr-density-fs);\n}\n\n.mrr-sheet--floating {\n  position: fixed;\n  left: 16px;\n  top: 80px;\n  width: 320px;\n  min-width: 280px;\n  max-width: calc(100vw - 32px);\n  min-height: 200px;\n  max-height: 70vh;\n  overflow: auto;\n  resize: both;\n  z-index: var(--mrr-z-sheet);\n}\n\n.mrr-sheet__header {\n  display: flex;\n  flex-direction: column;\n  gap: var(--mrr-density-gap);\n  border-bottom: 1px solid var(--mrr-border);\n  padding-bottom: 6px;\n  margin-bottom: 4px;\n}\n\n.mrr-sheet__title-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  width: 100%;\n}\n\n.mrr-sheet__title {\n  font-weight: 600;\n  letter-spacing: 0.02em;\n  color: var(--mrr-accent);\n}\n\n.mrr-sheet__meta {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n}\n\n.mrr-sheet__char-row {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n\n/* Phase 5 step 5.1 — Identity card (port of prototype's `.identity`).\n   Sits at the bottom of the sheet header, immediately above the body.\n   Wraps the existing renderIdentityField inputs so save/load behavior\n   is preserved verbatim. Ruleset-driven sub-row honors identityFields[]\n   when declared; otherwise falls back to header.raceLabel/classLabel.\n   Token names mirror the prototype: __avatar, __main, __name, __sub,\n   __sub-item, __sub-label, __sub-input. Type scale matches UI-build.md\n   §3.4 exactly: name 16px/600, sub-label 9px uppercase letter-spacing\n   0.1em, sub-input 12px borderless text-dim. */\n.mrr-identity {\n  background: linear-gradient(145deg, var(--mrr-accent-soft), transparent 70%), var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-hairline);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  display: grid;\n  grid-template-columns: 44px 1fr;\n  gap: 10px;\n  align-items: center;\n  margin-top: var(--mrr-gap);\n}\n.mrr-identity__avatar {\n  width: 44px;\n  height: 44px;\n  border-radius: 10px;\n  background: repeating-linear-gradient(\n    45deg,\n    oklch(0.3 0.04 285) 0 6px,\n    oklch(0.26 0.04 285) 6px 12px\n  );\n  color: var(--mrr-text-dim);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  border: 1px dashed var(--mrr-hairline-strong);\n}\n.mrr-identity__main {\n  min-width: 0;\n}\n.mrr-identity__name {\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text);\n  font-size: 16px;\n  font-weight: 600;\n  padding: 0;\n  width: 100%;\n  outline: none;\n  font-family: inherit;\n}\n.mrr-identity__name:focus {\n  color: var(--mrr-accent);\n}\n.mrr-identity__sub {\n  display: flex;\n  gap: 8px;\n  margin-top: 2px;\n  flex-wrap: wrap;\n}\n.mrr-identity__sub-item {\n  display: flex;\n  flex-direction: column;\n  gap: 0;\n  min-width: 0;\n}\n.mrr-identity__sub-label {\n  font-size: 9px;\n  letter-spacing: 0.1em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint);\n}\n.mrr-identity__sub-input {\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text-dim);\n  font-size: 12px;\n  padding: 0;\n  width: 100px;\n  outline: none;\n  font-family: inherit;\n}\n.mrr-identity__sub-input:focus {\n  color: var(--mrr-accent);\n}\n\n.mrr-sheet__char-label {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-char-select {\n  flex: 1;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-char-btn {\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-size: 11px;\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-char-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-char-btn--danger:hover {\n  background: rgba(251, 113, 133, 0.30);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-char-btn--accent {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n}\n\n.mrr-char-btn--dashed {\n  border-style: dashed;\n  border-color: var(--mrr-accent-dim);\n}\n\n.mrr-draggable-handle { cursor: grab; user-select: none; touch-action: none; }\n.mrr-draggable-handle:active { cursor: grabbing; }\n\n.mrr-section {\n  display: flex;\n  flex-direction: column;\n  gap: var(--mrr-density-gap);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);\n  background: var(--mrr-bg-elev);\n}\n\n.mrr-section__title {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n  margin-bottom: 2px;\n}\n\n.mrr-group {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  margin-bottom: 6px;\n}\n\n.mrr-group__label {\n  font-size: 10px;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n  margin-top: 4px;\n}\n\n.mrr-row {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto;\n  align-items: center;\n  gap: var(--mrr-density-gap);\n  padding: 2px 4px;\n  border-radius: var(--mrr-radius-sm);\n}\n\n.mrr-row:hover {\n  background: var(--mrr-tint-1);\n}\n\n.mrr-row--compact {\n  grid-template-columns: 1fr auto auto;\n}\n\n.mrr-row__name {\n  font-weight: 500;\n}\n\n.mrr-row__abbr {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-row__value {\n  min-width: 32px;\n  text-align: right;\n  font-family: var(--mrr-mono);\n}\n\n/* Editable numeric input — replaces the historical value <span> on every\n   numeric sheet row (attributes, skills, derived, backgrounds, custom\n   skills, bar current values). Visually flush with the surrounding row;\n   the user types directly. The browser's native number-input spinners\n   are suppressed because the +/- stepper next to the field already\n   provides the same affordance and double controls are visual noise. */\n.mrr-row__value--editable {\n  width: 48px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 4px;\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  text-align: right;\n  -moz-appearance: textfield;\n}\n.mrr-row__value--editable:focus {\n  outline: none;\n  border-color: var(--mrr-accent);\n  background: var(--mrr-bg);\n}\n.mrr-row__value--editable::-webkit-outer-spin-button,\n.mrr-row__value--editable::-webkit-inner-spin-button {\n  -webkit-appearance: none;\n  margin: 0;\n}\n\n/* Condition row inline effect summary — small, dim, italic so it\n   reads as metadata next to the condition name without competing for\n   the row's primary attention. */\n.mrr-condition-effect {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  font-style: italic;\n  flex: 1;\n  margin-left: 6px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n/* Advantage / disadvantage toggle row in the d20 dice widget. */\n.mrr-dice__adv-row {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  margin: 4px 0;\n}\n.mrr-dice__adv-row label {\n  flex: 0 0 80px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n.mrr-adv-btn {\n  flex: 1;\n  padding: 4px 8px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  font-family: inherit;\n  font-size: 11px;\n  cursor: pointer;\n}\n.mrr-adv-btn:hover { background: var(--mrr-accent-dim); }\n.mrr-adv-btn--active {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n\n/* \"/\" separator that sits between the editable current and editable\n   max inputs on bars without an engine-declared cap (D&D HP, etc.).\n   Dimmed because it's a visual cue, not a control. */\n.mrr-bar__sep {\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  color: var(--mrr-text-dim);\n  padding: 0 2px;\n}\n\n/* Auto-calculated derived stat — value computed from `valueFormula` every\n   time the stat context changes. Read-only by design; the formula IS the\n   override path. Subtle accent stripe on the left distinguishes it from\n   manually-entered values without screaming for attention. */\n.mrr-row__value--autocalc {\n  min-width: 32px;\n  text-align: right;\n  font-family: var(--mrr-mono);\n  color: var(--mrr-accent);\n  border-left: 2px solid var(--mrr-accent-dim);\n  padding-left: 6px;\n}\n\n.mrr-row__roll {\n  font-size: 11px;\n  padding: 2px 6px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-accent-dim);\n  border: 1px solid var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-row__roll:hover { background: var(--mrr-accent); color: var(--mrr-on-accent); }\n\n/*  ─────  Skill proficiency tier button + specialty sub-row  ───── */\n\n/* Shared base for the small letter buttons that sit inside the stepper\n   group on each skill row. Kept separate from `.mrr-stepper button` so\n   the stepper can be 18×18 (numeric +/-) while these are 22×18 (single\n   uppercase letter or \"+S\") without re-spec'ing every property. */\n.mrr-skill-tier-btn,\n.mrr-skill-spec-btn {\n  width: 22px;\n  height: 18px;\n  padding: 0;\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  font-weight: 700;\n  line-height: 1;\n}\n\n.mrr-skill-tier-btn { letter-spacing: 0.04em; }\n.mrr-skill-spec-btn { border-style: dashed; border-color: var(--mrr-accent-dim); }\n\n.mrr-skill-tier-btn:hover,\n.mrr-skill-spec-btn:hover { background: var(--mrr-accent-dim); }\n\n/* Tier modifier classes — visual cue for the active tier. The renderer\n   adds `--<code>` for the active tier; codes are ruleset-defined so\n   these mappings cover the common cases (PF2e U/T/E/M/L, Exalted U/C/F,\n   D&D U/T/E). Untrained-equivalent stays at the default tint. */\n.mrr-skill-tier-btn--T,\n.mrr-skill-tier-btn--C { background: var(--mrr-tint-strong); }\n.mrr-skill-tier-btn--E,\n.mrr-skill-tier-btn--F { background: var(--mrr-accent-dim); border-color: var(--mrr-accent-dim); }\n.mrr-skill-tier-btn--M { background: var(--mrr-accent); color: var(--mrr-on-accent); border-color: var(--mrr-accent); }\n.mrr-skill-tier-btn--L {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n  box-shadow: 0 0 0 1px var(--mrr-accent-dim);\n}\n\n.mrr-skill-spec-row {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto auto;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 4px 2px 18px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  margin-top: 2px;\n}\n\n.mrr-skill-spec-name {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 11px;\n}\n\n/* Custom skill / lore row — inherits the specialty layout but adds an\n   attribute selector between the name and the value so user-added skills\n   can declare which attribute they roll under. The select stays compact\n   so the row's grid columns line up with the existing specialty rows. */\n.mrr-custom-skill-row { grid-template-columns: 1fr auto auto auto auto auto; }\n.mrr-custom-skill-attr {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 4px;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n}\n\n.mrr-skill-spec-label {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n}\n\n/*  ─────  Dice widget specialty pane  ───── */\n\n.mrr-dice__specs {\n  margin-top: 8px;\n  padding: 6px 8px;\n  border: 1px dashed var(--mrr-accent-dim);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-dice__specs-title {\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n  margin-bottom: 4px;\n}\n\n.mrr-dice__spec-row {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 0;\n  cursor: pointer;\n}\n\n.mrr-dice__spec-checkbox {\n  margin: 0;\n  cursor: pointer;\n}\n\n.mrr-stepper {\n  display: inline-flex;\n  gap: 2px;\n}\n\n.mrr-stepper button {\n  width: 18px;\n  height: 18px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--mrr-tint-2);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  padding: 0;\n  line-height: 1;\n}\n\n.mrr-stepper button:hover { background: var(--mrr-accent-dim); }\n.mrr-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }\n\n/*  ─────  Derived stats  ───── */\n\n.mrr-derived {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-derived__formula {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-bar {\n  position: relative;\n  height: 14px;\n  background: var(--mrr-tint-2);\n  border-radius: var(--mrr-radius-sm);\n  overflow: hidden;\n}\n\n.mrr-bar__fill {\n  position: absolute;\n  inset: 0;\n  background: linear-gradient(90deg, var(--mrr-accent-dim), var(--mrr-accent));\n  width: 0;\n  transition: width 0.18s ease-out;\n}\n\n.mrr-bar__label {\n  position: relative;\n  z-index: 1;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  text-align: center;\n  line-height: 14px;\n  color: var(--mrr-text);\n  text-shadow: 0 0 2px rgba(0,0,0,0.6);\n}\n\n.mrr-track {\n  display: flex;\n  gap: 3px;\n  flex-wrap: wrap;\n}\n\n.mrr-track__cell {\n  min-width: 38px;\n  padding: 2px 6px;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  text-align: center;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  cursor: pointer;\n  user-select: none;\n}\n\n.mrr-track__cell--filled {\n  background: var(--mrr-fail);\n  color: var(--mrr-on-fail);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-track__cell--active {\n  outline: 2px solid var(--mrr-warning);\n}\n\n.mrr-track__cell--extra {\n  border-style: dashed;\n  border-color: var(--mrr-accent-dim);\n}\n\n/*  ─────  Damage-type tones  ─────\n    Used by rulesets that declare damageTypes on a track-renderAs derived\n    stat (Exalted, WoD, anything Storyteller-flavored). Bashing is mild\n    (warning yellow), Lethal is severe (fail red, same hue as legacy\n    single-fill), Aggravated is dire (deep maroon — meant to read as\n    'something supernatural just hit you'). The renderer overlays the\n    damage-type label (B/L/A) on the cell when filled. */\n.mrr-track__cell--bashing {\n  background: var(--mrr-warning);\n  color: #1a0f0f;\n  border-color: var(--mrr-warning);\n}\n.mrr-track__cell--lethal {\n  background: var(--mrr-fail);\n  color: var(--mrr-on-fail);\n  border-color: var(--mrr-fail);\n}\n.mrr-track__cell--aggravated {\n  background: #5a1a1a;\n  color: #f5f0ff;\n  border-color: #7a2a2a;\n  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);\n}\n\n.mrr-track-ctrl {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 4px;\n  margin-top: 4px;\n}\n\n.mrr-track-ctrl__label {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  margin-right: 2px;\n}\n\n.mrr-track-add-btn {\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 6px;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  cursor: pointer;\n}\n\n.mrr-track-add-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-track-add-btn--danger:hover {\n  background: rgba(251, 113, 133, 0.30);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-saved-indicator {\n  font-size: 10px;\n  color: var(--mrr-success);\n  font-family: var(--mrr-mono);\n  margin-left: 6px;\n  white-space: nowrap;\n}\n\n/*  ─────  States (anima banner / stunt tier / D&D conditions)  ───── */\n\n.mrr-state {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 6px;\n  padding: 4px 0;\n}\n\n.mrr-state__name { font-weight: 500; }\n\n.mrr-state__select {\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n/*  ─────  Floating dice widget  ───── */\n\n.mrr-dice {\n  position: fixed;\n  top: 80px;\n  right: 16px;\n  width: 280px;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  box-shadow: var(--mrr-shadow);\n  z-index: var(--mrr-z-dice);\n  font-size: var(--mrr-density-fs);\n  display: none;\n}\n\n.mrr-dice--open { display: block; }\n\n.mrr-dice__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  margin-bottom: 6px;\n  padding-bottom: 6px;\n  border-bottom: 1px solid var(--mrr-border);\n}\n\n.mrr-dice__title {\n  font-weight: 600;\n  color: var(--mrr-accent);\n}\n\n.mrr-dice__close {\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text-dim);\n  font-size: 18px;\n  cursor: pointer;\n  line-height: 1;\n}\n\n.mrr-dice__row {\n  display: flex;\n  gap: 6px;\n  align-items: center;\n  margin: 4px 0;\n}\n\n.mrr-dice__row label {\n  flex: 0 0 80px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-dice__input {\n  flex: 1;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: var(--mrr-mono);\n  font-size: var(--mrr-density-fs);\n  width: 100%;\n}\n\n.mrr-dice__btn {\n  width: 100%;\n  margin-top: 6px;\n  padding: 6px 10px;\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border: 0;\n  border-radius: var(--mrr-radius-sm);\n  font-weight: 600;\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-dice__btn:hover { filter: brightness(1.1); }\n\n.mrr-dice__btn--secondary {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n}\n\n.mrr-dice__btn--row-spaced { margin-top: 4px; }\n\n.mrr-dice__result {\n  margin-top: 8px;\n  padding: 8px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  white-space: pre-wrap;\n}\n\n.mrr-dice__result--success { border-color: var(--mrr-success); }\n.mrr-dice__result--fail    { border-color: var(--mrr-fail); }\n.mrr-dice__result--botch   { border-color: var(--mrr-warning); background: rgba(251, 191, 36, 0.10); }\n.mrr-dice__result--tie     { border-color: var(--mrr-warning); }\n\n.mrr-dice__faces {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 3px;\n  margin-top: 6px;\n}\n\n.mrr-dice__face {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 22px;\n  height: 22px;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-dice__face--success { background: var(--mrr-accent-dim); border-color: var(--mrr-accent); }\n.mrr-dice__face--double  { background: var(--mrr-accent); color: var(--mrr-on-accent); }\n.mrr-dice__face--one     { background: rgba(251, 113, 133, 0.20); border-color: var(--mrr-fail); }\n\n/*  ─────  Header gear button + dialog  ───── */\n\n.mrr-gear-btn {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  margin-left: 8px;\n  padding: 4px 8px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-gear-btn:hover { background: var(--mrr-accent-dim); }\n\n/*  ─────  Header sheet-toggle button (scroll icon)  ───── */\n\n.mrr-sheet-toggle-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 32px;\n  height: 32px;\n  margin-left: 8px;\n  padding: 0;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: 50%;\n  cursor: pointer;\n  font-family: inherit;\n  vertical-align: middle;\n}\n\n.mrr-sheet-toggle-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-sheet-toggle-btn--active {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n\n.mrr-sheet-toggle-btn svg {\n  width: 18px;\n  height: 18px;\n  display: block;\n}\n\n.mrr-dialog-backdrop {\n  position: fixed;\n  inset: 0;\n  background: rgba(0, 0, 0, 0.55);\n  z-index: var(--mrr-z-dialog);\n  display: none;\n  align-items: center;\n  justify-content: center;\n}\n\n.mrr-dialog-backdrop--open { display: flex; }\n\n.mrr-dialog {\n  width: min(560px, 92vw);\n  max-height: 80vh;\n  overflow: auto;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: 16px;\n  box-shadow: var(--mrr-shadow);\n}\n\n.mrr-dialog h3 {\n  margin: 0 0 8px;\n  color: var(--mrr-accent);\n  font-size: 16px;\n}\n\n.mrr-dialog p {\n  color: var(--mrr-text-dim);\n  font-size: 12px;\n  margin: 4px 0 8px;\n}\n\n.mrr-dialog textarea {\n  width: 100%;\n  min-height: 220px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 8px;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  resize: vertical;\n}\n\n.mrr-dialog__row {\n  display: flex;\n  gap: 6px;\n  align-items: center;\n  margin: 8px 0;\n}\n\n.mrr-dialog__label {\n  flex: 0 0 50px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-dialog__buttons {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px;\n  justify-content: flex-end;\n  margin-top: 12px;\n}\n\n.mrr-dialog__lib-title {\n  margin-top: 18px;\n  border-top: 1px solid var(--mrr-border);\n  padding-top: 14px;\n}\n.mrr-dialog__lib-help {\n  font-size: 12px;\n  opacity: 0.8;\n  margin-top: 4px;\n}\n.mrr-dialog__lib {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  margin-top: 8px;\n}\n.mrr-dialog__lib-row {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding: 6px 8px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: rgba(0, 0, 0, 0.15);\n}\n.mrr-dialog__lib-name {\n  flex: 1;\n  font-family: var(--mrr-mono);\n  font-size: var(--mrr-density-fs);\n}\n\n.mrr-msg {\n  margin-top: 6px;\n  padding: 6px 8px;\n  border-radius: var(--mrr-radius-sm);\n  font-size: 12px;\n  font-family: var(--mrr-mono);\n}\n\n.mrr-msg--ok    { background: rgba(110, 231, 183, 0.12); border: 1px solid var(--mrr-success); }\n.mrr-msg--err   { background: rgba(251, 113, 133, 0.12); border: 1px solid var(--mrr-fail); }\n.mrr-msg--info  { background: rgba(212, 168, 255, 0.10); border: 1px solid var(--mrr-accent-dim); }\n\n/*  ─────  Inventory section + item editor  ───── */\n\n.mrr-inv-list {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-inv-item {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto auto;\n  align-items: center;\n  gap: 6px;\n  padding: 4px 6px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-inv-item--equipped {\n  border-color: var(--mrr-accent);\n  background: var(--mrr-tint-2);\n}\n\n.mrr-inv-item__name {\n  font-weight: 500;\n}\n\n.mrr-inv-item__slot {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n}\n\n/* Damage cell on a weapon row — visually distinct from the slot tag so a\n   skim of the inventory tells the player at a glance which items hit\n   and how much. Color picks up the warning hue (the cue for \"this is\n   the violent thing\"). */\n.mrr-inv-item__damage {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-warning);\n  white-space: nowrap;\n}\n\n.mrr-inv-item__bonus-summary {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-accent);\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.mrr-inv-empty {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  font-style: italic;\n}\n\n.mrr-item-form__row {\n  display: grid;\n  grid-template-columns: 70px 1fr;\n  align-items: center;\n  gap: 12px;\n  margin: 6px 0;\n}\n\n.mrr-item-form__row label {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  text-align: right;\n}\n\n.mrr-item-form__input,\n.mrr-item-form__select {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-item-form__textarea {\n  width: 100%;\n  min-height: 50px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: inherit;\n  font-size: 12px;\n  resize: vertical;\n}\n\n.mrr-bonus-list {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  margin-top: 4px;\n  padding: 6px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: rgba(0, 0, 0, 0.10);\n}\n\n.mrr-bonus-list__title {\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-bonus-row {\n  display: grid;\n  grid-template-columns: 2fr 50px 70px 1.2fr auto;\n  align-items: center;\n  gap: 4px;\n}\n\n.mrr-bonus-row__input {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 4px;\n  font-family: inherit;\n  font-size: 11px;\n}\n\n/* <option> elements ignore most parent styling on Linux/Chromium and fall back\n   to OS-default (often white bg + inherited near-white text => invisible until\n   highlighted). Explicit colors here force a readable dark dropdown panel. */\n.mrr-bonus-row__input option,\n.mrr-item-form__select option,\n.mrr-item-form__input option {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n}\n\n/*  ─────  Derived / skill row equipment-bonus suffix  ───── */\n\n.mrr-row__bonus {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-success);\n  margin-left: 2px;\n}\n\n.mrr-row__bonus--neg { color: var(--mrr-fail); }\n\n/*  ─────  Derived value cap suffix (\"/ max\")  ───── */\n\n.mrr-row__cap {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  margin-left: 2px;\n  white-space: nowrap;\n}\n\n\n/*  ─────  state mutation confirmation toast  ───── */\n/* Top-right floating stack of brief notifications shown when the\n   state-mutator agent's tags fire. Each toast confirms one mutation:\n   prefix (HP / Condition / Inventory), change (signed delta or +/- name),\n   and the agent-reported reason. Stacks vertically; auto-dismisses. */\n.mrr-toast-container {\n  position: fixed;\n  top: 16px;\n  right: 16px;\n  z-index: 10000;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  pointer-events: none;\n}\n\n.mrr-toast {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-left: 3px solid var(--mrr-accent);\n  border-radius: var(--mrr-radius-sm);\n  padding: 8px 12px;\n  font-family: inherit;\n  font-size: 12px;\n  box-shadow: var(--mrr-shadow);\n  opacity: 0;\n  transform: translateX(20px);\n  transition: opacity 0.25s ease-out, transform 0.25s ease-out;\n  pointer-events: auto;\n  display: flex;\n  gap: 8px;\n  align-items: baseline;\n  max-width: 320px;\n}\n\n.mrr-toast--visible {\n  opacity: 1;\n  transform: translateX(0);\n}\n\n.mrr-toast__prefix {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n  color: var(--mrr-text-dim);\n  flex-shrink: 0;\n}\n\n.mrr-toast__change {\n  font-family: var(--mrr-mono);\n  font-weight: 700;\n  color: var(--mrr-accent);\n  flex-shrink: 0;\n}\n\n.mrr-toast__reason {\n  color: var(--mrr-text-dim);\n  font-size: 11px;\n  font-style: italic;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n/*  ─────  Spellbook flyout (third floating panel, system-labeled)  ───── */\n/* Per-ruleset abilities/charms/stunts panel. Toggled from the main sheet's\n   spellbook row; renders one collapsible category section per\n   ruleset.abilities.categories[]. Position persists to mrr-spellbook-pos\n   (per-extension, not per-chat). Z-index sits between sheet and dice so\n   the dice widget can overlap it on roll. */\n\n.mrr-spellbook {\n  position: fixed;\n  top: 80px;\n  left: 360px;\n  width: 320px;\n  max-height: 70vh;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  box-shadow: var(--mrr-shadow);\n  z-index: 9996;\n  font-size: var(--mrr-density-fs);\n  display: none;\n  flex-direction: column;\n  overflow: hidden;\n}\n\n.mrr-spellbook--open { display: flex; }\n\n.mrr-spellbook__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  margin-bottom: 6px;\n  padding-bottom: 6px;\n  border-bottom: 1px solid var(--mrr-border);\n  cursor: grab;\n  user-select: none;\n}\n\n.mrr-spellbook__header:active { cursor: grabbing; }\n\n.mrr-spellbook__title {\n  font-weight: 600;\n  color: var(--mrr-accent);\n}\n\n.mrr-spellbook__body {\n  flex: 1;\n  overflow-y: auto;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-spellbook-row {\n  cursor: default;\n}\n\n.mrr-spellbook-row__btn {\n  width: 100%;\n  text-align: left;\n}\n\n.mrr-spellbook-cat {\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  padding: 4px 6px;\n}\n\n.mrr-spellbook-cat__head {\n  width: 100%;\n  background: transparent;\n  color: var(--mrr-text);\n  border: 0;\n  padding: 4px 2px;\n  font-family: inherit;\n  font-size: 12px;\n  font-weight: 600;\n  text-align: left;\n  cursor: pointer;\n  letter-spacing: 0.04em;\n}\n\n.mrr-spellbook-cat__head:hover { color: var(--mrr-accent); }\n\n.mrr-spellbook-cat__list {\n  display: flex;\n  flex-direction: column;\n  gap: 3px;\n  margin-top: 4px;\n}\n\n.mrr-spellbook-cat--collapsed .mrr-spellbook-cat__list,\n.mrr-spellbook-cat--collapsed .mrr-spellbook-cat__add {\n  display: none;\n}\n\n.mrr-spellbook-cat__add {\n  margin-top: 4px;\n}\n\n.mrr-spellbook-ab {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto;\n  align-items: center;\n  gap: 4px;\n  padding: 2px 4px;\n  background: var(--mrr-bg-elev);\n  border-radius: var(--mrr-radius-sm);\n  border: 1px solid var(--mrr-border);\n}\n\n.mrr-spellbook-ab__name {\n  font-weight: 500;\n  font-size: 12px;\n}\n\n.mrr-spellbook-ab__cost {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  white-space: nowrap;\n}\n\n/*  ─────  Chip primitive  ─────────────────────────────────────────────────\n    Small inline pill used for status-flavored item details: Hardness,\n    Overwhelming, intimacy kind. Tints lean on existing CSS variables so\n    the palette stays consistent. */\n.mrr-chip {\n  display: inline-flex;\n  align-items: center;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  line-height: 1;\n  padding: 2px 6px;\n  border-radius: 999px;\n  border: 1px solid var(--mrr-border);\n  background: var(--mrr-tint-1);\n  color: var(--mrr-text-dim);\n  white-space: nowrap;\n}\n\n.mrr-chip--hardness {\n  color: #b9d8ff;\n  border-color: rgba(133, 173, 220, 0.45);\n  background: rgba(80, 120, 180, 0.18);\n}\n\n.mrr-chip--overwhelming {\n  color: #ffd0a8;\n  border-color: rgba(220, 140, 80, 0.45);\n  background: rgba(180, 90, 40, 0.20);\n}\n\n/* Commitment chips — surface per-item magic-binding state on the inventory\n   row. Attuned and Invested share the accent palette (the system's \"magic\n   is active\" cue). Mote uses the warning hue since Exalted essence reads\n   as \"energy held in reserve\" rather than a passive enchantment. */\n.mrr-chip--attuned {\n  color: var(--mrr-on-accent);\n  background: var(--mrr-accent);\n  border-color: var(--mrr-accent);\n  font-weight: 600;\n  letter-spacing: 0.04em;\n}\n\n.mrr-chip--invested {\n  color: var(--mrr-on-accent);\n  background: var(--mrr-accent);\n  border-color: var(--mrr-accent);\n  font-weight: 600;\n  letter-spacing: 0.04em;\n}\n\n.mrr-chip--mote {\n  color: #1a0f0f;\n  background: var(--mrr-warning);\n  border-color: var(--mrr-warning);\n  font-weight: 600;\n  letter-spacing: 0.04em;\n}\n\n.mrr-chip--intimacy-kind {\n  cursor: pointer;\n  background: var(--mrr-tint-2);\n  border-color: var(--mrr-border-strong);\n  color: var(--mrr-text);\n  font-weight: 600;\n  letter-spacing: 0.04em;\n}\n\n.mrr-chip--intimacy-kind-tie {\n  color: var(--mrr-accent);\n  border-color: var(--mrr-accent-dim);\n}\n\n.mrr-chip--intimacy-kind-principle {\n  color: var(--mrr-success);\n  border-color: rgba(110, 231, 183, 0.45);\n  background: rgba(110, 231, 183, 0.10);\n}\n\n/*  ─────  Intimacies flyout panel  ────────────────────────────────────────\n    Shares the .mrr-spellbook structural classes so position, header,\n    body scroll, and category collapse all \"just work.\" Only the layout\n    of an individual intimacy row is custom: a two-line grid with the\n    kind chip + degree dropdown + delete on the first line and the text\n    input on the second so the field is wide enough to read. */\n.mrr-intimacies { /* inherits .mrr-spellbook positioning + open class */ }\n\n.mrr-intimacy-group {\n  /* inherits .mrr-spellbook-cat */\n}\n\n.mrr-intimacy-group--defining .mrr-spellbook-cat__head {\n  color: var(--mrr-accent);\n}\n\n.mrr-intimacy-row {\n  display: grid;\n  grid-template-columns: auto 1fr auto auto;\n  align-items: center;\n  gap: 4px;\n  padding: 4px;\n  background: var(--mrr-bg-elev);\n  border-radius: var(--mrr-radius-sm);\n  border: 1px solid var(--mrr-border);\n}\n\n.mrr-intimacy-row__text {\n  grid-column: 1 / -1;\n  width: 100%;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: inherit;\n  font-size: 12px;\n  order: 2;\n}\n\n.mrr-intimacy-row > .mrr-chip--intimacy-kind { order: 1; }\n\n.mrr-intimacy-row__degree {\n  order: 3;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 4px;\n  font-family: inherit;\n  font-size: 11px;\n}\n\n.mrr-intimacy-row__target {\n  order: 4;\n  grid-column: 1 / -1;\n  width: 100%;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 3px 6px;\n  font-family: inherit;\n  font-size: 11px;\n  font-style: italic;\n}\n\n.mrr-intimacy-row > .mrr-char-btn--danger { order: 5; }\n\n.mrr-intimacies__top-add {\n  width: 100%;\n  margin-bottom: 4px;\n}\n\n/*  ─────  XP card  ─────────────────────────────────────────────────────────\n    Sits between identity row and the section list in the main sheet. Two\n    layouts driven by ruleset.resolution.mode:\n      \"single-roll\" (D&D, PF2e) — level + current/next + 4px progress bar\n                                  fed by ruleset.xpTable\n      \"dice-pool\"   (Exalted)   — current + total earned + +1 XP button\n                                  (a pure int accumulator)\n    Hidden entirely for rulesets whose mode isn't one of the two above\n    (Fate Core uses Fate Points, not XP). */\n\n.mrr-xp-card {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  padding: 8px 10px;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  margin-top: 4px;\n}\n\n.mrr-xp-card__label {\n  font-size: 10px;\n  font-weight: 600;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n}\n\n.mrr-xp-card__row {\n  display: flex;\n  align-items: flex-end;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n\n.mrr-xp-card__group {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 60px;\n}\n\n.mrr-xp-card__sub {\n  font-size: 9px;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-xp-card__input {\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: var(--mrr-mono);\n  font-size: 14px;\n  font-weight: 600;\n  text-align: right;\n  width: 80px;\n  font-variant-numeric: tabular-nums;\n  -moz-appearance: textfield;\n}\n\n.mrr-xp-card__input:focus {\n  outline: none;\n  border-color: var(--mrr-accent);\n  background: var(--mrr-bg-elev);\n}\n\n.mrr-xp-card__input::-webkit-outer-spin-button,\n.mrr-xp-card__input::-webkit-inner-spin-button {\n  -webkit-appearance: none;\n  margin: 0;\n}\n\n.mrr-xp-card__input--lvl {\n  width: 50px;\n  font-size: 16px;\n  text-align: center;\n}\n\n.mrr-xp-card__sep {\n  font-family: var(--mrr-mono);\n  font-size: 16px;\n  color: var(--mrr-text-dim);\n  align-self: flex-end;\n  padding-bottom: 2px;\n}\n\n.mrr-xp-card__next {\n  font-family: var(--mrr-mono);\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--mrr-text);\n  padding: 2px 6px;\n  font-variant-numeric: tabular-nums;\n  align-self: flex-end;\n}\n\n.mrr-xp-card__bar {\n  height: 4px;\n  background: var(--mrr-tint-2);\n  border-radius: 2px;\n  overflow: hidden;\n}\n\n.mrr-xp-card__bar-fill {\n  height: 100%;\n  background: var(--mrr-accent);\n  width: 0;\n  transition: width 0.18s ease-out;\n}\n\n.mrr-xp-card__add {\n  align-self: flex-start;\n  background: var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-accent);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 10px;\n  font-family: inherit;\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.05em;\n  cursor: pointer;\n}\n\n.mrr-xp-card__add:hover {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n}\n\n/* ═══════════════════════════════════════════════════════════════\n * Phase 3.1 — row-primitive CSS (mrr-p3-* namespace)\n * ═══════════════════════════════════════════════════════════════\n * Sibling to the existing .mrr-section / .mrr-row / .mrr-stepper /\n * .mrr-bar rules used by the running renderer. Phase-3 namespace\n * prevents collision; cutover in a future session renames or\n * removes the -p3 infix when the new renderer is the only path.\n *\n * Density values inlined as cozy defaults (12/8/30/13). Token\n * migration will swap these for --density-* later.\n * ═══════════════════════════════════════════════════════════════ */\n\n.mrr-p3-section {\n  /* display:flex + column makes the card a flex container AND fixes\n     the flex-item height collapse: when this card is itself a flex\n     item of .mrr-sheet (which is column flex), Chrome computes its\n     intrinsic min-height as 0 if the card isn't a flex container,\n     which causes head + body to render outside the card's painted\n     bounds. Matching the existing .mrr-section pattern (also column\n     flex) keeps the card sized to its children. overflow:hidden\n     dropped — children have padding so they don't bleed past the\n     rounded corners. */\n  display: flex;\n  flex-direction: column;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius);\n  margin-bottom: 8px;\n}\n.mrr-p3-section__head {\n  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);\n  cursor: pointer;\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  user-select: none;\n  border-bottom: 1px solid transparent;\n}\n.mrr-p3-section--open .mrr-p3-section__head { border-bottom-color: var(--mrr-border); }\n.mrr-p3-section__head:hover { background: var(--mrr-tint-1); }\n.mrr-p3-section__title {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  color: var(--mrr-text);\n}\n.mrr-p3-section__count {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n}\n.mrr-p3-section__actions {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n}\n.mrr-p3-section__right { margin-left: auto; }\n.mrr-p3-section__chev {\n  margin-left: auto;\n  color: var(--mrr-text-dim);\n  transition: transform 150ms ease;\n  display: inline-block;\n}\n.mrr-p3-section--open .mrr-p3-section__chev { transform: rotate(90deg); }\n.mrr-p3-section__body {\n  display: none;\n  padding: 8px var(--mrr-density-pad-x) var(--mrr-density-pad-y);\n  flex-direction: column;\n  gap: 8px;\n}\n.mrr-p3-section--open .mrr-p3-section__body { display: flex; }\n\n/* Stepper */\n.mrr-p3-stepper {\n  display: inline-flex;\n  gap: 2px;\n}\n.mrr-p3-stepper button {\n  width: 22px;\n  height: 22px;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  cursor: pointer;\n  font-size: 13px;\n  border-radius: var(--mrr-radius-sm);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  padding: 0;\n}\n.mrr-p3-stepper button:hover {\n  background: var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  border-color: var(--mrr-border-strong);\n}\n\n/* Row base + variants */\n.mrr-p3-row {\n  display: grid;\n  align-items: center;\n  gap: 8px;\n  padding: 4px 8px;\n  height: var(--mrr-density-row-h);\n  border-radius: var(--mrr-radius-sm);\n}\n.mrr-p3-row:hover { background: var(--mrr-tint-1); }\n.mrr-p3-row--attr { grid-template-columns: 1fr auto auto auto auto; }\n.mrr-p3-row--skill {\n  grid-template-columns: 1fr auto auto auto;\n  align-items: start;\n  height: auto;\n  min-height: var(--mrr-density-row-h);\n}\n.mrr-p3-row--save { grid-template-columns: 1fr auto auto auto; }\n.mrr-p3-row__name {\n  font-size: var(--mrr-density-fs);\n  color: var(--mrr-text);\n  display: inline-flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 4px;\n}\n.mrr-p3-row__abbr {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  margin-left: 4px;\n}\n.mrr-p3-row__kind {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n  margin-left: 6px;\n}\n.mrr-p3-row__gear {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-accent);\n  margin-left: 6px;\n  padding: 1px 5px;\n  border: 1px solid var(--mrr-accent-dim);\n  border-radius: 6px;\n  background: var(--mrr-tint-1);\n}\n.mrr-p3-row__mod {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  min-width: 22px;\n  text-align: right;\n}\n.mrr-p3-row__main {\n  min-width: 0;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n.mrr-p3-row__del {\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text-dim);\n  font-size: 14px;\n  cursor: pointer;\n  padding: 0 4px;\n  margin-left: auto;\n  line-height: 1;\n}\n.mrr-p3-row__del:hover { color: var(--mrr-warning); }\n.mrr-p3-row__val {\n  width: 64px;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text);\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  padding: 4px 6px;\n  border-radius: var(--mrr-radius-sm);\n  text-align: center;\n}\n.mrr-p3-row__val::-webkit-outer-spin-button,\n.mrr-p3-row__val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }\n.mrr-p3-row__val:focus { outline: 0; border-color: var(--mrr-accent); }\n.mrr-p3-row__val--auto {\n  background: transparent;\n  border: 0;\n  font-size: var(--mrr-density-fs);\n  font-weight: 600;\n  font-feature-settings: \"tnum\";\n  font-variant-numeric: tabular-nums;\n  color: var(--mrr-text);\n}\n.mrr-p3-row__roll {\n  background: transparent;\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  padding: 4px 10px;\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  min-width: 48px;\n}\n.mrr-p3-row__roll:hover {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n.mrr-p3-row__roll--sm {\n  padding: 2px 6px;\n  font-size: 10px;\n  min-width: 0;\n}\n\n/* Tier pill */\n.mrr-p3-tier {\n  width: 36px;\n  height: 22px;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  font-weight: 700;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  padding: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n}\n.mrr-p3-tier:hover { background: var(--mrr-accent-dim); }\n.mrr-p3-tier--T {\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border-color: var(--mrr-border-strong);\n}\n.mrr-p3-tier--E {\n  background: var(--mrr-accent-dim);\n  border-color: var(--mrr-border-strong);\n  color: var(--mrr-text);\n}\n.mrr-p3-tier--M {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n\n/* Specialty chips + editor */\n.mrr-p3-row__spec-toggle {\n  background: transparent;\n  border: 1px dashed var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-size: 10px;\n  padding: 1px 6px;\n  border-radius: 6px;\n  cursor: pointer;\n  margin-left: 6px;\n}\n.mrr-p3-row__spec-toggle:hover {\n  border-style: solid;\n  border-color: var(--mrr-border-strong);\n  color: var(--mrr-accent);\n}\n.mrr-p3-row__specs {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px;\n  margin-top: 2px;\n}\n.mrr-p3-spec-chip {\n  background: var(--mrr-tint-1);\n  border: 1px solid var(--mrr-border);\n  border-radius: 6px;\n  padding: 2px 6px;\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  cursor: pointer;\n  font-size: 11px;\n  color: var(--mrr-text);\n}\n.mrr-p3-spec-chip:hover {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n}\n.mrr-p3-spec-chip__name { font-weight: 500; }\n.mrr-p3-spec-chip__dice {\n  font-family: var(--mrr-mono);\n  font-size: 9.5px;\n  opacity: 0.85;\n}\n.mrr-p3-spec-chip__x {\n  margin-left: 2px;\n  opacity: 0.7;\n  cursor: pointer;\n  padding: 0 2px;\n}\n.mrr-p3-spec-chip__x:hover { opacity: 1; color: var(--mrr-warning); }\n.mrr-p3-row__spec-editor {\n  display: flex;\n  gap: 4px;\n  align-items: center;\n  margin-top: 4px;\n}\n.mrr-p3-row__spec-input {\n  flex: 1;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text);\n  font-size: 12px;\n  padding: 4px 6px;\n  border-radius: var(--mrr-radius-sm);\n}\n.mrr-p3-row__spec-input:focus { outline: 0; border-color: var(--mrr-accent); }\n.mrr-p3-row__spec-add,\n.mrr-p3-row__spec-done {\n  background: transparent;\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-size: 11px;\n  padding: 4px 8px;\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n}\n.mrr-p3-row__spec-add:hover { border-color: var(--mrr-accent); color: var(--mrr-accent); }\n.mrr-p3-row__spec-done:hover { border-color: var(--mrr-border-strong); color: var(--mrr-text); }\n\n/* Auto-calc bonus pill (skill + save rows) */\n.mrr-p3-save__bonus {\n  font-feature-settings: \"tnum\";\n  font-variant-numeric: tabular-nums;\n  font-size: 13px;\n  font-weight: 600;\n  color: var(--mrr-accent);\n}\n.mrr-p3-row--save .mrr-p3-save__bonus { color: var(--mrr-accent); }\n\n/* Bar */\n.mrr-p3-bar {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  padding: 6px 8px;\n}\n.mrr-p3-bar__top {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  gap: 8px;\n}\n.mrr-p3-bar__name {\n  font-size: 12px;\n  font-weight: 500;\n  color: var(--mrr-text);\n}\n.mrr-p3-bar__values {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  color: var(--mrr-text-dim);\n}\n.mrr-p3-bar__val-input {\n  width: 40px;\n  background: transparent;\n  border: 0;\n  border-bottom: 1px dotted var(--mrr-border);\n  color: var(--mrr-text);\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  text-align: center;\n  padding: 1px 0;\n}\n.mrr-p3-bar__val-input::-webkit-outer-spin-button,\n.mrr-p3-bar__val-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }\n.mrr-p3-bar__val-input:hover,\n.mrr-p3-bar__val-input:focus {\n  outline: 0;\n  border-bottom-color: var(--mrr-border-strong);\n}\n.mrr-p3-bar__sep { color: var(--mrr-text-dim); }\n.mrr-p3-bar__track {\n  height: 4px;\n  border-radius: 2px;\n  background: var(--mrr-tint-2);\n  overflow: hidden;\n}\n.mrr-p3-bar__fill {\n  height: 100%;\n  transition: width 200ms ease, background 200ms ease;\n}\n.mrr-p3-bar__fill--ok { background: var(--mrr-success); }\n.mrr-p3-bar__fill--warn { background: var(--mrr-warning); }\n.mrr-p3-bar__fill--bad { background: var(--mrr-fail); }\n.mrr-p3-bar__quick {\n  display: flex;\n  gap: 4px;\n  margin-top: 2px;\n}\n.mrr-p3-bar__quick button {\n  background: transparent;\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  padding: 2px 6px;\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n}\n.mrr-p3-bar__quick button:hover {\n  background: var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  border-color: var(--mrr-border-strong);\n}\n\n/* Damage track (Exalted) */\n.mrr-p3-bar--damage .mrr-p3-bar__values--track {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n}\n.mrr-p3-track {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px;\n  margin-top: 4px;\n}\n.mrr-p3-cell {\n  width: 36px;\n  height: 22px;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  padding: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n}\n.mrr-p3-cell:hover {\n  border-color: var(--mrr-border-strong);\n  color: var(--mrr-text);\n}\n.mrr-p3-cell--B {\n  background: var(--mrr-warning);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-warning);\n}\n.mrr-p3-cell--L {\n  background: var(--mrr-fail);\n  color: var(--mrr-text);\n  border-color: var(--mrr-fail);\n}\n.mrr-p3-cell--A {\n  background: var(--mrr-on-fail);\n  color: var(--mrr-text);\n  border-color: var(--mrr-fail);\n}\n.mrr-p3-track-tools {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  gap: 8px;\n  margin-top: 4px;\n  flex-wrap: wrap;\n}\n.mrr-p3-track-tools__group {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n.mrr-p3-track-tools__label {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.04em;\n  opacity: 0.7;\n  margin-right: 2px;\n  color: var(--mrr-text-dim);\n}\n.mrr-p3-track-tools__add,\n.mrr-p3-track-tools__heal {\n  background: transparent;\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  padding: 2px 6px;\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n}\n.mrr-p3-track-tools__add:hover,\n.mrr-p3-track-tools__heal:hover:not(:disabled) {\n  background: var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  border-color: var(--mrr-border-strong);\n}\n.mrr-p3-track-tools__heal:disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n/* ═══════════════════════════════════════════════════════════════\n * Phase 3.2 — panel-frame chrome (port of panel-frame.jsx)\n * ═══════════════════════════════════════════════════════════════\n * Standalone floating panel: drag head + 8 resize handles + body.\n * Used by future Session 3.4+ flyouts (Inv / Spell / Gear edit forms,\n * BackpackFlyout, SpellbookFlyout). The current Phase 3.3 sheet body\n * REUSES the existing .mrr-sheet shell so toggling renderers doesn't\n * disturb the saved sheet position.\n * ═══════════════════════════════════════════════════════════════ */\n\n.mrr-p3-panel {\n  position: fixed;\n  background: var(--mrr-bg);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius);\n  box-shadow: var(--mrr-shadow);\n  color: var(--mrr-text);\n  z-index: var(--mrr-z-sheet);\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n}\n.mrr-p3-panel__head {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding: 10px var(--mrr-density-pad-x);\n  cursor: move;\n  user-select: none;\n  border-bottom: 1px solid var(--mrr-border);\n  background: var(--mrr-bg-elev);\n}\n.mrr-p3-panel__title {\n  font-size: 12px;\n  font-weight: 600;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n}\n.mrr-p3-panel__title-meta {\n  font-size: 11px;\n  font-weight: 500;\n  color: var(--mrr-text-dim);\n  letter-spacing: 0;\n  text-transform: none;\n  margin-left: 4px;\n}\n.mrr-p3-panel__close {\n  margin-left: auto;\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text-dim);\n  font-size: 16px;\n  line-height: 1;\n  cursor: pointer;\n  padding: 0 6px;\n  border-radius: var(--mrr-radius-sm);\n}\n.mrr-p3-panel__close:hover {\n  background: var(--mrr-tint-1);\n  color: var(--mrr-text);\n}\n.mrr-p3-panel__body {\n  flex: 1;\n  overflow: auto;\n  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);\n}\n\n/* Resize handles — 4 edges (8px wide along the edge) + 4 corners\n * (12px square at the corner). Cursor hints encode the drag axis. */\n.mrr-p3-panel__resize {\n  position: absolute;\n  background: transparent;\n  z-index: 1;\n}\n.mrr-p3-panel__resize--n  { top: 0;     left: 8px;   right: 8px;   height: 6px; cursor: ns-resize; }\n.mrr-p3-panel__resize--s  { bottom: 0;  left: 8px;   right: 8px;   height: 6px; cursor: ns-resize; }\n.mrr-p3-panel__resize--e  { top: 8px;   right: 0;    bottom: 8px;  width: 6px;  cursor: ew-resize; }\n.mrr-p3-panel__resize--w  { top: 8px;   left: 0;     bottom: 8px;  width: 6px;  cursor: ew-resize; }\n.mrr-p3-panel__resize--ne { top: 0;     right: 0;                              width: 12px; height: 12px; cursor: nesw-resize; }\n.mrr-p3-panel__resize--nw { top: 0;     left: 0;                               width: 12px; height: 12px; cursor: nwse-resize; }\n.mrr-p3-panel__resize--se {\n  bottom: 0; right: 0;\n  width: 14px; height: 14px;\n  cursor: nwse-resize;\n  display: flex;\n  align-items: flex-end;\n  justify-content: flex-end;\n  color: var(--mrr-text-dim);\n}\n.mrr-p3-panel__resize--se:hover { color: var(--mrr-accent); }\n.mrr-p3-panel__resize--sw { bottom: 0;  left: 0;                               width: 12px; height: 12px; cursor: nesw-resize; }\n\n/* Phase 3 attribute-group sub-label (used by mrrP3RenderAttributesSection\n * to label Exalted's Physical / Social / Mental groups). */\n.mrr-p3-section__subgroup-label {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n  color: var(--mrr-text-dim);\n  margin: 8px 0 4px;\n  padding-left: 4px;\n}\n\n/* Phase 3 derived-stat row wrapper (used by mrrP3RenderDerivedSection's\n * value branch — bars and tracks display their name inside the primitive,\n * but renderValue does not, so the wrapper supplies a name + formula\n * label outside the value primitive). */\n.mrr-p3-derived {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  margin-bottom: 8px;\n}\n\n.mrr-p3-derived__label {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  letter-spacing: 0.04em;\n  color: var(--mrr-text-dim);\n  padding-left: 4px;\n}\n\n/* ── Phase 5 step 5.5: density toggle ──────────────────────────────────\n * 3-way data-density attribute on .mrr-sheet swaps the five\n * --mrr-density-* variables. UI: pill button group in the actions row\n * with aria-pressed indicating selection. Per-character (state.sheet.density),\n * defaults to \"cozy\". Source: ~/projects/claude-design-updates/UI-build.md §2.3.\n * ────────────────────────────────────────────────────────────────────── */\n.mrr-sheet[data-density=\"compact\"] {\n  --mrr-density-pad-x: 8px;\n  --mrr-density-pad-y: 8px;\n  --mrr-density-gap:   4px;\n  --mrr-density-row-h: 24px;\n  --mrr-density-fs:   12px;\n}\n.mrr-sheet[data-density=\"cozy\"] {\n  --mrr-density-pad-x: 12px;\n  --mrr-density-pad-y: 12px;\n  --mrr-density-gap:    6px;\n  --mrr-density-row-h: 28px;\n  --mrr-density-fs:    13px;\n}\n.mrr-sheet[data-density=\"roomy\"] {\n  --mrr-density-pad-x: 16px;\n  --mrr-density-pad-y: 16px;\n  --mrr-density-gap:   10px;\n  --mrr-density-row-h: 34px;\n  --mrr-density-fs:   14px;\n}\n\n/* density toggle pill button group (rendered inside the actions row) */\n.mrr-density-toggle {\n  display: inline-flex;\n  align-items: center;\n  gap: 0;\n  padding: 2px;\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 999px;\n  background: var(--mrr-tint-1);\n}\n.mrr-density-toggle__label {\n  font-family: var(--mrr-mono);\n  font-size: 9px;\n  letter-spacing: 0.1em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint);\n  padding: 0 8px 0 6px;\n}\n.mrr-density-toggle__btn {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n  background: transparent;\n  border: 0;\n  border-radius: 999px;\n  padding: 4px 10px;\n  cursor: pointer;\n  transition: background-color 120ms ease, color 120ms ease;\n}\n.mrr-density-toggle__btn:hover {\n  color: var(--mrr-text);\n  background: var(--mrr-tint-2);\n}\n.mrr-density-toggle__btn:focus-visible {\n  outline: 1px solid var(--mrr-accent-line);\n  outline-offset: 1px;\n}\n.mrr-density-toggle__btn[aria-pressed=\"true\"] {\n  background: var(--mrr-accent-soft);\n  color: var(--mrr-text);\n  box-shadow: inset 0 0 0 1px var(--mrr-accent-line);\n}\n\n/* ── Phase 5 step 5.4: derived tooltip math ──────────────────────────\n * Cursor + underline affordance on derived value cells whose ruleset\n * declares a tooltipFormula. The browser's native title-attr tooltip\n * carries the breakdown (\"Soak (Bashing): 7 = Stamina (4) + Bashing\n * Soak (3)\"). Affordance is intentionally subtle — dotted underline\n * + help cursor is the long-established \"this has hover info\" pattern\n * (matches the prototype's skill-bonus pill UX). Scoped to autocalc\n * value cells with a non-empty title so static-rendered derived stats\n * without a tooltipFormula keep their default cursor + no underline. */\n.mrr-row__value--autocalc[title]:not([title=\"\"]) {\n  cursor: help;\n  text-decoration: underline dotted var(--mrr-text-faint);\n  text-underline-offset: 3px;\n  text-decoration-thickness: 1px;\n}\n.mrr-row__value--autocalc[title]:not([title=\"\"]):hover {\n  text-decoration-color: var(--mrr-accent-line);\n}\n\n/* ── Phase 5 step 5.2: XP card ───────────────────────────────────────\n * Visual restructure to prototype parity (sheet.jsx XpCard, UI-build.md\n * §3.4 + §4.7). The baseline rules at the .mrr-xp-card section above\n * already supply structure (flex column, row, group). This section\n * tightens the type scale + spacing to match the prototype:\n *   - card-level label: 10px / 600 / 0.12em uppercase (already)\n *   - sub-labels:       9px  / 0.10em uppercase (already)\n *   - numeric value:    14px → 16px / 600  (PROTOTYPE TARGET)\n *   - level input:      16px → 18px / 600 / 56px wide (PROTOTYPE)\n *   - + button placed inline at row end via flex-end self-align.\n * Selector specificity matches the baseline rule (single-class) so the\n * cascade resolves the override by source order — appended last wins.\n * Pool-mode (Exalted) and formula-mode (D&D, PF2e) both consume the\n * same primitives; the only mode difference is which primitives\n * appear (pool: current/sep/total/+1; formula: level/current/sep/next/bar).\n * Mode dispatch lives in renderXpCard() which keys off\n * ruleset.resolution.mode. */\n.mrr-xp-card__input {\n  font-size: 16px;\n}\n.mrr-xp-card__input--lvl {\n  font-size: 18px;\n  width: 56px;\n}\n.mrr-xp-card__sep {\n  font-size: 18px;\n  padding-bottom: 6px;\n}\n.mrr-xp-card__next {\n  font-size: 16px;\n  font-weight: 600;\n  padding-bottom: 4px;\n}\n/* Pool-mode +1 button now lives inside the row (see renderXpCard pool\n   branch). Anchor it to flex-end so it baselines with the inputs and\n   doesn't stretch the row vertically. The baseline alignment already\n   says align-self: flex-start at the .mrr-xp-card__add base rule;\n   this overrides for the inline placement. */\n.mrr-xp-card__row .mrr-xp-card__add {\n  align-self: flex-end;\n  margin-left: auto;\n}\n\n/* ── Phase 5 step 5.6: state badges + anima banner ──\n * Visual treatments for state rows whose active value carries narrative\n * weight: Initiative=Crashed (distress) and Anima=Suppressed (muted).\n * Uses a data-active-value attribute on .mrr-state plus paired modifier\n * classes so the row + select restyle without changing the underlying\n * select-based render (which already handles N values natively, including\n * the 6-value Anima Banner with Suppressed prepended in Plan B step B.2).\n *\n * Crashed token: scoped to this section, no global :root pollution beyond\n * the three new --mrr-state-crashed-* tokens.\n * Suppressed: leans on existing --mrr-text-faint for the \"no anima\" feel.\n */\n\n:root {\n  --mrr-state-crashed-color: oklch(0.62 0.18 28);\n  --mrr-state-crashed-soft:  oklch(0.62 0.18 28 / 0.18);\n  --mrr-state-crashed-line:  oklch(0.62 0.18 28 / 0.42);\n}\n\n/* Initiative=Crashed — red distress treatment on row + select.\n * Subtle pulse on the name to draw the eye without being jarring; respects\n * prefers-reduced-motion below. (!)-glyph appended via ::after pseudo. */\n.mrr-state--initiative-crashed .mrr-state__name {\n  color: var(--mrr-state-crashed-color);\n  font-weight: 600;\n  animation: mrr-state-crashed-pulse 2.4s ease-in-out infinite;\n}\n\n.mrr-state--initiative-crashed .mrr-state__name::after {\n  content: \" (!)\";\n  color: var(--mrr-state-crashed-color);\n  font-weight: 700;\n  letter-spacing: 0.02em;\n}\n\n.mrr-state--initiative-crashed .mrr-state__select {\n  color: var(--mrr-state-crashed-color);\n  border-color: var(--mrr-state-crashed-line);\n  background: var(--mrr-state-crashed-soft);\n}\n\n@keyframes mrr-state-crashed-pulse {\n  0%, 100% { opacity: 1; }\n  50%      { opacity: 0.72; }\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .mrr-state--initiative-crashed .mrr-state__name { animation: none; }\n}\n\n/* Anima=Suppressed — muted \"no anima visible\" treatment.\n * Suppressed renders at the top of the Anima Banner select because Plan B\n * step B.2 prepended it as the first value in ruleset.json — option order\n * follows ruleset value order. */\n.mrr-state--anima-suppressed .mrr-state__name {\n  color: var(--mrr-text-faint);\n  font-style: italic;\n}\n\n.mrr-state--anima-suppressed .mrr-state__select {\n  color: var(--mrr-text-faint);\n}\n\n/* Defensive overflow guard for state rows on narrow panels (≥320px).\n * The row is flex-row name+select; if a future ruleset adds a long state\n * name, the select should compress rather than spill. Anima Banner with 6\n * values (Suppressed/Dim/Glowing/Burning/Bonfire/Iconic) renders inside\n * the native <select>, so option count never affects row width. */\n.mrr-state {\n  flex-wrap: wrap;\n  min-width: 0;\n}\n.mrr-state__select {\n  max-width: 100%;\n  min-width: 0;\n}\n\n/* ── Phase 5 step 5.3: Resources cluster ──────────────────────────────\n * Horizontal \"charbar\" cluster of resource readouts rendered above\n * Attributes when the active ruleset declares resources[] (Plan B v1\n * schema add). Driven by mrrP3RenderResourcesSection — sub-renderers\n * dispatch by resource.type (bar / dice / counter / pool / custom).\n *\n * Layout: flex-wrap with min 120px per resource so 4+ pools at the top\n * of a 280-320px panel collapse to a 2x2 grid rather than spilling\n * horizontally. Adjacent resources sharing a `group` value render under\n * a shared subheader (D&D Spell Slots case).\n *\n * Auto-color thresholds match prototype <Bar> in sheet.jsx:151\n *   pct < 30%  → bad\n *   pct < 65%  → warn\n *   pct >= 65% → ok\n * Override via resource.color ∈ {ok|warn|bad|accent}.\n *\n * Tokens: reuses --mrr-success/-warning/-fail and --mrr-accent. No\n * global :root pollution. Local section-scoped tokens for the dice\n * glyph treatment only.\n */\n\n:root {\n  --mrr-resources-pad: 10px;\n  --mrr-resources-gap: 10px;\n  --mrr-resource-min-w: 120px;\n  --mrr-resource-bar-h: 6px;\n  --mrr-resource-die-size: 22px;\n}\n\n.mrr-resources {\n  display: flex;\n  flex-wrap: wrap;\n  gap: var(--mrr-resources-gap);\n  padding: var(--mrr-resources-pad);\n  margin: 0 0 8px 0;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-hairline);\n  border-radius: 8px;\n}\n\n/* Sub-group subheader (D&D Spell Slots). Forces a wrap break so all\n * resources sharing a group cluster under their label. */\n.mrr-resources__group-break {\n  flex-basis: 100%;\n  height: 0;\n  margin: 0;\n  border: 0;\n}\n.mrr-resources__group-label {\n  flex-basis: 100%;\n  font-size: 10px;\n  font-weight: 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint);\n  margin: 4px 0 -2px 0;\n}\n\n.mrr-resource {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  flex: 1 1 var(--mrr-resource-min-w);\n  min-width: var(--mrr-resource-min-w);\n  padding: 6px 8px;\n  background: var(--mrr-bg-input);\n  border: 1px solid var(--mrr-hairline);\n  border-radius: 6px;\n}\n/* Full-width resource (used by exalted-health-track so the track has room\n   to grow with extra HL added via Ox-Body, Mutations, etc.). Wraps onto\n   its own row regardless of cluster width. */\n.mrr-resource--full-width {\n  flex-basis: 100%;\n}\n\n.mrr-resource__label {\n  font-size: 10px;\n  font-weight: 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint);\n  line-height: 1.1;\n}\n\n.mrr-resource__values {\n  display: flex;\n  align-items: baseline;\n  gap: 4px;\n  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);\n  font-size: 13px;\n  color: var(--mrr-text);\n}\n.mrr-resource__val {\n  font-weight: 600;\n}\n.mrr-resource__val-input {\n  min-width: 3ch;\n  width: auto;\n  max-width: 5ch;\n  padding: 2px 4px;\n  background: var(--mrr-bg-app);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 3px;\n  color: inherit;\n  font: inherit;\n  text-align: right;\n  box-sizing: content-box;\n}\n.mrr-resource__val-input:focus {\n  outline: none;\n  border-color: var(--mrr-accent-line);\n}\n.mrr-resource__sep {\n  color: var(--mrr-text-faint);\n  opacity: 0.7;\n}\n\n/* Bar render (type=bar) — fill bar with auto-color. */\n.mrr-resource__bar {\n  position: relative;\n  height: var(--mrr-resource-bar-h);\n  width: 100%;\n  background: var(--mrr-bg-app);\n  border-radius: 999px;\n  overflow: hidden;\n}\n.mrr-resource__bar-fill {\n  height: 100%;\n  width: 0%;\n  border-radius: inherit;\n  transition: width 120ms ease-out, background-color 120ms ease-out;\n}\n.mrr-resource__bar-fill--ok     { background: var(--mrr-success, oklch(0.78 0.14 145)); }\n.mrr-resource__bar-fill--warn   { background: var(--mrr-warning, oklch(0.82 0.14 85)); }\n.mrr-resource__bar-fill--bad    { background: var(--mrr-fail, oklch(0.65 0.18 28)); }\n.mrr-resource__bar-fill--accent { background: var(--mrr-accent); }\n\n/* Dice render (type=dice) — pool of clickable dice glyphs. Spent dice\n * dim. Reuses --mrr-resource-die-size for sizing. */\n.mrr-resource__dice {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 3px;\n  margin-top: 2px;\n}\n.mrr-resource__die {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--mrr-resource-die-size);\n  height: var(--mrr-resource-die-size);\n  padding: 0;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  font-size: 9px;\n  font-weight: 600;\n  letter-spacing: 0;\n  cursor: pointer;\n  user-select: none;\n  transition: background-color 100ms ease-out, opacity 100ms ease-out;\n}\n.mrr-resource__die:hover { background: var(--mrr-accent-soft); }\n.mrr-resource__die--spent {\n  opacity: 0.32;\n  cursor: default;\n}\n.mrr-resource__die--spent:hover { background: var(--mrr-bg-elev); }\n\n/* Counter render (type=counter) — numeric stepper. */\n.mrr-resource__counter {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n.mrr-resource__step {\n  width: 22px;\n  height: 22px;\n  padding: 0;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1;\n  cursor: pointer;\n}\n.mrr-resource__step:hover { background: var(--mrr-accent-soft); }\n.mrr-resource__step:disabled { opacity: 0.3; cursor: not-allowed; }\n\n/* Pool render (type=pool) — current/max display, no bar (matches\n * Exalted motes/willpower pattern; the prominent type-scale recalls the\n * XP card values). */\n.mrr-resource--pool .mrr-resource__values {\n  font-size: 15px;\n}\n\n/* Custom placeholder — renders when a resource declares\n * type=custom with a rendererConfig.component name that has not been\n * registered in the custom-component registry yet. Distinct visual\n * marker so missing components are obvious during integration. */\n.mrr-resource__placeholder {\n  font-size: 11px;\n  color: var(--mrr-text-faint);\n  font-style: italic;\n  padding: 4px 6px;\n  background: var(--mrr-bg-app);\n  border: 1px dashed var(--mrr-hairline-strong);\n  border-radius: 4px;\n}\n.mrr-resource__placeholder code {\n  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);\n  font-size: 10px;\n  color: var(--mrr-text);\n}\n\n/* Quick-button row — pill-style, matches XpCard +1 XP affordance. */\n.mrr-resource__quick {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px;\n  margin-top: 2px;\n}\n.mrr-resource__quick-btn {\n  padding: 2px 8px;\n  background: var(--mrr-accent-soft);\n  border: 1px solid var(--mrr-accent-line);\n  border-radius: 999px;\n  color: var(--mrr-text);\n  font-size: 10px;\n  font-weight: 500;\n  letter-spacing: 0.02em;\n  cursor: pointer;\n  transition: background-color 100ms ease-out;\n}\n.mrr-resource__quick-btn:hover {\n  background: var(--mrr-accent-dim);\n}\n\n/* Narrow-panel guard (≥320px). Below ~280px the cluster collapses to a\n * single column; above that the resources wrap as a 2-up grid via\n * flex-wrap + min-width. */\n@media (max-width: 320px) {\n  .mrr-resource {\n    flex-basis: 100%;\n    min-width: 0;\n  }\n}\n\n/* ── Phase 5 step 5.6: V20 morality + paths + virtues + health-track ─────\n * V20 visual treatment. Owns the .mrr-morality cluster (Path Rating,\n * path picker + description, virtue rows with paired-choice toggle) and\n * the .mrr-health-track grid (7 boxes cycling through B / L / A damage\n * types per V20 RAW). All rules namespaced under .mrr-morality* and\n * .mrr-health-track* so they don't collide with the Phase 5 step 5.3\n * resources cluster above. */\n\n.mrr-morality {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  padding: 8px 10px;\n  margin: 6px 0;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-hairline);\n  border-radius: 6px;\n}\n.mrr-morality__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.mrr-morality__title {\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint);\n}\n.mrr-morality__rating {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n}\n.mrr-morality__rating-label {\n  font-size: 11px;\n  color: var(--mrr-text-faint);\n}\n.mrr-morality__rating-step {\n  width: 22px;\n  height: 22px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--mrr-bg-input);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  font-size: 14px;\n  line-height: 1;\n  cursor: pointer;\n}\n.mrr-morality__rating-step:hover:not([disabled]) {\n  background: var(--mrr-accent-soft);\n}\n.mrr-morality__rating-step[disabled] {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n.mrr-morality__rating-value {\n  min-width: 1.5em;\n  text-align: center;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--mrr-text);\n}\n.mrr-morality__path-row {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n.mrr-morality__path-select {\n  background: var(--mrr-bg-input);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  padding: 4px 6px;\n  font-size: 12px;\n  font-family: inherit;\n}\n.mrr-morality__path-desc {\n  font-size: 11px;\n  color: var(--mrr-text-faint);\n  line-height: 1.4;\n  padding: 4px 6px;\n  background: var(--mrr-bg-app);\n  border-left: 2px solid var(--mrr-accent-line);\n  border-radius: 2px;\n}\n.mrr-morality__virtues {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n.mrr-morality__virtue {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex-wrap: wrap;\n}\n.mrr-morality__virtue-label {\n  flex: 1 1 auto;\n  font-size: 12px;\n  color: var(--mrr-text);\n}\n.mrr-morality__virtue-toggle {\n  display: inline-flex;\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 4px;\n  overflow: hidden;\n}\n.mrr-morality__virtue-toggle-btn {\n  padding: 2px 8px;\n  background: var(--mrr-bg-input);\n  border: 0;\n  color: var(--mrr-text-faint);\n  font-size: 11px;\n  cursor: pointer;\n  transition: background-color 100ms ease-out, color 100ms ease-out;\n}\n.mrr-morality__virtue-toggle-btn[aria-pressed=\"true\"] {\n  background: var(--mrr-accent-soft);\n  color: var(--mrr-text);\n  font-weight: 600;\n}\n.mrr-morality__virtue-stepper {\n  display: inline-flex;\n  align-items: center;\n  gap: 2px;\n}\n.mrr-morality__virtue-step {\n  width: 20px;\n  height: 20px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--mrr-bg-input);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 3px;\n  color: var(--mrr-text);\n  font-size: 12px;\n  line-height: 1;\n  cursor: pointer;\n}\n.mrr-morality__virtue-step:hover:not([disabled]) {\n  background: var(--mrr-accent-soft);\n}\n.mrr-morality__virtue-step[disabled] {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n.mrr-morality__virtue-value {\n  min-width: 1.25em;\n  text-align: center;\n  font-size: 12px;\n  font-weight: 600;\n  color: var(--mrr-text);\n}\n\n/* v20-health-track — 7-level V20 health grid. Each box cycles\n * empty → B (bashing) → L (lethal) → A (aggravated) → empty on click.\n * Color tier matches damage severity (B = faint, L = warn, A = bad). */\n.mrr-health-track {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  width: 100%;\n}\n.mrr-health-track__levels {\n  display: grid;\n  grid-template-columns: repeat(7, minmax(0, 1fr));\n  gap: 3px;\n}\n.mrr-health-track__level {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 2px;\n}\n.mrr-health-track__box {\n  width: 100%;\n  min-height: 22px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--mrr-bg-input);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 3px;\n  color: var(--mrr-text);\n  font-size: 12px;\n  font-weight: 700;\n  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);\n  cursor: pointer;\n  transition: background-color 100ms ease-out, border-color 100ms ease-out;\n}\n.mrr-health-track__box[data-damage=\"B\"] {\n  background: var(--mrr-accent-soft);\n  border-color: var(--mrr-accent-line);\n}\n.mrr-health-track__box[data-damage=\"L\"] {\n  background: oklch(0.55 0.16 60 / 0.32);\n  border-color: oklch(0.65 0.18 60 / 0.55);\n  color: oklch(0.94 0.04 60);\n}\n.mrr-health-track__box[data-damage=\"A\"] {\n  background: oklch(0.50 0.20 25 / 0.42);\n  border-color: oklch(0.62 0.22 25 / 0.65);\n  color: oklch(0.96 0.05 25);\n}\n.mrr-health-track__label {\n  font-size: 9px;\n  letter-spacing: 0.04em;\n  color: var(--mrr-text-faint);\n  text-align: center;\n  line-height: 1.1;\n}\n.mrr-health-track__penalty {\n  font-size: 9px;\n  color: var(--mrr-text-faint);\n  font-variant-numeric: tabular-nums;\n}\n.mrr-health-track__summary {\n  display: flex;\n  justify-content: space-between;\n  gap: 6px;\n  font-size: 10px;\n  color: var(--mrr-text-faint);\n}\n.mrr-health-track__legend {\n  display: inline-flex;\n  gap: 6px;\n}\n.mrr-health-track__legend code {\n  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);\n  font-size: 10px;\n}\n\n@media (max-width: 320px) {\n  .mrr-health-track__levels {\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n  }\n  .mrr-morality__virtue {\n    flex-direction: column;\n    align-items: flex-start;\n  }\n}\n\n/* ── Round 6: roll-under mechanic ── */\n/* Visual states for roll-under outcomes. The dice tray's existing success/fail\n   modifiers cover plain pass/fail; these two add crit-success and fumble bands\n   the roll-under widget emits. accent ring for crit, warning fill for fumble —\n   same vocabulary as the dice-pool botch state. */\n.mrr-dice__result--crit {\n  border-color: var(--mrr-accent);\n  background: var(--mrr-accent-soft);\n}\n.mrr-dice__result--fumble {\n  border-color: var(--mrr-warning);\n  background: rgba(251, 191, 36, 0.10);\n}\n\n/* ── Round 7: stance-modal-pool ── */\n/* Segmented stance toggle for stance-modal-pool resolution mode (Lasers &\n   Feelings). Two pill buttons render in a single row above the pool size\n   input. Active stance is filled with accent; inactive is the standard\n   hairline-button look so the choice reads at a glance. Per-die \"exact\"\n   highlight class lights the LASER FEELINGS dice in the result row, and\n   outcome tier classes give the dice tray's result strip a per-tier\n   gradient so miss / barely / good / critical are distinguishable without\n   reading text. */\n.mrr-dice__stance-row {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding: 6px 8px 4px;\n}\n.mrr-dice__stance-row > label {\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint, oklch(0.7 0.02 285));\n  min-width: 48px;\n}\n.mrr-dice__stance-group {\n  display: inline-flex;\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 999px;\n  overflow: hidden;\n  background: var(--mrr-bg-input);\n}\n.mrr-stance-btn {\n  appearance: none;\n  border: 0;\n  background: transparent;\n  color: var(--mrr-text, inherit);\n  font: inherit;\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.06em;\n  padding: 4px 12px;\n  cursor: pointer;\n  transition: background 120ms ease, color 120ms ease;\n}\n.mrr-stance-btn + .mrr-stance-btn {\n  border-left: 1px solid var(--mrr-hairline);\n}\n.mrr-stance-btn:hover {\n  background: var(--mrr-accent-soft);\n}\n.mrr-stance-btn--active {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n}\n.mrr-stance-btn--active:hover {\n  background: var(--mrr-accent);\n}\n\n/* Pool-formula hint label under the pool input. Pure cosmetic — exposes\n   the rules-text formula for pool composition to the player without\n   forcing them into a parser. */\n.mrr-dice__hint {\n  font-size: 10px;\n  color: var(--mrr-text-faint, oklch(0.65 0.02 285));\n  padding: 0 8px 4px;\n  font-style: italic;\n}\n\n/* LASER FEELINGS / exact-match die highlight. Stronger accent ring than a\n   plain stance-success so the exact-match dice pop on the result strip. */\n.mrr-dice__face--exact {\n  outline: 2px solid var(--mrr-accent);\n  outline-offset: -2px;\n  background: var(--mrr-accent-soft);\n  position: relative;\n}\n\n/* Stance-modal-pool result strip — per-tier visual states. Outcome tiers\n   are open-ended labels (the spec doesn't enumerate them) so we map by\n   the canonical L&F label set: miss / barely / good / critical. Any other\n   tier label falls through to the default --success / --fail kind chosen\n   by rollStanceModalPool. */\n.mrr-dice__result--tier-miss {\n  border-color: var(--mrr-warning);\n  background: rgba(251, 191, 36, 0.08);\n}\n.mrr-dice__result--tier-barely {\n  border-color: var(--mrr-hairline-strong);\n  background: rgba(255, 255, 255, 0.04);\n}\n.mrr-dice__result--tier-good {\n  border-color: var(--mrr-accent-line);\n  background: var(--mrr-accent-soft);\n}\n.mrr-dice__result--tier-critical {\n  border-color: var(--mrr-accent);\n  background: var(--mrr-accent-soft);\n  box-shadow: 0 0 0 1px var(--mrr-accent-dim) inset;\n}\n\n/* ── Phase 6: DERIVED POOLS card grid ────────────────────────────────────\n * 2-column grid of compact stat cards replacing the legacy row layout.\n * Card anatomy: name top-left, big value top-right, faint formula\n * tokens below the head. Auto-calc cards show the computed value with\n * no edit input; manual cards keep an inline stepper.\n * Grid wraps to one column at narrow widths so the cards never crowd.\n * Source: ~/projects/claude-design-updates intent + image 7 (2026-05-08).\n * ────────────────────────────────────────────────────────────────────── */\n.mrr-derived-pools__subtitle {\n  font-size: 11px;\n  color: var(--mrr-text-faint, var(--mrr-text-dim));\n  margin: 2px 0 8px;\n  padding-left: 4px;\n  font-style: italic;\n  letter-spacing: 0.01em;\n}\n\n.mrr-derived-pools {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 8px;\n  width: 100%;\n}\n\n@media (max-width: 320px) {\n  .mrr-derived-pools {\n    grid-template-columns: 1fr;\n  }\n}\n\n.mrr-derived-pool-card {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  padding: 8px 10px;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-hairline);\n  border-radius: 6px;\n  min-width: 0;\n}\n\n.mrr-derived-pool-card:hover {\n  border-color: var(--mrr-hairline-strong);\n}\n\n.mrr-derived-pool-card__head {\n  display: flex;\n  flex-direction: row;\n  align-items: baseline;\n  justify-content: space-between;\n  gap: 8px;\n  min-width: 0;\n}\n\n.mrr-derived-pool-card__name {\n  font-family: var(--mrr-sans, inherit);\n  font-size: 13px;\n  font-weight: 500;\n  color: var(--mrr-text);\n  letter-spacing: 0.01em;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  min-width: 0;\n  flex: 1 1 auto;\n}\n\n.mrr-derived-pool-card__value-wrap {\n  display: inline-flex;\n  align-items: baseline;\n  gap: 4px;\n  flex-shrink: 0;\n}\n\n.mrr-derived-pool-card__value {\n  font-family: var(--mrr-mono, monospace);\n  font-size: 20px;\n  font-weight: 600;\n  color: var(--mrr-text);\n  line-height: 1;\n  min-width: 1.5ch;\n  text-align: right;\n}\n\n.mrr-derived-pool-card__value--autocalc {\n  color: var(--mrr-accent);\n}\n\n.mrr-derived-pool-card__value-input {\n  font-family: var(--mrr-mono, monospace);\n  font-size: 18px;\n  font-weight: 600;\n  width: auto;\n  min-width: 3ch;\n  max-width: 5ch;\n  padding: 2px 4px;\n  background: var(--mrr-bg-app);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  text-align: right;\n  box-sizing: content-box;\n}\n\n.mrr-derived-pool-card__max {\n  font-family: var(--mrr-mono, monospace);\n  font-size: 12px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-derived-pool-card__bonus {\n  font-family: var(--mrr-mono, monospace);\n  font-size: 12px;\n  color: var(--mrr-success, var(--mrr-accent));\n  white-space: nowrap;\n}\n\n.mrr-derived-pool-card__bonus--neg {\n  color: var(--mrr-fail);\n}\n\n.mrr-derived-pool-card__formula {\n  font-family: var(--mrr-mono, monospace);\n  font-size: 10px;\n  color: var(--mrr-text-faint, var(--mrr-text-dim));\n  letter-spacing: 0.02em;\n  line-height: 1.3;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.mrr-derived-pool-card__roll {\n  margin-top: 4px;\n  padding: 3px 8px;\n  font-size: 11px;\n  background: var(--mrr-bg-app);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  cursor: pointer;\n  align-self: flex-start;\n}\n\n.mrr-derived-pool-card__roll:hover {\n  background: var(--mrr-accent-soft);\n  border-color: var(--mrr-accent-line);\n}\n\n/* ── Phase 6: state-banner resource (Anima Banner inline) ────────────────\n * Cycle-button pill that lives inline in the Resources cluster. Per-tier\n * color tints communicate the banner's intensity at a glance.\n * Hidden dropdown stays in DOM (sr-only-ish) so keyboard users can pick\n * a value directly rather than clicking through the cycle.\n * ────────────────────────────────────────────────────────────────────── */\n.mrr-resource--state-banner {\n  /* Allow the banner to use a contrasting background so it reads as a\n     status pill rather than another stepper. */\n  background: transparent;\n  border: 1px dashed var(--mrr-hairline);\n}\n\n.mrr-state-banner {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  gap: 6px;\n}\n\n.mrr-state-banner__pill {\n  font-family: var(--mrr-sans, inherit);\n  font-size: 13px;\n  font-weight: 600;\n  letter-spacing: 0.02em;\n  padding: 4px 12px;\n  border-radius: 999px;\n  background: var(--mrr-bg-app);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-hairline-strong);\n  cursor: pointer;\n  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;\n}\n\n.mrr-state-banner__pill:hover {\n  border-color: var(--mrr-accent-line);\n}\n\n/* Anima Banner tiers — dim → bonfire follows intensity gradient. */\n.mrr-state-banner__pill--suppressed,\n.mrr-state-banner__pill--none {\n  background: var(--mrr-bg-app);\n  color: var(--mrr-text-dim);\n  border-color: var(--mrr-hairline);\n}\n.mrr-state-banner__pill--dim {\n  background: oklch(0.25 0.04 60 / 0.30);\n  color: oklch(0.85 0.06 60);\n  border-color: oklch(0.6 0.10 60 / 0.5);\n}\n.mrr-state-banner__pill--glowing {\n  background: oklch(0.30 0.08 60 / 0.45);\n  color: oklch(0.92 0.10 60);\n  border-color: oklch(0.7 0.14 60 / 0.7);\n}\n.mrr-state-banner__pill--burning {\n  background: oklch(0.36 0.13 50 / 0.55);\n  color: oklch(0.95 0.14 50);\n  border-color: oklch(0.75 0.18 50 / 0.8);\n  box-shadow: 0 0 8px oklch(0.7 0.20 50 / 0.35);\n}\n.mrr-state-banner__pill--bonfire {\n  background: oklch(0.42 0.18 45 / 0.65);\n  color: oklch(0.97 0.15 50);\n  border-color: oklch(0.80 0.20 45 / 0.9);\n  box-shadow: 0 0 12px oklch(0.75 0.22 45 / 0.50);\n}\n.mrr-state-banner__pill--iconic {\n  background: oklch(0.48 0.22 40 / 0.75);\n  color: oklch(0.98 0.18 45);\n  border-color: oklch(0.85 0.22 40);\n  box-shadow: 0 0 16px oklch(0.80 0.24 40 / 0.65);\n  text-transform: uppercase;\n  letter-spacing: 0.06em;\n}\n\n/* Visually hide the redundant keyboard-accessible <select> — it's still in\n   the DOM for keyboard users and screen readers (assistive tech can focus\n   the hidden element and pick a value), but it doesn't overlap the pill.\n   The click-to-cycle pill is the primary affordance for mouse users. */\n.mrr-state-banner__select {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  padding: 0;\n  margin: -1px;\n  overflow: hidden;\n  clip: rect(0, 0, 0, 0);\n  white-space: nowrap;\n  border: 0;\n}\n";
+var EMBEDDED_CSS = "/*\n * Marinara-RPG-Extension — RPG-Extension-GM-Mode.css\n * Companion stylesheet for RPG-Extension-GM-Mode.js. This file is bundled into\n * the loader automatically via tools/embed-css.mjs — you do not paste it by hand.\n * Install the extension by importing the folder/manifest (or the single .js file)\n * in Marinara Engine -> Settings -> Extensions.\n *\n * License: MIT\n * Source:  https://github.com/Kenhito/Marinara-RPG-Extension\n */\n\n:root {\n  /* Phase 4 — design-token migration: oklch palette + Geist font stack\n   * Ported from ~/projects/claude-design-updates/styles.css. Token NAMES preserved\n   * so existing rules resolve unchanged. New tokens (h/c/l, *-soft, *-line, *-app,\n   * *-input, hairline, hairline-strong, *-text-faint, *-sans) added per prototype.\n   * The old-value/new-value mapping lived in tools/token-migration-map.json,\n   * a one-off migration record deleted in round 27 once the migration closed;\n   * the CHANGELOG entry for the Phase-4 token pass retains its summary. */\n\n  /* tweakable accent (purple, port of prototype --accent-h/c/l) */\n  --mrr-accent-h: 280;\n  --mrr-accent-c: 0.12;\n  --mrr-accent-l: 0.78;\n\n  /* derived accent — original token names preserved */\n  --mrr-accent:       oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h));\n  --mrr-accent-soft:  oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.18);\n  --mrr-accent-line:  oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.32);\n  --mrr-accent-dim:   oklch(var(--mrr-accent-l) var(--mrr-accent-c) var(--mrr-accent-h) / 0.30);\n  --mrr-on-accent:    oklch(0.18 0.04 var(--mrr-accent-h));\n\n  /* surfaces — purple/dark mood per prototype --bg-app/--bg/--bg-elev/--bg-input */\n  --mrr-bg:           oklch(0.21 0.025 285 / 0.96);\n  --mrr-bg-elev:      oklch(0.26 0.03 285 / 0.92);\n  --mrr-bg-app:       oklch(0.16 0.02 285);\n  --mrr-bg-input:     oklch(0.18 0.02 285);\n\n  /* hairlines (NEW) and borders (NAMES retained) */\n  --mrr-hairline:        oklch(1 0 0 / 0.07);\n  --mrr-hairline-strong: oklch(1 0 0 / 0.14);\n  --mrr-border:          oklch(1 0 0 / 0.10);\n  --mrr-border-strong:   oklch(1 0 0 / 0.20);\n\n  /* tints — port of prototype --tint/--tint-2 (--tint-strong retained) */\n  --mrr-tint-1:       oklch(1 0 0 / 0.04);\n  --mrr-tint-2:       oklch(1 0 0 / 0.07);\n  --mrr-tint-strong:  oklch(1 0 0 / 0.20);\n\n  /* text — three tiers per prototype --text/--text-dim/--text-faint */\n  --mrr-text:        oklch(0.97 0.005 285);\n  --mrr-text-dim:    oklch(0.72 0.01 285);\n  --mrr-text-faint:  oklch(0.55 0.012 285);\n\n  /* status — port of prototype --ok/--warn/--bad */\n  --mrr-success:    oklch(0.82 0.13 155);\n  --mrr-warning:    oklch(0.84 0.14 85);\n  --mrr-fail:       oklch(0.72 0.16 25);\n  --mrr-on-fail:    oklch(0.18 0.02 25);\n\n  /* radii / spacing — preserved (density toggle deferred to step 4.4) */\n  --mrr-radius:     8px;\n  --mrr-radius-sm:  4px;\n  --mrr-pad:        10px;\n  --mrr-gap:        6px;\n\n  /* shadow — ported from prototype --shadow (richer drop) */\n  --mrr-shadow:     0 24px 60px -20px rgba(0, 0, 0, 0.6), 0 6px 16px -8px rgba(0, 0, 0, 0.5);\n\n  /* typography — ported from prototype --sans/--mono (Geist-first stack) */\n  --mrr-sans:       \"Geist\", \"Inter\", system-ui, -apple-system, \"Segoe UI\", sans-serif;\n  --mrr-mono:       \"Geist Mono\", ui-monospace, \"JetBrains Mono\", \"SF Mono\", Menlo, monospace;\n\n  /* layering — preserved */\n  --mrr-z-sheet:    9997;\n  --mrr-z-dice:     9998;\n  --mrr-z-dialog:   9999;\n\n  /* Phase 5 step 5.5 — density toggle (cozy preset defaults; branched per\n   * .mrr-sheet[data-density=\"…\"] at end of file). Drives padding, gap,\n   * row height, and body font-size across density-aware components. */\n  --mrr-density-pad-x: 12px;\n  --mrr-density-pad-y: 12px;\n  --mrr-density-gap:    6px;\n  --mrr-density-row-h: 28px;\n  --mrr-density-fs:    13px;\n}\n\n.mrr-hidden { display: none !important; }\n.mrr-msg--hidden,\n.mrr-dice__result--hidden { display: none; }\n\n/*  ─────  Sheet panel (replaces the hidden built-in attribute panel) ───── */\n\n.mrr-sheet {\n  display: flex;\n  flex-direction: column;\n  gap: var(--mrr-gap);\n  background: var(--mrr-bg);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  margin: var(--mrr-gap) 0;\n  color: var(--mrr-text);\n  font-family: var(--mrr-sans);\n  font-size: var(--mrr-density-fs);\n}\n\n.mrr-sheet--floating {\n  position: fixed;\n  left: 16px;\n  top: 80px;\n  width: 320px;\n  min-width: 280px;\n  max-width: calc(100vw - 32px);\n  min-height: 200px;\n  max-height: 70vh;\n  overflow: auto;\n  resize: both;\n  z-index: var(--mrr-z-sheet);\n}\n\n.mrr-sheet__header {\n  display: flex;\n  flex-direction: column;\n  gap: var(--mrr-density-gap);\n  border-bottom: 1px solid var(--mrr-border);\n  padding-bottom: 6px;\n  margin-bottom: 4px;\n}\n\n.mrr-sheet__title-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  width: 100%;\n}\n\n.mrr-sheet__title {\n  font-weight: 600;\n  letter-spacing: 0.02em;\n  color: var(--mrr-accent);\n}\n\n.mrr-sheet__meta {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n}\n\n.mrr-sheet__char-row {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n\n/* Phase 5 step 5.1 — Identity card (port of prototype's `.identity`).\n   Sits at the bottom of the sheet header, immediately above the body.\n   Wraps the existing renderIdentityField inputs so save/load behavior\n   is preserved verbatim. Ruleset-driven sub-row honors identityFields[]\n   when declared; otherwise falls back to header.raceLabel/classLabel.\n   Token names mirror the prototype: __avatar, __main, __name, __sub,\n   __sub-item, __sub-label, __sub-input. Type scale matches UI-build.md\n   §3.4 exactly: name 16px/600, sub-label 9px uppercase letter-spacing\n   0.1em, sub-input 12px borderless text-dim. */\n.mrr-identity {\n  background: linear-gradient(145deg, var(--mrr-accent-soft), transparent 70%), var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-hairline);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  display: grid;\n  grid-template-columns: 44px 1fr;\n  gap: 10px;\n  align-items: center;\n  margin-top: var(--mrr-gap);\n}\n.mrr-identity__avatar {\n  width: 44px;\n  height: 44px;\n  border-radius: 10px;\n  background: repeating-linear-gradient(\n    45deg,\n    oklch(0.3 0.04 285) 0 6px,\n    oklch(0.26 0.04 285) 6px 12px\n  );\n  color: var(--mrr-text-dim);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  border: 1px dashed var(--mrr-hairline-strong);\n}\n.mrr-identity__main {\n  min-width: 0;\n}\n.mrr-identity__name {\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text);\n  font-size: 16px;\n  font-weight: 600;\n  padding: 0;\n  width: 100%;\n  outline: none;\n  font-family: inherit;\n}\n.mrr-identity__name:focus {\n  color: var(--mrr-accent);\n}\n.mrr-identity__sub {\n  display: flex;\n  gap: 8px;\n  margin-top: 2px;\n  flex-wrap: wrap;\n}\n.mrr-identity__sub-item {\n  display: flex;\n  flex-direction: column;\n  gap: 0;\n  min-width: 0;\n}\n.mrr-identity__sub-label {\n  font-size: 9px;\n  letter-spacing: 0.1em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint);\n}\n.mrr-identity__sub-input {\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text-dim);\n  font-size: 12px;\n  padding: 0;\n  width: 100px;\n  outline: none;\n  font-family: inherit;\n}\n.mrr-identity__sub-input:focus {\n  color: var(--mrr-accent);\n}\n\n.mrr-sheet__char-label {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-char-select {\n  flex: 1;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-char-btn {\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-size: 11px;\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-char-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-char-btn--danger:hover {\n  background: rgba(251, 113, 133, 0.30);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-char-btn--accent {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n}\n\n.mrr-char-btn--dashed {\n  border-style: dashed;\n  border-color: var(--mrr-accent-dim);\n}\n\n.mrr-draggable-handle { cursor: grab; user-select: none; touch-action: none; }\n.mrr-draggable-handle:active { cursor: grabbing; }\n\n.mrr-section {\n  display: flex;\n  flex-direction: column;\n  gap: var(--mrr-density-gap);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);\n  background: var(--mrr-bg-elev);\n}\n\n.mrr-section__title {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n  margin-bottom: 2px;\n}\n\n.mrr-group {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  margin-bottom: 6px;\n}\n\n.mrr-group__label {\n  font-size: 10px;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n  margin-top: 4px;\n}\n\n.mrr-row {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto;\n  align-items: center;\n  gap: var(--mrr-density-gap);\n  padding: 2px 4px;\n  border-radius: var(--mrr-radius-sm);\n}\n\n.mrr-row:hover {\n  background: var(--mrr-tint-1);\n}\n\n.mrr-row--compact {\n  grid-template-columns: 1fr auto auto;\n}\n\n.mrr-row__name {\n  font-weight: 500;\n}\n\n.mrr-row__abbr {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-row__value {\n  min-width: 32px;\n  text-align: right;\n  font-family: var(--mrr-mono);\n}\n\n/* Editable numeric input — replaces the historical value <span> on every\n   numeric sheet row (attributes, skills, derived, backgrounds, custom\n   skills, bar current values). Visually flush with the surrounding row;\n   the user types directly. The browser's native number-input spinners\n   are suppressed because the +/- stepper next to the field already\n   provides the same affordance and double controls are visual noise. */\n.mrr-row__value--editable {\n  width: 48px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 4px;\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  text-align: right;\n  -moz-appearance: textfield;\n}\n.mrr-row__value--editable:focus {\n  outline: none;\n  border-color: var(--mrr-accent);\n  background: var(--mrr-bg);\n}\n.mrr-row__value--editable::-webkit-outer-spin-button,\n.mrr-row__value--editable::-webkit-inner-spin-button {\n  -webkit-appearance: none;\n  margin: 0;\n}\n\n/* Condition row inline effect summary — small, dim, italic so it\n   reads as metadata next to the condition name without competing for\n   the row's primary attention. */\n.mrr-condition-effect {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  font-style: italic;\n  flex: 1;\n  margin-left: 6px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n/* Advantage / disadvantage toggle row in the d20 dice widget. */\n.mrr-dice__adv-row {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  margin: 4px 0;\n}\n.mrr-dice__adv-row label {\n  flex: 0 0 80px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n.mrr-adv-btn {\n  flex: 1;\n  padding: 4px 8px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  font-family: inherit;\n  font-size: 11px;\n  cursor: pointer;\n}\n.mrr-adv-btn:hover { background: var(--mrr-accent-dim); }\n.mrr-adv-btn--active {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n\n/* \"/\" separator that sits between the editable current and editable\n   max inputs on bars without an engine-declared cap (D&D HP, etc.).\n   Dimmed because it's a visual cue, not a control. */\n.mrr-bar__sep {\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  color: var(--mrr-text-dim);\n  padding: 0 2px;\n}\n\n/* Auto-calculated derived stat — value computed from `valueFormula` every\n   time the stat context changes. Read-only by design; the formula IS the\n   override path. Subtle accent stripe on the left distinguishes it from\n   manually-entered values without screaming for attention. */\n.mrr-row__value--autocalc {\n  min-width: 32px;\n  text-align: right;\n  font-family: var(--mrr-mono);\n  color: var(--mrr-accent);\n  border-left: 2px solid var(--mrr-accent-dim);\n  padding-left: 6px;\n}\n\n.mrr-row__roll {\n  font-size: 11px;\n  padding: 2px 6px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-accent-dim);\n  border: 1px solid var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-row__roll:hover { background: var(--mrr-accent); color: var(--mrr-on-accent); }\n\n/*  ─────  Skill proficiency tier button + specialty sub-row  ───── */\n\n/* Shared base for the small letter buttons that sit inside the stepper\n   group on each skill row. Kept separate from `.mrr-stepper button` so\n   the stepper can be 18×18 (numeric +/-) while these are 22×18 (single\n   uppercase letter or \"+S\") without re-spec'ing every property. */\n.mrr-skill-tier-btn,\n.mrr-skill-spec-btn {\n  width: 22px;\n  height: 18px;\n  padding: 0;\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  font-weight: 700;\n  line-height: 1;\n}\n\n.mrr-skill-tier-btn { letter-spacing: 0.04em; }\n.mrr-skill-spec-btn { border-style: dashed; border-color: var(--mrr-accent-dim); }\n\n.mrr-skill-tier-btn:hover,\n.mrr-skill-spec-btn:hover { background: var(--mrr-accent-dim); }\n\n/* Tier modifier classes — visual cue for the active tier. The renderer\n   adds `--<code>` for the active tier; codes are ruleset-defined so\n   these mappings cover the common cases (PF2e U/T/E/M/L, Exalted U/C/F,\n   D&D U/T/E). Untrained-equivalent stays at the default tint. */\n.mrr-skill-tier-btn--T,\n.mrr-skill-tier-btn--C { background: var(--mrr-tint-strong); }\n.mrr-skill-tier-btn--E,\n.mrr-skill-tier-btn--F { background: var(--mrr-accent-dim); border-color: var(--mrr-accent-dim); }\n.mrr-skill-tier-btn--M { background: var(--mrr-accent); color: var(--mrr-on-accent); border-color: var(--mrr-accent); }\n.mrr-skill-tier-btn--L {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n  box-shadow: 0 0 0 1px var(--mrr-accent-dim);\n}\n\n.mrr-skill-spec-row {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto auto;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 4px 2px 18px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  margin-top: 2px;\n}\n\n.mrr-skill-spec-name {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 11px;\n}\n\n/* Custom skill / lore row — inherits the specialty layout but adds an\n   attribute selector between the name and the value so user-added skills\n   can declare which attribute they roll under. The select stays compact\n   so the row's grid columns line up with the existing specialty rows. */\n.mrr-custom-skill-row { grid-template-columns: 1fr auto auto auto auto auto; }\n.mrr-custom-skill-attr {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 4px;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n}\n\n.mrr-skill-spec-label {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n}\n\n/*  ─────  Dice widget specialty pane  ───── */\n\n.mrr-dice__specs {\n  margin-top: 8px;\n  padding: 6px 8px;\n  border: 1px dashed var(--mrr-accent-dim);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-dice__specs-title {\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n  margin-bottom: 4px;\n}\n\n.mrr-dice__spec-row {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  padding: 2px 0;\n  cursor: pointer;\n}\n\n.mrr-dice__spec-checkbox {\n  margin: 0;\n  cursor: pointer;\n}\n\n.mrr-stepper {\n  display: inline-flex;\n  gap: 2px;\n}\n\n.mrr-stepper button {\n  width: 18px;\n  height: 18px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--mrr-tint-2);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  padding: 0;\n  line-height: 1;\n}\n\n.mrr-stepper button:hover { background: var(--mrr-accent-dim); }\n.mrr-stepper button:disabled { opacity: 0.4; cursor: not-allowed; }\n\n/*  ─────  Derived stats  ───── */\n\n.mrr-derived {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-derived__formula {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-bar {\n  position: relative;\n  height: 14px;\n  background: var(--mrr-tint-2);\n  border-radius: var(--mrr-radius-sm);\n  overflow: hidden;\n}\n\n.mrr-bar__fill {\n  position: absolute;\n  inset: 0;\n  background: linear-gradient(90deg, var(--mrr-accent-dim), var(--mrr-accent));\n  width: 0;\n  transition: width 0.18s ease-out;\n}\n\n.mrr-bar__label {\n  position: relative;\n  z-index: 1;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  text-align: center;\n  line-height: 14px;\n  color: var(--mrr-text);\n  text-shadow: 0 0 2px rgba(0,0,0,0.6);\n}\n\n.mrr-track {\n  display: flex;\n  gap: 3px;\n  flex-wrap: wrap;\n}\n\n.mrr-track__cell {\n  min-width: 38px;\n  padding: 2px 6px;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  text-align: center;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  cursor: pointer;\n  user-select: none;\n}\n\n.mrr-track__cell--filled {\n  background: var(--mrr-fail);\n  color: var(--mrr-on-fail);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-track__cell--active {\n  outline: 2px solid var(--mrr-warning);\n}\n\n.mrr-track__cell--extra {\n  border-style: dashed;\n  border-color: var(--mrr-accent-dim);\n}\n\n/*  ─────  Damage-type tones  ─────\n    Used by rulesets that declare damageTypes on a track-renderAs derived\n    stat (Exalted, WoD, anything Storyteller-flavored). Bashing is mild\n    (warning yellow), Lethal is severe (fail red, same hue as legacy\n    single-fill), Aggravated is dire (deep maroon — meant to read as\n    'something supernatural just hit you'). The renderer overlays the\n    damage-type label (B/L/A) on the cell when filled. */\n.mrr-track__cell--bashing {\n  background: var(--mrr-warning);\n  color: #1a0f0f;\n  border-color: var(--mrr-warning);\n}\n.mrr-track__cell--lethal {\n  background: var(--mrr-fail);\n  color: var(--mrr-on-fail);\n  border-color: var(--mrr-fail);\n}\n.mrr-track__cell--aggravated {\n  background: #5a1a1a;\n  color: #f5f0ff;\n  border-color: #7a2a2a;\n  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);\n}\n\n.mrr-track-ctrl {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 4px;\n  margin-top: 4px;\n}\n\n.mrr-track-ctrl__label {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  margin-right: 2px;\n}\n\n.mrr-track-add-btn {\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 1px 6px;\n  font-size: 10px;\n  font-family: var(--mrr-mono);\n  cursor: pointer;\n}\n\n.mrr-track-add-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-track-add-btn--danger:hover {\n  background: rgba(251, 113, 133, 0.30);\n  border-color: var(--mrr-fail);\n}\n\n.mrr-saved-indicator {\n  font-size: 10px;\n  color: var(--mrr-success);\n  font-family: var(--mrr-mono);\n  margin-left: 6px;\n  white-space: nowrap;\n}\n\n/*  ─────  States (anima banner / stunt tier / D&D conditions)  ───── */\n\n.mrr-state {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 6px;\n  padding: 4px 0;\n}\n\n.mrr-state__name { font-weight: 500; }\n\n.mrr-state__select {\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n/*  ─────  Floating dice widget  ───── */\n\n.mrr-dice {\n  position: fixed;\n  top: 80px;\n  right: 16px;\n  width: 280px;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  box-shadow: var(--mrr-shadow);\n  z-index: var(--mrr-z-dice);\n  font-size: var(--mrr-density-fs);\n  display: none;\n}\n\n.mrr-dice--open { display: block; }\n\n.mrr-dice__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  margin-bottom: 6px;\n  padding-bottom: 6px;\n  border-bottom: 1px solid var(--mrr-border);\n}\n\n.mrr-dice__title {\n  font-weight: 600;\n  color: var(--mrr-accent);\n}\n\n.mrr-dice__close {\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text-dim);\n  font-size: 18px;\n  cursor: pointer;\n  line-height: 1;\n}\n\n.mrr-dice__row {\n  display: flex;\n  gap: 6px;\n  align-items: center;\n  margin: 4px 0;\n}\n\n.mrr-dice__row label {\n  flex: 0 0 80px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-dice__input {\n  flex: 1;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: var(--mrr-mono);\n  font-size: var(--mrr-density-fs);\n  width: 100%;\n}\n\n.mrr-dice__btn {\n  width: 100%;\n  margin-top: 6px;\n  padding: 6px 10px;\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border: 0;\n  border-radius: var(--mrr-radius-sm);\n  font-weight: 600;\n  cursor: pointer;\n  font-family: inherit;\n}\n\n.mrr-dice__btn:hover { filter: brightness(1.1); }\n\n.mrr-dice__btn--secondary {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n}\n\n.mrr-dice__btn--row-spaced { margin-top: 4px; }\n\n.mrr-dice__result {\n  margin-top: 8px;\n  padding: 8px;\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  white-space: pre-wrap;\n}\n\n.mrr-dice__result--success { border-color: var(--mrr-success); }\n.mrr-dice__result--fail    { border-color: var(--mrr-fail); }\n.mrr-dice__result--botch   { border-color: var(--mrr-warning); background: rgba(251, 191, 36, 0.10); }\n.mrr-dice__result--tie     { border-color: var(--mrr-warning); }\n\n.mrr-dice__faces {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 3px;\n  margin-top: 6px;\n}\n\n.mrr-dice__face {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 22px;\n  height: 22px;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-dice__face--success { background: var(--mrr-accent-dim); border-color: var(--mrr-accent); }\n.mrr-dice__face--double  { background: var(--mrr-accent); color: var(--mrr-on-accent); }\n.mrr-dice__face--one     { background: rgba(251, 113, 133, 0.20); border-color: var(--mrr-fail); }\n\n/*  ─────  Header gear button + dialog  ───── */\n\n.mrr-gear-btn {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  margin-left: 8px;\n  padding: 4px 8px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-gear-btn:hover { background: var(--mrr-accent-dim); }\n\n/*  ─────  Header sheet-toggle button (scroll icon)  ───── */\n\n.mrr-sheet-toggle-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 32px;\n  height: 32px;\n  margin-left: 8px;\n  padding: 0;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: 50%;\n  cursor: pointer;\n  font-family: inherit;\n  vertical-align: middle;\n}\n\n.mrr-sheet-toggle-btn:hover { background: var(--mrr-accent-dim); }\n\n.mrr-sheet-toggle-btn--active {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n\n.mrr-sheet-toggle-btn svg {\n  width: 18px;\n  height: 18px;\n  display: block;\n}\n\n.mrr-dialog-backdrop {\n  position: fixed;\n  inset: 0;\n  background: rgba(0, 0, 0, 0.55);\n  z-index: var(--mrr-z-dialog);\n  display: none;\n  align-items: center;\n  justify-content: center;\n}\n\n.mrr-dialog-backdrop--open { display: flex; }\n\n.mrr-dialog {\n  width: min(560px, 92vw);\n  max-height: 80vh;\n  overflow: auto;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: 16px;\n  box-shadow: var(--mrr-shadow);\n}\n\n.mrr-dialog h3 {\n  margin: 0 0 8px;\n  color: var(--mrr-accent);\n  font-size: 16px;\n}\n\n.mrr-dialog p {\n  color: var(--mrr-text-dim);\n  font-size: 12px;\n  margin: 4px 0 8px;\n}\n\n.mrr-dialog textarea {\n  width: 100%;\n  min-height: 220px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 8px;\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  resize: vertical;\n}\n\n.mrr-dialog__row {\n  display: flex;\n  gap: 6px;\n  align-items: center;\n  margin: 8px 0;\n}\n\n.mrr-dialog__label {\n  flex: 0 0 50px;\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-dialog__buttons {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px;\n  justify-content: flex-end;\n  margin-top: 12px;\n}\n\n.mrr-dialog__lib-title {\n  margin-top: 18px;\n  border-top: 1px solid var(--mrr-border);\n  padding-top: 14px;\n}\n.mrr-dialog__lib-help {\n  font-size: 12px;\n  opacity: 0.8;\n  margin-top: 4px;\n}\n.mrr-dialog__lib {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  margin-top: 8px;\n}\n.mrr-dialog__lib-row {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding: 6px 8px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: rgba(0, 0, 0, 0.15);\n}\n.mrr-dialog__lib-name {\n  flex: 1;\n  font-family: var(--mrr-mono);\n  font-size: var(--mrr-density-fs);\n}\n\n.mrr-msg {\n  margin-top: 6px;\n  padding: 6px 8px;\n  border-radius: var(--mrr-radius-sm);\n  font-size: 12px;\n  font-family: var(--mrr-mono);\n}\n\n.mrr-msg--ok    { background: rgba(110, 231, 183, 0.12); border: 1px solid var(--mrr-success); }\n.mrr-msg--err   { background: rgba(251, 113, 133, 0.12); border: 1px solid var(--mrr-fail); }\n.mrr-msg--info  { background: rgba(212, 168, 255, 0.10); border: 1px solid var(--mrr-accent-dim); }\n\n/*  ─────  Inventory section + item editor  ───── */\n\n.mrr-inv-list {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-inv-item {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto auto;\n  align-items: center;\n  gap: 6px;\n  padding: 4px 6px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n}\n\n.mrr-inv-item--equipped {\n  border-color: var(--mrr-accent);\n  background: var(--mrr-tint-2);\n}\n\n.mrr-inv-item__name {\n  font-weight: 500;\n}\n\n.mrr-inv-item__slot {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n}\n\n/* Damage cell on a weapon row — visually distinct from the slot tag so a\n   skim of the inventory tells the player at a glance which items hit\n   and how much. Color picks up the warning hue (the cue for \"this is\n   the violent thing\"). */\n.mrr-inv-item__damage {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-warning);\n  white-space: nowrap;\n}\n\n.mrr-inv-item__bonus-summary {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-accent);\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.mrr-inv-empty {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  font-style: italic;\n}\n\n.mrr-item-form__row {\n  display: grid;\n  grid-template-columns: 70px 1fr;\n  align-items: center;\n  gap: 12px;\n  margin: 6px 0;\n}\n\n.mrr-item-form__row label {\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  text-align: right;\n}\n\n.mrr-item-form__input,\n.mrr-item-form__select {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: inherit;\n  font-size: 12px;\n}\n\n.mrr-item-form__textarea {\n  width: 100%;\n  min-height: 50px;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: inherit;\n  font-size: 12px;\n  resize: vertical;\n}\n\n.mrr-bonus-list {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  margin-top: 4px;\n  padding: 6px;\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: rgba(0, 0, 0, 0.10);\n}\n\n.mrr-bonus-list__title {\n  font-size: 10px;\n  font-weight: 700;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-bonus-row {\n  display: grid;\n  grid-template-columns: 2fr 50px 70px 1.2fr auto;\n  align-items: center;\n  gap: 4px;\n}\n\n.mrr-bonus-row__input {\n  width: 100%;\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 4px;\n  font-family: inherit;\n  font-size: 11px;\n}\n\n/* <option> elements ignore most parent styling on Linux/Chromium and fall back\n   to OS-default (often white bg + inherited near-white text => invisible until\n   highlighted). Explicit colors here force a readable dark dropdown panel. */\n.mrr-bonus-row__input option,\n.mrr-item-form__select option,\n.mrr-item-form__input option {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n}\n\n/*  ─────  Derived / skill row equipment-bonus suffix  ───── */\n\n.mrr-row__bonus {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-success);\n  margin-left: 2px;\n}\n\n.mrr-row__bonus--neg { color: var(--mrr-fail); }\n\n/*  ─────  Derived value cap suffix (\"/ max\")  ───── */\n\n.mrr-row__cap {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  margin-left: 2px;\n  white-space: nowrap;\n}\n\n\n/*  ─────  state mutation confirmation toast  ───── */\n/* Top-right floating stack of brief notifications shown when the\n   state-mutator agent's tags fire. Each toast confirms one mutation:\n   prefix (HP / Condition / Inventory), change (signed delta or +/- name),\n   and the agent-reported reason. Stacks vertically; auto-dismisses. */\n.mrr-toast-container {\n  position: fixed;\n  top: 16px;\n  right: 16px;\n  z-index: 10000;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  pointer-events: none;\n}\n\n.mrr-toast {\n  background: var(--mrr-bg-elev);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-left: 3px solid var(--mrr-accent);\n  border-radius: var(--mrr-radius-sm);\n  padding: 8px 12px;\n  font-family: inherit;\n  font-size: 12px;\n  box-shadow: var(--mrr-shadow);\n  opacity: 0;\n  transform: translateX(20px);\n  transition: opacity 0.25s ease-out, transform 0.25s ease-out;\n  pointer-events: auto;\n  display: flex;\n  gap: 8px;\n  align-items: baseline;\n  max-width: 320px;\n}\n\n.mrr-toast--visible {\n  opacity: 1;\n  transform: translateX(0);\n}\n\n.mrr-toast__prefix {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n  color: var(--mrr-text-dim);\n  flex-shrink: 0;\n}\n\n.mrr-toast__change {\n  font-family: var(--mrr-mono);\n  font-weight: 700;\n  color: var(--mrr-accent);\n  flex-shrink: 0;\n}\n\n.mrr-toast__reason {\n  color: var(--mrr-text-dim);\n  font-size: 11px;\n  font-style: italic;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n\n/*  ─────  Spellbook flyout (third floating panel, system-labeled)  ───── */\n/* Per-ruleset abilities/charms/stunts panel. Toggled from the main sheet's\n   spellbook row; renders one collapsible category section per\n   ruleset.abilities.categories[]. Position persists to mrr-spellbook-pos\n   (per-extension, not per-chat). Z-index sits between sheet and dice so\n   the dice widget can overlap it on roll. */\n\n.mrr-spellbook {\n  position: fixed;\n  top: 80px;\n  left: 360px;\n  width: 320px;\n  max-height: 70vh;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border-strong);\n  border-radius: var(--mrr-radius);\n  padding: var(--mrr-pad);\n  box-shadow: var(--mrr-shadow);\n  z-index: 9996;\n  font-size: var(--mrr-density-fs);\n  display: none;\n  flex-direction: column;\n  overflow: hidden;\n}\n\n.mrr-spellbook--open { display: flex; }\n\n.mrr-spellbook__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  margin-bottom: 6px;\n  padding-bottom: 6px;\n  border-bottom: 1px solid var(--mrr-border);\n  cursor: grab;\n  user-select: none;\n}\n\n.mrr-spellbook__header:active { cursor: grabbing; }\n\n.mrr-spellbook__title {\n  font-weight: 600;\n  color: var(--mrr-accent);\n}\n\n.mrr-spellbook__body {\n  flex: 1;\n  overflow-y: auto;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n\n.mrr-spellbook-row {\n  cursor: default;\n}\n\n.mrr-spellbook-row__btn {\n  width: 100%;\n  text-align: left;\n}\n\n.mrr-spellbook-cat {\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  background: var(--mrr-tint-1);\n  padding: 4px 6px;\n}\n\n.mrr-spellbook-cat__head {\n  width: 100%;\n  background: transparent;\n  color: var(--mrr-text);\n  border: 0;\n  padding: 4px 2px;\n  font-family: inherit;\n  font-size: 12px;\n  font-weight: 600;\n  text-align: left;\n  cursor: pointer;\n  letter-spacing: 0.04em;\n}\n\n.mrr-spellbook-cat__head:hover { color: var(--mrr-accent); }\n\n.mrr-spellbook-cat__list {\n  display: flex;\n  flex-direction: column;\n  gap: 3px;\n  margin-top: 4px;\n}\n\n.mrr-spellbook-cat--collapsed .mrr-spellbook-cat__list,\n.mrr-spellbook-cat--collapsed .mrr-spellbook-cat__add {\n  display: none;\n}\n\n.mrr-spellbook-cat__add {\n  margin-top: 4px;\n}\n\n.mrr-spellbook-ab {\n  display: grid;\n  grid-template-columns: 1fr auto auto auto;\n  align-items: center;\n  gap: 4px;\n  padding: 2px 4px;\n  background: var(--mrr-bg-elev);\n  border-radius: var(--mrr-radius-sm);\n  border: 1px solid var(--mrr-border);\n}\n\n.mrr-spellbook-ab__name {\n  font-weight: 500;\n  font-size: 12px;\n}\n\n.mrr-spellbook-ab__cost {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  white-space: nowrap;\n}\n\n/*  ─────  Chip primitive  ─────────────────────────────────────────────────\n    Small inline pill used for status-flavored item details: Hardness,\n    Overwhelming, intimacy kind. Tints lean on existing CSS variables so\n    the palette stays consistent. */\n.mrr-chip {\n  display: inline-flex;\n  align-items: center;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  line-height: 1;\n  padding: 2px 6px;\n  border-radius: 999px;\n  border: 1px solid var(--mrr-border);\n  background: var(--mrr-tint-1);\n  color: var(--mrr-text-dim);\n  white-space: nowrap;\n}\n\n.mrr-chip--hardness {\n  color: #b9d8ff;\n  border-color: rgba(133, 173, 220, 0.45);\n  background: rgba(80, 120, 180, 0.18);\n}\n\n.mrr-chip--overwhelming {\n  color: #ffd0a8;\n  border-color: rgba(220, 140, 80, 0.45);\n  background: rgba(180, 90, 40, 0.20);\n}\n\n/* Commitment chips — surface per-item magic-binding state on the inventory\n   row. Attuned and Invested share the accent palette (the system's \"magic\n   is active\" cue). Mote uses the warning hue since Exalted essence reads\n   as \"energy held in reserve\" rather than a passive enchantment. */\n.mrr-chip--attuned {\n  color: var(--mrr-on-accent);\n  background: var(--mrr-accent);\n  border-color: var(--mrr-accent);\n  font-weight: 600;\n  letter-spacing: 0.04em;\n}\n\n.mrr-chip--invested {\n  color: var(--mrr-on-accent);\n  background: var(--mrr-accent);\n  border-color: var(--mrr-accent);\n  font-weight: 600;\n  letter-spacing: 0.04em;\n}\n\n.mrr-chip--mote {\n  color: #1a0f0f;\n  background: var(--mrr-warning);\n  border-color: var(--mrr-warning);\n  font-weight: 600;\n  letter-spacing: 0.04em;\n}\n\n.mrr-chip--intimacy-kind {\n  cursor: pointer;\n  background: var(--mrr-tint-2);\n  border-color: var(--mrr-border-strong);\n  color: var(--mrr-text);\n  font-weight: 600;\n  letter-spacing: 0.04em;\n}\n\n.mrr-chip--intimacy-kind-tie {\n  color: var(--mrr-accent);\n  border-color: var(--mrr-accent-dim);\n}\n\n.mrr-chip--intimacy-kind-principle {\n  color: var(--mrr-success);\n  border-color: rgba(110, 231, 183, 0.45);\n  background: rgba(110, 231, 183, 0.10);\n}\n\n/*  ─────  Intimacies flyout panel  ────────────────────────────────────────\n    Shares the .mrr-spellbook structural classes so position, header,\n    body scroll, and category collapse all \"just work.\" Only the layout\n    of an individual intimacy row is custom: a two-line grid with the\n    kind chip + degree dropdown + delete on the first line and the text\n    input on the second so the field is wide enough to read. */\n.mrr-intimacies { /* inherits .mrr-spellbook positioning + open class */ }\n\n.mrr-intimacy-group {\n  /* inherits .mrr-spellbook-cat */\n}\n\n.mrr-intimacy-group--defining .mrr-spellbook-cat__head {\n  color: var(--mrr-accent);\n}\n\n.mrr-intimacy-row {\n  display: grid;\n  grid-template-columns: auto 1fr auto auto;\n  align-items: center;\n  gap: 4px;\n  padding: 4px;\n  background: var(--mrr-bg-elev);\n  border-radius: var(--mrr-radius-sm);\n  border: 1px solid var(--mrr-border);\n}\n\n.mrr-intimacy-row__text {\n  grid-column: 1 / -1;\n  width: 100%;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 6px;\n  font-family: inherit;\n  font-size: 12px;\n  order: 2;\n}\n\n.mrr-intimacy-row > .mrr-chip--intimacy-kind { order: 1; }\n\n.mrr-intimacy-row__degree {\n  order: 3;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 4px;\n  font-family: inherit;\n  font-size: 11px;\n}\n\n.mrr-intimacy-row__target {\n  order: 4;\n  grid-column: 1 / -1;\n  width: 100%;\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 3px 6px;\n  font-family: inherit;\n  font-size: 11px;\n  font-style: italic;\n}\n\n.mrr-intimacy-row > .mrr-char-btn--danger { order: 5; }\n\n.mrr-intimacies__top-add {\n  width: 100%;\n  margin-bottom: 4px;\n}\n\n/*  ─────  XP card  ─────────────────────────────────────────────────────────\n    Sits between identity row and the section list in the main sheet. Two\n    layouts driven by ruleset.resolution.mode:\n      \"single-roll\" (D&D, PF2e) — level + current/next + 4px progress bar\n                                  fed by ruleset.xpTable\n      \"dice-pool\"   (Exalted)   — current + total earned + +1 XP button\n                                  (a pure int accumulator)\n    Hidden entirely for rulesets whose mode isn't one of the two above\n    (Fate Core uses Fate Points, not XP). */\n\n.mrr-xp-card {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  padding: 8px 10px;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  margin-top: 4px;\n}\n\n.mrr-xp-card__label {\n  font-size: 10px;\n  font-weight: 600;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n}\n\n.mrr-xp-card__row {\n  display: flex;\n  align-items: flex-end;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n\n.mrr-xp-card__group {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 60px;\n}\n\n.mrr-xp-card__sub {\n  font-size: 9px;\n  letter-spacing: 0.10em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-xp-card__input {\n  background: var(--mrr-bg);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius-sm);\n  padding: 2px 6px;\n  font-family: var(--mrr-mono);\n  font-size: 14px;\n  font-weight: 600;\n  text-align: right;\n  width: 80px;\n  font-variant-numeric: tabular-nums;\n  -moz-appearance: textfield;\n}\n\n.mrr-xp-card__input:focus {\n  outline: none;\n  border-color: var(--mrr-accent);\n  background: var(--mrr-bg-elev);\n}\n\n.mrr-xp-card__input::-webkit-outer-spin-button,\n.mrr-xp-card__input::-webkit-inner-spin-button {\n  -webkit-appearance: none;\n  margin: 0;\n}\n\n.mrr-xp-card__input--lvl {\n  width: 50px;\n  font-size: 16px;\n  text-align: center;\n}\n\n.mrr-xp-card__sep {\n  font-family: var(--mrr-mono);\n  font-size: 16px;\n  color: var(--mrr-text-dim);\n  align-self: flex-end;\n  padding-bottom: 2px;\n}\n\n.mrr-xp-card__next {\n  font-family: var(--mrr-mono);\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--mrr-text);\n  padding: 2px 6px;\n  font-variant-numeric: tabular-nums;\n  align-self: flex-end;\n}\n\n.mrr-xp-card__bar {\n  height: 4px;\n  background: var(--mrr-tint-2);\n  border-radius: 2px;\n  overflow: hidden;\n}\n\n.mrr-xp-card__bar-fill {\n  height: 100%;\n  background: var(--mrr-accent);\n  width: 0;\n  transition: width 0.18s ease-out;\n}\n\n.mrr-xp-card__add {\n  align-self: flex-start;\n  background: var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-accent);\n  border-radius: var(--mrr-radius-sm);\n  padding: 4px 10px;\n  font-family: inherit;\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.05em;\n  cursor: pointer;\n}\n\n.mrr-xp-card__add:hover {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n}\n\n/* ═══════════════════════════════════════════════════════════════\n * Phase 3.1 — row-primitive CSS (mrr-p3-* namespace)\n * ═══════════════════════════════════════════════════════════════\n * Sibling to the existing .mrr-section / .mrr-row / .mrr-stepper /\n * .mrr-bar rules used by the running renderer. Phase-3 namespace\n * prevents collision; cutover in a future session renames or\n * removes the -p3 infix when the new renderer is the only path.\n *\n * Density values inlined as cozy defaults (12/8/30/13). Token\n * migration will swap these for --density-* later.\n * ═══════════════════════════════════════════════════════════════ */\n\n.mrr-p3-section {\n  /* display:flex + column makes the card a flex container AND fixes\n     the flex-item height collapse: when this card is itself a flex\n     item of .mrr-sheet (which is column flex), Chrome computes its\n     intrinsic min-height as 0 if the card isn't a flex container,\n     which causes head + body to render outside the card's painted\n     bounds. Matching the existing .mrr-section pattern (also column\n     flex) keeps the card sized to its children. overflow:hidden\n     dropped — children have padding so they don't bleed past the\n     rounded corners. */\n  display: flex;\n  flex-direction: column;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius);\n  margin-bottom: 8px;\n}\n.mrr-p3-section__head {\n  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);\n  cursor: pointer;\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  user-select: none;\n  border-bottom: 1px solid transparent;\n}\n.mrr-p3-section--open .mrr-p3-section__head { border-bottom-color: var(--mrr-border); }\n.mrr-p3-section__head:hover { background: var(--mrr-tint-1); }\n.mrr-p3-section__title {\n  font-size: 11px;\n  font-weight: 700;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  color: var(--mrr-text);\n}\n.mrr-p3-section__count {\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n}\n.mrr-p3-section__actions {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n}\n.mrr-p3-section__right { margin-left: auto; }\n.mrr-p3-section__chev {\n  margin-left: auto;\n  color: var(--mrr-text-dim);\n  transition: transform 150ms ease;\n  display: inline-block;\n}\n.mrr-p3-section--open .mrr-p3-section__chev { transform: rotate(90deg); }\n.mrr-p3-section__body {\n  display: none;\n  padding: 8px var(--mrr-density-pad-x) var(--mrr-density-pad-y);\n  flex-direction: column;\n  gap: 8px;\n}\n.mrr-p3-section--open .mrr-p3-section__body { display: flex; }\n\n/* Stepper */\n.mrr-p3-stepper {\n  display: inline-flex;\n  gap: 2px;\n}\n.mrr-p3-stepper button {\n  width: 22px;\n  height: 22px;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  cursor: pointer;\n  font-size: 13px;\n  border-radius: var(--mrr-radius-sm);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  padding: 0;\n}\n.mrr-p3-stepper button:hover {\n  background: var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  border-color: var(--mrr-border-strong);\n}\n\n/* Row base + variants */\n.mrr-p3-row {\n  display: grid;\n  align-items: center;\n  gap: 8px;\n  padding: 4px 8px;\n  height: var(--mrr-density-row-h);\n  border-radius: var(--mrr-radius-sm);\n}\n.mrr-p3-row:hover { background: var(--mrr-tint-1); }\n.mrr-p3-row--attr { grid-template-columns: 1fr auto auto auto auto; }\n.mrr-p3-row--skill {\n  grid-template-columns: 1fr auto auto auto;\n  align-items: start;\n  height: auto;\n  min-height: var(--mrr-density-row-h);\n}\n.mrr-p3-row--save { grid-template-columns: 1fr auto auto auto; }\n.mrr-p3-row__name {\n  font-size: var(--mrr-density-fs);\n  color: var(--mrr-text);\n  display: inline-flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: 4px;\n}\n.mrr-p3-row__abbr {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  margin-left: 4px;\n}\n.mrr-p3-row__kind {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n  margin-left: 6px;\n}\n.mrr-p3-row__gear {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-accent);\n  margin-left: 6px;\n  padding: 1px 5px;\n  border: 1px solid var(--mrr-accent-dim);\n  border-radius: 6px;\n  background: var(--mrr-tint-1);\n}\n.mrr-p3-row__mod {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  color: var(--mrr-text-dim);\n  min-width: 22px;\n  text-align: right;\n}\n.mrr-p3-row__main {\n  min-width: 0;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n.mrr-p3-row__del {\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text-dim);\n  font-size: 14px;\n  cursor: pointer;\n  padding: 0 4px;\n  margin-left: auto;\n  line-height: 1;\n}\n.mrr-p3-row__del:hover { color: var(--mrr-warning); }\n.mrr-p3-row__val {\n  width: 64px;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text);\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  padding: 4px 6px;\n  border-radius: var(--mrr-radius-sm);\n  text-align: center;\n}\n.mrr-p3-row__val::-webkit-outer-spin-button,\n.mrr-p3-row__val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }\n.mrr-p3-row__val:focus { outline: 0; border-color: var(--mrr-accent); }\n.mrr-p3-row__val--auto {\n  background: transparent;\n  border: 0;\n  font-size: var(--mrr-density-fs);\n  font-weight: 600;\n  font-feature-settings: \"tnum\";\n  font-variant-numeric: tabular-nums;\n  color: var(--mrr-text);\n}\n.mrr-p3-row__roll {\n  background: transparent;\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  padding: 4px 10px;\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  min-width: 48px;\n}\n.mrr-p3-row__roll:hover {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n.mrr-p3-row__roll--sm {\n  padding: 2px 6px;\n  font-size: 10px;\n  min-width: 0;\n}\n\n/* Tier pill */\n.mrr-p3-tier {\n  width: 36px;\n  height: 22px;\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  font-weight: 700;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  padding: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n}\n.mrr-p3-tier:hover { background: var(--mrr-accent-dim); }\n.mrr-p3-tier--T {\n  background: var(--mrr-tint-2);\n  color: var(--mrr-text);\n  border-color: var(--mrr-border-strong);\n}\n.mrr-p3-tier--E {\n  background: var(--mrr-accent-dim);\n  border-color: var(--mrr-border-strong);\n  color: var(--mrr-text);\n}\n.mrr-p3-tier--M {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-accent);\n}\n\n/* Specialty chips + editor */\n.mrr-p3-row__spec-toggle {\n  background: transparent;\n  border: 1px dashed var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-size: 10px;\n  padding: 1px 6px;\n  border-radius: 6px;\n  cursor: pointer;\n  margin-left: 6px;\n}\n.mrr-p3-row__spec-toggle:hover {\n  border-style: solid;\n  border-color: var(--mrr-border-strong);\n  color: var(--mrr-accent);\n}\n.mrr-p3-row__specs {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px;\n  margin-top: 2px;\n}\n.mrr-p3-spec-chip {\n  background: var(--mrr-tint-1);\n  border: 1px solid var(--mrr-border);\n  border-radius: 6px;\n  padding: 2px 6px;\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  cursor: pointer;\n  font-size: 11px;\n  color: var(--mrr-text);\n}\n.mrr-p3-spec-chip:hover {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n}\n.mrr-p3-spec-chip__name { font-weight: 500; }\n.mrr-p3-spec-chip__dice {\n  font-family: var(--mrr-mono);\n  font-size: 9.5px;\n  opacity: 0.85;\n}\n.mrr-p3-spec-chip__x {\n  margin-left: 2px;\n  opacity: 0.7;\n  cursor: pointer;\n  padding: 0 2px;\n}\n.mrr-p3-spec-chip__x:hover { opacity: 1; color: var(--mrr-warning); }\n.mrr-p3-row__spec-editor {\n  display: flex;\n  gap: 4px;\n  align-items: center;\n  margin-top: 4px;\n}\n.mrr-p3-row__spec-input {\n  flex: 1;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text);\n  font-size: 12px;\n  padding: 4px 6px;\n  border-radius: var(--mrr-radius-sm);\n}\n.mrr-p3-row__spec-input:focus { outline: 0; border-color: var(--mrr-accent); }\n.mrr-p3-row__spec-add,\n.mrr-p3-row__spec-done {\n  background: transparent;\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-size: 11px;\n  padding: 4px 8px;\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n}\n.mrr-p3-row__spec-add:hover { border-color: var(--mrr-accent); color: var(--mrr-accent); }\n.mrr-p3-row__spec-done:hover { border-color: var(--mrr-border-strong); color: var(--mrr-text); }\n\n/* Auto-calc bonus pill (skill + save rows) */\n.mrr-p3-save__bonus {\n  font-feature-settings: \"tnum\";\n  font-variant-numeric: tabular-nums;\n  font-size: 13px;\n  font-weight: 600;\n  color: var(--mrr-accent);\n}\n.mrr-p3-row--save .mrr-p3-save__bonus { color: var(--mrr-accent); }\n\n/* Bar */\n.mrr-p3-bar {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  padding: 6px 8px;\n}\n.mrr-p3-bar__top {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  gap: 8px;\n}\n.mrr-p3-bar__name {\n  font-size: 12px;\n  font-weight: 500;\n  color: var(--mrr-text);\n}\n.mrr-p3-bar__values {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  color: var(--mrr-text-dim);\n}\n.mrr-p3-bar__val-input {\n  width: 40px;\n  background: transparent;\n  border: 0;\n  border-bottom: 1px dotted var(--mrr-border);\n  color: var(--mrr-text);\n  font-family: var(--mrr-mono);\n  font-size: 12px;\n  text-align: center;\n  padding: 1px 0;\n}\n.mrr-p3-bar__val-input::-webkit-outer-spin-button,\n.mrr-p3-bar__val-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }\n.mrr-p3-bar__val-input:hover,\n.mrr-p3-bar__val-input:focus {\n  outline: 0;\n  border-bottom-color: var(--mrr-border-strong);\n}\n.mrr-p3-bar__sep { color: var(--mrr-text-dim); }\n.mrr-p3-bar__track {\n  height: 4px;\n  border-radius: 2px;\n  background: var(--mrr-tint-2);\n  overflow: hidden;\n}\n.mrr-p3-bar__fill {\n  height: 100%;\n  transition: width 200ms ease, background 200ms ease;\n}\n.mrr-p3-bar__fill--ok { background: var(--mrr-success); }\n.mrr-p3-bar__fill--warn { background: var(--mrr-warning); }\n.mrr-p3-bar__fill--bad { background: var(--mrr-fail); }\n.mrr-p3-bar__quick {\n  display: flex;\n  gap: 4px;\n  margin-top: 2px;\n}\n.mrr-p3-bar__quick button {\n  background: transparent;\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  padding: 2px 6px;\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n}\n.mrr-p3-bar__quick button:hover {\n  background: var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  border-color: var(--mrr-border-strong);\n}\n\n/* Damage track (Exalted) */\n.mrr-p3-bar--damage .mrr-p3-bar__values--track {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  color: var(--mrr-text-dim);\n}\n.mrr-p3-track {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px;\n  margin-top: 4px;\n}\n.mrr-p3-cell {\n  width: 36px;\n  height: 22px;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n  padding: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n}\n.mrr-p3-cell:hover {\n  border-color: var(--mrr-border-strong);\n  color: var(--mrr-text);\n}\n.mrr-p3-cell--B {\n  background: var(--mrr-warning);\n  color: var(--mrr-on-accent);\n  border-color: var(--mrr-warning);\n}\n.mrr-p3-cell--L {\n  background: var(--mrr-fail);\n  color: var(--mrr-text);\n  border-color: var(--mrr-fail);\n}\n.mrr-p3-cell--A {\n  background: var(--mrr-on-fail);\n  color: var(--mrr-text);\n  border-color: var(--mrr-fail);\n}\n.mrr-p3-track-tools {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  gap: 8px;\n  margin-top: 4px;\n  flex-wrap: wrap;\n}\n.mrr-p3-track-tools__group {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n.mrr-p3-track-tools__label {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.04em;\n  opacity: 0.7;\n  margin-right: 2px;\n  color: var(--mrr-text-dim);\n}\n.mrr-p3-track-tools__add,\n.mrr-p3-track-tools__heal {\n  background: transparent;\n  border: 1px solid var(--mrr-border);\n  color: var(--mrr-text-dim);\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  padding: 2px 6px;\n  border-radius: var(--mrr-radius-sm);\n  cursor: pointer;\n}\n.mrr-p3-track-tools__add:hover,\n.mrr-p3-track-tools__heal:hover:not(:disabled) {\n  background: var(--mrr-accent-dim);\n  color: var(--mrr-text);\n  border-color: var(--mrr-border-strong);\n}\n.mrr-p3-track-tools__heal:disabled {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n\n/* ═══════════════════════════════════════════════════════════════\n * Phase 3.2 — panel-frame chrome (port of panel-frame.jsx)\n * ═══════════════════════════════════════════════════════════════\n * Standalone floating panel: drag head + 8 resize handles + body.\n * Used by future Session 3.4+ flyouts (Inv / Spell / Gear edit forms,\n * BackpackFlyout, SpellbookFlyout). The current Phase 3.3 sheet body\n * REUSES the existing .mrr-sheet shell so toggling renderers doesn't\n * disturb the saved sheet position.\n * ═══════════════════════════════════════════════════════════════ */\n\n.mrr-p3-panel {\n  position: fixed;\n  background: var(--mrr-bg);\n  border: 1px solid var(--mrr-border);\n  border-radius: var(--mrr-radius);\n  box-shadow: var(--mrr-shadow);\n  color: var(--mrr-text);\n  z-index: var(--mrr-z-sheet);\n  display: flex;\n  flex-direction: column;\n  overflow: hidden;\n}\n.mrr-p3-panel__head {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding: 10px var(--mrr-density-pad-x);\n  cursor: move;\n  user-select: none;\n  border-bottom: 1px solid var(--mrr-border);\n  background: var(--mrr-bg-elev);\n}\n.mrr-p3-panel__title {\n  font-size: 12px;\n  font-weight: 600;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n  color: var(--mrr-accent);\n}\n.mrr-p3-panel__title-meta {\n  font-size: 11px;\n  font-weight: 500;\n  color: var(--mrr-text-dim);\n  letter-spacing: 0;\n  text-transform: none;\n  margin-left: 4px;\n}\n.mrr-p3-panel__close {\n  margin-left: auto;\n  background: transparent;\n  border: 0;\n  color: var(--mrr-text-dim);\n  font-size: 16px;\n  line-height: 1;\n  cursor: pointer;\n  padding: 0 6px;\n  border-radius: var(--mrr-radius-sm);\n}\n.mrr-p3-panel__close:hover {\n  background: var(--mrr-tint-1);\n  color: var(--mrr-text);\n}\n.mrr-p3-panel__body {\n  flex: 1;\n  overflow: auto;\n  padding: var(--mrr-density-pad-y) var(--mrr-density-pad-x);\n}\n\n/* Resize handles — 4 edges (8px wide along the edge) + 4 corners\n * (12px square at the corner). Cursor hints encode the drag axis. */\n.mrr-p3-panel__resize {\n  position: absolute;\n  background: transparent;\n  z-index: 1;\n}\n.mrr-p3-panel__resize--n  { top: 0;     left: 8px;   right: 8px;   height: 6px; cursor: ns-resize; }\n.mrr-p3-panel__resize--s  { bottom: 0;  left: 8px;   right: 8px;   height: 6px; cursor: ns-resize; }\n.mrr-p3-panel__resize--e  { top: 8px;   right: 0;    bottom: 8px;  width: 6px;  cursor: ew-resize; }\n.mrr-p3-panel__resize--w  { top: 8px;   left: 0;     bottom: 8px;  width: 6px;  cursor: ew-resize; }\n.mrr-p3-panel__resize--ne { top: 0;     right: 0;                              width: 12px; height: 12px; cursor: nesw-resize; }\n.mrr-p3-panel__resize--nw { top: 0;     left: 0;                               width: 12px; height: 12px; cursor: nwse-resize; }\n.mrr-p3-panel__resize--se {\n  bottom: 0; right: 0;\n  width: 14px; height: 14px;\n  cursor: nwse-resize;\n  display: flex;\n  align-items: flex-end;\n  justify-content: flex-end;\n  color: var(--mrr-text-dim);\n}\n.mrr-p3-panel__resize--se:hover { color: var(--mrr-accent); }\n.mrr-p3-panel__resize--sw { bottom: 0;  left: 0;                               width: 12px; height: 12px; cursor: nesw-resize; }\n\n/* Phase 3 attribute-group sub-label (used by mrrP3RenderAttributesSection\n * to label Exalted's Physical / Social / Mental groups). */\n.mrr-p3-section__subgroup-label {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  text-transform: uppercase;\n  letter-spacing: 0.08em;\n  color: var(--mrr-text-dim);\n  margin: 8px 0 4px;\n  padding-left: 4px;\n}\n\n/* Phase 3 derived-stat row wrapper (used by mrrP3RenderDerivedSection's\n * value branch — bars and tracks display their name inside the primitive,\n * but renderValue does not, so the wrapper supplies a name + formula\n * label outside the value primitive). */\n.mrr-p3-derived {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  margin-bottom: 8px;\n}\n\n.mrr-p3-derived__label {\n  font-family: var(--mrr-mono);\n  font-size: 11px;\n  letter-spacing: 0.04em;\n  color: var(--mrr-text-dim);\n  padding-left: 4px;\n}\n\n/* ── Phase 5 step 5.5: density toggle ──────────────────────────────────\n * 3-way data-density attribute on .mrr-sheet swaps the five\n * --mrr-density-* variables. UI: pill button group in the actions row\n * with aria-pressed indicating selection. Per-character (state.sheet.density),\n * defaults to \"cozy\". Source: ~/projects/claude-design-updates/UI-build.md §2.3.\n * ────────────────────────────────────────────────────────────────────── */\n.mrr-sheet[data-density=\"compact\"] {\n  --mrr-density-pad-x: 8px;\n  --mrr-density-pad-y: 8px;\n  --mrr-density-gap:   4px;\n  --mrr-density-row-h: 24px;\n  --mrr-density-fs:   12px;\n}\n.mrr-sheet[data-density=\"cozy\"] {\n  --mrr-density-pad-x: 12px;\n  --mrr-density-pad-y: 12px;\n  --mrr-density-gap:    6px;\n  --mrr-density-row-h: 28px;\n  --mrr-density-fs:    13px;\n}\n.mrr-sheet[data-density=\"roomy\"] {\n  --mrr-density-pad-x: 16px;\n  --mrr-density-pad-y: 16px;\n  --mrr-density-gap:   10px;\n  --mrr-density-row-h: 34px;\n  --mrr-density-fs:   14px;\n}\n\n/* density toggle pill button group (rendered inside the actions row) */\n.mrr-density-toggle {\n  display: inline-flex;\n  align-items: center;\n  gap: 0;\n  padding: 2px;\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 999px;\n  background: var(--mrr-tint-1);\n}\n.mrr-density-toggle__label {\n  font-family: var(--mrr-mono);\n  font-size: 9px;\n  letter-spacing: 0.1em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint);\n  padding: 0 8px 0 6px;\n}\n.mrr-density-toggle__btn {\n  font-family: var(--mrr-mono);\n  font-size: 10px;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n  color: var(--mrr-text-dim);\n  background: transparent;\n  border: 0;\n  border-radius: 999px;\n  padding: 4px 10px;\n  cursor: pointer;\n  transition: background-color 120ms ease, color 120ms ease;\n}\n.mrr-density-toggle__btn:hover {\n  color: var(--mrr-text);\n  background: var(--mrr-tint-2);\n}\n.mrr-density-toggle__btn:focus-visible {\n  outline: 1px solid var(--mrr-accent-line);\n  outline-offset: 1px;\n}\n.mrr-density-toggle__btn[aria-pressed=\"true\"] {\n  background: var(--mrr-accent-soft);\n  color: var(--mrr-text);\n  box-shadow: inset 0 0 0 1px var(--mrr-accent-line);\n}\n\n/* ── Phase 5 step 5.4: derived tooltip math ──────────────────────────\n * Cursor + underline affordance on derived value cells whose ruleset\n * declares a tooltipFormula. The browser's native title-attr tooltip\n * carries the breakdown (\"Soak (Bashing): 7 = Stamina (4) + Bashing\n * Soak (3)\"). Affordance is intentionally subtle — dotted underline\n * + help cursor is the long-established \"this has hover info\" pattern\n * (matches the prototype's skill-bonus pill UX). Scoped to autocalc\n * value cells with a non-empty title so static-rendered derived stats\n * without a tooltipFormula keep their default cursor + no underline. */\n.mrr-row__value--autocalc[title]:not([title=\"\"]) {\n  cursor: help;\n  text-decoration: underline dotted var(--mrr-text-faint);\n  text-underline-offset: 3px;\n  text-decoration-thickness: 1px;\n}\n.mrr-row__value--autocalc[title]:not([title=\"\"]):hover {\n  text-decoration-color: var(--mrr-accent-line);\n}\n\n/* ── Phase 5 step 5.2: XP card ───────────────────────────────────────\n * Visual restructure to prototype parity (sheet.jsx XpCard, UI-build.md\n * §3.4 + §4.7). The baseline rules at the .mrr-xp-card section above\n * already supply structure (flex column, row, group). This section\n * tightens the type scale + spacing to match the prototype:\n *   - card-level label: 10px / 600 / 0.12em uppercase (already)\n *   - sub-labels:       9px  / 0.10em uppercase (already)\n *   - numeric value:    14px → 16px / 600  (PROTOTYPE TARGET)\n *   - level input:      16px → 18px / 600 / 56px wide (PROTOTYPE)\n *   - + button placed inline at row end via flex-end self-align.\n * Selector specificity matches the baseline rule (single-class) so the\n * cascade resolves the override by source order — appended last wins.\n * Pool-mode (Exalted) and formula-mode (D&D, PF2e) both consume the\n * same primitives; the only mode difference is which primitives\n * appear (pool: current/sep/total/+1; formula: level/current/sep/next/bar).\n * Mode dispatch lives in renderXpCard() which keys off\n * ruleset.resolution.mode. */\n.mrr-xp-card__input {\n  font-size: 16px;\n}\n.mrr-xp-card__input--lvl {\n  font-size: 18px;\n  width: 56px;\n}\n.mrr-xp-card__sep {\n  font-size: 18px;\n  padding-bottom: 6px;\n}\n.mrr-xp-card__next {\n  font-size: 16px;\n  font-weight: 600;\n  padding-bottom: 4px;\n}\n/* Pool-mode +1 button now lives inside the row (see renderXpCard pool\n   branch). Anchor it to flex-end so it baselines with the inputs and\n   doesn't stretch the row vertically. The baseline alignment already\n   says align-self: flex-start at the .mrr-xp-card__add base rule;\n   this overrides for the inline placement. */\n.mrr-xp-card__row .mrr-xp-card__add {\n  align-self: flex-end;\n  margin-left: auto;\n}\n\n/* ── Phase 5 step 5.6: state badges + anima banner ──\n * Visual treatments for state rows whose active value carries narrative\n * weight: Initiative=Crashed (distress) and Anima=Suppressed (muted).\n * Uses a data-active-value attribute on .mrr-state plus paired modifier\n * classes so the row + select restyle without changing the underlying\n * select-based render (which already handles N values natively, including\n * the 6-value Anima Banner with Suppressed prepended in Plan B step B.2).\n *\n * Crashed token: scoped to this section, no global :root pollution beyond\n * the three new --mrr-state-crashed-* tokens.\n * Suppressed: leans on existing --mrr-text-faint for the \"no anima\" feel.\n */\n\n:root {\n  --mrr-state-crashed-color: oklch(0.62 0.18 28);\n  --mrr-state-crashed-soft:  oklch(0.62 0.18 28 / 0.18);\n  --mrr-state-crashed-line:  oklch(0.62 0.18 28 / 0.42);\n}\n\n/* Initiative=Crashed — red distress treatment on row + select.\n * Subtle pulse on the name to draw the eye without being jarring; respects\n * prefers-reduced-motion below. (!)-glyph appended via ::after pseudo. */\n.mrr-state--initiative-crashed .mrr-state__name {\n  color: var(--mrr-state-crashed-color);\n  font-weight: 600;\n  animation: mrr-state-crashed-pulse 2.4s ease-in-out infinite;\n}\n\n.mrr-state--initiative-crashed .mrr-state__name::after {\n  content: \" (!)\";\n  color: var(--mrr-state-crashed-color);\n  font-weight: 700;\n  letter-spacing: 0.02em;\n}\n\n.mrr-state--initiative-crashed .mrr-state__select {\n  color: var(--mrr-state-crashed-color);\n  border-color: var(--mrr-state-crashed-line);\n  background: var(--mrr-state-crashed-soft);\n}\n\n@keyframes mrr-state-crashed-pulse {\n  0%, 100% { opacity: 1; }\n  50%      { opacity: 0.72; }\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .mrr-state--initiative-crashed .mrr-state__name { animation: none; }\n}\n\n/* Anima=Suppressed — muted \"no anima visible\" treatment.\n * Suppressed renders at the top of the Anima Banner select because Plan B\n * step B.2 prepended it as the first value in ruleset.json — option order\n * follows ruleset value order. */\n.mrr-state--anima-suppressed .mrr-state__name {\n  color: var(--mrr-text-faint);\n  font-style: italic;\n}\n\n.mrr-state--anima-suppressed .mrr-state__select {\n  color: var(--mrr-text-faint);\n}\n\n/* Defensive overflow guard for state rows on narrow panels (≥320px).\n * The row is flex-row name+select; if a future ruleset adds a long state\n * name, the select should compress rather than spill. Anima Banner with 6\n * values (Suppressed/Dim/Glowing/Burning/Bonfire/Iconic) renders inside\n * the native <select>, so option count never affects row width. */\n.mrr-state {\n  flex-wrap: wrap;\n  min-width: 0;\n}\n.mrr-state__select {\n  max-width: 100%;\n  min-width: 0;\n}\n\n/* ── Phase 5 step 5.3: Resources cluster ──────────────────────────────\n * Horizontal \"charbar\" cluster of resource readouts rendered above\n * Attributes when the active ruleset declares resources[] (Plan B v1\n * schema add). Driven by mrrP3RenderResourcesSection — sub-renderers\n * dispatch by resource.type (bar / dice / counter / pool / custom).\n *\n * Layout: flex-wrap with min 120px per resource so 4+ pools at the top\n * of a 280-320px panel collapse to a 2x2 grid rather than spilling\n * horizontally. Adjacent resources sharing a `group` value render under\n * a shared subheader (D&D Spell Slots case).\n *\n * Auto-color thresholds match prototype <Bar> in sheet.jsx:151\n *   pct < 30%  → bad\n *   pct < 65%  → warn\n *   pct >= 65% → ok\n * Override via resource.color ∈ {ok|warn|bad|accent}.\n *\n * Tokens: reuses --mrr-success/-warning/-fail and --mrr-accent. No\n * global :root pollution. Local section-scoped tokens for the dice\n * glyph treatment only.\n */\n\n:root {\n  --mrr-resources-pad: 10px;\n  --mrr-resources-gap: 10px;\n  --mrr-resource-min-w: 120px;\n  --mrr-resource-bar-h: 6px;\n  --mrr-resource-die-size: 22px;\n}\n\n.mrr-resources {\n  display: flex;\n  flex-wrap: wrap;\n  gap: var(--mrr-resources-gap);\n  padding: var(--mrr-resources-pad);\n  margin: 0 0 8px 0;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-hairline);\n  border-radius: 8px;\n}\n\n/* Sub-group subheader (D&D Spell Slots). Forces a wrap break so all\n * resources sharing a group cluster under their label. */\n.mrr-resources__group-break {\n  flex-basis: 100%;\n  height: 0;\n  margin: 0;\n  border: 0;\n}\n.mrr-resources__group-label {\n  flex-basis: 100%;\n  font-size: 10px;\n  font-weight: 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint);\n  margin: 4px 0 -2px 0;\n}\n\n.mrr-resource {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  flex: 1 1 var(--mrr-resource-min-w);\n  min-width: var(--mrr-resource-min-w);\n  padding: 6px 8px;\n  background: var(--mrr-bg-input);\n  border: 1px solid var(--mrr-hairline);\n  border-radius: 6px;\n}\n/* Full-width resource (used by exalted-health-track so the track has room\n   to grow with extra HL added via Ox-Body, Mutations, etc.). Wraps onto\n   its own row regardless of cluster width. */\n.mrr-resource--full-width {\n  flex-basis: 100%;\n}\n\n.mrr-resource__label {\n  font-size: 10px;\n  font-weight: 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint);\n  line-height: 1.1;\n}\n\n.mrr-resource__values {\n  display: flex;\n  align-items: baseline;\n  gap: 4px;\n  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);\n  font-size: 13px;\n  color: var(--mrr-text);\n}\n.mrr-resource__val {\n  font-weight: 600;\n}\n.mrr-resource__val-input {\n  min-width: 3ch;\n  width: auto;\n  max-width: 5ch;\n  padding: 2px 4px;\n  background: var(--mrr-bg-app);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 3px;\n  color: inherit;\n  font: inherit;\n  text-align: right;\n  box-sizing: content-box;\n}\n.mrr-resource__val-input:focus {\n  outline: none;\n  border-color: var(--mrr-accent-line);\n}\n.mrr-resource__sep {\n  color: var(--mrr-text-faint);\n  opacity: 0.7;\n}\n\n/* Bar render (type=bar) — fill bar with auto-color. */\n.mrr-resource__bar {\n  position: relative;\n  height: var(--mrr-resource-bar-h);\n  width: 100%;\n  background: var(--mrr-bg-app);\n  border-radius: 999px;\n  overflow: hidden;\n}\n.mrr-resource__bar-fill {\n  height: 100%;\n  width: 0%;\n  border-radius: inherit;\n  transition: width 120ms ease-out, background-color 120ms ease-out;\n}\n.mrr-resource__bar-fill--ok     { background: var(--mrr-success, oklch(0.78 0.14 145)); }\n.mrr-resource__bar-fill--warn   { background: var(--mrr-warning, oklch(0.82 0.14 85)); }\n.mrr-resource__bar-fill--bad    { background: var(--mrr-fail, oklch(0.65 0.18 28)); }\n.mrr-resource__bar-fill--accent { background: var(--mrr-accent); }\n\n/* Dice render (type=dice) — pool of clickable dice glyphs. Spent dice\n * dim. Reuses --mrr-resource-die-size for sizing. */\n.mrr-resource__dice {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 3px;\n  margin-top: 2px;\n}\n.mrr-resource__die {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--mrr-resource-die-size);\n  height: var(--mrr-resource-die-size);\n  padding: 0;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  font-size: 9px;\n  font-weight: 600;\n  letter-spacing: 0;\n  cursor: pointer;\n  user-select: none;\n  transition: background-color 100ms ease-out, opacity 100ms ease-out;\n}\n.mrr-resource__die:hover { background: var(--mrr-accent-soft); }\n.mrr-resource__die--spent {\n  opacity: 0.32;\n  cursor: default;\n}\n.mrr-resource__die--spent:hover { background: var(--mrr-bg-elev); }\n\n/* Counter render (type=counter) — numeric stepper. */\n.mrr-resource__counter {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n}\n.mrr-resource__step {\n  width: 22px;\n  height: 22px;\n  padding: 0;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-border);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  font-size: 14px;\n  font-weight: 600;\n  line-height: 1;\n  cursor: pointer;\n}\n.mrr-resource__step:hover { background: var(--mrr-accent-soft); }\n.mrr-resource__step:disabled { opacity: 0.3; cursor: not-allowed; }\n\n/* Pool render (type=pool) — current/max display, no bar (matches\n * Exalted motes/willpower pattern; the prominent type-scale recalls the\n * XP card values). */\n.mrr-resource--pool .mrr-resource__values {\n  font-size: 15px;\n}\n\n/* Custom placeholder — renders when a resource declares\n * type=custom with a rendererConfig.component name that has not been\n * registered in the custom-component registry yet. Distinct visual\n * marker so missing components are obvious during integration. */\n.mrr-resource__placeholder {\n  font-size: 11px;\n  color: var(--mrr-text-faint);\n  font-style: italic;\n  padding: 4px 6px;\n  background: var(--mrr-bg-app);\n  border: 1px dashed var(--mrr-hairline-strong);\n  border-radius: 4px;\n}\n.mrr-resource__placeholder code {\n  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);\n  font-size: 10px;\n  color: var(--mrr-text);\n}\n\n/* Quick-button row — pill-style, matches XpCard +1 XP affordance. */\n.mrr-resource__quick {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px;\n  margin-top: 2px;\n}\n.mrr-resource__quick-btn {\n  padding: 2px 8px;\n  background: var(--mrr-accent-soft);\n  border: 1px solid var(--mrr-accent-line);\n  border-radius: 999px;\n  color: var(--mrr-text);\n  font-size: 10px;\n  font-weight: 500;\n  letter-spacing: 0.02em;\n  cursor: pointer;\n  transition: background-color 100ms ease-out;\n}\n.mrr-resource__quick-btn:hover {\n  background: var(--mrr-accent-dim);\n}\n\n/* Narrow-panel guard (≥320px). Below ~280px the cluster collapses to a\n * single column; above that the resources wrap as a 2-up grid via\n * flex-wrap + min-width. */\n@media (max-width: 320px) {\n  .mrr-resource {\n    flex-basis: 100%;\n    min-width: 0;\n  }\n}\n\n/* ── Phase 5 step 5.6: V20 morality + paths + virtues + health-track ─────\n * V20 visual treatment. Owns the .mrr-morality cluster (Path Rating,\n * path picker + description, virtue rows with paired-choice toggle) and\n * the .mrr-health-track grid (7 boxes cycling through B / L / A damage\n * types per V20 RAW). All rules namespaced under .mrr-morality* and\n * .mrr-health-track* so they don't collide with the Phase 5 step 5.3\n * resources cluster above. */\n\n.mrr-morality {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  padding: 8px 10px;\n  margin: 6px 0;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-hairline);\n  border-radius: 6px;\n}\n.mrr-morality__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.mrr-morality__title {\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint);\n}\n.mrr-morality__rating {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n}\n.mrr-morality__rating-label {\n  font-size: 11px;\n  color: var(--mrr-text-faint);\n}\n.mrr-morality__rating-step {\n  width: 22px;\n  height: 22px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--mrr-bg-input);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  font-size: 14px;\n  line-height: 1;\n  cursor: pointer;\n}\n.mrr-morality__rating-step:hover:not([disabled]) {\n  background: var(--mrr-accent-soft);\n}\n.mrr-morality__rating-step[disabled] {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n.mrr-morality__rating-value {\n  min-width: 1.5em;\n  text-align: center;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--mrr-text);\n}\n.mrr-morality__path-row {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n.mrr-morality__path-select {\n  background: var(--mrr-bg-input);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  padding: 4px 6px;\n  font-size: 12px;\n  font-family: inherit;\n}\n.mrr-morality__path-desc {\n  font-size: 11px;\n  color: var(--mrr-text-faint);\n  line-height: 1.4;\n  padding: 4px 6px;\n  background: var(--mrr-bg-app);\n  border-left: 2px solid var(--mrr-accent-line);\n  border-radius: 2px;\n}\n.mrr-morality__virtues {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n.mrr-morality__virtue {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex-wrap: wrap;\n}\n.mrr-morality__virtue-label {\n  flex: 1 1 auto;\n  font-size: 12px;\n  color: var(--mrr-text);\n}\n.mrr-morality__virtue-toggle {\n  display: inline-flex;\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 4px;\n  overflow: hidden;\n}\n.mrr-morality__virtue-toggle-btn {\n  padding: 2px 8px;\n  background: var(--mrr-bg-input);\n  border: 0;\n  color: var(--mrr-text-faint);\n  font-size: 11px;\n  cursor: pointer;\n  transition: background-color 100ms ease-out, color 100ms ease-out;\n}\n.mrr-morality__virtue-toggle-btn[aria-pressed=\"true\"] {\n  background: var(--mrr-accent-soft);\n  color: var(--mrr-text);\n  font-weight: 600;\n}\n.mrr-morality__virtue-stepper {\n  display: inline-flex;\n  align-items: center;\n  gap: 2px;\n}\n.mrr-morality__virtue-step {\n  width: 20px;\n  height: 20px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--mrr-bg-input);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 3px;\n  color: var(--mrr-text);\n  font-size: 12px;\n  line-height: 1;\n  cursor: pointer;\n}\n.mrr-morality__virtue-step:hover:not([disabled]) {\n  background: var(--mrr-accent-soft);\n}\n.mrr-morality__virtue-step[disabled] {\n  opacity: 0.4;\n  cursor: not-allowed;\n}\n.mrr-morality__virtue-value {\n  min-width: 1.25em;\n  text-align: center;\n  font-size: 12px;\n  font-weight: 600;\n  color: var(--mrr-text);\n}\n\n/* v20-health-track — 7-level V20 health grid. Each box cycles\n * empty → B (bashing) → L (lethal) → A (aggravated) → empty on click.\n * Color tier matches damage severity (B = faint, L = warn, A = bad). */\n.mrr-health-track {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  width: 100%;\n}\n.mrr-health-track__levels {\n  display: grid;\n  grid-template-columns: repeat(7, minmax(0, 1fr));\n  gap: 3px;\n}\n.mrr-health-track__level {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  gap: 2px;\n}\n.mrr-health-track__box {\n  width: 100%;\n  min-height: 22px;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  background: var(--mrr-bg-input);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 3px;\n  color: var(--mrr-text);\n  font-size: 12px;\n  font-weight: 700;\n  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);\n  cursor: pointer;\n  transition: background-color 100ms ease-out, border-color 100ms ease-out;\n}\n.mrr-health-track__box[data-damage=\"B\"] {\n  background: var(--mrr-accent-soft);\n  border-color: var(--mrr-accent-line);\n}\n.mrr-health-track__box[data-damage=\"L\"] {\n  background: oklch(0.55 0.16 60 / 0.32);\n  border-color: oklch(0.65 0.18 60 / 0.55);\n  color: oklch(0.94 0.04 60);\n}\n.mrr-health-track__box[data-damage=\"A\"] {\n  background: oklch(0.50 0.20 25 / 0.42);\n  border-color: oklch(0.62 0.22 25 / 0.65);\n  color: oklch(0.96 0.05 25);\n}\n.mrr-health-track__label {\n  font-size: 9px;\n  letter-spacing: 0.04em;\n  color: var(--mrr-text-faint);\n  text-align: center;\n  line-height: 1.1;\n}\n.mrr-health-track__penalty {\n  font-size: 9px;\n  color: var(--mrr-text-faint);\n  font-variant-numeric: tabular-nums;\n}\n.mrr-health-track__summary {\n  display: flex;\n  justify-content: space-between;\n  gap: 6px;\n  font-size: 10px;\n  color: var(--mrr-text-faint);\n}\n.mrr-health-track__legend {\n  display: inline-flex;\n  gap: 6px;\n}\n.mrr-health-track__legend code {\n  font-family: var(--mrr-mono, ui-monospace, SFMono-Regular, Menlo, monospace);\n  font-size: 10px;\n}\n\n@media (max-width: 320px) {\n  .mrr-health-track__levels {\n    grid-template-columns: repeat(4, minmax(0, 1fr));\n  }\n  .mrr-morality__virtue {\n    flex-direction: column;\n    align-items: flex-start;\n  }\n}\n\n/* ── Round 6: roll-under mechanic ── */\n/* Visual states for roll-under outcomes. The dice tray's existing success/fail\n   modifiers cover plain pass/fail; these two add crit-success and fumble bands\n   the roll-under widget emits. accent ring for crit, warning fill for fumble —\n   same vocabulary as the dice-pool botch state. */\n.mrr-dice__result--crit {\n  border-color: var(--mrr-accent);\n  background: var(--mrr-accent-soft);\n}\n.mrr-dice__result--fumble {\n  border-color: var(--mrr-warning);\n  background: rgba(251, 191, 36, 0.10);\n}\n\n/* ── Round 7: stance-modal-pool ── */\n/* Segmented stance toggle for stance-modal-pool resolution mode (Lasers &\n   Feelings). Two pill buttons render in a single row above the pool size\n   input. Active stance is filled with accent; inactive is the standard\n   hairline-button look so the choice reads at a glance. Per-die \"exact\"\n   highlight class lights the LASER FEELINGS dice in the result row, and\n   outcome tier classes give the dice tray's result strip a per-tier\n   gradient so miss / barely / good / critical are distinguishable without\n   reading text. */\n.mrr-dice__stance-row {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding: 6px 8px 4px;\n}\n.mrr-dice__stance-row > label {\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n  color: var(--mrr-text-faint, oklch(0.7 0.02 285));\n  min-width: 48px;\n}\n.mrr-dice__stance-group {\n  display: inline-flex;\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 999px;\n  overflow: hidden;\n  background: var(--mrr-bg-input);\n}\n.mrr-stance-btn {\n  appearance: none;\n  border: 0;\n  background: transparent;\n  color: var(--mrr-text, inherit);\n  font: inherit;\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.06em;\n  padding: 4px 12px;\n  cursor: pointer;\n  transition: background 120ms ease, color 120ms ease;\n}\n.mrr-stance-btn + .mrr-stance-btn {\n  border-left: 1px solid var(--mrr-hairline);\n}\n.mrr-stance-btn:hover {\n  background: var(--mrr-accent-soft);\n}\n.mrr-stance-btn--active {\n  background: var(--mrr-accent);\n  color: var(--mrr-on-accent);\n}\n.mrr-stance-btn--active:hover {\n  background: var(--mrr-accent);\n}\n\n/* Pool-formula hint label under the pool input. Pure cosmetic — exposes\n   the rules-text formula for pool composition to the player without\n   forcing them into a parser. */\n.mrr-dice__hint {\n  font-size: 10px;\n  color: var(--mrr-text-faint, oklch(0.65 0.02 285));\n  padding: 0 8px 4px;\n  font-style: italic;\n}\n\n/* LASER FEELINGS / exact-match die highlight. Stronger accent ring than a\n   plain stance-success so the exact-match dice pop on the result strip. */\n.mrr-dice__face--exact {\n  outline: 2px solid var(--mrr-accent);\n  outline-offset: -2px;\n  background: var(--mrr-accent-soft);\n  position: relative;\n}\n\n/* Stance-modal-pool result strip — per-tier visual states. Outcome tiers\n   are open-ended labels (the spec doesn't enumerate them) so we map by\n   the canonical L&F label set: miss / barely / good / critical. Any other\n   tier label falls through to the default --success / --fail kind chosen\n   by rollStanceModalPool. */\n.mrr-dice__result--tier-miss {\n  border-color: var(--mrr-warning);\n  background: rgba(251, 191, 36, 0.08);\n}\n.mrr-dice__result--tier-barely {\n  border-color: var(--mrr-hairline-strong);\n  background: rgba(255, 255, 255, 0.04);\n}\n.mrr-dice__result--tier-good {\n  border-color: var(--mrr-accent-line);\n  background: var(--mrr-accent-soft);\n}\n.mrr-dice__result--tier-critical {\n  border-color: var(--mrr-accent);\n  background: var(--mrr-accent-soft);\n  box-shadow: 0 0 0 1px var(--mrr-accent-dim) inset;\n}\n\n/* ── Phase 6: DERIVED POOLS card grid ────────────────────────────────────\n * 2-column grid of compact stat cards replacing the legacy row layout.\n * Card anatomy: name top-left, big value top-right, faint formula\n * tokens below the head. Auto-calc cards show the computed value with\n * no edit input; manual cards keep an inline stepper.\n * Grid wraps to one column at narrow widths so the cards never crowd.\n * Source: ~/projects/claude-design-updates intent + image 7 (2026-05-08).\n * ────────────────────────────────────────────────────────────────────── */\n.mrr-derived-pools__subtitle {\n  font-size: 11px;\n  color: var(--mrr-text-faint, var(--mrr-text-dim));\n  margin: 2px 0 8px;\n  padding-left: 4px;\n  font-style: italic;\n  letter-spacing: 0.01em;\n}\n\n.mrr-derived-pools {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 8px;\n  width: 100%;\n}\n\n@media (max-width: 320px) {\n  .mrr-derived-pools {\n    grid-template-columns: 1fr;\n  }\n}\n\n.mrr-derived-pool-card {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  padding: 8px 10px;\n  background: var(--mrr-bg-elev);\n  border: 1px solid var(--mrr-hairline);\n  border-radius: 6px;\n  min-width: 0;\n}\n\n.mrr-derived-pool-card:hover {\n  border-color: var(--mrr-hairline-strong);\n}\n\n.mrr-derived-pool-card__head {\n  display: flex;\n  flex-direction: row;\n  align-items: baseline;\n  justify-content: space-between;\n  gap: 8px;\n  min-width: 0;\n}\n\n.mrr-derived-pool-card__name {\n  font-family: var(--mrr-sans, inherit);\n  font-size: 13px;\n  font-weight: 500;\n  color: var(--mrr-text);\n  letter-spacing: 0.01em;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  min-width: 0;\n  flex: 1 1 auto;\n}\n\n.mrr-derived-pool-card__value-wrap {\n  display: inline-flex;\n  align-items: baseline;\n  gap: 4px;\n  flex-shrink: 0;\n}\n\n.mrr-derived-pool-card__value {\n  font-family: var(--mrr-mono, monospace);\n  font-size: 20px;\n  font-weight: 600;\n  color: var(--mrr-text);\n  line-height: 1;\n  min-width: 1.5ch;\n  text-align: right;\n}\n\n.mrr-derived-pool-card__value--autocalc {\n  color: var(--mrr-accent);\n}\n\n.mrr-derived-pool-card__value-input {\n  font-family: var(--mrr-mono, monospace);\n  font-size: 18px;\n  font-weight: 600;\n  width: auto;\n  min-width: 3ch;\n  max-width: 5ch;\n  padding: 2px 4px;\n  background: var(--mrr-bg-app);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  text-align: right;\n  box-sizing: content-box;\n}\n\n.mrr-derived-pool-card__max {\n  font-family: var(--mrr-mono, monospace);\n  font-size: 12px;\n  color: var(--mrr-text-dim);\n}\n\n.mrr-derived-pool-card__bonus {\n  font-family: var(--mrr-mono, monospace);\n  font-size: 12px;\n  color: var(--mrr-success, var(--mrr-accent));\n  white-space: nowrap;\n}\n\n.mrr-derived-pool-card__bonus--neg {\n  color: var(--mrr-fail);\n}\n\n.mrr-derived-pool-card__formula {\n  font-family: var(--mrr-mono, monospace);\n  font-size: 10px;\n  color: var(--mrr-text-faint, var(--mrr-text-dim));\n  letter-spacing: 0.02em;\n  line-height: 1.3;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.mrr-derived-pool-card__roll {\n  margin-top: 4px;\n  padding: 3px 8px;\n  font-size: 11px;\n  background: var(--mrr-bg-app);\n  border: 1px solid var(--mrr-hairline-strong);\n  border-radius: 4px;\n  color: var(--mrr-text);\n  cursor: pointer;\n  align-self: flex-start;\n}\n\n.mrr-derived-pool-card__roll:hover {\n  background: var(--mrr-accent-soft);\n  border-color: var(--mrr-accent-line);\n}\n\n/* ── Phase 6: state-banner resource (Anima Banner inline) ────────────────\n * Cycle-button pill that lives inline in the Resources cluster. Per-tier\n * color tints communicate the banner's intensity at a glance.\n * Hidden dropdown stays in DOM (sr-only-ish) so keyboard users can pick\n * a value directly rather than clicking through the cycle.\n * ────────────────────────────────────────────────────────────────────── */\n.mrr-resource--state-banner {\n  /* Allow the banner to use a contrasting background so it reads as a\n     status pill rather than another stepper. */\n  background: transparent;\n  border: 1px dashed var(--mrr-hairline);\n}\n\n.mrr-state-banner {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  gap: 6px;\n}\n\n.mrr-state-banner__pill {\n  font-family: var(--mrr-sans, inherit);\n  font-size: 13px;\n  font-weight: 600;\n  letter-spacing: 0.02em;\n  padding: 4px 12px;\n  border-radius: 999px;\n  background: var(--mrr-bg-app);\n  color: var(--mrr-text);\n  border: 1px solid var(--mrr-hairline-strong);\n  cursor: pointer;\n  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;\n}\n\n.mrr-state-banner__pill:hover {\n  border-color: var(--mrr-accent-line);\n}\n\n/* Anima Banner tiers — dim → bonfire follows intensity gradient. */\n.mrr-state-banner__pill--suppressed,\n.mrr-state-banner__pill--none {\n  background: var(--mrr-bg-app);\n  color: var(--mrr-text-dim);\n  border-color: var(--mrr-hairline);\n}\n.mrr-state-banner__pill--dim {\n  background: oklch(0.25 0.04 60 / 0.30);\n  color: oklch(0.85 0.06 60);\n  border-color: oklch(0.6 0.10 60 / 0.5);\n}\n.mrr-state-banner__pill--glowing {\n  background: oklch(0.30 0.08 60 / 0.45);\n  color: oklch(0.92 0.10 60);\n  border-color: oklch(0.7 0.14 60 / 0.7);\n}\n.mrr-state-banner__pill--burning {\n  background: oklch(0.36 0.13 50 / 0.55);\n  color: oklch(0.95 0.14 50);\n  border-color: oklch(0.75 0.18 50 / 0.8);\n  box-shadow: 0 0 8px oklch(0.7 0.20 50 / 0.35);\n}\n.mrr-state-banner__pill--bonfire {\n  background: oklch(0.42 0.18 45 / 0.65);\n  color: oklch(0.97 0.15 50);\n  border-color: oklch(0.80 0.20 45 / 0.9);\n  box-shadow: 0 0 12px oklch(0.75 0.22 45 / 0.50);\n}\n.mrr-state-banner__pill--iconic {\n  background: oklch(0.48 0.22 40 / 0.75);\n  color: oklch(0.98 0.18 45);\n  border-color: oklch(0.85 0.22 40);\n  box-shadow: 0 0 16px oklch(0.80 0.24 40 / 0.65);\n  text-transform: uppercase;\n  letter-spacing: 0.06em;\n}\n\n/* Visually hide the redundant keyboard-accessible <select> — it's still in\n   the DOM for keyboard users and screen readers (assistive tech can focus\n   the hidden element and pick a value), but it doesn't overlap the pill.\n   The click-to-cycle pill is the primary affordance for mouse users. */\n.mrr-state-banner__select {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  padding: 0;\n  margin: -1px;\n  overflow: hidden;\n  clip: rect(0, 0, 0, 0);\n  white-space: nowrap;\n  border: 0;\n}\n";
 /* EMBEDDED_CSS_END */
 
 var BUNDLE_SCHEMA  = "mrr-character-bundle";
@@ -2428,9 +2428,10 @@ function saveSheet(chatId, sheet) {
   if (!ok) { warn("saveSheet: lsSet failed for " + key + " (quota or private mode?)"); return; }
   log("saved key=" + key + " bytes=" + payload.length);
   updateSavedIndicator();
-  /* Push fresh sheet state to the chat's customTrackerFields so overlay
-     agents see what the player sees on the next generation. Debounced so
-     a burst of stepper clicks collapses into a single PATCH. */
+  /* Push fresh sheet state to the overlay agents' promptTemplates (and the
+     field-reference lorebook entry) so they see what the player sees on the
+     next generation. Debounced so a burst of stepper clicks collapses into a
+     single round of PATCHes. */
   if (typeof scheduleAutoSync === "function") scheduleAutoSync();
 }
 
@@ -4354,17 +4355,37 @@ function removeIntimacy(id) {
   if (state.intimaciesOpen) showIntimacies(true);
 }
 
-/* Sheet section row: a single button that opens / toggles the flyout. */
-function renderIntimaciesSection(parent) {
-  var sec = marinara.addElement(parent, "div", { "class": "mrr-section mrr-spellbook-row" });
-  if (!sec) return;
-  var btn = marinara.addElement(sec, "button", {
-    "class": "mrr-char-btn mrr-char-btn--dashed mrr-spellbook-row__btn",
-    type: "button",
-    textContent: "Intimacies (" + totalIntimacyCount() + ")"
-  });
-  if (btn) marinara.on(btn, "click", function () { showIntimacies(!state.intimaciesOpen); });
-}
+/* ─────  REMOVED (round 27): the dead legacy render family  ─────
+
+   21 functions deleted — the classic pre-Phase-3 sheet renderers plus three
+   unrelated orphans. `renderSheet` has dispatched unconditionally to
+   `mrrP3RenderSheet` since the Phase-3 cutover, but the cutover never ran its
+   promised "step 2" deletion, so this family sat unreachable for months.
+   Flagged by the 2026-07-03 code review (§3-D1); executed here.
+
+   Roots with zero call sites anywhere in the file: renderAttributes,
+   renderSkills, renderSaves, renderDerived, renderStates, renderBackgrounds,
+   renderInventory, parseDiceNotation, renderIntimaciesSection, fillTagTemplate,
+   escapeHtml. Helpers reachable ONLY from inside that set — verified by
+   resolving each call site's enclosing function, not by grep counts alone:
+   renderAttrRow, renderSkillRow, renderCustomSkillRow, renderSpecialtyRow,
+   renderSaveRow, renderValue, renderBar, renderTrack, ensureTypedTrack,
+   renderBackgroundRow.
+
+   DELIBERATELY KEPT — each has a live call site, so none of these are dead:
+     renderConditions      <- mrrP3RenderSheet (the LIVE Phase-3 render path).
+                              The 07-03 plan's D1b wants this repointed at
+                              mrrP3RenderConditionsSection; that is a behavior
+                              change, not a deletion, and needs its own round.
+     buildItemBag          <- showItemBag
+     buildSpellbook        <- showSpellbook
+     buildIntimaciesPanel  <- showIntimacies
+     LS_INTIMACIES_POS     <- buildIntimaciesPanel
+   The last three sit in `else` branches behind always-true
+   `typeof mrrP3* === "function"` guards, so they are unreachable in practice,
+   but removing them means editing a live guard — that is a behavior change,
+   not a dead-code deletion. Left for the round that does D1b. */
+
 
 /* Phase 3.7 — Phase-3 intimacies flyout via mrrP3CreatePanel. */
 function mrrP3BuildIntimaciesPanel() {
@@ -4976,21 +4997,7 @@ function diceFooter(parent, rollLabel, rollFn) {
   if (btnSend) marinara.on(btnSend, "click", sendLastRoll);
 }
 
-function fillTagTemplate(template, values) {
-  return template.replace(/\{(\w+)\}/g, function (_m, key) {
-    if (values[key] === undefined || values[key] === null) return "";
-    return String(values[key]);
-  }).replace(/\s+/g, " ").trim();
-}
 
-function escapeHtml(s) {
-  if (s == null) return "";
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 /* ─────  rendering  ───── */
 
@@ -5357,7 +5364,7 @@ function mrrP3RenderStepper(parent, opts) {
   return { el: span, minus: minus, plus: plus };
 }
 
-/* renderAttrRow — attribute row (STR 14, DEX 16) matching sheet.jsx:44.
+/* mrrP3RenderAttrRow — attribute row (STR 14, DEX 16) matching sheet.jsx:44.
    opts: { name, abbr, value, modifier?, min?, max?, onChange, onRoll? }
    Grid: 1fr auto auto auto auto (5 cols — `mrr-p3-row--attr` modifier).
    Slots: name+abbr · numeric input · modifier (e.g. "+2") · stepper · Roll.
@@ -5413,7 +5420,7 @@ function mrrP3RenderAttrRow(parent, opts) {
   return { row: row, input: input, roll: roll };
 }
 
-/* renderSkillRow — skill row matching sheet.jsx:60.
+/* mrrP3RenderSkillRow — skill row matching sheet.jsx:60.
    opts: {
      skill: { name, attr? },
      tier, tiers, tierLabel?,
@@ -5669,7 +5676,7 @@ function mrrP3RenderSkillRow(parent, opts) {
   return { row: row };
 }
 
-/* renderSaveRow — saving throw row matching sheet.jsx:132.
+/* mrrP3RenderSaveRow — saving throw row matching sheet.jsx:132.
    opts: { save: {name, attr?}, tier, tiers, tierLabel?, attrMod, totalBonus, onTier, onRoll }
    Always auto-calc; total bonus is computed by caller (so the same
    primitive serves D&D ability_mod+prof and PF2e tier+stat). */
@@ -5728,7 +5735,7 @@ function mrrP3RenderSaveRow(parent, opts) {
   return { row: row };
 }
 
-/* renderBar — resource bar (HP / Motes / Willpower) matching sheet.jsx:149.
+/* mrrP3RenderBar — resource bar (HP / Motes / Willpower) matching sheet.jsx:149.
    opts: { name, current, max, fillVariant?, onCurrent, onMax, quick? }
    Auto-color: ratio < 0.3 → bad, < 0.65 → warn, else ok.
    `fillVariant` overrides the auto-color choice.
@@ -6296,9 +6303,11 @@ function mrrP3RenderSheet() {
   var actions = marinara.addElement(state.mountEl, "div", { "class": "mrr-section" });
   if (actions) {
     var btnRoll = marinara.addElement(actions, "button", { "class": "mrr-dice__btn", textContent: "Open dice widget" });
-    var btnSync = marinara.addElement(actions, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary mrr-dice__btn--row-spaced", textContent: "Sync sheet to chat fields" });
     if (btnRoll) marinara.on(btnRoll, "click", function () { showDice(true); });
-    if (btnSync) marinara.on(btnSync, "click", syncSheetToChat);
+    /* Round 27: the "Sync sheet to chat fields" button that used to sit here is
+       gone along with syncSheetToChat — the server has silently discarded that
+       PATCH since 2.0.9, so the button spent a GET + a PATCH to do nothing and
+       then reported success. Removed rather than left wired to a no-op. */
 
     /* Phase 5 step 5.5 — density toggle (compact | cozy | roomy). Writes
        state.sheet.density, sets data-density on .mrr-sheet, saves via
@@ -8424,418 +8433,13 @@ function mrrRenderIdentitySubField(parent, labelText, key, placeholder) {
   });
 }
 
-function renderAttributes(parent) {
-  var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
-  if (!sec) return;
-  marinara.addElement(sec, "div", { "class": "mrr-section__title", textContent: "Attributes" });
 
-  var groups = {};
-  var groupOrder = [];
-  state.ruleset.attributes.forEach(function (a) {
-    var g = a.group || "";
-    if (!(g in groups)) { groups[g] = []; groupOrder.push(g); }
-    groups[g].push(a);
-  });
 
-  groupOrder.forEach(function (g) {
-    var grpEl = marinara.addElement(sec, "div", { "class": "mrr-group" });
-    if (!grpEl) return;
-    if (g) marinara.addElement(grpEl, "div", { "class": "mrr-group__label", textContent: g });
-    groups[g].forEach(function (a) { renderAttrRow(grpEl, a); });
-  });
-}
 
-function renderAttrRow(parent, attr) {
-  var row = marinara.addElement(parent, "div", { "class": "mrr-row" });
-  if (!row) return;
-  marinara.addElement(row, "span", { "class": "mrr-row__name", textContent: attr.name });
-  marinara.addElement(row, "span", { "class": "mrr-row__abbr", textContent: attr.abbreviation || "" });
-  var val = makeEditableValue(
-    row,
-    function () { return state.sheet.attributes[attr.name]; },
-    function (v) { state.sheet.attributes[attr.name] = v; saveSheet(state.chatId, state.sheet); },
-    attr.min, attr.max,
-    refreshAllBars
-  );
 
-  addStepper(row, {
-    get: function () { return state.sheet.attributes[attr.name]; },
-    set: function (v) { state.sheet.attributes[attr.name] = v; saveSheet(state.chatId, state.sheet); },
-    min: attr.min,
-    max: attr.max,
-    onChange: function (v) {
-      if (val) val.value = String(v);
-      /* Defensive: a future ruleset's maxFormula may reference an
-         attribute. Cheap to refresh; no DOM rebuild. */
-      refreshAllBars();
-    }
-  });
-}
 
-function renderSkills(parent) {
-  var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
-  if (!sec) return;
-  var title = (state.ruleset.id === "exalted3e") ? "Abilities" : "Skills";
-  marinara.addElement(sec, "div", { "class": "mrr-section__title", textContent: title });
 
-  state.ruleset.skills.forEach(function (sk) { renderSkillRow(sec, sk); });
 
-  /* Custom user-added skills/lores. Render after the ruleset's declared
-     skills so the system's canonical list reads first; custom rows mirror
-     the specialty/background row layout (free-text name + value + stepper
-     + remove). The "+ Add Skill" button at the section foot adds a fresh
-     blank row; users can add as many as they want. */
-  var customs = Array.isArray(state.sheet.customSkills) ? state.sheet.customSkills : [];
-  customs.forEach(function (sk, idx) { renderCustomSkillRow(sec, sk, idx); });
-
-  var addBtn = marinara.addElement(sec, "button", {
-    "class": "mrr-track-add-btn mrr-char-btn--dashed",
-    textContent: "+ Add Skill"
-  });
-  if (addBtn) marinara.on(addBtn, "click", function (e) {
-    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    addCustomSkill();
-  });
-}
-
-/* Saving throws — D&D, PF2e, and any system whose resolution rolls a
-   save against a fixed DC. Each entry: { name, linkedAttribute }. The
-   row mirrors a skill row visually but with no specialty / "+S" / Add-
-   Skill button — saves are a fixed canonical list per ruleset (D&D 5e:
-   six, one per ability; PF2e: three, Fortitude/Reflex/Will). The
-   computed bonus uses the same skillBonusFormula as skills if declared,
-   otherwise falls back to attribute mod alone. Proficiency tier per save
-   reuses the existing skillProficiency machinery (saves and skills share
-   the tier vocabulary in D&D 5e). */
-function renderSaves(parent) {
-  var saves = (state.ruleset && Array.isArray(state.ruleset.saves)) ? state.ruleset.saves : [];
-  if (!saves.length) return;
-  var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
-  if (!sec) return;
-  marinara.addElement(sec, "div", { "class": "mrr-section__title", textContent: "Saving Throws" });
-  saves.forEach(function (sv) { renderSaveRow(sec, sv); });
-}
-
-function renderSaveRow(parent, save) {
-  var row = marinara.addElement(parent, "div", { "class": "mrr-row" });
-  if (!row) return;
-  marinara.addElement(row, "span", { "class": "mrr-row__name", textContent: save.name });
-  marinara.addElement(row, "span", { "class": "mrr-row__abbr", textContent: save.linkedAttribute ? "(" + save.linkedAttribute + ")" : "" });
-
-  var skillFormula = state.ruleset && state.ruleset.resolution && state.ruleset.resolution.skillBonusFormula;
-  var calc = marinara.addElement(row, "span", {
-    "class": "mrr-row__value mrr-row__value--autocalc",
-    title: skillFormula ? ("Auto-calculated: " + skillFormula) : "Auto-calculated from attribute modifier"
-  });
-  function refreshSaveBonus() {
-    if (!calc || !calc.parentNode) return;
-    var ctx = statContext();
-    var t = tierForSkill(save.name);
-    var tierBonus = (t && t.rollBonusFormula) ? evalFormula(t.rollBonusFormula, ctx) : 0;
-    if (tierBonus == null) tierBonus = 0;
-    var attrMod = 0;
-    if (save.linkedAttribute) {
-      var modKey = save.linkedAttribute + "_mod";
-      if (typeof ctx[modKey] === "number") attrMod = ctx[modKey];
-    }
-    var num;
-    if (skillFormula) {
-      var subbed = String(skillFormula)
-        .replace(/\{linkedAttribute_mod\}/g, String(attrMod))
-        .replace(/\{tierBonus\}/g, String(tierBonus));
-      var v = evalFormula(subbed, ctx);
-      num = (typeof v === "number" && isFinite(v)) ? Math.floor(v) : 0;
-    } else {
-      num = attrMod + tierBonus;
-    }
-    var sign = num >= 0 ? "+" : "";
-    calc.textContent = sign + String(num);
-  }
-  refreshSaveBonus();
-  barRefreshers.push(refreshSaveBonus);
-
-  /* Tier button mirrors the skill tier UX so the user can mark a save
-     proficient with a single click. Cycle through the tier list; the
-     button uses the same renderer/handler so styling stays consistent. */
-  var stp = marinara.addElement(row, "span", { "class": "mrr-stepper mrr-stepper--autocalc" });
-  if (!stp) return;
-  var tier = tierForSkill(save.name);
-  if (tier) {
-    var tierBtn = marinara.addElement(stp, "button", {
-      "class": "mrr-skill-tier-btn mrr-skill-tier-btn--" + tier.code,
-      textContent: tier.code,
-      title: tier.label + (tier.rollBonusFormula ? " — " + tier.rollBonusFormula : "")
-    });
-    if (tierBtn) marinara.on(tierBtn, "click", function (e) {
-      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-      cycleTier(save.name, tierBtn);
-    });
-  }
-
-  /* Roll button — opens the dice widget pre-filled with this save's
-     attribute mod and proficiency bonus. The player drops the DC the GM
-     called and rolls; the chat-tag pipeline handles the result. */
-  if (state.ruleset.resolution && state.ruleset.resolution.mode === MODES.SINGLE) {
-    var rollBtn = marinara.addElement(stp, "button", { textContent: "roll", "class": "mrr-row__roll" });
-    if (rollBtn) marinara.on(rollBtn, "click", function (e) {
-      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-      quickRollForSave(save);
-    });
-  }
-}
-
-/* One custom skill row. Mirrors renderBackgroundRow's debounced-name +
-   editable-value-with-stepper + remove button, plus an optional linked
-   attribute select drawn from the ruleset's attributes (so custom skills
-   can participate in dice math like ruleset skills). */
-function renderCustomSkillRow(parent, sk, idx) {
-  var row = marinara.addElement(parent, "div", { "class": "mrr-skill-spec-row mrr-custom-skill-row" });
-  if (!row) return;
-
-  var nameInput = marinara.addElement(row, "input", {
-    "class": "mrr-skill-spec-name",
-    type: "text",
-    placeholder: "skill or lore name",
-    value: sk.name || ""
-  });
-  if (nameInput) {
-    var saveTimer = null;
-    marinara.on(nameInput, "input", function () {
-      sk.name = nameInput.value;
-      if (saveTimer) clearTimeout(saveTimer);
-      saveTimer = setTimeout(function () { saveSheet(state.chatId, state.sheet); }, 250);
-    });
-    marinara.on(nameInput, "blur", function () {
-      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
-      saveSheet(state.chatId, state.sheet);
-    });
-    marinara.on(nameInput, "click", function (e) {
-      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    });
-  }
-
-  /* Linked-attribute picker. Optional — blank means "no linked attribute"
-     (Lore-style skills in some systems don't link to a single attribute
-     because the attribute depends on the action). The ruleset's attribute
-     list drives the choices. */
-  var attrSel = marinara.addElement(row, "select", { "class": "mrr-custom-skill-attr" });
-  if (attrSel) {
-    var blank = document.createElement("option");
-    blank.value = ""; blank.textContent = "—";
-    attrSel.appendChild(blank);
-    (state.ruleset.attributes || []).forEach(function (a) {
-      var opt = document.createElement("option");
-      opt.value = a.abbreviation || a.name;
-      opt.textContent = a.abbreviation || a.name;
-      if ((sk.linkedAttribute || "") === opt.value) opt.selected = true;
-      attrSel.appendChild(opt);
-    });
-    marinara.on(attrSel, "change", function () {
-      sk.linkedAttribute = attrSel.value;
-      saveSheet(state.chatId, state.sheet);
-    });
-    marinara.on(attrSel, "click", function (e) {
-      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    });
-  }
-
-  var val = makeEditableValue(
-    row,
-    function () { return sk.value || 0; },
-    function (v) { sk.value = v; saveSheet(state.chatId, state.sheet); },
-    0, DEFAULT_SKILL_MAX,
-    refreshAllBars
-  );
-  addStepper(row, {
-    get: function () { return sk.value || 0; },
-    set: function (v) { sk.value = v; saveSheet(state.chatId, state.sheet); },
-    min: 0,
-    max: DEFAULT_SKILL_MAX,
-    onChange: function (v) { if (val) val.value = String(v); refreshAllBars(); }
-  });
-
-  var removeBtn = marinara.addElement(row, "button", {
-    "class": "mrr-track-add-btn mrr-track-add-btn--danger",
-    textContent: "×",
-    title: "Remove skill"
-  });
-  if (removeBtn) marinara.on(removeBtn, "click", function (e) {
-    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    removeCustomSkill(idx);
-  });
-}
-
-function renderSkillRow(parent, skill) {
-  var row = marinara.addElement(parent, "div", { "class": "mrr-row" });
-  if (!row) return;
-  marinara.addElement(row, "span", { "class": "mrr-row__name", textContent: skill.name });
-  marinara.addElement(row, "span", { "class": "mrr-row__abbr", textContent: skill.linkedAttribute ? "(" + skill.linkedAttribute + ")" : "" });
-
-  /* Autocalc skill bonus: when the ruleset declares
-     `resolution.skillBonusFormula` (D&D, PF2e — systems where the skill
-     "value" the player cares about is the *roll bonus*, not a dot
-     investment), display the computed bonus in place of the raw stepper.
-     The formula has access to {linkedAttribute_mod} (substituted with the
-     skill's specific attribute mod) and {tierBonus} (the active
-     proficiency tier's rollBonusFormula evaluated). For Exalted / WoD
-     style skills the formula is absent and we fall through to the
-     historical raw-value stepper. */
-  var skillFormula = state.ruleset && state.ruleset.resolution && state.ruleset.resolution.skillBonusFormula;
-  var stp;
-  if (skillFormula && typeof skillFormula === "string" && skillFormula) {
-    var calc = marinara.addElement(row, "span", {
-      "class": "mrr-row__value mrr-row__value--autocalc",
-      title: "Auto-calculated: " + skillFormula
-    });
-    function refreshSkillBonus() {
-      if (!calc || !calc.parentNode) return;
-      var ctx = statContext();
-      var t = tierForSkill(skill.name);
-      var tierBonus = (t && t.rollBonusFormula) ? evalFormula(t.rollBonusFormula, ctx) : 0;
-      if (tierBonus == null) tierBonus = 0;
-      var attrMod = 0;
-      if (skill.linkedAttribute) {
-        var modKey = skill.linkedAttribute + "_mod";
-        if (typeof ctx[modKey] === "number") attrMod = ctx[modKey];
-      }
-      /* Local substitution: {linkedAttribute_mod} and {tierBonus} are
-         skill-specific tokens, not real stats. evalFormula's whitelist
-         only accepts arithmetic + {Stat} placeholders, so we pre-
-         substitute these two tokens with their numeric values before
-         evaluating the rest of the formula against the broader context. */
-      var subbed = String(skillFormula)
-        .replace(/\{linkedAttribute_mod\}/g, String(attrMod))
-        .replace(/\{tierBonus\}/g, String(tierBonus));
-      var v = evalFormula(subbed, ctx);
-      var num = (typeof v === "number" && isFinite(v)) ? Math.floor(v) : 0;
-      var sign = num >= 0 ? "+" : "";
-      calc.textContent = sign + String(num);
-    }
-    refreshSkillBonus();
-    barRefreshers.push(refreshSkillBonus);
-    /* Empty stepper container so tier + roll buttons still have a parent.
-       The stepper element itself is suppressed in the autocalc branch —
-       the formula is the source of truth, and a +/- "raw skill value"
-       has no meaning in the systems that use this. */
-    stp = marinara.addElement(row, "span", { "class": "mrr-stepper mrr-stepper--autocalc" });
-  } else {
-    var val = makeEditableValue(
-      row,
-      function () { return state.sheet.skills[skill.name]; },
-      function (v) { state.sheet.skills[skill.name] = v; saveSheet(state.chatId, state.sheet); },
-      skill.min != null ? skill.min : 0,
-      skill.max != null ? skill.max : DEFAULT_SKILL_MAX,
-      refreshAllBars
-    );
-
-    stp = addStepper(row, {
-      get: function () { return state.sheet.skills[skill.name]; },
-      set: function (v) { state.sheet.skills[skill.name] = v; saveSheet(state.chatId, state.sheet); },
-      min: skill.min != null ? skill.min : 0,
-      max: skill.max != null ? skill.max : DEFAULT_SKILL_MAX,
-      onChange: function (v) {
-        if (val) val.value = String(v);
-        refreshAllBars();
-      }
-    });
-  }
-  if (!stp) return;
-
-  var tier = tierForSkill(skill.name);
-  if (tier) {
-    var tierBtn = marinara.addElement(stp, "button", {
-      "class": "mrr-skill-tier-btn mrr-skill-tier-btn--" + tier.code,
-      textContent: tier.code,
-      title: tier.label + (tier.rollBonusFormula ? " — " + tier.rollBonusFormula : "")
-    });
-    if (tierBtn) marinara.on(tierBtn, "click", function (e) {
-      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-      cycleTier(skill.name, tierBtn);
-    });
-  }
-
-  var specsCfg = state.ruleset.skillSpecialties;
-  if (specsCfg && specsCfg.enabled) {
-    var addBtn = marinara.addElement(stp, "button", {
-      "class": "mrr-skill-spec-btn",
-      textContent: "+S",
-      title: "Add specialty"
-    });
-    if (addBtn) marinara.on(addBtn, "click", function (e) {
-      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-      addSpecialty(skill.name);
-    });
-  }
-
-  var roll = marinara.addElement(stp, "button", { textContent: "roll", "class": "mrr-row__roll" });
-  if (roll) marinara.on(roll, "click", function () { quickRollForSkill(skill); });
-
-  /* Specialties render as siblings of the skill row in the same section
-     so the row's stepper / button grid stays aligned — putting them
-     inside the skill row would force every column to widen. */
-  var specs = (state.sheet.skillSpecialties && state.sheet.skillSpecialties[skill.name]) || [];
-  if (specs.length && specsCfg && specsCfg.enabled) {
-    specs.forEach(function (sp, idx) { renderSpecialtyRow(parent, skill, sp, idx); });
-  }
-}
-
-function renderSpecialtyRow(parent, skill, spec, idx) {
-  var row = marinara.addElement(parent, "div", { "class": "mrr-skill-spec-row" });
-  if (!row) return;
-
-  var nameInput = marinara.addElement(row, "input", {
-    "class": "mrr-skill-spec-name",
-    type: "text",
-    placeholder: "specialty (e.g. Daiklaves)",
-    value: spec.name || ""
-  });
-  if (nameInput) {
-    /* Save on input via debounce; do NOT re-render mid-typing or focus is
-       lost on every keystroke. The DOM input value already reflects what
-       the user typed; only state needs to keep up. */
-    var saveTimer = null;
-    marinara.on(nameInput, "input", function () {
-      spec.name = nameInput.value;
-      if (saveTimer) clearTimeout(saveTimer);
-      saveTimer = setTimeout(function () {
-        saveSheet(state.chatId, state.sheet);
-      }, 250);
-    });
-    marinara.on(nameInput, "blur", function () {
-      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
-      saveSheet(state.chatId, state.sheet);
-    });
-    /* Defensive against any future parent click handler — the input must
-       receive its own clicks for cursor placement, not bubble up. */
-    marinara.on(nameInput, "click", function (e) {
-      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    });
-  }
-
-  var valueLabel = (state.ruleset.skillSpecialties && state.ruleset.skillSpecialties.valueLabel) || "";
-  if (valueLabel) {
-    marinara.addElement(row, "span", { "class": "mrr-skill-spec-label", textContent: valueLabel });
-  }
-
-  var valSpan = marinara.addElement(row, "span", { "class": "mrr-row__value", textContent: String(spec.value || 0) });
-  addStepper(row, {
-    get: function () { return spec.value || 0; },
-    set: function (v) { spec.value = v; saveSheet(state.chatId, state.sheet); },
-    min: 0,
-    max: 9,
-    onChange: function (v) { if (valSpan) valSpan.textContent = String(v); }
-  });
-
-  var removeBtn = marinara.addElement(row, "button", {
-    "class": "mrr-track-add-btn mrr-track-add-btn--danger",
-    textContent: "×",
-    title: "Remove specialty"
-  });
-  if (removeBtn) marinara.on(removeBtn, "click", function (e) {
-    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    removeSpecialty(skill.name, idx);
-  });
-}
 
 /* Quick-roll a save: opens the dice widget pre-filled with the save's
    computed bonus, split into mod (attribute modifier) + prof (proficiency
@@ -9412,25 +9016,6 @@ function applyDiceContextSpecialties() {
   }
 }
 
-function renderDerived(parent) {
-  if (!Array.isArray(state.ruleset.derivedStats) || !state.ruleset.derivedStats.length) return;
-  var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
-  if (!sec) return;
-  marinara.addElement(sec, "div", { "class": "mrr-section__title", textContent: "Derived" });
-
-  state.ruleset.derivedStats.forEach(function (d) {
-    var wrap = marinara.addElement(sec, "div", { "class": "mrr-derived" });
-    if (!wrap) return;
-    marinara.addElement(wrap, "div", { "class": "mrr-derived__formula", textContent: d.name + " — " + d.formula });
-    if (d.renderAs === "track" && Array.isArray(d.track)) {
-      renderTrack(wrap, d);
-    } else if (d.renderAs === "bar") {
-      renderBar(wrap, d);
-    } else {
-      renderValue(wrap, d);
-    }
-  });
-}
 
 /* ── Phase 5 step 5.4 — derived tooltip math ──────────────────────────
    Tokenized formula substitution that returns both the arithmetic-ready
@@ -9505,266 +9090,7 @@ function mrrComputeTooltipBreakdown(derived, ctx) {
   return { value: num, tooltip: tip };
 }
 
-function renderValue(parent, derived) {
-  var row = marinara.addElement(parent, "div", { "class": "mrr-row mrr-row--compact" });
-  if (!row) return;
 
-  /* Phase 5 step 5.4 — when only tooltipFormula is declared (no
-     valueFormula), promote tooltipFormula to drive the value AND the
-     tooltip. valueFormula winning over tooltipFormula on conflict is
-     intentional: valueFormula is the existing autocalc contract; this
-     branch only fires when valueFormula is absent. */
-  var hasValueFormula = derived && typeof derived.valueFormula === "string" && !!derived.valueFormula;
-  var hasTooltipFormula = derived && typeof derived.tooltipFormula === "string" && !!derived.tooltipFormula;
-  var tooltipOnlyAutocalc = !hasValueFormula && hasTooltipFormula;
-
-  /* Autocalc: derived stats with `valueFormula` (parallel to `maxFormula`)
-     compute their displayed value from the current stat context every
-     time refreshAllBars fires. The stepper is suppressed because the
-     formula IS the override — typing into a computed value would either
-     desync from the formula or require a "reset to formula" affordance
-     that adds UX surface area for negligible gain. */
-  if (hasValueFormula || tooltipOnlyAutocalc) {
-    var calc = marinara.addElement(row, "span", {
-      "class": "mrr-row__value mrr-row__value--autocalc",
-      title: hasValueFormula
-        ? ("Auto-calculated from formula: " + derived.valueFormula)
-        : ("Auto-calculated from formula: " + derived.tooltipFormula)
-    });
-    var bonusSpanA = marinara.addElement(row, "span", { "class": "mrr-row__bonus" });
-    refreshDerivedBonus(bonusSpanA, derived.name);
-    derivedBonusRefreshers.push(function () { refreshDerivedBonus(bonusSpanA, derived.name); });
-    function refreshAutocalc() {
-      if (!calc || !calc.parentNode) return;
-      var ctx = statContext();
-      var num;
-      if (hasValueFormula) {
-        var v = evalFormula(derived.valueFormula, ctx);
-        /* Floor (not round) so D&D ability mods like (9-10)/2=-0.5 land on -1
-           not 0, AND Exalted ceiling formulas of the form (a+b+1)/2 stay
-           correct (already pre-add +1, so floor produces the intended ceil). */
-        num = (typeof v === "number" && isFinite(v)) ? Math.floor(v) : 0;
-      } else {
-        /* tooltipOnlyAutocalc path — value comes from tooltipFormula via
-           the same {bonuses:Key}-aware substitution helper used for the
-           breakdown below. */
-        var brk0 = mrrComputeTooltipBreakdown(derived, ctx);
-        num = (brk0 && typeof brk0.value === "number") ? brk0.value : 0;
-      }
-      calc.textContent = String(num);
-      /* Phase 5 step 5.4 — when the derived stat declares a tooltipFormula,
-         overwrite the autocalc title with the breakdown string. valueFormula
-         continues to drive the visible number; tooltipFormula only drives
-         the tooltip text. */
-      if (hasTooltipFormula) {
-        var brk = mrrComputeTooltipBreakdown(derived, ctx);
-        if (brk && brk.tooltip) {
-          calc.title = brk.tooltip;
-          calc.setAttribute("title", brk.tooltip);
-        }
-      }
-      /* Persist the computed value to state so other consumers — chat sync,
-         dice math, agent state mutators — see the same number the user
-         sees, even though the user can't override it directly. Save only
-         when the value actually changes so render-time refreshes don't
-         re-touch localStorage on every renderSheet call. */
-      if (state.sheet.derived[derived.name] !== num) {
-        state.sheet.derived[derived.name] = num;
-        saveSheet(state.chatId, state.sheet);
-      }
-    }
-    refreshAutocalc();
-    barRefreshers.push(refreshAutocalc);
-    /* Roll button on autocalc'd derived stats that declare a rollFormula
-       (Initiative = {Dexterity_mod} for D&D). Opens the dice widget pre-
-       filled with the formula's value so the player rolls 1d20 + bonus.
-       Skipped on derived without a rollFormula because there's nothing
-       to roll — Hit Points, Armor Class, Speed are values, not checks. */
-    if (typeof derived.rollFormula === "string" && derived.rollFormula
-        && state.ruleset.resolution && derivedRollSupported(mrrResolveModeId(derived.resolutionId).mode)) {
-      var rollD = marinara.addElement(row, "button", { textContent: "roll", "class": "mrr-row__roll" });
-      if (rollD) marinara.on(rollD, "click", function (e) {
-        if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-        quickRollForDerived(derived);
-      });
-    }
-    return;
-  }
-
-  /* Compute the upper bound for editing + display from either an engine-
-     declared `max` literal or a `maxFormula`. Used both as the input clamp
-     and as the "/N" cap shown next to the value (Essence reads "5 / 10"
-     instead of bare "5"). When neither is declared, no cap shown and the
-     value range is the legacy ±999. */
-  function computeValueMax() {
-    if (typeof derived.maxFormula === "string" && derived.maxFormula) {
-      var v = evalFormula(derived.maxFormula, statContext());
-      if (v != null && v > 0) return Math.floor(v);
-    }
-    if (typeof derived.max === "number" && derived.max > 0) return derived.max;
-    return null;
-  }
-  var declaredMax = computeValueMax();
-  var hasDeclaredMax = (declaredMax != null);
-
-  var val = makeEditableValue(
-    row,
-    function () { return state.sheet.derived[derived.name] || 0; },
-    function (v) { state.sheet.derived[derived.name] = v; saveSheet(state.chatId, state.sheet); },
-    hasDeclaredMax ? 0 : -999,
-    hasDeclaredMax ? function () { return computeValueMax(); } : 999,
-    function () { if (capLabel) capLabel.textContent = " / " + computeValueMax(); refreshAllBars(); }
-  );
-  /* Inline "/ max" cap label next to the value when the ruleset declared a
-     cap. Lets a value-rendered derived stat (Essence, Willpower-as-value)
-     visibly carry its limit without changing renderAs to "bar". */
-  var capLabel = null;
-  if (hasDeclaredMax) {
-    capLabel = marinara.addElement(row, "span", {
-      "class": "mrr-row__cap",
-      textContent: " / " + declaredMax,
-      title: "Maximum " + derived.name + (derived.maxFormula ? " (computed: " + derived.maxFormula + ")" : "")
-    });
-  }
-  var bonusSpan = marinara.addElement(row, "span", { "class": "mrr-row__bonus" });
-  refreshDerivedBonus(bonusSpan, derived.name);
-  derivedBonusRefreshers.push(function () { refreshDerivedBonus(bonusSpan, derived.name); });
-  /* Refresh the cap label whenever any bar refreshes — picks up changes to
-     {Essence} flowing through Personal Motes' maxFormula, etc. */
-  if (capLabel) {
-    barRefreshers.push(function () {
-      if (!capLabel || !capLabel.parentNode) return;
-      capLabel.textContent = " / " + computeValueMax();
-    });
-  }
-  addStepper(row, {
-    get: function () { return state.sheet.derived[derived.name] || 0; },
-    set: function (v) { state.sheet.derived[derived.name] = v; saveSheet(state.chatId, state.sheet); },
-    min: hasDeclaredMax ? 0 : -999,
-    max: hasDeclaredMax ? function () { return computeValueMax(); } : 999,
-    onChange: function (v) {
-      if (val) val.value = String(v);
-      /* A derived value (e.g. Essence) may be referenced by another stat's
-         maxFormula (e.g. Personal Motes = {Essence}*3+10). Refresh the bars
-         in-place so dependents pick up the new max — DOM is not rebuilt,
-         so the user's scroll position survives. */
-      refreshAllBars();
-    }
-  });
-
-  /* Roll button on manual derived stats that declare a rollFormula.
-     Lets a player click to roll Initiative or any other "1d20 + bonus"
-     check pinned to a derived stat without going through skills. */
-  if (typeof derived.rollFormula === "string" && derived.rollFormula
-      && state.ruleset.resolution && state.ruleset.resolution.mode === MODES.SINGLE) {
-    var rollD2 = marinara.addElement(row, "button", { textContent: "roll", "class": "mrr-row__roll" });
-    if (rollD2) marinara.on(rollD2, "click", function (e) {
-      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-      quickRollForDerived(derived);
-    });
-  }
-}
-
-function renderBar(parent, derived) {
-  var bar = marinara.addElement(parent, "div", { "class": "mrr-bar" });
-  if (!bar) return;
-  var fill = marinara.addElement(bar, "div", { "class": "mrr-bar__fill" });
-  var label = marinara.addElement(bar, "div", { "class": "mrr-bar__label" });
-
-  function computeMax() {
-    /* User-set override wins over ruleset formula/literal so a manual
-       adjustment via the max input always sticks. Gives the GM agent
-       and the player a single authoritative source of truth: whatever
-       is in derivedMax[name] is the cap. Formula seeds it; user can
-       override (Anima boosts, temporary Willpower modifiers, per-
-       character Willpower caps that aren't a flat 10). */
-    if (state.sheet.derivedMax && typeof state.sheet.derivedMax[derived.name] === "number"
-        && state.sheet.derivedMax[derived.name] > 0) {
-      return state.sheet.derivedMax[derived.name];
-    }
-    if (derived.maxFormula) {
-      var v = evalFormula(derived.maxFormula, statContext());
-      if (v != null && v > 0) return Math.floor(v);
-    }
-    if (derived.max != null) return derived.max;
-    /* Last-resort fallback for fresh sheets where the user hasn't typed
-       a max yet — auto-grow with the current value so the visual fill
-       still shows partial progress instead of saturating against the
-       phantom 10. Once the user types a max, this branch never fires. */
-    var current = state.sheet.derived[derived.name] || 0;
-    return Math.max(DEFAULT_BAR_MAX, current);
-  }
-
-  function refresh() {
-    if (!fill || !fill.parentNode) return;
-    var max = computeMax();
-    var v = state.sheet.derived[derived.name] || 0;
-    fill.style.width = Math.max(0, Math.min(100, (v / max) * 100)) + "%";
-    if (label) label.textContent = v + " / " + max;
-    /* Re-sync both editable inputs to current sheet state. Without this,
-       a state-mutator delta (e.g., `[mrr-state: field="Personal Motes"
-       delta="+5"]` from a refresh) updates the underlying value but the
-       inputs keep showing stale numbers — the player and the GM agent
-       end up reading different values from the same field, producing
-       math errors on the next refresh attempt. */
-    if (inputEl) inputEl.value = String(v);
-    if (maxEl) maxEl.value = String(max);
-  }
-
-  var ctrl = marinara.addElement(parent, "div", { "class": "mrr-state" });
-  if (!ctrl) return;
-  /* Editable current value. Clamps to the computed max on commit so a
-     user can't type a value that exceeds the cap. */
-  var inputEl = makeEditableValue(
-    ctrl,
-    function () { return state.sheet.derived[derived.name] || 0; },
-    function (v) { state.sheet.derived[derived.name] = v; saveSheet(state.chatId, state.sheet); },
-    0, computeMax,
-    function () { refresh(); refreshAllBars(); }
-  );
-
-  /* Editable max input — always shown so the user has a single visible
-     "current / max" surface for every bar. For ruleset-capped bars
-     (Exalted Motes via maxFormula, anything with a literal max) the
-     input default-displays the formula/literal value; typing a value
-     persists to state.sheet.derivedMax and overrides the ruleset. For
-     uncapped bars (D&D HP, Willpower under per-character caps) it's
-     the only source of truth. */
-  marinara.addElement(ctrl, "span", { "class": "mrr-bar__sep", textContent: "/" });
-  var maxEl = makeEditableValue(
-    ctrl,
-    function () { return computeMax(); },
-    function (v) {
-      if (!state.sheet.derivedMax) state.sheet.derivedMax = {};
-      state.sheet.derivedMax[derived.name] = v;
-      saveSheet(state.chatId, state.sheet);
-    },
-    0, 9999,
-    function () { refresh(); refreshAllBars(); }
-  );
-  if (maxEl) {
-    var hint = derived.maxFormula
-      ? " (default: " + derived.maxFormula + " — type to override)"
-      : (derived.max != null ? " (ruleset default " + derived.max + " — type to override)" : " (user-set)");
-    maxEl.title = "Max " + derived.name + hint;
-  }
-
-  addStepper(ctrl, {
-    get: function () { return state.sheet.derived[derived.name] || 0; },
-    set: function (v) { state.sheet.derived[derived.name] = v; saveSheet(state.chatId, state.sheet); },
-    min: 0,
-    max: computeMax,
-    onChange: function (v) {
-      if (inputEl) inputEl.value = String(v);
-      refreshAllBars();
-    }
-  });
-
-  /* Initial paint after both inputs are mounted so refresh() can sync
-     them to the current state value. */
-  refresh();
-  barRefreshers.push(refresh);
-}
 
 /* Resolve the damage-types declaration on a track-renderAs derived stat,
    sorted by severity descending so the highest-severity type fills the
@@ -9851,227 +9177,8 @@ function syncTrackCellsToTyped(d) {
   state.sheet.track[name] = typedObj;
 }
 
-/* Get-or-create the typed damage object for a track. Migrates a legacy
-   numeric value into the lightest type (bashing) since the meaning of
-   the old single counter was "damage taken" with type unspecified. */
-function ensureTypedTrack(trackName, types) {
-  if (!state.sheet.track) state.sheet.track = {};
-  var current = state.sheet.track[trackName];
-  if (current && typeof current === "object" && !Array.isArray(current)) {
-    /* Already typed. Make sure every declared type has a slot, default 0. */
-    for (var i = 0; i < types.length; i++) {
-      if (typeof current[types[i].id] !== "number") current[types[i].id] = 0;
-    }
-    return current;
-  }
-  /* Build fresh, seeding the lightest type with any legacy number. */
-  var legacy = (typeof current === "number") ? current : 0;
-  var lightest = types[types.length - 1];
-  var fresh = {};
-  for (var j = 0; j < types.length; j++) fresh[types[j].id] = 0;
-  if (lightest) fresh[lightest.id] = legacy;
-  state.sheet.track[trackName] = fresh;
-  return fresh;
-}
 
-function renderTrack(parent, derived) {
-  var track = marinara.addElement(parent, "div", { "class": "mrr-track" });
-  if (!track) return;
 
-  function rulesetCells() { return derived.track || []; }
-  function extraCells() {
-    if (!state.sheet.extraTrack) state.sheet.extraTrack = {};
-    if (!state.sheet.extraTrack[derived.name]) state.sheet.extraTrack[derived.name] = [];
-    return state.sheet.extraTrack[derived.name];
-  }
-  function totalLen() { return rulesetCells().length + extraCells().length; }
-
-  /* The types list (severity-descending) and a per-cell type lookup keyed
-     on rendered position. Computed fresh on each rebuild so any data
-     mutation — manual click, button, AI mutator — produces a coherent
-     re-render without stale closures. */
-  var types = damageTypesFor(derived);
-
-  function buildCellTypeMap() {
-    if (!types) return null;
-    var damage = ensureTypedTrack(derived.name, types);
-    /* Severity-descending fill: e.g., for Exalted [A, L, B], cells 0..a-1
-       get aggravated, a..a+l-1 get lethal, a+l..a+l+b-1 get bashing.
-       Damage that overflows the cell count is preserved in counters but
-       only the visible cells render; over-fill = on-the-edge / dying. */
-    var cellType = [];
-    for (var i = 0; i < types.length; i++) {
-      var t = types[i];
-      var n = damage[t.id] || 0;
-      for (var k = 0; k < n; k++) cellType.push(t);
-    }
-    return cellType;
-  }
-
-  function rebuild() {
-    track.textContent = "";
-    /* Tag each cell with its origin so a stable sort by penalty can group
-       like-with-like without losing the "extra" flag used for the dashed
-       border. Sort is descending — best (0) first, Incapacitated (-99)
-       always last — and stable, so multiple cells of the same penalty
-       keep insertion order. Damage progression still fills left-to-right. */
-    var tagged = rulesetCells().map(function (c) { return { cell: c, extra: false }; })
-      .concat(extraCells().map(function (c) { return { cell: c, extra: true }; }));
-    tagged.sort(function (a, b) { return b.cell.penalty - a.cell.penalty; });
-
-    var cellType = buildCellTypeMap();
-    var legacyFilled = (typeof state.sheet.track[derived.name] === "number")
-      ? state.sheet.track[derived.name]
-      : 0;
-    var filled = cellType ? cellType.length : legacyFilled;
-
-    tagged.forEach(function (entry, idx) {
-      var cell = entry.cell;
-      var typeAtIdx = (cellType && idx < cellType.length) ? cellType[idx] : null;
-      var titleParts = ["penalty " + cell.penalty];
-      if (entry.extra) titleParts.push("(added)");
-      if (typeAtIdx) titleParts.push("damage: " + typeAtIdx.id);
-      var c = marinara.addElement(track, "div", {
-        title: titleParts.join(" "),
-        textContent: typeAtIdx ? typeAtIdx.label : cell.label
-      });
-      if (!c) return;
-      var cls = "mrr-track__cell";
-      if (idx < filled) cls += " mrr-track__cell--filled";
-      if (idx === filled - 1 && filled > 0) cls += " mrr-track__cell--active";
-      if (entry.extra) cls += " mrr-track__cell--extra";
-      if (typeAtIdx) cls += " mrr-track__cell--" + typeAtIdx.id;
-      c.className = cls;
-      marinara.on(c, "click", function () {
-        if (types) {
-          var damage = ensureTypedTrack(derived.name, types);
-          if (typeAtIdx) {
-            /* Heal one of the type at this cell — direct fixup. */
-            damage[typeAtIdx.id] = Math.max(0, (damage[typeAtIdx.id] || 0) - 1);
-          } else {
-            /* Empty cell click takes one bashing — the lightest type. */
-            var lightest = types[types.length - 1];
-            damage[lightest.id] = (damage[lightest.id] || 0) + 1;
-          }
-        } else {
-          /* Legacy single-counter behavior. */
-          var current = state.sheet.track[derived.name] || 0;
-          state.sheet.track[derived.name] = (current === idx + 1) ? idx : idx + 1;
-        }
-        saveSheet(state.chatId, state.sheet);
-        rebuild();
-      });
-    });
-  }
-  rebuild();
-
-  /* Damage-type controls (Exalted/WoD-style typed damage). One "Take" per
-     declared type plus a "Heal worst" that drops the highest-severity
-     damage in the stack — the canonical "ease your wounds" action. */
-  if (types) {
-    var dmgCtrl = marinara.addElement(parent, "div", { "class": "mrr-track-ctrl" });
-    if (dmgCtrl) {
-      marinara.addElement(dmgCtrl, "span", { "class": "mrr-track-ctrl__label", textContent: "Take damage:" });
-      types.slice().reverse().forEach(function (t) {
-        /* Reversed to render lightest-first (B, L, A) for left-to-right
-           severity reading, while the data-side `types` stays severity-desc. */
-        var btn = marinara.addElement(dmgCtrl, "button", {
-          "class": "mrr-track-add-btn",
-          textContent: t.label,
-          title: "Take 1 " + t.id + " damage"
-        });
-        if (!btn) return;
-        marinara.on(btn, "click", function () {
-          var damage = ensureTypedTrack(derived.name, types);
-          damage[t.id] = (damage[t.id] || 0) + 1;
-          saveSheet(state.chatId, state.sheet);
-          rebuild();
-        });
-      });
-      var healBtn = marinara.addElement(dmgCtrl, "button", {
-        "class": "mrr-track-add-btn mrr-track-add-btn--danger",
-        textContent: "heal worst",
-        title: "Remove one level of the highest-severity damage taken"
-      });
-      if (healBtn) marinara.on(healBtn, "click", function () {
-        var damage = ensureTypedTrack(derived.name, types);
-        for (var i = 0; i < types.length; i++) {
-          if ((damage[types[i].id] || 0) > 0) {
-            damage[types[i].id] -= 1;
-            saveSheet(state.chatId, state.sheet);
-            rebuild();
-            return;
-          }
-        }
-      });
-    }
-  }
-
-  /* Ox-Body and similar Charms add health levels at runtime. Three buttons
-     for the canonical penalty values plus a remove-last for mistakes. */
-  var ctrl = marinara.addElement(parent, "div", { "class": "mrr-track-ctrl" });
-  if (!ctrl) return;
-  marinara.addElement(ctrl, "span", { "class": "mrr-track-ctrl__label", textContent: "Add level:" });
-
-  [{ label: "-0", penalty: 0 }, { label: "-1", penalty: -1 }, { label: "-2", penalty: -2 }].forEach(function (def) {
-    var btn = marinara.addElement(ctrl, "button", {
-      "class": "mrr-track-add-btn",
-      textContent: def.label
-    });
-    if (!btn) return;
-    marinara.on(btn, "click", function () {
-      extraCells().push({ label: def.label, penalty: def.penalty });
-      saveSheet(state.chatId, state.sheet);
-      rebuild();
-    });
-  });
-
-  var rmBtn = marinara.addElement(ctrl, "button", {
-    "class": "mrr-track-add-btn mrr-track-add-btn--danger",
-    textContent: "remove last",
-    title: "Remove the most-recently added level"
-  });
-  if (rmBtn) marinara.on(rmBtn, "click", function () {
-    var extras = extraCells();
-    if (!extras.length) return;
-    extras.pop();
-    /* Clamp legacy filled count if the user removed a filled level. The
-       typed-damage path doesn't need clamping here — overflow damage is
-       preserved in counters and just doesn't render past the last cell. */
-    var len = totalLen();
-    if (typeof state.sheet.track[derived.name] === "number" && state.sheet.track[derived.name] > len) {
-      state.sheet.track[derived.name] = len;
-    }
-    saveSheet(state.chatId, state.sheet);
-    rebuild();
-  });
-}
-
-function renderStates(parent) {
-  if (!Array.isArray(state.ruleset.states) || !state.ruleset.states.length) return;
-  var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
-  if (!sec) return;
-  marinara.addElement(sec, "div", { "class": "mrr-section__title", textContent: "States" });
-
-  state.ruleset.states.forEach(function (st) {
-    var row = marinara.addElement(sec, "div", { "class": "mrr-state" });
-    if (!row) return;
-    marinara.addElement(row, "span", { "class": "mrr-state__name", textContent: st.name });
-    var sel = marinara.addElement(row, "select", { "class": "mrr-state__select" });
-    if (!sel) return;
-    st.values.forEach(function (v) {
-      var opt = document.createElement("option");
-      opt.value = v.label;
-      opt.textContent = v.label;
-      if (v.label === state.sheet.states[st.name]) opt.selected = true;
-      sel.appendChild(opt);
-    });
-    marinara.on(sel, "change", function () {
-      state.sheet.states[st.name] = sel.value;
-      saveSheet(state.chatId, state.sheet);
-    });
-  });
-}
 
 /* ─────  derived equipment-bonus suffix  ───── */
 
@@ -10221,106 +9328,10 @@ function conditionRollMode(category) {
 
 /* ─────  backgrounds / merits section  ───── */
 
-/* Free-text dot-rated traits (Exalted Backgrounds & Merits, WoD Merits, etc.).
-   Each entry is { name: string, value: int }. Modeled on the Specialty inline
-   pattern: renderBackgroundRow draws name input + stepper + remove button,
-   add button at the section footer pushes a fresh entry. */
-function renderBackgrounds(parent) {
-  var cfg = state.ruleset.backgrounds;
-  if (!cfg || cfg.enabled !== true) return;
 
-  var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
-  if (!sec) return;
-  marinara.addElement(sec, "div", {
-    "class": "mrr-section__title",
-    textContent: cfg.label || "Backgrounds"
-  });
-
-  var entries = Array.isArray(state.sheet.backgrounds) ? state.sheet.backgrounds : [];
-  entries.forEach(function (entry, idx) { renderBackgroundRow(sec, entry, idx); });
-
-  var addBtn = marinara.addElement(sec, "button", {
-    "class": "mrr-track-add-btn mrr-char-btn--dashed",
-    textContent: "+ Add Background"
-  });
-  if (addBtn) marinara.on(addBtn, "click", function (e) {
-    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    addBackground();
-  });
-}
-
-function renderBackgroundRow(parent, entry, idx) {
-  var cfg = state.ruleset.backgrounds || {};
-  var lo = (typeof cfg.min === "number") ? cfg.min : 0;
-  var hi = (typeof cfg.max === "number") ? cfg.max : 5;
-  /* `textOnly` suppresses the value display + stepper (D&D Feats use it). */
-  var textOnly = !!cfg.textOnly;
-
-  var row = marinara.addElement(parent, "div", { "class": "mrr-skill-spec-row" });
-  if (!row) return;
-
-  var nameInput = marinara.addElement(row, "input", {
-    "class": "mrr-skill-spec-name",
-    type: "text",
-    placeholder: textOnly
-      ? "feat (e.g. Sharpshooter, Lucky)"
-      : "background (e.g. Resources, Allies)",
-    value: entry.name || ""
-  });
-  if (nameInput) {
-    /* Debounced save; do NOT re-render mid-typing or focus is lost on every
-       keystroke. Mirror the Specialty input handling exactly. */
-    var saveTimer = null;
-    marinara.on(nameInput, "input", function () {
-      entry.name = nameInput.value;
-      if (saveTimer) clearTimeout(saveTimer);
-      saveTimer = setTimeout(function () { saveSheet(state.chatId, state.sheet); }, 250);
-    });
-    marinara.on(nameInput, "blur", function () {
-      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
-      saveSheet(state.chatId, state.sheet);
-    });
-    marinara.on(nameInput, "click", function (e) {
-      if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    });
-  }
-
-  if (!textOnly) {
-    var valEl = makeEditableValue(
-      row,
-      function () { return entry.value || 0; },
-      function (v) { entry.value = v; saveSheet(state.chatId, state.sheet); },
-      lo, hi,
-      refreshAllBars
-    );
-    addStepper(row, {
-      get: function () { return entry.value || 0; },
-      set: function (v) { entry.value = v; saveSheet(state.chatId, state.sheet); },
-      min: lo,
-      max: hi,
-      onChange: function (v) { if (valEl) valEl.value = String(v); }
-    });
-  }
-
-  var removeBtn = marinara.addElement(row, "button", {
-    "class": "mrr-track-add-btn mrr-track-add-btn--danger",
-    textContent: "×",
-    title: "Remove background"
-  });
-  if (removeBtn) marinara.on(removeBtn, "click", function (e) {
-    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    removeBackground(idx);
-  });
-}
 
 /* ─────  inventory section  ───── */
 
-function renderInventory(parent) {
-  var sec = marinara.addElement(parent, "div", { "class": "mrr-section" });
-  if (!sec) return;
-  marinara.addElement(sec, "div", { "class": "mrr-section__title", textContent: "Equipment" });
-  renderInventoryList(sec);
-}
 
 /* Equipment list body — split from renderInventory so the Phase-3
    wrapper (mrrP3RenderInventorySection) can render the same content
@@ -10680,10 +9691,11 @@ function deleteItem(id) {
   /* Find the item BEFORE splicing so we can: (a) restore committed
      motes to the named Exalted pool when the item was equipped at
      deletion time, and (b) recompute attunedCount / investedCount
-     caches for downstream consumers. The four canonical read sites
-     (buildSyncFields + buildSheetForPrompt × attuned/invested) now
-     recompute from inventory directly, but keeping the cache fields
-     consistent on disk costs nothing. */
+     caches for downstream consumers. The canonical read sites
+     (buildSheetForPrompt × attuned/invested) now recompute from
+     inventory directly, but keeping the cache fields consistent on
+     disk costs nothing. (Round 27: buildSyncFields was the other two
+     read sites; it died with syncSheetToChat.) */
   var removed = null;
   for (var ri = 0; ri < state.sheet.inventory.length; ri++) {
     if (state.sheet.inventory[ri] && state.sheet.inventory[ri].id === id) {
@@ -13014,23 +12026,6 @@ function rollDicePool() {
   }));
 }
 
-/* Parse a structured dice-notation string of the form "ND[+P]" or "ND[-P]"
-   (case-insensitive on D). Returns { dieCount, dieSize, modifier } or null
-   for malformed input. STRUCTURED parser only — does NOT eval strings, stays
-   CSP-safe. Used by dice-pool-sum and (Batch 2) the damage-pool bonus kind. */
-function parseDiceNotation(s) {
-  if (typeof s !== "string") return null;
-  var m = s.trim().match(/^(\d+)[dD](?:([+-])(\d+))?$/);
-  if (!m) return null;
-  var dieCount = parseInt(m[1], 10);
-  if (!isFinite(dieCount) || dieCount < 1) return null;
-  var modifier = 0;
-  if (m[2] && m[3]) {
-    var n = parseInt(m[3], 10);
-    modifier = (m[2] === "+") ? n : -n;
-  }
-  return { dieCount: dieCount, dieSize: 6, modifier: modifier };
-}
 
 /* Roll for dice-pool-sum mode: sum N six-siders against a difficulty number.
    One die may be the Wild Die — explode-on-explodeFace, crit-fail-on-critFailFace
@@ -13710,277 +12705,31 @@ function renderLibrarySection(dialog, msg) {
   });
 }
 
-/* ─────  sync sheet to chat customTrackerFields  ───── */
+/* ─────  REMOVED (round 27): sync sheet to chat customTrackerFields  ─────
 
-/* Build the full set of customTrackerFields the agent prompts read from.
-   This is what the LLM "sees" of the sheet at generation time — anything
-   not pushed here is invisible to every overlay agent (state-mutator,
-   state-reminder, lore-helper, NPC-bookkeeper, combat-adjudicator). The
-   agents key off Marinara's standard customTrackerFields surface, which
-   is the only structured per-chat data path the engine exposes to
-   pre-generation context. Returned shape: array of {name, value}. */
-function buildSyncFields(prefix) {
-  var fresh = [];
-  if (!state.sheet) return fresh;
-
-  /* Identity (race + class). Empty values still emit so the agent sees the
-     fields exist and can prompt the user to fill them. */
-  if (state.sheet.identity) {
-    var hcfg = (state.ruleset && state.ruleset.header) || {};
-    fresh.push({ name: prefix + (hcfg.raceLabel || "Race"),  value: String(state.sheet.identity.race  || "") });
-    fresh.push({ name: prefix + (hcfg.classLabel || "Class"), value: String(state.sheet.identity["class"] || "") });
-  }
-
-  /* Raw attributes (Strength=16, etc.) so the agent can reason about
-     ability scores directly. */
-  Object.keys(state.sheet.attributes || {}).forEach(function (n) {
-    fresh.push({ name: prefix + n, value: String(state.sheet.attributes[n]) });
-  });
-
-  /* Computed attribute modifiers — exposed under both long name and
-     abbreviation so the agent can reference either ("Dexterity_mod",
-     "DEX_mod"). For Exalted etc. that don't declare modifierFormula,
-     this loop is a no-op and the field set stays clean. */
-  var ctx = statContext();
-  if (state.ruleset && Array.isArray(state.ruleset.attributes)) {
-    state.ruleset.attributes.forEach(function (a) {
-      if (!a || typeof a.modifierFormula !== "string" || !a.modifierFormula) return;
-      var modKey = a.name + "_mod";
-      if (typeof ctx[modKey] === "number") {
-        var sign = ctx[modKey] >= 0 ? "+" : "";
-        fresh.push({ name: prefix + modKey, value: sign + String(ctx[modKey]) });
-      }
-    });
-  }
-
-  /* Skills — when the ruleset uses skillBonusFormula, write the COMPUTED
-     bonus (the +5 the user sees) so the agent can roll without re-doing
-     the math. When it doesn't, write the raw value (Exalted/WoD dot
-     investment). */
-  var skillFormula = state.ruleset && state.ruleset.resolution && state.ruleset.resolution.skillBonusFormula;
-  Object.keys(state.sheet.skills || {}).forEach(function (n) {
-    if (skillFormula) {
-      var skillDef = (state.ruleset.skills || []).find(function (s) { return s.name === n; });
-      var attrMod = 0;
-      if (skillDef && skillDef.linkedAttribute) {
-        var mk = skillDef.linkedAttribute + "_mod";
-        if (typeof ctx[mk] === "number") attrMod = ctx[mk];
-      }
-      var t = tierForSkill(n);
-      var tierBonus = (t && t.rollBonusFormula) ? evalFormula(t.rollBonusFormula, ctx) : 0;
-      if (tierBonus == null) tierBonus = 0;
-      var subbed = String(skillFormula)
-        .replace(/\{linkedAttribute_mod\}/g, String(attrMod))
-        .replace(/\{tierBonus\}/g, String(tierBonus));
-      var v = evalFormula(subbed, ctx);
-      var num = (typeof v === "number" && isFinite(v)) ? Math.floor(v) : 0;
-      /* P0-7: the dice widget adds equippedBonuses(name).value into the roll
-         (see renderOneSkill), so the synced number must include it too — else
-         the "do NOT invent stats" block shows a value that contradicts rolls. */
-      num += (equippedBonuses(n) || {}).value || 0;
-      var sign = num >= 0 ? "+" : "";
-      fresh.push({ name: prefix + n, value: sign + String(num) });
-    } else {
-      fresh.push({ name: prefix + n, value: String(state.sheet.skills[n]) });
-    }
-  });
-
-  /* Custom skills (player-added Lores, Professions). Same compute path as
-     ruleset skills — if skillBonusFormula is set, write the bonus. */
-  if (Array.isArray(state.sheet.customSkills)) {
-    state.sheet.customSkills.forEach(function (sk) {
-      if (!sk || !sk.name) return;
-      if (skillFormula) {
-        var attrMod = 0;
-        if (sk.linkedAttribute) {
-          var mk = sk.linkedAttribute + "_mod";
-          if (typeof ctx[mk] === "number") attrMod = ctx[mk];
-        }
-        var t = tierForSkill(sk.name);
-        var tierBonus = (t && t.rollBonusFormula) ? evalFormula(t.rollBonusFormula, ctx) : 0;
-        if (tierBonus == null) tierBonus = 0;
-        var subbed = String(skillFormula)
-          .replace(/\{linkedAttribute_mod\}/g, String(attrMod))
-          .replace(/\{tierBonus\}/g, String(tierBonus));
-        var v = evalFormula(subbed, ctx);
-        var num = (typeof v === "number" && isFinite(v)) ? Math.floor(v) : 0;
-        /* P0-7: include equipped gear bonus, mirroring the dice widget. */
-        num += (equippedBonuses(sk.name) || {}).value || 0;
-        var sign = num >= 0 ? "+" : "";
-        fresh.push({ name: prefix + sk.name, value: sign + String(num) });
-      } else {
-        fresh.push({ name: prefix + sk.name, value: String(sk.value || 0) });
-      }
-    });
-  }
-
-  /* Saving throws — same compute path as skills, fallback to attr_mod
-     alone when skillBonusFormula is absent (no proficiency tier system). */
-  if (Array.isArray(state.ruleset && state.ruleset.saves)) {
-    state.ruleset.saves.forEach(function (sv) {
-      var attrMod = 0;
-      if (sv.linkedAttribute) {
-        var mk = sv.linkedAttribute + "_mod";
-        if (typeof ctx[mk] === "number") attrMod = ctx[mk];
-      }
-      var t = tierForSkill(sv.name);
-      var tierBonus = (t && t.rollBonusFormula) ? evalFormula(t.rollBonusFormula, ctx) : 0;
-      if (tierBonus == null) tierBonus = 0;
-      var num;
-      if (skillFormula) {
-        var subbed = String(skillFormula)
-          .replace(/\{linkedAttribute_mod\}/g, String(attrMod))
-          .replace(/\{tierBonus\}/g, String(tierBonus));
-        var v = evalFormula(subbed, ctx);
-        num = (typeof v === "number" && isFinite(v)) ? Math.floor(v) : 0;
-      } else {
-        num = attrMod + tierBonus;
-      }
-      /* P0-7: saves pick up equipped gear bonus in the dice widget (line
-         ~7012 uses bonuses.value + tierBonus); include it in the synced
-         value so injected numbers match what rolls produce. */
-      num += (equippedBonuses(sv.name) || {}).value || 0;
-      var sign = num >= 0 ? "+" : "";
-      fresh.push({ name: prefix + sv.name, value: sign + String(num) });
-    });
-  }
-
-  /* Derived stats — write both the stored value AND, when a valueFormula
-     is declared, the computed result. The stored value is what
-     refreshAutocalc has already persisted, so they should match — but
-     write the computed too in case localStorage is out of sync. */
-  Object.keys(state.sheet.derived || {}).forEach(function (n) {
-    fresh.push({ name: prefix + n, value: String(state.sheet.derived[n]) });
-  });
-
-  /* States (anima level, conditions). */
-  Object.keys(state.sheet.states || {}).forEach(function (n) {
-    fresh.push({ name: prefix + n, value: String(state.sheet.states[n]) });
-  });
-
-  /* Backgrounds / Feats / Merits — name+value pairs. */
-  if (Array.isArray(state.sheet.backgrounds) && state.sheet.backgrounds.length) {
-    var bgLabel = (state.ruleset && state.ruleset.backgrounds && state.ruleset.backgrounds.label) || "Background";
-    state.sheet.backgrounds.forEach(function (bg) {
-      if (!bg || !bg.name) return;
-      fresh.push({ name: prefix + bgLabel + ": " + bg.name, value: String(bg.value || 0) });
-    });
-  }
-
-  /* Experience progression — shape depends on resolution.mode. Both
-     formula and pool variants land in the tracker so the GM agent
-     can reference progression directly without re-deriving. */
-  if (state.sheet.xp && typeof state.sheet.xp === "object") {
-    var resModeXp = state.ruleset && state.ruleset.resolution && state.ruleset.resolution.mode;
-    if (resModeXp === "single-roll") {
-      fresh.push({ name: prefix + "XP Level",   value: String(state.sheet.xp.level   || 1) });
-      fresh.push({ name: prefix + "XP Current", value: String(state.sheet.xp.current || 0) });
-      if (typeof state.sheet.xp.next === "number" && state.sheet.xp.next > 0) {
-        fresh.push({ name: prefix + "XP Next", value: String(state.sheet.xp.next) });
-      }
-    } else if (resModeXp === "dice-pool") {
-      fresh.push({ name: prefix + "XP Current",      value: String(state.sheet.xp.current || 0) });
-      fresh.push({ name: prefix + "XP Total Earned", value: String(state.sheet.xp.total   || 0) });
-    }
-  }
-
-  /* Commitment summary — "in use / cap" for boolean models, total
-     mote cost broken down by pool for the Exalted model. Single
-     human-readable field per ruleset since a flat tracker doesn't
-     have room for per-item detail; the GM agent gets the budget
-     view it needs to know whether the player is over-committed. */
-  var commitModelSync = state.ruleset && state.ruleset.commitmentModel;
-  if (commitModelSync) {
-    var invSync = Array.isArray(state.sheet.inventory) ? state.sheet.inventory : [];
-    if (commitModelSync === "attuned") {
-      /* Always recompute from inventory — the attunedCount cache is
-         updated by openItemDialog + deleteItem but the agent state-
-         mutator may write attunement fields without going through
-         them, so a single source of truth (the inventory itself)
-         keeps every consumer honest. */
-      var ac = invSync.filter(function (it) { return it && it.attuned; }).length;
-      fresh.push({ name: prefix + "Attuned", value: String(ac) + " / 3" });
-    } else if (commitModelSync === "invested") {
-      var ic = invSync.filter(function (it) { return it && it.invested; }).length;
-      fresh.push({ name: prefix + "Invested", value: String(ic) + " / 10" });
-    } else if (commitModelSync === "mote") {
-      var personalSpent = 0, peripheralSpent = 0;
-      invSync.forEach(function (it) {
-        if (!it || !it.moteCommitment) return;
-        if (it.motePool === "Peripheral") peripheralSpent += it.moteCommitment;
-        else                              personalSpent   += it.moteCommitment;
-      });
-      var totalSpent = personalSpent + peripheralSpent;
-      fresh.push({
-        name: prefix + "Mote Commitment",
-        value: String(totalSpent) + " motes (Personal: " + personalSpent + ", Peripheral: " + peripheralSpent + ")"
-      });
-    }
-  }
-
-  return fresh;
-}
-
-/* ⚠️ ROUND-21 C1/F1 — THIS FUNCTION IS A CONFIRMED NO-OP AGAINST THE SERVER.
-   Kept, not deleted, per the corrections-pass scope (removal is a design call
-   for the replan, folded into B7/B8).
-
+   `syncSheetToChat` and its ~200-line field builder `buildSyncFields` are
+   deleted. They were a confirmed server-side no-op, not merely unused:
    `PATCH /chats/:id` parses its body with `createChatSchema.partial().parse(...)`
-   (chats.routes.ts:1001). `createChatSchema` (chat.schema.ts:11-19) declares
+   (chats.routes.ts:1001) and `createChatSchema` (chat.schema.ts:11-19) declares
    exactly `{name, mode, characterIds, groupId, personaId, promptPresetId,
-   connectionId}` — there is NO `customTrackerFields` key, and a plain Zod
-   object STRIPS unknown keys rather than rejecting them. So this PATCH returns
-   200, writes nothing, and the field reads back undefined forever. That has
-   been true at every engine version since 2.0.9, which means COUPLINGS row 5's
-   "57-field sheet sync to chat succeeded" was reading an HTTP 200 as a write —
-   it never was one. Row 5 is corrected accordingly.
+   connectionId}` — no `customTrackerFields`. A plain Zod object STRIPS unknown
+   keys instead of rejecting them, so the PATCH returned 200, wrote nothing, and
+   the field read back undefined. True at every engine version since 2.0.9, which
+   means the old "synced 47/57 fields" console lines were reporting an HTTP 200
+   as a write. It never was one.
 
-   The real home for this data is game-state `playerStats` (plan items B7/B8).
-   Until that lands, the sheet reaches the model exclusively through the agent
-   promptTemplate injection, which is why that path is load-bearing.
+   The cost was real even though the effect was not: a GET plus a PATCH on every
+   debounced save.
 
-   The round-19 captured-chatId fix below remains correct and is retained: it
-   closed a genuine cross-chat read-modify-write. It simply now guards a call
-   whose write half the server discards. */
-function syncSheetToChat() {
-  if (!state.chatId) { warn("no chat id; cannot sync"); return; }
-  var current = state.characters.find(function (c) { return c.id === state.activeCharacterId; });
-  /* P0-1 guard: a stale/absent activeCharacterId yields prefix === "", and
-     `indexOf("") === 0` matches EVERY field — the read-modify-write below
-     would then strip and re-write every character's synced fields, wiping
-     other characters' and any user-created customTrackerFields. Bail. */
-  if (!current) { warn("sync skipped: no active character for id " + state.activeCharacterId); return; }
-  var prefix = "[" + current.name + "] ";
-  /* Round-19 (found during the BUG-3 audit): capture the chat id ONCE, at
-     entry — the same pattern reconcileActiveAgents:14090 already uses.
-     This used to read `state.chatId` THREE separate times (the GET, the
-     PATCH inside the .then, and the log), so a chat switch during the GET
-     made this a cross-chat read-modify-write: chat A's customTrackerFields
-     were read, merged with the active character's fresh slice, and then
-     PATCHed onto chat B — clobbering chat B's own tracker fields with
-     chat A's merged set. Completing the write against the captured chat is
-     correct (the sync was initiated FOR that chat) and is all this needs;
-     no bail is required, only consistency. */
-  var syncChatId = state.chatId;
+   REPLACEMENT CHANNEL: game-state `playerStats` (plan items B7/B8). Until that
+   lands, the sheet reaches the model exclusively through the agent promptTemplate
+   injection built by `syncSheetToAgents` / `buildSheetForPrompt` — which is why
+   that path is load-bearing and was deliberately NOT touched here. The managed
+   lorebook field-reference sync (`syncFieldReferenceToLorebook`) also stands.
 
-  marinara.apiFetch("/chats/" + syncChatId).then(function (chat) {
-    var existing = (chat && chat.customTrackerFields) || [];
-    /* Read-modify-write so other characters' synced fields survive when we
-       update this character's slice. Strip our own prefix, then re-add. */
-    var kept = existing.filter(function (f) { return !f.name || f.name.indexOf(prefix) !== 0; });
-    var fresh = buildSyncFields(prefix);
-    var allFields = kept.concat(fresh);
-    return marinara.apiFetch("/chats/" + syncChatId, {
-      method: "PATCH",
-      body: JSON.stringify({ customTrackerFields: allFields })
-    }).then(function () { return fresh.length; });
-  }).then(function (n) {
-    log("synced " + n + " fields for " + (current ? current.name : "?") + " to chat " + syncChatId);
-  }).catch(function (e) {
-    warn("sync failed: " + (e && e.message ? e.message : e));
-  });
-}
-
+   The `/chats/:id/metadata` surface is unaffected and still works — it is how
+   `activeAgentIds` and the ruleset stamp round-trip. Only the customTrackerFields
+   write on `/chats/:id` is gone. */
 /* Render the current sheet as a human-readable markdown block that gets
    injected directly into each overlay agent's promptTemplate. This is
    the LLM's only reliable view of mechanical state — chats.customTracker
@@ -15188,13 +13937,17 @@ function mrrCheckChatRulesetStamp(chatId) {
 
 /* Auto-sync on save: fires a debounced sync 1.5s after the last
    saveSheet call so a burst of typing collapses into a single round of
-   PATCHes. Three surfaces fire: the chat's customTrackerFields (UI
-   tracker panel), each managed overlay agent's promptTemplate (the
-   primary path that reaches our overlay agents), and the managed
-   lorebook's field-reference entry (the path that reaches the MAIN
-   narrator, which emits the [mrr-state: ...] tags). Triple coverage
-   so the LLM sees canonical field names whichever surface its prompt
-   builder samples from. */
+   PATCHes. TWO surfaces fire (round 27 — was three): each managed overlay
+   agent's promptTemplate (the primary path that reaches our overlay
+   agents), and the managed lorebook's field-reference entry (the path
+   that reaches the MAIN narrator, which emits the [mrr-state: ...] tags).
+   Dual coverage so the LLM sees canonical field names whichever surface
+   its prompt builder samples from.
+
+   The third leg — a customTrackerFields PATCH to the chat via
+   syncSheetToChat — is gone. The server had been Zod-stripping that key
+   since 2.0.9, so it burned a GET + a PATCH per save and stored nothing.
+   See the REMOVED tombstone where syncSheetToChat used to live. */
 var autoSyncTimer = null;
 function scheduleAutoSync() {
   if (autoSyncTimer) clearTimeout(autoSyncTimer);
@@ -15204,7 +13957,6 @@ function scheduleAutoSync() {
        agents or recreate the field-reference lorebook entry an in-flight
        uninstall is busy removing. */
     if (state.installing) { warn("auto-sync skipped: install/uninstall in progress"); return; }
-    try { syncSheetToChat(); } catch (e) { warn("auto-sync chat threw: " + e); }
     try { syncSheetToAgents(); } catch (e) { warn("auto-sync agents threw: " + e); }
     try { syncFieldReferenceToLorebook(); } catch (e) { warn("auto-sync lorebook threw: " + e); }
   }, 1500);
@@ -16800,9 +15552,10 @@ function resolveSheetField(sheet, field) {
    confirmation co-located in one place so they cannot drift. */
 /* finalizeMutation's four duties (audited for round-9 fix 5d): (1)
    saveSheet — persists the sheet AND, as a side effect of saveSheet
-   itself, schedules the existing 1.5s-debounced 3-surface autosync
-   (chat customTrackerFields / overlay-agent prompts / field-reference
-   lorebook — see scheduleAutoSync); (2) renderSheet — redraws the DOM;
+   itself, schedules the existing 1.5s-debounced 2-surface autosync
+   (overlay-agent prompts / field-reference lorebook — see
+   scheduleAutoSync; the chat customTrackerFields leg was removed in
+   round 27); (2) renderSheet — redraws the DOM;
    (3) state.mutationLog append (a rolling 20-entry log, no reader found
    elsewhere in this file beyond capping its own length — display TBD/
    future use); (4) showMutationToast — the player-visible "X changed by
@@ -17624,16 +16377,18 @@ function applyStateMutation(attrs) {
   return finalizeMutation(attrs);
 }
 
-/* Round-26: `isChildListOrigin` (second arg) is now VESTIGIAL. Round 15
-   added it to gate a cosmetic hideStateTagsInElement(node) call at the
-   tail of this function; round 26 deleted that call and the function
-   outright. Its `node.innerHTML = wrapped` re-parsed the whole message
-   subtree, so React's rendered hover action bar became fiber-less clones
-   — swipe/edit/regenerate visible but completely inert. Convicted live by
-   the extension-off test 2026-08-23. Tags now render visibly; cosmetic
-   hiding moves to engine-native regexScripts in a future round.
-   Detection/journal/apply logic never depended on either. */
-function processChatMessage(node, isChildListOrigin) {
+/* Round-27: the vestigial `isChildListOrigin` second parameter is gone. Round
+   15 added it to gate a cosmetic hideStateTagsInElement(node) call at the tail
+   of this function; round 26 deleted that call and the function outright (its
+   `node.innerHTML = wrapped` re-parsed the whole message subtree, so React's
+   hover action bar came back as fiber-less clones — swipe/edit/regenerate
+   visible but completely inert, convicted live by the extension-off test on
+   2026-08-23) and left the parameter threaded through for one round. Nothing
+   read it after that, so the whole origin-tracking chain — this parameter,
+   watchChatMessages' pendingOrigin map, and the wasChildList threading through
+   schedule() — is unwound here. Detection, journaling, and apply logic never
+   depended on any of it. */
+function processChatMessage(node) {
   if (!node || !node.getAttribute) return;
   var msgId = node.getAttribute("data-message-id");
   if (!msgId) return;
@@ -18550,12 +17305,11 @@ function watchChatMessages() {
      so pending parses cannot fire after the extension is disabled. */
   var pendingTokens = Object.create(null);
   var nextToken = 0;
-  /* Round-15 hotfix: per-message "was any observation in this debounce
-     window a childList mutation" flag, OR-merged across every schedule()
-     call for that msgId until the timer actually fires. Round 26: the
-     innerHTML rewrite this gated is gone, so the flag is now vestigial —
-     kept only so schedule()'s signature stays stable. */
-  var pendingOrigin = Object.create(null);
+  /* Round-27: the `pendingOrigin` map that used to live here is gone. It was a
+     round-15 per-message "was any observation in this debounce window a
+     childList mutation" flag, OR-merged across schedule() calls, existing only
+     to gate round 26's deleted innerHTML rewrite. Nothing has read the origin
+     since. */
   /* Round-24: per-message re-deferral counter for the write-gate check in
      schedule()'s timer body. 20 tries x the 1500ms debounce = ~30s, the
      same order as MRR_AUTOSWITCH_GUARD_TTL_MS. */
@@ -18577,33 +17331,22 @@ function watchChatMessages() {
     }
     return null;
   }
-  /* Round-15 hotfix: `isChildListOrigin` — true when THIS particular
-     observation came from a childList mutation (a new/moved/removed
-     element), false for a characterData-only one (streamed text landing
-     via node.nodeValue writes, per round 14's Task A). OR-merged into
-     pendingOrigin[msgId] rather than overwritten, so a childList
-     observation earlier in the same debounce window is never forgotten
-     by a later characterData-only one before the timer fires. */
-  function schedule(msgEl, isChildListOrigin) {
+  function schedule(msgEl) {
     if (!msgEl || !msgEl.getAttribute) return;
     var msgId = msgEl.getAttribute("data-message-id");
     if (!msgId) return;
     /* Round-17 TASK 1: earliest possible bail — a placeholder id (see
-       mrrIsPlaceholderMessageId) would otherwise churn pendingOrigin/
-       pendingTokens on every streamed token (characterData fires
-       constantly on the live element) and eventually reach
-       processChatMessage, which now also gates it independently. Skipping
-       here avoids the debounce-scheduling churn entirely, not just the
-       downstream state-touching. */
+       mrrIsPlaceholderMessageId) would otherwise churn pendingTokens on
+       every streamed token (characterData fires constantly on the live
+       element) and eventually reach processChatMessage, which now also
+       gates it independently. Skipping here avoids the debounce-scheduling
+       churn entirely, not just the downstream state-touching. */
     if (mrrIsPlaceholderMessageId(msgId)) return;
-    pendingOrigin[msgId] = !!pendingOrigin[msgId] || !!isChildListOrigin;
     var myToken = ++nextToken;
     pendingTokens[msgId] = myToken;
     marinara.setTimeout(function () {
       if (pendingTokens[msgId] !== myToken) return; /* superseded by newer schedule */
       delete pendingTokens[msgId];
-      var wasChildList = !!pendingOrigin[msgId];
-      delete pendingOrigin[msgId];
       /* ─── Round-24: the narrator DOM path is the OTHER async sheet writer,
          and it has the same hazard the runs poller does (see the gate at the
          top of pollCustomAgentRuns): processing a tag-bearing message while
@@ -18622,33 +17365,29 @@ function watchChatMessages() {
       if (msgBlock) {
         var tries = (mrrMsgDeferCounts[msgId] || 0) + 1;
         mrrMsgDeferCounts[msgId] = tries;
-        if (tries <= MRR_MSG_DEFER_MAX_TRIES) { schedule(msgEl, wasChildList); return; }
+        if (tries <= MRR_MSG_DEFER_MAX_TRIES) { schedule(msgEl); return; }
         delete mrrMsgDeferCounts[msgId];
         warn("message " + msgId + " deferred " + MRR_MSG_DEFER_MAX_TRIES + " times while sheet writes were blocked (" +
              msgBlock.code + ") — dropping this observation UNPROCESSED (not marked applied) so a later reload can re-process it. " + msgBlock.msg);
         return;
       }
       delete mrrMsgDeferCounts[msgId];
-      processChatMessage(msgEl, wasChildList);
+      processChatMessage(msgEl);
     }, 1500);
   }
 
   var obs = new MutationObserver(function (records) {
     for (var i = 0; i < records.length; i++) {
       var rec = records[i];
-      var isChildList = rec.type === "childList";
       var msg = findParentMessage(rec.target);
-      if (msg) schedule(msg, isChildList);
+      if (msg) schedule(msg);
       for (var j = 0; j < rec.addedNodes.length; j++) {
         var n = rec.addedNodes[j];
         if (!n || n.nodeType !== 1) continue;
-        /* addedNodes only ever exist on a childList record — always
-           childList-origin regardless of the outer isChildList check
-           above (which is redundant here but kept explicit on purpose). */
-        if (n.hasAttribute && n.hasAttribute("data-message-id")) schedule(n, true);
+        if (n.hasAttribute && n.hasAttribute("data-message-id")) schedule(n);
         if (n.querySelectorAll) {
           var msgs = n.querySelectorAll("[data-message-id]");
-          for (var k = 0; k < msgs.length; k++) schedule(msgs[k], true);
+          for (var k = 0; k < msgs.length; k++) schedule(msgs[k]);
         }
       }
     }
@@ -18714,9 +17453,7 @@ function watchChatMessages() {
        already gate on their own. */
     if (mrrIsPlaceholderMessageId(mid)) continue;
     if (mid && isMessageProcessed(mid, null)) continue; /* FIX-2: shared helper — plain, composite-exact (n/a, idx null), and prefix-scan checks */
-    /* Static, already-rendered elements at extension-load time (not a
-       live stream), so childList-origin=true. */
-    schedule(el, true);
+    schedule(el);
   }
 }
 
@@ -18788,11 +17525,11 @@ function init() {
   watchChatMessages();
   exposeDebug();
   log("activated ruleset " + rs.id + " v" + rs.version + " on chat " + (state.chatId || "(none)") + " as " + state.activeCharacterId);
-  /* Initial sync to chat customTrackerFields so the overlay agents see
-     current sheet state on the very first generation after activation,
-     not just after the user's first edit. Debounced via the same path
-     as saveSheet so multiple activations on a fast SPA route change
-     coalesce into one PATCH. */
+  /* Initial sync so the overlay agents (and the field-reference lorebook
+     entry) see current sheet state on the very first generation after
+     activation, not just after the user's first edit. Debounced via the
+     same path as saveSheet so multiple activations on a fast SPA route
+     change coalesce into one round of PATCHes. */
   if (typeof scheduleAutoSync === "function") scheduleAutoSync();
   /* Round-24: the unconditional `reconcileActiveAgents(true)` that used to
      live here has MOVED into mrrConfirmChatRuleset. Reason (full write-up
