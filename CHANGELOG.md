@@ -7,6 +7,13 @@ Version numbers follow [Semantic Versioning](https://semver.org/) once a 1.0
 release is cut; pre-1.0 minor bumps may include breaking changes (called out
 explicitly when they do).
 
+### Added (overnight docs+tooling round, 2026-08-24)
+- **Artifact freshness gate (`tools/check-freshness.mjs`, `npm run check:freshness`).** Re-runs the full build pipeline — every ruleset bundle and agents file, the loader's embedded CSS, and the release package — against the current working tree and asserts a zero diff. Clean tree in, clean tree out. Committed sources can no longer silently drift from committed artifacts. Refuses to judge a tree whose artifact paths are already dirty (exit 2; `--allow-dirty` overrides), leaves rebuilt files in place on failure so `git diff` shows the drift, and holds the two non-reproducible values constant (release-zip mtimes excluded — its payload is byte-checked separately; `exportedAt` pinned to the committed value). Verified FRESH at `edd01d4`.
+- **npm scripts for every tool that lacked one** — `build-extension-package`, `validate-extension-package`, `build-character-card`, and the five preview CLIs.
+- **INSTALL.md for `coc7e`, `gurps-lite`, `pathfinder2e`, `stewpot`, `trophy-dark`** — per-ruleset facts read from each `bundle.json`, sanity-check tags taken from the loader's actual output (the authored `diceTagFormat` examples disagree in three places).
+- **`COUPLINGS.md` "Ledger discipline."** A `confirmed` row now carries a verification date + engine version and expires to `stale-recheck` on any engine minor bump (round 21 found three `confirmed` rows false; nothing in the ledger forced a re-look).
+
+
 ## [Unreleased]
 
 Pending the next published release. New entries land here between releases;
