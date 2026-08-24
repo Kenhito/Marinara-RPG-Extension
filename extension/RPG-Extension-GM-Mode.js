@@ -1767,6 +1767,23 @@ function installBundle(bundle, progressCb) {
         return addChain;
       });
     }).then(function () {
+      /* Round 28 trigger point #1. A reinstall mints NEW agent types (the
+         engine collision-suffixes them and never mutates an existing row's
+         type), so every preset marker section this ruleset owns is now
+         pointing at a type that no longer exists — and the engine discards
+         unplaced agent output silently. Repoint them here, while we still
+         know which ruleset was just installed, rather than leaving the user
+         to re-run "Add agent sections to active preset" by hand.
+         force:true also clears the mutator config-id cache, whose ids the
+         reinstall just invalidated. Never fails the install. */
+      progress("Reconciling agent bindings...");
+      return mrrReconcileAgentBindings({
+        rulesetId: rulesetId,
+        reason: "bundle install",
+        force: true,
+        progressCb: progressCb
+      }).catch(function () { return null; });
+    }).then(function () {
       progress("Done. Reloading...");
       return { rulesetId: rulesetId, authorId: authorId };
     });
@@ -2141,6 +2158,13 @@ function mrrConfirmChatRuleset(chatId, why) {
      by definition has no such mismatch) EXCEPT on the deliberate-switch
      path, which is the one case where we genuinely do want the rebind. */
   if (typeof reconcileActiveAgents === "function") reconcileActiveAgents(true);
+  /* Round 28 trigger point #2: the confirmation chokepoint. The chat's
+     ruleset is settled here and nowhere earlier, so this is the first moment
+     the marker pass can know which ruleset's agents the preset should be
+     pointing at. Gated on (chatId, rulesetId) internally — the steady state
+     is a string compare, not a fetch. No stamp re-derivation from here: the
+     stamp check has already done it on this chat's way in. */
+  if (typeof mrrReconcileAgentBindings === "function") mrrReconcileAgentBindings({ reason: "chat ruleset confirmed" });
 }
 
 /* The latch must reset on EVERY chat change — called from watchRouteChanges
@@ -2154,6 +2178,10 @@ function mrrResetRulesetLatch() {
   mrrStampHeldChatId = null;
   mrrStampWarnedChatId = null;
   mrrStampFetchWarnedChatId = null;
+  /* Round 28: both per-chat one-shots reset with the latch — the new chat
+     gets its own derivation attempt and its own preset-watch baseline. */
+  mrrStampDeriveTriedChatId = null;
+  mrrPresetWatchTs = 0;
 }
 
 /* ─── reload-loop sentinel ───
@@ -13806,6 +13834,403 @@ function reconcileActiveAgents(rebind) {
   });
 }
 
+/* ═══ ROUND 28 — the standing binding reconciliation ═══════════════════════
+   Two engine behaviors quietly rot the two bindings we store:
+
+   F3 (marker orphaning). An agent's `type` is immutable after create and
+   COLLISION-SUFFIXED on recreate — getUniqueCustomType() appends
+   suffixFromId(id) (the row id's first 8 [A-Za-z0-9_-] chars), then
+   "-2", "-3", ... on further collisions (agents.storage.ts:124-136, since
+   1.5.6). Our preset marker sections are keyed by that type on BOTH sides:
+   markerConfig.agentType AND the `{{agent::<type>}}` macro in the section
+   body (assembler.ts:845, :878). Uninstall -> reinstall mints new types, so
+   every marker section becomes an orphan pointing at a dead type, and on
+   2.4.0+ the engine discards those agents' output entirely — silently. The
+   old advice was "re-run Add agent sections to active preset by hand"; this
+   pass removes the need for it.
+
+   F4 (metadata wipe). Applying an engine chat-preset REPLACES chat metadata
+   wholesale: newMetadata = baseDefaults + presetMetadata + a short
+   `preserved` allow-list + appliedChatPresetId (chat-presets.storage.ts
+   :300-325). No `mrr*` key is on that list, so our `mrrChatRulesetId` stamp
+   is erased — and because preset metadata is portable between chats, a stamp
+   belonging to a DIFFERENT chat can be carried in. The stamp therefore has
+   to be advisory (re-derivable), never a single point of truth.
+
+   The durable identity is the SETTINGS TAGS — mrrManaged / mrrRulesetId /
+   mrrAgentRole. The installer writes them into every row it creates, so they
+   survive a reinstall unchanged; types and chat metadata do not. Everything
+   below re-derives from the tags instead of trusting either stored key. */
+
+/* Engine collision-suffix grammar: suffixFromId slices to 8 chars from
+   [A-Za-z0-9_-], optionally followed by "-<attempt>" from the retry loop. */
+var MRR_TYPE_SUFFIX_RE = /^[A-Za-z0-9_-]{1,8}(?:-[0-9]+)?$/;
+var MRR_PRESET_WATCH_MS = 60000;      /* how often a SETTLED chat is re-read to notice a chat-preset apply */
+
+var mrrReconcileDoneKey = null;       /* "<chatId>|<rulesetId>" already reconciled — the cheap idempotency gate */
+var mrrReconcilePromise = null;       /* one pass at a time; a second trigger joins the in-flight one */
+var mrrReconcileNoPresetLoggedChatId = null;
+var mrrReconcileStockPresetWarnedId = null;
+var mrrManagedAgentSig = Object.create(null);   /* rulesetId -> id:type signature of its managed rows, to spot a reinstall */
+var mrrAppliedChatPresetSeen = Object.create(null); /* chatId -> last observed metadata.appliedChatPresetId */
+var mrrStampDeriveTriedChatId = null; /* one derivation attempt per chat entry — never a per-tick fetch */
+var mrrPresetWatchTs = 0;
+var mrrPresetWatchInFlight = false;
+var mrrPresetWatchWarned = false;
+
+/* chat.metadata arrives as a JSON STRING from the engine's chat routes. */
+function mrrChatMeta(chat) {
+  if (chat && typeof chat.metadata === "string") return safeParse(chat.metadata) || {};
+  return (chat && chat.metadata) || {};
+}
+
+/* role -> CURRENT type, for the managed agents of one ruleset. First row per
+   role wins (the installer creates exactly one). Roles come from the settings
+   tag; a row with no mrrAgentRole is the main gmAgent, same convention
+   findManagedAgent uses. */
+function mrrManagedRoleTypes(agents, rulesetId) {
+  var map = Object.create(null);
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    if (!a || typeof a.type !== "string" || !a.type) continue;
+    var s = parseAgentSettings(a);
+    if (!s || s.mrrManaged !== true || s.mrrRulesetId !== rulesetId) continue;
+    var role = (typeof s.mrrAgentRole === "string" && s.mrrAgentRole) ? s.mrrAgentRole : "main";
+    if (!map[role]) map[role] = a.type;
+  }
+  return map;
+}
+
+/* Every type the server currently knows about — MRR or not. A marker whose
+   type is in here is by definition not orphaned and is never touched. */
+function mrrLiveAgentTypes(agents) {
+  var set = Object.create(null);
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var t = list[i] && list[i].type;
+    if (typeof t === "string" && t) set[t] = true;
+  }
+  return set;
+}
+
+/* Which of OUR roles a dead type used to belong to, or null.
+   The type string is the only evidence a dead marker carries, so it is parsed
+   against the naming scheme that produced it:
+
+     base(role) = mrrAgentTypeForRole(role)   ("mrr-overlay-v1" for main,
+                                               "mrr-overlay-v1-<slug>" else)
+     candidate  = base            (installed with no collision)
+                | base + "-" + S  (S matching the engine's suffix grammar)
+
+   LONGEST base wins, because main's base is a prefix of every other role's
+   base — without that rule "mrr-overlay-v1-lore-query" would resolve to main
+   with "lore-query" read as a collision suffix. The suffix regex is the
+   second guard: a real suffix is at most 8 chars (+ "-N"), which alone
+   disqualifies most role slugs. Only roles that exist RIGHT NOW are
+   candidates, so a marker for a role the bundle has dropped resolves to
+   null and is left alone. */
+function mrrRoleForOrphanType(orphanType, roleTypes) {
+  if (typeof orphanType !== "string" || !orphanType) return null;
+  if (orphanType.indexOf(MRR_AGENT_TYPE) !== 0) return null;   /* not our naming scheme -> not ours -> never touched */
+  var best = null;
+  var bestLen = -1;
+  for (var role in roleTypes) {
+    if (!Object.prototype.hasOwnProperty.call(roleTypes, role)) continue;
+    var base = mrrAgentTypeForRole(role);
+    var rest = null;
+    if (orphanType === base) rest = "";
+    else if (orphanType.indexOf(base + "-") === 0) rest = orphanType.slice(base.length + 1);
+    else continue;
+    if (rest && !MRR_TYPE_SUFFIX_RE.test(rest)) continue;
+    if (base.length > bestLen) { bestLen = base.length; best = role; }
+  }
+  return best;
+}
+
+/* Signature of a ruleset's managed rows. A reinstall changes ids AND types,
+   so a changed signature is exactly the condition under which every id-keyed
+   cache downstream (the state-mutator config id) is stale. */
+function mrrManagedAgentSignatureFor(agents, rulesetId) {
+  var parts = [];
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    if (!a) continue;
+    var s = parseAgentSettings(a);
+    if (!s || s.mrrManaged !== true || s.mrrRulesetId !== rulesetId) continue;
+    parts.push(String(a.id) + ":" + String(a.type));
+  }
+  parts.sort();
+  return parts.join(",");
+}
+
+/* mrrResolveMutatorConfigId caches the mutator's ROW ID per ruleset and only
+   re-resolves when the active ruleset changes — which a reinstall does not
+   do. Clearing the ruleset key is what forces the next poll to re-resolve.
+   The round-23 bucket claims, the round-24 latch and the sole-writer filter
+   all key off config ids/settings resolved per-poll, so they pick the new id
+   up on the very next cycle with nothing else to reset. */
+function mrrInvalidateMutatorCache(why) {
+  if (mrrMutatorConfigIdRulesetId === undefined && mrrMutatorConfigId === null) return;
+  mrrMutatorConfigId = null;
+  mrrMutatorConfigIdRulesetId = undefined;
+  mrrMutatorFilterWarned = false;
+  log("reconcile: cleared the state-mutator config-id cache — " + why);
+}
+
+/* The ruleset this chat's own active agents say it belongs to, or null when
+   the answer is absent or ambiguous. Reads BOTH type and legacy row id,
+   because pre-round-20 installs pushed row ids into activeAgentIds. */
+function mrrDeriveRulesetFromChatAgents(meta, agents) {
+  var active = Array.isArray(meta && meta.activeAgentIds) ? meta.activeAgentIds : [];
+  if (!active.length) return null;
+  var owner = Object.create(null);
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    if (!a) continue;
+    var s = parseAgentSettings(a);
+    if (!s || s.mrrManaged !== true || typeof s.mrrRulesetId !== "string" || !s.mrrRulesetId) continue;
+    if (typeof a.type === "string" && a.type) owner[a.type] = s.mrrRulesetId;
+    if (typeof a.id === "string" && a.id) owner[a.id] = s.mrrRulesetId;
+  }
+  var found = null;
+  for (var j = 0; j < active.length; j++) {
+    var rid = owner[active[j]];
+    if (!rid) continue;
+    if (found && found !== rid) return null;   /* managed agents disagree -> unchanged behavior */
+    found = rid;
+  }
+  return found;
+}
+
+/* F4 recovery. Called ONLY for a chat whose metadata carries no
+   mrrChatRulesetId: re-derives the stamp from the chat's own managed agents
+   and writes it back, so a preset apply that wiped it doesn't read as "never
+   stamped" (which would let the ACTIVE ruleset claim the chat). Resolves to
+   the derived id or null; never throws. */
+function mrrDeriveAndRestampChat(chatId, meta, opts) {
+  opts = opts || {};
+  if (!opts.force && mrrStampDeriveTriedChatId === chatId) return Promise.resolve(null);
+  mrrStampDeriveTriedChatId = chatId;
+  /* No agent list on the chat = nothing to derive FROM. Costs zero fetches. */
+  if (!Array.isArray(meta && meta.activeAgentIds) || !meta.activeAgentIds.length) return Promise.resolve(null);
+  var agentsP = opts.agents ? Promise.resolve(opts.agents) : apiFetch("/agents");
+  return agentsP.then(function (agents) {
+    var derived = mrrDeriveRulesetFromChatAgents(meta, agents);
+    if (!derived) return null;
+    return apiFetch("/chats/" + encodeURIComponent(chatId) + "/metadata", {
+      method: "PATCH",
+      body: JSON.stringify({ mrrChatRulesetId: derived })
+    }).then(function () {
+      log("re-derived chat ruleset stamp '" + derived + "' from managed agents (preset apply likely wiped it) — chat " + chatId);
+      return derived;
+    });
+  }).catch(function (e) {
+    warn("stamp re-derivation failed for chat " + chatId + " (" + (e && e.message ? e.message : e) +
+         ") — treating the chat as unstamped");
+    return null;
+  });
+}
+
+/* F3 repair. Repoints this preset's orphaned MRR agent_data markers at the
+   live types. Both keys are rewritten together — markerConfig.agentType and
+   the `{{agent::TYPE}}` macro in the body — because the assembler reads the
+   macro through ctx.macroCtx.agentData[agentType] and a mismatch between the
+   two produces an empty section. `identifier` is deliberately NOT rewritten:
+   updatePromptSectionSchema omits it (prompt.schema.ts:186-188), and it is
+   inert for marker resolution. */
+function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progress) {
+  var presetId = chat && chat.promptPresetId;
+  if (!presetId) {
+    /* No preset on the chat: the server has no fallback, so there are no
+       sections to reconcile. NOT the place to attach one — that is the
+       explicit, consent-gated job of mrrAddAgentSectionsToActivePreset. */
+    if (mrrReconcileNoPresetLoggedChatId !== chatId) {
+      mrrReconcileNoPresetLoggedChatId = chatId;
+      log("reconcile: chat " + chatId + " has no prompt preset — no agent marker sections to reconcile");
+    }
+    return Promise.resolve();
+  }
+  var roleTypes = mrrManagedRoleTypes(agents, rulesetId);
+  var roleCount = 0;
+  for (var k in roleTypes) { if (Object.prototype.hasOwnProperty.call(roleTypes, k)) roleCount++; }
+  if (!roleCount) return Promise.resolve();     /* nothing managed installed for this ruleset */
+  var live = mrrLiveAgentTypes(agents);
+
+  return apiFetch("/prompts/" + encodeURIComponent(presetId) + "/full").then(function (full) {
+    var sections = (full && Array.isArray(full.sections)) ? full.sections : [];
+    var presetName = (full && full.preset && full.preset.name) || presetId;
+    /* Types already placed in this preset — including the ones we are about
+       to write. Guarantees we never mint a second section for a type: the
+       engine mints ONE token per type and consumes it on first substitution,
+       so a duplicate could never fill. */
+    var claimed = mrrExistingAgentSectionTypes(sections);
+    var work = [];
+    for (var i = 0; i < sections.length; i++) {
+      var sec = sections[i];
+      if (!sec || !sec.id || !sec.markerConfig) continue;
+      var mc = sec.markerConfig;
+      if (typeof mc === "string") mc = safeParse(mc);
+      if (!mc || typeof mc !== "object" || mc.type !== "agent_data") continue;
+      var t = mc.agentType;
+      if (typeof t !== "string" || !t) continue;
+      if (live[t]) continue;                                  /* points at a live agent — leave alone */
+      var role = mrrRoleForOrphanType(t, roleTypes);
+      if (!role) continue;                                    /* not ours, or a role that no longer exists */
+      var target = roleTypes[role];
+      if (!target || target === t) continue;
+      if (claimed[target]) {
+        log("reconcile: orphaned marker '" + t + "' maps to role '" + role + "', whose live type '" + target +
+            "' already has a section — leaving the orphan alone (delete it by hand if it is stale)");
+        continue;
+      }
+      claimed[target] = true;
+      work.push({ id: sec.id, from: t, to: target, role: role });
+    }
+    if (!work.length) return;
+    progress("Repointing " + work.length + " agent marker section(s)...");
+    return work.reduce(function (c, w) {
+      return c.then(function () {
+        return apiFetch("/prompts/" + encodeURIComponent(presetId) + "/sections/" + encodeURIComponent(w.id), {
+          method: "PATCH",
+          body: JSON.stringify({
+            content: "{{agent::" + w.to + "}}",
+            markerConfig: { type: "agent_data", agentType: w.to }
+          })
+        }).then(function () {
+          out.rewritten++;
+          log("reconcile: repointed the '" + w.role + "' agent marker from dead type '" + w.from + "' to '" + w.to + "'");
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      if (out.rewritten > 0) {
+        log("reconciled " + out.rewritten + " orphaned agent marker(s) after reinstall — preset \"" + presetName +
+            "\" now points at the live agent types");
+      }
+    });
+  }).catch(function (e) {
+    if (e && e.status === 409) {
+      if (mrrReconcileStockPresetWarnedId !== presetId) {
+        mrrReconcileStockPresetWarnedId = presetId;
+        warn("reconcile: preset is read-only (the stock \"Marinara Universal\" preset refuses every mutation) — " +
+             "its orphaned agent markers cannot be repaired. Save a copy, select it for this chat, and re-run the install.");
+      }
+      return;
+    }
+    warn("reconcile: preset marker pass failed: " + (e && e.message ? e.message : e));
+  });
+}
+
+/* The standing pass. Idempotent, gated on (chatId, rulesetId) so the cheap
+   case is a string compare and zero fetches. Two fetches when it does run
+   (GET /chats/:id + GET /agents), plus one GET /prompts/:id/full when the
+   chat actually has a preset. Never throws; never blocks its caller.
+   opts: { chatId, rulesetId, reason, force, rederiveStamp, progressCb }. */
+function mrrReconcileAgentBindings(opts) {
+  opts = opts || {};
+  var rulesetId = opts.rulesetId || (state.ruleset && state.ruleset.id);
+  var chatId = opts.chatId || state.chatId;
+  var reason = opts.reason || "unspecified";
+  function progress(m) { if (opts.progressCb) opts.progressCb(m); }
+  var out = { rewritten: 0, restamped: null };
+  if (!rulesetId || !chatId) return Promise.resolve(out);
+  var key = chatId + "|" + rulesetId;
+  if (!opts.force && mrrReconcileDoneKey === key) return Promise.resolve(out);
+  if (mrrReconcilePromise) return mrrReconcilePromise;
+  /* Claim the gate BEFORE the async work so a per-tick caller cannot pile up;
+     a failure clears it again so the next trigger retries. */
+  mrrReconcileDoneKey = key;
+
+  mrrReconcilePromise = Promise.all([
+    apiFetch("/chats/" + encodeURIComponent(chatId)),
+    apiFetch("/agents")
+  ]).then(function (r) {
+    var chat = r[0];
+    var agents = r[1];
+    /* The user can switch chats mid-fetch; this answer describes a chat we
+       have already left. Same stale-chat guard the runs poller uses. */
+    if (state.chatId !== chatId && !opts.force) return out;
+    var meta = mrrChatMeta(chat);
+    mrrAppliedChatPresetSeen[chatId] = (typeof meta.appliedChatPresetId === "string") ? meta.appliedChatPresetId : null;
+
+    var sig = mrrManagedAgentSignatureFor(agents, rulesetId);
+    var prevSig = mrrManagedAgentSig[rulesetId];
+    if (opts.force || (prevSig !== undefined && prevSig !== sig)) {
+      mrrInvalidateMutatorCache("managed agent rows changed for ruleset '" + rulesetId + "' (" + reason + ")");
+    }
+    mrrManagedAgentSig[rulesetId] = sig;
+
+    /* Stamp re-derivation runs here ONLY for triggers that reach a chat
+       already past the stamp check (a mid-session preset apply). On chat
+       entry the check itself does it, BEFORE reconcileActiveAgents can claim
+       an unstamped chat for the active ruleset — running it in both places
+       at once would put the two writers in a race over the same field. */
+    var stampChain = (opts.rederiveStamp && !meta.mrrChatRulesetId)
+      ? mrrDeriveAndRestampChat(chatId, meta, { force: true, agents: agents }).then(function (d) { out.restamped = d; })
+      : Promise.resolve();
+
+    return stampChain.then(function () {
+      return mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progress);
+    }).then(function () { return out; });
+  }).catch(function (e) {
+    mrrReconcileDoneKey = null;
+    warn("mrrReconcileAgentBindings failed (" + reason + "): " + (e && e.message ? e.message : e));
+    return out;
+  }).then(function (res) {
+    mrrReconcilePromise = null;
+    return res;
+  });
+  return mrrReconcilePromise;
+}
+
+/* Detects a chat-preset apply on a SETTLED chat, which the stamp check can no
+   longer see (it returns early once the chat is confirmed). One GET per
+   minute per chat, and only while a chat is confirmed and no install is in
+   flight. `appliedChatPresetId` is written by the engine's own applyToChat
+   (chat-presets.storage.ts:324), so a change in it is proof that the wipe
+   just happened. */
+function mrrWatchAppliedChatPreset(chatId) {
+  if (!chatId) return;
+  if (!state.ruleset || !state.ruleset.id) return;
+  if (state.installing) return;
+  if (mrrRulesetConfirmedChatId !== chatId) return;
+  if (mrrPresetWatchInFlight) return;
+  var now = Date.now();
+  if (now - mrrPresetWatchTs < MRR_PRESET_WATCH_MS) return;
+  mrrPresetWatchTs = now;
+  mrrPresetWatchInFlight = true;
+  apiFetch("/chats/" + encodeURIComponent(chatId)).then(function (chat) {
+    mrrPresetWatchInFlight = false;
+    if (state.chatId !== chatId) return;
+    var meta = mrrChatMeta(chat);
+    var applied = (typeof meta.appliedChatPresetId === "string") ? meta.appliedChatPresetId : null;
+    var had = Object.prototype.hasOwnProperty.call(mrrAppliedChatPresetSeen, chatId);
+    var prev = had ? mrrAppliedChatPresetSeen[chatId] : undefined;
+    mrrAppliedChatPresetSeen[chatId] = applied;
+    if (!had || prev === applied) return;
+    log("chat " + chatId + " had a chat-preset applied (appliedChatPresetId " + (prev || "(none)") + " -> " +
+        (applied || "(none)") + ") — an apply replaces chat metadata wholesale, so re-running the binding reconciliation");
+    mrrStampDeriveTriedChatId = null;
+    mrrReconcileAgentBindings({
+      chatId: chatId, reason: "chat-preset applied", force: true, rederiveStamp: true
+    }).then(function () {
+      /* PASSIVE reconcile deliberately: the apply may also have replaced
+         activeAgentIds, and the passive path re-unions the managed types
+         while still refusing to touch a chat stamped for another ruleset. */
+      if (typeof reconcileActiveAgents === "function") reconcileActiveAgents();
+    });
+  }).catch(function (e) {
+    mrrPresetWatchInFlight = false;
+    if (!mrrPresetWatchWarned) {
+      mrrPresetWatchWarned = true;
+      warn("mrrWatchAppliedChatPreset: could not read chat " + chatId + " (" + (e && e.message ? e.message : e) +
+           ") — a chat-preset apply may go unnoticed until the next chat switch");
+    }
+  });
+}
+
 /* ═══ ROUND 24 PART 1 — auto-switch the ruleset on chat enter ══════════════
    Finishes the "Phase 2" that commit fd6d755 (2026-05-16) explicitly
    deferred when it introduced the `mrrChatRulesetId` stamp. Until now that
@@ -13858,11 +14283,10 @@ function mrrCheckChatRulesetStamp(chatId) {
   mrrStampCheckInFlightChatId = chatId;
 
   apiFetch("/chats/" + chatId).then(function (chat) {
-    mrrStampCheckInFlightChatId = null;
     /* The user can switch chats during the fetch; this answer describes a
        chat we have already left. Mirrors the stale-chat guards the runs
        poller uses at each of its own async hops. */
-    if (state.chatId !== chatId) return;
+    if (state.chatId !== chatId) { mrrStampCheckInFlightChatId = null; return; }
 
     /* chat.metadata is a JSON string from the engine route; parse before reading. */
     var meta = (chat && typeof chat.metadata === "string")
@@ -13870,10 +14294,49 @@ function mrrCheckChatRulesetStamp(chatId) {
       : ((chat && chat.metadata) || {});
     var stamp = meta.mrrChatRulesetId;
 
-    if (!stamp || stamp === activeId) {
-      mrrConfirmChatRuleset(chatId, stamp
-        ? "chat stamp '" + stamp + "' matches the active ruleset"
-        : "chat carries no ruleset stamp (nothing to disagree with)");
+    /* Round 28 F4: baseline for the applied-chat-preset watcher, taken on the
+       one metadata read this chat already performs. */
+    mrrAppliedChatPresetSeen[chatId] = (typeof meta.appliedChatPresetId === "string") ? meta.appliedChatPresetId : null;
+
+    if (stamp) { mrrStampCheckInFlightChatId = null; decide(stamp); return; }
+
+    /* ── no stamp ──
+       Round 28 F4: "no stamp" is ambiguous. It means either a chat that
+       predates the stamp, OR a chat whose stamp a chat-preset apply just
+       ERASED (applyToChat rebuilds metadata from the preset and preserves no
+       mrr* key). Treating the second case as the first hands the chat to
+       whatever ruleset happens to be active — the exact cross-ruleset bleed
+       round 24 exists to prevent. So: ask the chat's own managed agents,
+       whose settings tags survive everything, and re-stamp from their answer.
+       Ambiguous or absent -> unchanged behavior. Runs BEFORE any confirm, so
+       reconcileActiveAgents (fired by the confirm) sees the restored stamp. */
+    /* In-flight stays CLAIMED across this second hop so the 1.5s retry tick
+       cannot start a duplicate check while the derivation is running. */
+    mrrDeriveAndRestampChat(chatId, meta).then(function (derived) {
+      mrrStampCheckInFlightChatId = null;
+      if (state.chatId !== chatId) return;
+      if (derived) { decide(derived); return; }
+      mrrConfirmChatRuleset(chatId, "chat carries no ruleset stamp (nothing to disagree with)");
+    });
+    return;
+  }).catch(function (e) {
+    mrrStampCheckInFlightChatId = null;
+    /* Transient failure: do NOT confirm. Confirming on a failed read is
+       exactly the guess this whole round exists to remove. The latch stays
+       shut and the route-poll tick retries — warn-once so a sustained
+       outage doesn't spam one line every 1.5s. */
+    if (mrrStampFetchWarnedChatId !== chatId) {
+      mrrStampFetchWarnedChatId = chatId;
+      warn("mrrCheckChatRulesetStamp: could not read chat " + chatId + "'s metadata (" +
+           (e && e.message ? e.message : e) + ") — sheet writes stay latched shut and the check retries on the next route-poll tick");
+    }
+  });
+
+  /* Everything below the stamp is known. Factored out so the F4 re-derivation
+     above can feed a RECOVERED stamp through the identical decision path. */
+  function decide(stamp) {
+    if (stamp === activeId) {
+      mrrConfirmChatRuleset(chatId, "chat stamp '" + stamp + "' matches the active ruleset");
       return;
     }
 
@@ -13921,18 +14384,7 @@ function mrrCheckChatRulesetStamp(chatId) {
       warn("chat " + chatId + " is stamped '" + stamp + "' but that ruleset is not in the library — sheet is held to prevent bleed; activate '" +
            stamp + "' manually (Ruleset > Library, or import its bundle) to use this chat.");
     }
-  }).catch(function (e) {
-    mrrStampCheckInFlightChatId = null;
-    /* Transient failure: do NOT confirm. Confirming on a failed read is
-       exactly the guess this whole round exists to remove. The latch stays
-       shut and the route-poll tick retries — warn-once so a sustained
-       outage doesn't spam one line every 1.5s. */
-    if (mrrStampFetchWarnedChatId !== chatId) {
-      mrrStampFetchWarnedChatId = chatId;
-      warn("mrrCheckChatRulesetStamp: could not read chat " + chatId + "'s metadata (" +
-           (e && e.message ? e.message : e) + ") — sheet writes stay latched shut and the check retries on the next route-poll tick");
-    }
-  });
+  }
 }
 
 /* Auto-sync on save: fires a debounced sync 1.5s after the last
@@ -17599,6 +18051,13 @@ function watchRouteChanges() {
        id that wasn't available yet when init() ran — resolves on its own
        instead of leaving sheet writes latched shut for the session. */
     mrrCheckChatRulesetStamp(state.chatId);
+
+    /* Round 28 trigger point #3: notice a chat-preset apply on an already
+       SETTLED chat, which the stamp check above can no longer see (it returns
+       immediately once the chat is confirmed). Self-throttled to one GET per
+       MRR_PRESET_WATCH_MS, and only while a chat is confirmed — one
+       comparison per tick otherwise. */
+    mrrWatchAppliedChatPreset(state.chatId);
 
     var newId = getChatId();
     if (newId === lastSeenChatId) return;
