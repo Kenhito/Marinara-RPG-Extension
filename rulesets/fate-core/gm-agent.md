@@ -1,6 +1,6 @@
 # Fate Core GM Agent Prompt
 
-Paste this into Marinara's **Custom Agent → System Prompt** field for your Game Mode agent. Pair with the Fate Core lorebook at `rulesets/fate-core/lorebook.json` and the Fate Core ruleset at `rulesets/fate-core/ruleset.json`.
+Paste the contents below into Marinara's **Custom Agent → System Prompt** field for your Fate Core game (this file ships automatically via the bundle's `additionalAgents`/`gmAgent` install path — you do not need to paste it by hand if you installed the bundle). Pair with the Fate Core lorebook at `rulesets/fate-core/lorebook.json` and the Fate Core ruleset at `rulesets/fate-core/ruleset.json`.
 
 ---
 

@@ -41,8 +41,9 @@ Expected values for this release:
 
 - `Marinara-RPG-Extension.extension.zip` — `<ZIP_SHA256>`
 - `RPG-Extension-GM-Mode.js` — `<LOADER_SHA256>`
+- **After import**, open the extension's page and confirm it lists **Full page access** — Marinara's **Review and Run** dialog should show exactly `sha256:<ENGINE_HASH>`. That is the engine's own hash of the code it is about to approve; if it reads anything else, you imported a different file.
 
-If a hash does not match, stop and re-download rather than importing. (Marinara's own **Review and Run** step approves the code's hash separately, on the engine side — that pins what you approved, but only this check tells you the file was the published one to begin with.)
+If a hash does not match, stop and re-download rather than importing. (Marinara's own **Review and Run** step approves the code's hash separately, on the engine side — that pins what you approved, but only the two checks above tell you the file was the published one to begin with.)
 
 ## Step 2 — Import and approve the extension (one time)
 
@@ -165,7 +166,7 @@ For Exalted: pick a Sorcery Circle from the states dropdown if you're playing a 
 
 For D&D: pick a class and fill in proficiencies. Add spells via the spellbook flyout.
 
-The sheet auto-saves to localStorage on every change.
+The sheet auto-saves on every change — to your browser's local storage and, on engine 2.4.x, to the Marinara server as well, so your characters survive a cleared browser and follow you to a second browser.
 
 ## Step 6 — Play
 
@@ -213,16 +214,18 @@ The ruleset's lorebook isn't attached to the game. Attach it (game setup or afte
 
 Marinara's combat-encounter modal is server-coded with hardcoded D&D-style six-attribute stat blocks. The overlay can't replace it. Combat narration (chat-based) uses your system's vocabulary at full power — sheets, dice, and state tracking all work normally in narrative combat; the modal alone stays d20-shaped. Recommended: play combat narratively (don't trigger the modal) for non-d20 systems.
 
-### Character sheets disappear when switching chats
+### A new chat starts with no characters
 
-Marinara's chat IDs rotate per chat. Sheets in localStorage are keyed by chat ID, so a fresh chat looks like a brand-new character. Use the sheet header's **Save** button to export all characters as a JSON file, and **Load** to import in the new chat. The save file contains all characters across all chats from the export source.
+Sheets are keyed to the chat they were made in, so a brand-new chat legitimately starts empty — that is not data loss. Use the sheet header's **Save** button to export all characters in the current chat as a JSON file, and **Load** to import them into the new one. (Returning to an *existing* chat does bring its characters and its ruleset back automatically; if it doesn't, that's a bug worth reporting.)
 
 ## Updating to a newer version
 
 1. Import the new release's `Marinara-RPG-Extension.extension.zip` (Settings → Addons → External Extensions → Import) and **Review and Run** the new hash — every code update re-requires this approval.
 2. Reinstall your ruleset's `bundle.json` via the Ruleset dialog (bundles are data — no approval prompt).
 
-Your sheets, characters, conditions, etc. all persist in localStorage. The update path doesn't lose data.
+**Step 2 is required, not optional, for anyone coming from 1.0.0.** The compatibility fixes in this release are split across the extension and the ruleset bundles, so a bundle you downloaded with 1.0.0 will not behave correctly against the 1.1.0 extension: its state-writing agent still runs on the old pre-narration timing and will invent dice results rather than copy them out of the narration, it lacks the GM dice doctrine that routes rolls through the engine's real RNG, and it predates the self-repairing preset reconciliation. Re-download and re-import the current `bundle.json` for **every system you play** — fresh copies of all sixteen are in this release's `install-files/` folder. Once the new bundle is in, the extension repairs your preset's agent bindings by itself.
+
+Your sheets, characters, conditions, etc. all persist — and as of 1.1.0 they persist on the Marinara server as well as in your browser, so the update path doesn't lose data even if you also clear site data along the way.
 
 **Your preset's agent sections are repaired for you.** The bundle re-import recreates the MRR agents under new types, which used to orphan every **Agent Data** marker section you had added. The extension now repoints them on every import and logs `reconciled N orphaned agent marker(s)` to the browser console, so you do not re-run **Add agent sections to active preset** after an update. The stock read-only "Marinara Universal" preset is the one exception — save a copy, select the copy, and run the one-click assist against that.
 

@@ -1,6 +1,6 @@
 # Lasers & Feelings GM Agent Prompt
 
-Paste this into Marinara's **Custom Agent → System Prompt** field for your Lasers & Feelings roleplay-mode game. Pair with the L&F lorebook at `rulesets/lasers-and-feelings/lorebook.json` and the L&F ruleset at `rulesets/lasers-and-feelings/ruleset.json`.
+Paste the contents below into Marinara's **Custom Agent → System Prompt** field for your Lasers & Feelings game (this file ships automatically via the bundle's `additionalAgents`/`gmAgent` install path — you do not need to paste it by hand if you installed the bundle). Pair with the L&F lorebook at `rulesets/lasers-and-feelings/lorebook.json` and the L&F ruleset at `rulesets/lasers-and-feelings/ruleset.json`.
 
 ---
 

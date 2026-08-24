@@ -15,9 +15,24 @@ where they are.
 
 **Still requires Marinara Engine 2.4.3 or newer**, and it is still a zip
 import (`releases/1.1.0/Marinara-RPG-Extension.extension.zip`), never a
-loose `.js` file. Updating from 1.0.0 means importing the new zip, clicking
-**Review and Run** on the new code hash, and re-importing your ruleset
-bundle. Your characters come with you.
+loose `.js` file.
+
+### Upgrading from 1.0.0 — the new ruleset bundles are REQUIRED
+
+Re-importing your ruleset bundle is not an optional tidy-up step this
+release; it is part of the fix. The compatibility work below is split
+across the extension and the ruleset bundles, so a bundle downloaded with
+1.0.0 will not behave correctly against the 1.1.0 extension: its
+state-writing agent still runs on the old pre-narration timing and will
+invent dice results instead of copying them out of the narration, it lacks
+the GM dice doctrine that routes rolls through the engine's real RNG, and
+it predates the self-repairing preset reconciliation. **Re-download and
+re-import the current `bundle.json` for every system you play** — fresh
+copies of all sixteen ship in `releases/1.1.0/install-files/`. The order
+is: import the new zip, click **Review and Run** on the new code hash,
+then re-import each bundle from the Ruleset dialog. Your characters and
+sheets are untouched by any of it, and once the new bundle is in the
+extension repoints your preset's agent sections by itself.
 
 ### The headline four
 

@@ -1,4 +1,4 @@
-# Marinara RPG Rulesets (v1.0.0)
+# Marinara RPG Rulesets (v1.1.0)
 
 Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara-Engine)'s Game Mode. Run a D10 dice-pool game (Exalted 3e), a d20 game (D&D 5e), a 4dF narrative game (Fate Core), or **author your own ruleset for any tabletop RPG** — without forking Marinara, without writing TypeScript, without waiting for upstream feature requests.
 
@@ -68,6 +68,23 @@ Marinara Engine ships a Game Mode where an AI Game Master runs the table. By def
 
 The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps insert ruleset instructions while a rules lore book will provide Marinara with instructions on how to run the selected system. This allows systems to be created based around existing dice mechanics. Build instructions are present to allow an AI Agent, chat or CLI, to create a ruleset featuring a character sheet, GM Agent Prompt, and Lore book with the core mechanics.
 
+## What's new in v1.1.0
+
+- **The 1.0 compatibility problems are fixed, and they now repair themselves.** Three of them, all engine-2.4.x behavior 1.0 predated. A roleplay preset owns agent placement since 2.4.0, so an agent with no matching **Agent Data** section had its output discarded silently — running, costing tokens, and never reaching the narrator. Reinstalling a bundle made it worse: Marinara can never change an existing agent's `type`, so a re-import created the MRR agents fresh and orphaned every preset section you'd added. And applying a chat preset could wipe the chat's ruleset stamp outright. The extension now repoints orphaned sections after every bundle import, re-derives a wiped stamp from the chat's own enabled agents, and logs each repair to the console. First-time setup still uses the **Add agent sections to active preset** button; only the re-run became automatic.
+- **Character sheets save to the server, not just your browser.** Sheets, the per-chat character roster, the active-character pointer, and the active ruleset sync through Marinara's own extension storage on 2.4.x engines, with localStorage kept as an always-written mirror. Every stored value is timestamped and the newer side wins on load, so a browser that saved and then crashed before the upload landed reclaims its own edit instead of losing it to a stale server copy. Clearing site data no longer wipes your characters, and they turn up in a second browser. Panel position and size stay deliberately device-local, and a warning strip appears on the sheet if storage degrades rather than failing quietly.
+- **Chats remember their character sheets and their ruleset.** Entering a chat auto-activates that chat's ruleset; the sheet and dice widget follow it. Sheets are held per character, with protection against one system's values bleeding into another's game. (Residual: the same library character *deliberately* loaded under two rulesets still shares one record — accidental bleed is impossible, that case is known debt.)
+- **A ruleset can offer more than one dice mechanic.** Systems can declare named alternate mechanics, bind individual skills to them, and let you pick from a selector on the dice widget; the roll tag names the mechanic it used, so the GM reads what actually happened. **Dice-pool and roll-under are wired end to end**, with Old School Essentials as the pilot (percentile Thief skills and X-in-6 door checks alongside its d20 attacks and saves). Foundation, not a finished feature — more mechanics convert in later releases.
+- **Real dice, end to end.** With the chat's **Enable Tool Use** toggle on, the GM resolves random outcomes through Marinara's server-side `roll_dice` tool and narrates the number it returned. The other half: the agent that writes to your sheet now runs *after* the narration instead of before it, so it copies numbers out of the story rather than inventing ones that didn't exist yet, and it cites its source for each (`reason="GM narrated 15 poison damage"`) so a wrong value is auditable. In 1.0 the sheet and the story disagreed on every random number.
+- **Full swipe support.** Each swipe carries its own state — swipe away and its changes revert, swipe back and they reapply, regenerate and the dice roll fresh instead of reusing the last version's numbers.
+- **The turn-editing buttons work again.** Regenerate, the swipe arrows, and edit had been dead in every chat with the extension installed, a long-standing bug earlier sessions kept misattributing.
+- **Two more systems** — Old School Essentials and Rolemaster (RMFRP) — taking the shipped count from 14 to 16.
+- **A smaller download.** The packaged loader is comment-stripped at build time (comments and nothing else, with every literal verified identical afterward): 623 KB packaged, down from 760 KB in 1.0.0, well clear of the engine's 1 MiB ceiling.
+- **Docs overhaul.** Five systems that shipped without an install guide now have one (CoC 7e, GURPS Lite, Pathfinder 2e, The Stewpot, Trophy Dark); all sixteen cover the dice-tool toggle and the preset agent-sections step; six screenshots walk the install flow; and both release-folder guides publish SHA-256 download hashes.
+
+> **Upgrading from 1.0.0? Re-import your ruleset bundles — this one is required.** The compatibility fixes above are split across the extension and the ruleset bundles, so a bundle downloaded with 1.0.0 misbehaves against the 1.1.0 extension: its state-writing agent still runs on the old pre-narration timing and invents dice results, it lacks the GM dice doctrine, and it predates the self-repairing preset reconciliation. Import the new zip, **Review and Run** the new code hash, then re-import the current `bundle.json` for every system you play — from the table above, or from `releases/1.1.0/install-files/`. Your characters and sheets are untouched, and the extension repairs your preset's agent bindings on its own afterward.
+
+**Known notes.** Multi-mechanic dice is wiring and preview (two of nine resolution modes, one pilot ruleset). Game mode is expected to work but was not played through before shipping — the live testing behind these fixes ran in roleplay mode. And **Vampire 20th, Werewolf 20th, and Exalted Versus World of Darkness still run the previous-generation state flow**: their sheet-writing agent stays on the older pre-narration timing and can still guess at dice, and their transcripts still show raw `[mrr-state: ...]` tags. Each needs its own pass.
+
 ## What's new in v1.0.0
 
 - **Marinara 2.4.3 compliance — live-tested.** The engine deleted its old extension system (v2.3.4) and rebuilt it (v2.4.0+); this release runs in the new **Full-page External Extension** lane via a compat layer, with the engine's CSRF requirements handled and the whole install + play loop smoke-tested on a live 2.4.3 engine: sheet, dice widget, and the full state-mutation chain (numeric stats, damage tracks, label-valued states) in both Game Mode and Roleplay Mode. **Engines older than 2.4.3 are not supported.**
@@ -94,17 +111,23 @@ See [`CHANGELOG.md`](CHANGELOG.md) for the full list.
 
 ## How it works (in 60 seconds)
 
-**End user install — one file import + one bundle install.**
+**End user install — one zip import + one bundle install.**
 
-1. Import the framework JS once into Marinara's Settings → Extensions
-   (Marinara's Extensions screen is a file-upload UI). The CSS is
-   embedded in the JS — there is no separate stylesheet to upload.
+1. Import `Marinara-RPG-Extension.extension.zip` once, through
+   **Settings → Addons → External Extensions → Import**, then click
+   **Review and Run** to approve its code hash. Never import the loose
+   `.js` file — on 2.4.3+ that installs a sandboxed worker that cannot
+   run. The CSS is embedded in the loader; there is no stylesheet to
+   upload.
 2. Click the **Ruleset** button in the chat header. The dialog accepts
    a `bundle.json` three ways: **Choose file…** (local upload),
    **Fetch URL** (paste a raw URL), or paste the JSON into the textarea.
    Click **Save and reload**. The extension validates the bundle, then auto-installs
    the lorebook, the GM agent prompt, and the ruleset via Marinara's
    API in one shot.
+3. Launch your game, attach the ruleset's lorebook to it, and enable the
+   MRR agents for that game. Installing is not activating — Step 6 below
+   has the detail.
 
 A `bundle.json` wraps the three per-ruleset files (ruleset, GM agent prompt, lorebook) into one envelope. The extension reads the embedded ruleset to drive the character sheet and dice widget; the GM agent prompt teaches the AI Game Master your system's mechanics; the lorebook fires keyword-triggered rules references during play. **Authors who can't run a CLI** (vibecoders on claude.ai or similar chat tools) write JSON, never JavaScript. See [`AUTHORING-PROMPT.md`](AUTHORING-PROMPT.md) for the one-paste prompt template that turns any chat AI into a bundle generator.
 
@@ -114,7 +137,7 @@ The extension also gives you a floating dice widget that rolls correctly for you
 
 **Player rolls and GM rolls come from two different places, on purpose.** The widget above is *yours*: you roll it, it produces a dice tag with the actual faces in it, and **Send to chat** puts that tag into your own message — where it is authoritative. The GM reads your result and narrates from it; it never re-rolls a number you sent. The GM's own rolls are the other half, and they come from the engine's server-side `roll_dice` tool, which is why the chat's **Enable Tool Use** toggle matters (Step 6c below). Widget for your dice, engine tool for the GM's.
 
-Four systems ship as reference rulesets: **D&D 5e**, **Exalted 3e**, **Fate Core**, and **Pathfinder 2e**. They cover the most common dice mechanics — d20-and-modifier (D&D, PF2e), d10 dice pool with successes (Exalted), and 4dF on a verbal ladder (Fate). Add a fifth system by copying one of the four folders and editing the data, GM prompt, and lorebook to match your system. About 2 hours for a rules-light system, a day for a mid-weight one. Or use the AI-authoring path in [`AUTHORING-PROMPT.md`](AUTHORING-PROMPT.md) to skip writing files by hand entirely — that's how the Pathfinder 2e bundle was authored.
+Sixteen systems ship ready to import (the table above). Four of them — **D&D 5e**, **Exalted 3e**, **Fate Core**, and **Pathfinder 2e** — double as the reference implementations, covering the most common dice mechanics: d20-and-modifier (D&D, PF2e), d10 dice pool with successes (Exalted), and 4dF on a verbal ladder (Fate). Add a seventeenth by copying one of those folders and editing the data, GM prompt, and lorebook to match your system. About 2 hours for a rules-light system, a day for a mid-weight one. Or use the AI-authoring path in [`AUTHORING-PROMPT.md`](AUTHORING-PROMPT.md) to skip writing files by hand entirely — that's how the Pathfinder 2e bundle was authored.
 
 If you want an AI to do the authoring for you, point it at [`AGENTS.md`](AGENTS.md) — a standalone reference dense enough that a coding agent can build a new ruleset (or extend the framework) without reading anything else first.
 
@@ -122,16 +145,16 @@ If you want an AI to do the authoring for you, point it at [`AGENTS.md`](AGENTS.
 
 | Path | What it is |
 |------|------------|
-| `schema/ruleset.schema.json` | JSON Schema (draft 2020-12) defining the canonical ruleset.json shape. Five resolution modes: single-roll, dice-pool, d100-percentile, 2d6-stat (PbtA), fate-ladder. |
+| `schema/ruleset.schema.json` | JSON Schema (draft 2020-12) defining the canonical ruleset.json shape. Nine resolution modes: single-roll, dice-pool, d100-percentile, 2d6-stat (PbtA), fate-ladder, roll-under, stance-modal-pool, dice-pool-sum, narrative-handled — plus `resolution.additionalModes[]` for a ruleset that needs more than one. |
 | `rulesets/dnd5e/`            | D&D 5e (SRD 5.1, CC-BY-4.0). Mirrors Marinara's existing default flavor as a reference implementation. |
 | `rulesets/exalted3e/`        | Exalted 3rd Edition (2016 Onyx Path core). D10 dice pools, target 7, tens double, botch on zero-successes-with-a-1, 9 attributes / 25 abilities, motes / Willpower / Anima Banner, sample charms. |
 | `rulesets/fate-core/`        | Fate Core (Evil Hat). 4dF + skill on the Mediocre→Legendary ladder, Fate Points, stress / consequences, success-with-style at +3 shifts. |
 | `rulesets/pathfinder2e/`     | Pathfinder Second Edition (Remaster). Single-roll d20 + proficiency, four degrees of success, three-action economy, MAP, level-based DCs, 6 attributes / 17 skills, 20 conditions. Bundle-only (no source files) — authored end-to-end via the vibecoder workflow as a proof of concept. |
-| `extension/RPG-Extension-GM-Mode.{css,js}` | The single client extension you import into Marinara's Settings → Extensions (CSS embedded in the JS). Hides the built-in attribute panel, renders a ruleset-driven sheet, drives the dice widget, manages a multi-ruleset library. |
+| `extension/RPG-Extension-GM-Mode.{css,js}` | The loader behind the packaged extension you import through Settings → Addons → External Extensions (CSS embedded in the JS). Hides the built-in attribute panel, renders a ruleset-driven sheet, drives the dice widget, manages a multi-ruleset library. |
 | `schema/bundle.schema.json`  | JSON Schema for the install bundle envelope (ruleset + gmAgent + lorebook in one file). |
 | `tools/validate-ruleset.mjs` | CLI: validates any `ruleset.json` against the schema. `npm run validate-rulesets` validates everything in `rulesets/`. |
-| `tools/validate-bundle.mjs`  | CLI: validates `bundle.json` files. `npm run validate-bundles` checks all three reference bundles. |
-| `tools/build-bundle.mjs`     | CLI: assembles `bundle.json` from a ruleset directory. `npm run build-bundles` rebuilds all three. |
+| `tools/validate-bundle.mjs`  | CLI: validates `bundle.json` files. `npm run validate-bundles` checks all sixteen shipped bundles. |
+| `tools/build-bundle.mjs`     | CLI: assembles `bundle.json` from a ruleset directory. `npm run build-bundles` rebuilds all sixteen. |
 | `tools/embed-css.mjs`        | CLI: re-embeds `extension/RPG-Extension-GM-Mode.css` into `RPG-Extension-GM-Mode.js` after CSS edits. |
 | `AUTHORING-PROMPT.md`        | **One-paste prompt template for vibecoder authors.** Hand it to claude.ai/ChatGPT/Gemini with "<<YOUR SYSTEM>>" filled in; the AI returns a complete `bundle.json`. |
 | `AGENTS.md`                  | **Self-contained reference for AI coding agents.** An LLM reading just this file has enough to author a new ruleset bundle from zero or extend the extension with a new resolution mode. Read this if you're an AI agent or if you want an AI to do the authoring. |
@@ -144,7 +167,7 @@ If you want an AI to do the authoring for you, point it at [`AGENTS.md`](AGENTS.
 
 If you just want to use the extension and don't have Node, npm, or git installed, this is the path. You'll do two file imports total: one for the extension itself, one for the ruleset bundle. **Marinara Engine should already be running in a browser tab before you start** — if you don't have it set up yet, follow Marinara's own [installation guide](https://github.com/Pasta-Devs/Marinara-Engine#installation) first, then come back here.
 
-> **Requires Marinara Engine 2.4.3+ with External Extensions enabled.** Pre-2.3.4 engines may work but are untested (best-effort passthrough only); engines 2.3.4–2.3.x have no extension support at all and cannot load MRR. See `docs/INSTALL.md` for the two gates you need enabled before Step 3 below.
+> **Requires Marinara Engine 2.4.3+ with External Extensions enabled.** This is a hard floor, not a preference: Marinara deleted its old extension system in v2.3.4 and rebuilt it in v2.4.0, so engines 2.3.4–2.3.x cannot load an extension at all and engines older than that expose an API this release no longer speaks. See `docs/INSTALL.md` for the two gates you need enabled before Step 3 below.
 
 **Step 1 — Download the release zip.** Open the [Releases page](https://github.com/Kenhito/Marinara-RPG-Extension/releases/latest), scroll to the **Assets** section, and click the file ending in `.zip` (named like `Marinara-RPG-Extension-<version>.zip`). It will save to your Downloads folder.
 
@@ -186,7 +209,7 @@ A new **Ruleset** button will appear in the top-right of the chat header next to
 
 **Step 6 — Launch your game, attach the lorebook, enable the agents.** Installing is not activating: on Marinara 2.4.3+ the MRR agents behave like any custom agents — after you create/launch your game, **attach the ruleset's lorebook to the game** (at setup or after launch; without it the agents have no rules to follow) and **enable the MRR agents for that game** (Settings → Agents, agents named like `MRR: <System> — <Role>`, enabled after the game launches — not mid-generation). A good minimal set is the Ruleset Helper + State Mutator; each enabled agent costs one model call per turn.
 
-> **If Fetch URL fails,** your Marinara server may be blocking outbound fetches — use **Choose file…** or paste the JSON instead. **If Save and reload errors,** check the browser console (F12 → Console) for the specific message; the most common cause is an old extension version not seeing a recent bundle field, which the v0.3 release does not have.
+> **If Fetch URL fails,** your Marinara server may be blocking outbound fetches — use **Choose file…** or paste the JSON instead. **If Save and reload errors,** check the browser console (F12 → Console) for the specific message; the most common cause is an extension older than the bundle you are importing — make sure both came from the same release.
 
 **Custom bundles.** If you authored your own `bundle.json` using [`AUTHORING-PROMPT.md`](AUTHORING-PROMPT.md) — paste the prompt into Claude/ChatGPT/Gemini, fill in your system's mechanics, save the AI's response as a `.json` file — the same dialog accepts it via any of the three paths above. The file lives wherever you saved it (typically your Downloads or Documents folder).
 
@@ -248,7 +271,7 @@ The client extension is shared across rulesets — install it once, switch rules
 
 ![Character save controls](docs/screenshots/character-save-controls.png)
 
-Character sheets are stored in your **browser's localStorage**, keyed to the chat ID + character ID. The bar at the top of every sheet (shown above) is how you manage characters and their saves. From left to right:
+Character sheets are keyed to the chat ID + character ID and, as of v1.1.0, stored **both** on your Marinara server (through the engine's own extension storage) and in your browser's localStorage. The server copy is what survives a cleared browser and follows you to a second one; the local copy is the always-written mirror that keeps sheet reads instant. Every value carries a timestamp and the newer of the two wins when the sheet loads, so an edit that was saved locally and never made it to the server is reclaimed rather than lost. The bar at the top of every sheet (shown above) is how you manage characters and their saves. From left to right:
 
 | Control | What it does |
 |---------|--------------|
@@ -258,32 +281,31 @@ Character sheets are stored in your **browser's localStorage**, keyed to the cha
 | **x** | Remove the active character from this chat (irreversible — there's no trash) |
 | **save** | **Download** all characters in the active chat as a JSON file you keep on your computer |
 | **load** | **Replace** all characters in the active chat with a previously-downloaded JSON file |
-| **Saved HH:MM:SS** | Timestamp of the most recent in-browser auto-save (every edit auto-saves to localStorage). **This is NOT a permanent save.** |
+| **Saved HH:MM:SS** | Timestamp of the most recent auto-save (every edit saves locally and syncs to the server in the background). |
 
-### ⚠️ localStorage is volatile — save your characters regularly
+### Server-backed since v1.1.0 — but still export the ones you care about
 
-The auto-save indicator confirms your sheet is currently persisted in your browser's local storage, **but localStorage is NOT a long-term backup.** Your characters can disappear if any of the following happens:
+Before v1.1.0 the browser was the only copy, and clearing site data or switching browsers lost your characters outright. The server copy closes that whole class of loss: clearing site data, a second browser, a different machine on the same engine, and a fresh profile all recover from the server now.
 
-- You **clear site data** for the Marinara host (browser settings → privacy → clear data)
-- You **switch browsers** (Firefox character won't appear in Chrome, and vice versa)
-- You **switch devices or computers** (localStorage doesn't sync)
-- Your browser **hits its per-site storage quota** and evicts older entries
-- You uninstall and reinstall the extension on a fresh profile
-- Private / incognito browser sessions wipe their localStorage on close
-- A browser update bug, OS reinstall, or disk failure wipes the profile
+What the server copy does **not** protect against:
 
-**To permanently save a character: hit the `save` button.** It downloads a JSON file containing every character in the current chat. Store these files in a folder you control — sync them to cloud storage, commit them to git, email them to yourself, whatever fits your workflow. Save after every meaningful session (XP gain, gear changes, story moments, end of session).
+- **The Marinara server itself** — its database is where your characters now live, so its backups are their backups
+- **An engine older than 2.4.x**, or a session where storage degraded (you'll see a warning strip at the top of the sheet) — in either case you are back to browser-only
+- **A sheet too large to sync**, which falls back to local-only and says so
+- **Deleting a character**, which the server copy faithfully replicates
 
-**To restore characters into a new chat: hit `load`** and pick the JSON file. The current chat's characters are replaced with the file's contents (every character in the saved file). Chat IDs rotate per Marinara session, so a fresh chat will look like a blank slate until you `load` your saved file. You can also `load` the same file into multiple chats — the characters will appear in each chat independently.
+**To keep a copy you control: hit the `save` button.** It downloads a JSON file containing every character in the current chat. Store these files in a folder you control — sync them to cloud storage, commit them to git, email them to yourself, whatever fits your workflow. Save after every meaningful session (XP gain, gear changes, story moments, end of session).
 
-**Bottom line**: think of localStorage as "draft, in flight." The downloaded JSON is the master copy.
+**To restore characters into a new chat: hit `load`** and pick the JSON file. The current chat's characters are replaced with the file's contents (every character in the saved file). A brand-new chat starts empty by design — sheets belong to the chat they were made in — so `load` your saved file, or use the same file in several chats and the characters appear in each independently. Returning to an *existing* chat brings its characters and its ruleset back on its own.
+
+**Bottom line**: the server holds the live copy, and the downloaded JSON is the one nobody but you can touch.
 
 ## The honest part — what this overlay cannot do
 
 Marinara's GM prompt assembly and the combat-encounter modal live in server-side TypeScript and aren't user-replaceable without forking the engine. This overlay deliberately does NOT fork. Practical implications:
 
 - **Combat-encounter modal** — when Marinara's built-in combat UI fires, the encounter resolution is still d20-flavored under the hood. The narration around it is still ruleset-flavored, but the modal's stat blocks are not. Tradeoff documented in `docs/ENGINE-CONSTRAINTS.md`.
-- **`RPGAttributes` writes back to chat state** — the engine's attribute storage is typed to D&D's six attrs. Non-D&D rulesets persist their sheet to localStorage per chat, with a "Sync to chat" button to copy values into Marinara's `customTrackerFields` so the GM agent sees them.
+- **`RPGAttributes` writes back to chat state** — the engine's attribute storage is typed to D&D's six attrs. Non-D&D rulesets keep their sheet in the extension's own storage per chat rather than in that field, and the GM agent is fed the sheet through the ruleset's own prompt surface instead.
 
 If you want true mechanic replacement (e.g. server-rendered Exalted combat with proper tick-based initiative), that requires either upstream PRs into Marinara or a fork. This repo's scope is "no fork".
 
@@ -360,4 +382,4 @@ Marinara Engine itself is AGPL-3.0 — but this repo is an **overlay** (it does 
 
 ## Status
 
-v0.3 — four reference rulesets (D&D 5e, Exalted 3e, Fate Core, Pathfinder 2e), validating schema with five resolution modes, single-file `bundle.json` install, embedded-CSS framework JS, multi-ruleset library, JSON character save/load, inventory + equipment-bonus system, resizable + collapsible floating character sheet, and a no-developer-tools install path. Built and tested against Marinara Engine v1.5.6. Bug reports welcome; PRs more so. If you build a bundle for Blades in the Dark, Lancer, Mörk Borg, GURPS, Vampire 5e, Cyberpunk RED, or any other system, please open a PR — the framework is meant to support more.
+v1.1.0 — sixteen shipped rulesets, a validating schema with nine resolution modes plus multi-mechanic routing, single-file `bundle.json` install, zip/folder/manifest extension packaging, server-backed character storage with per-chat ruleset memory, swipe-aware state tracking, real server-side dice, multi-ruleset library, JSON character save/load, inventory + equipment-bonus system, resizable + collapsible floating character sheet, and a no-developer-tools install path. Built and live-tested against Marinara Engine 2.4.3 (roleplay mode); engines older than 2.4.3 are not supported. Bug reports welcome; PRs more so. If you build a bundle for Blades in the Dark, Lancer, Mörk Borg, GURPS, Vampire 5e, Cyberpunk RED, or any other system, please open a PR — the framework is meant to support more.
