@@ -14901,6 +14901,72 @@ var MRR_ORPHAN_DIAG_MIN_SKIPS = 3;  /* don't fire off a single stray observation
    so narrator behavior is byte-identical to before B1. */
 var appliedMutationKeys = Object.create(null);
 
+/* ─── Round-23: bucket-level channel claim (first-writer-wins) ─────────────
+   LIVE EVIDENCE (console log EX3_2052, 2026-08-23): "add 3 Bashing" put 6
+   on the track; "remove 5 motes" took 10. Same shape on two consecutive
+   turns. The log shows BOTH transports landing on ONE turn, and neither
+   suppressed:
+     runs-poller: run ugXFf... mid=t-cUg... → anchor=Uqvcjd9_eYMp6Vo8dEU8D
+                  (resolved) journalKey=Uqvcjd9_eYMp6Vo8dEU8D:0
+     runs-poller: applied 3/3 mutation(s) from custom-agent runs
+     state-mutator: applied 3/3 mutation(s) from message Uqvcjd9_...:0
+   Same anchor, same journal bucket, six applications, zero dedup hits.
+
+   WHY appliedMutationKeys STRUCTURALLY CANNOT CATCH THIS. Its key is
+   anchorId::contentSig::occIdx, and contentSig (mutationContentSig, just
+   below) serializes EVERY parsed attr — including the free-text `reason=`
+   the agent wrote, and the value FORM it chose (delta="+3" vs set="6" vs
+   current="6"). The GM narrator's inline [mrr-state:] tag and the State
+   Mutator agent's run tag describe the SAME semantic mutation but are
+   authored by two different models on two different prompts, so their
+   reason strings (and often their value forms) differ. Different sig →
+   different key → both apply. Equating them by string is a dead end:
+   free-text can't be normalized, and delta-vs-absolute can't be reconciled
+   without reading current state (which is itself mid-mutation). The seam
+   was already documented at the round-18 BUG-2 block ("dedup gate only
+   catches EXACT duplicate content"); it never FIRED before round 20 because
+   the GM couldn't see the sheet and therefore never emitted write tags at
+   all. Round 20 made the read path live — now the GM echoes tags the
+   mutator also emits, on every state-touching turn.
+
+   THE FIX, one level up: sole-writer per JOURNAL BUCKET. The first channel
+   to apply a tag-bearing call for a bucket key CLAIMS it; a later call from
+   the OTHER channel for that same bucket is suppressed wholesale — nothing
+   applied, one log line. Bucket-level (not sig-level) is the point: it does
+   not care what the two models wrote, only that one turn's state writes come
+   from exactly one transport.
+
+   ACCEPTED TRADE-OFF (deliberate, revisit on evidence): if the second
+   channel genuinely carried DIFFERENT mutations than the claiming channel
+   (not an echo — a real extra write), those are suppressed and LOST for that
+   turn. We can't tell the two cases apart by content, so instead of guessing
+   we emit a warn naming the bucket and the incoming sigs that the claiming
+   channel never applied. If that warn shows up in a live log, this decision
+   gets re-opened with real data behind it.
+
+   Key = the journal bucket key (journalKey, i.e. "<msgId>:<idx>", falling
+   back to plain anchorId when the swipe index is unresolvable). Value =
+   "dom" | "poller". Session-only, per chat: reset at the same two
+   loadProcessedMessageIds chokepoints appliedMutationKeys resets at, and
+   DELETED for a bucket whenever that bucket is reverted (mrrRevertBucket) —
+   otherwise a swipe-back re-admitted through the other channel would be
+   wrongly suppressed. Re-SET after a journal reapply (the
+   reappliedFromJournal paths bypass applyStateTagsWithDedup entirely), so a
+   late echo from the other channel still can't slip in behind it.
+
+   KNOWN GAP (unfixed, comment-only): the claim is keyed on the bucket, so
+   the two channels only collide when they resolve the SAME bucket key. If
+   the poller cannot resolve a swipe index it falls back to a plain-msgId
+   bucket while the DOM path uses "msgId:idx" — different keys, no
+   suppression, double-apply as before. That is the same anchor-resolution
+   failure the round-18/19 backstop already warns loudly about; it is not
+   given a second, quieter workaround here.
+
+   INVARIANT: with MRR_RUNS_POLLER_MODE "off" only the DOM channel ever
+   writes, so claims are populated but the channel always matches — behavior
+   is byte-identical to pre-round-23. */
+var mrrBucketChannelClaims = Object.create(null);
+
 function mutationContentSig(attrs) {
   if (!attrs || typeof attrs !== "object") return "";
   var keys = Object.keys(attrs).sort();
@@ -14974,6 +15040,44 @@ function normalizeStateAttrs(attrs) {
   return out.length ? out : [attrs];
 }
 
+/* Round-23 telemetry for the sole-writer gate's ONE accepted risk. When a
+   bucket claim suppresses the second channel, the overwhelmingly likely case
+   is a cross-model ECHO — the same mutation the claiming channel already
+   applied, just worded differently — and suppressing it is exactly the fix.
+   The case we cannot distinguish by content is the second channel carrying a
+   GENUINELY DIFFERENT mutation, which suppression then loses. Proxy test:
+   run the incoming tags through the SAME normalize+sig pipeline the gate
+   uses and ask whether appliedMutationKeys already holds each
+   anchor::sig::occIdx. A sig that is MISSING was never applied by anyone —
+   evidence (not proof: the echo case produces different sigs by definition,
+   so this warns on echoes too) that this bucket may have carried more than
+   one distinct write. Named loudly so a live log can re-open the trade-off.
+   Diagnostic ONLY — never gates, never mutates, and swallows its own throws
+   (normalizeStateAttrs walks state.ruleset.derivedStats and CAN throw on
+   malformed ruleset data; see the round-12 F2 note at the poller call site).
+   Suppression must stand regardless of whether this line can be produced. */
+function mrrWarnCrossChannelMismatch(bucketKey, tags, anchorId, claimedBy, chan) {
+  try {
+    var occ = Object.create(null);
+    var missing = [];
+    for (var i = 0; i < tags.length; i++) {
+      var normalized = normalizeStateAttrs(tags[i].attrs);
+      for (var n = 0; n < normalized.length; n++) {
+        var sig = mutationContentSig(normalized[n]);
+        var idx = (occ[sig] = (occ[sig] || 0) + 1) - 1;
+        if (appliedMutationKeys[String(anchorId) + "::" + sig + "::" + idx]) continue;
+        missing.push(sig.length > 120 ? sig.slice(0, 120) + "…" : sig);
+      }
+    }
+    if (!missing.length) return; /* every incoming sig was already applied under this anchor — a clean exact-duplicate echo, nothing to report */
+    warn("cross-channel: bucket " + bucketKey + " — " + missing.length + " suppressed " + chan +
+         " mutation(s) have no matching apply from the claiming '" + claimedBy + "' channel: " + missing.join(" ; ") +
+         " — either a differently-worded echo (expected, harmless) or a genuinely distinct write that is now LOST for this turn (accepted round-23 trade-off; report this line so it can be re-opened with real data)");
+  } catch (e) {
+    warn("cross-channel: mismatch telemetry threw for bucket '" + bucketKey + "' (" + (e && e.message ? e.message : e) + ") — suppression itself is unaffected");
+  }
+}
+
 /* Apply a parsed [mrr-state:] tag list with cross-transport dedup. Returns
    the count applied. Both the narrator DOM path and the runs poller route
    through here so a tag present in BOTH sources applies exactly once. The key
@@ -14983,9 +15087,25 @@ function normalizeStateAttrs(attrs) {
    duration of this call — kept SEPARATE from anchorId on purpose, since
    the dedup anchor is plain msgId (FIX-1) while the journal needs the
    swipe-specific composite key. Reset in a finally so a thrown mutation
-   can never leave a stale bucket key active for an unrelated later call. */
-function applyStateTagsWithDedup(tags, anchorId, journalKey) {
+   can never leave a stale bucket key active for an unrelated later call.
+   Round-23: `channel` ("dom" | "poller") names the transport making this
+   call and drives the bucket-level sole-writer claim — see
+   mrrBucketChannelClaims' header for the EX3_2052 double-apply evidence and
+   why per-sig content dedup structurally cannot catch a cross-model echo. */
+function applyStateTagsWithDedup(tags, anchorId, journalKey, channel) {
   if (!tags || !tags.length) return 0;
+  var bucketKey = journalKey || anchorId;
+  var chan = channel || "dom"; /* defensive default: an un-passed channel behaves as the historic single-writer (narrator) path */
+  var claimedBy = mrrBucketChannelClaims[bucketKey];
+  if (claimedBy && claimedBy !== chan) {
+    /* Round-23 sole-writer gate: this bucket's state writes already came
+       from the other transport this turn. Suppress the WHOLE call — not
+       per-sig — because the two channels' sigs are authored by different
+       models and never match (free-text reason=, delta-vs-absolute forms). */
+    log("cross-channel: bucket " + bucketKey + " already applied by " + claimedBy + " — suppressing " + tags.length + " tag(s) from " + chan);
+    mrrWarnCrossChannelMismatch(bucketKey, tags, anchorId, claimedBy, chan);
+    return 0;
+  }
   var occ = Object.create(null);
   var applied = 0;
   var prevJournalBucketKey = mrrCurrentJournalBucketKey;
@@ -15023,14 +15143,23 @@ function applyStateTagsWithDedup(tags, anchorId, journalKey) {
     }
   } finally {
     mrrCurrentJournalBucketKey = prevJournalBucketKey;
+    /* Round-23: claim the bucket for this channel. In the finally on
+       purpose — a mutation that THREW still applied whatever came before it,
+       so the bucket is this channel's either way (the throwing row is
+       retried by the SAME channel next poll, where the claim matches and
+       changes nothing). Claimed even when `applied` ends at 0: a call whose
+       tags were all swallowed by per-sig exact dedup within this same
+       channel still means this bucket belongs to this channel. */
+    mrrBucketChannelClaims[bucketKey] = chan;
   }
   return applied;
 }
 
 function loadProcessedMessageIds(chatId) {
-  if (!chatId) { processedMessageIds = {}; processedMessageIdsChatId = null; appliedMutationKeys = Object.create(null); mrrProcessedTextMemo = Object.create(null); mrrLoadMutationJournal(null); return; }
+  if (!chatId) { processedMessageIds = {}; processedMessageIdsChatId = null; appliedMutationKeys = Object.create(null); mrrBucketChannelClaims = Object.create(null); mrrProcessedTextMemo = Object.create(null); mrrLoadMutationJournal(null); return; }
   if (processedMessageIdsChatId === chatId) return; /* already loaded */
   appliedMutationKeys = Object.create(null); /* new chat — clear cross-transport dedup so old-chat keys can't suppress new applies */
+  mrrBucketChannelClaims = Object.create(null); /* round-23 — same reasoning: an old chat's bucket claims must never suppress a new chat's writes */
   mrrProcessedTextMemo = Object.create(null); /* FIX-2b: new chat — a msgId's text memo from a DIFFERENT chat must never suppress this chat's fast path (message ids are not guaranteed unique across chats) */
   mrrLoadMutationJournal(chatId); /* B2-R: same chat-switch chokepoint the other per-chat observation state already resets on */
   var raw = lsGet(LS_PROCESSED_MSGS_PFX + chatId);
@@ -15412,6 +15541,14 @@ function mrrRevertBucket(bucketKey, skipSigs) {
      render even though the sheet-side revert loop above already
      succeeded. Warn and continue rather than lose those. */
   try {
+    /* Round-23: the bucket-level channel claim is released by the SAME
+       event, and for the same reason, as the per-sig dedup keys below — a
+       reverted bucket must be fully re-admittable. Without this, a swipe
+       whose tags arrive via the OTHER transport than the one that claimed
+       the bucket pre-revert would hit the sole-writer gate and apply
+       NOTHING, silently. Deleted first so a throw out of
+       mrrClearDedupKeysForBucket can't strand the claim. */
+    delete mrrBucketChannelClaims[bucketKey];
     mrrClearDedupKeysForBucket(mrrAnchorFromBucketKey(bucketKey), bucket);
   } catch (e) {
     warn("B2-R revert: mrrClearDedupKeysForBucket threw for bucket '" + bucketKey + "' — dedup keys may not be cleared, incoming identical-content swipes may still be blocked (" + (e && e.message ? e.message : e) + ")");
@@ -17231,6 +17368,14 @@ function processChatMessage(node, isChildListOrigin) {
            path below could never re-admit it on its own; this was the
            ONLY sanctioned way back in, and still is — just centralized. */
         processedMessageIds[transition.newBucketKey] = true;
+        /* Round-23: a journal reapply bypasses applyStateTagsWithDedup, so
+           it never sets the sole-writer claim on its own — leaving the
+           bucket unclaimed and wide open to a late echo from the poller
+           landing a SECOND copy of these same mutations on top of the
+           reapply. Re-claim it here for the channel doing the reapply (this
+           is processChatMessage: "dom"). mrrRevertBucket deliberately
+           cleared the claim moments ago; this is the matching re-set. */
+        mrrBucketChannelClaims[transition.newBucketKey] = "dom";
         mrrProcessedTextMemo[msgId] = text;
         saveProcessedMessageIds();
         return; /* hideStateTagsInElement already ran synchronously below, before this async callback started */
@@ -17301,7 +17446,7 @@ function processChatMessage(node, isChildListOrigin) {
          change detection above reverts the old swipe's journaled entries
          first. Still a known open design question for the un-covered
          mutation types; not solved here. */
-      var applied = applyStateTagsWithDedup(tags, msgId, key);
+      var applied = applyStateTagsWithDedup(tags, msgId, key, "dom"); /* round-23: narrator DOM transport — see mrrBucketChannelClaims */
       processedMessageIds[key] = true;
       mrrProcessedTextMemo[msgId] = text; /* FIX-2b: record what content this msgId was processed against, so a spurious re-observation with the SAME text short-circuits at the fast path without a fetch */
       saveProcessedMessageIds();
@@ -17924,9 +18069,18 @@ function mrrPollCustomAgentRunsInner(chatId, pollToken) {
           total += entry.tags.length;
           try {
             if (mid && swipeMap && Object.prototype.hasOwnProperty.call(swipeMap, mid)) {
-              mrrHandleSwipeTransition(mid, swipeMap[mid], mrrComputeIncomingSigs(entry.tags));
+              var pollTransition = mrrHandleSwipeTransition(mid, swipeMap[mid], mrrComputeIncomingSigs(entry.tags));
+              /* Round-23: this transport can trigger a swipe-back journal
+                 reapply too (it calls the shared transition owner), and that
+                 reapply bypasses applyStateTagsWithDedup — so re-claim the
+                 bucket for THIS channel, exactly as processChatMessage's
+                 reappliedFromJournal branch does for "dom". The
+                 applyStateTagsWithDedup call below passes the same channel,
+                 so the claim it meets always matches and nothing here
+                 changes the apply path. */
+              if (pollTransition && pollTransition.reappliedFromJournal) mrrBucketChannelClaims[pollTransition.newBucketKey] = "poller";
             }
-            applied += applyStateTagsWithDedup(entry.tags, anchor, journalKey);
+            applied += applyStateTagsWithDedup(entry.tags, anchor, journalKey, "poller"); /* round-23: custom-agent runs transport — see mrrBucketChannelClaims */
             if (entry.runId != null) { processedRunIds[entry.runId] = true; sawNew = true; }
           } catch (e) {
             /* Round-9 fix 7: a throw on ONE row warns honestly and does
