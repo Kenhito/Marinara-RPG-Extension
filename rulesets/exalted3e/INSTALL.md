@@ -117,6 +117,8 @@ In a fresh Game Mode chat:
 
 Bundle update flow is the same as install — Choose file again or fetch the URL again with the new `bundle.json`. The installer detects the existing managed agents/lorebook by tag/setting and PATCHes rather than duplicating. The extension itself updates by re-importing the `.extension.zip` and re-approving via **Review and Run**.
 
+**Re-paste any hand-pasted GM prompt after upgrading.** The re-import updates the *managed* agents the bundle installed — it does **not** touch a copy of the GM prompt you pasted into a character card or a hand-made agent by hand. Those copies go stale silently and keep running the old instructions (a stale card still emits the old inline tags and lacks everything added since, including the reroll-on-regenerate dice doctrine). Re-paste from this folder's `gm-agent.md` — the block between the triple backticks — every time you update the bundle.
+
 ## Equipment & bonuses (v1.1.0+)
 
 The character sheet now includes an Inventory section. Click **+ Add item**, give the item a name, slot (e.g. `weapon`, `armor` — anything you want), and one or more bonuses such as `Melee +2 dice (accuracy)` or `Defense (Parry) +1`. Click **Equip** on a row to apply that item's bonuses to the slot.

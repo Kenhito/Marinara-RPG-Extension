@@ -116,6 +116,8 @@ In a fresh Game Mode chat:
 
 Bundle update flow is the same as install — Choose file again or fetch the URL again with the new `bundle.json`. The installer detects the existing managed agents/lorebook by tag/setting and PATCHes rather than duplicating. The extension itself updates by re-importing the `.extension.zip` and re-approving via **Review and Run** — every code change re-requires that step.
 
+**Re-paste any hand-pasted GM prompt after upgrading.** The re-import updates the *managed* agents the bundle installed — it does **not** touch a copy of the GM prompt you pasted into a character card or a hand-made agent by hand. Those copies go stale silently and keep running the old instructions (a stale card still emits the old inline tags and lacks everything added since, including the reroll-on-regenerate dice doctrine). Re-paste from this folder's `gm-agent.md` — the block between the triple backticks — every time you update the bundle.
+
 ## Removing
 
 Open the Ruleset dialog and click **Uninstall server data** to remove the lorebook and agents created by this install. Click **Clear** to wipe the local ruleset cache (returns Marinara's UI to default). Optionally remove the extension from **Settings → Addons → External Extensions**.

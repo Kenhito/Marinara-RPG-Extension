@@ -73,6 +73,8 @@ If you used **Fetch URL** to install a ruleset, you can re-fetch it whenever the
 
 The extension itself updates by re-importing the package (same form as install) and re-approving the new hash via **Review and Run** — every code/CSS change requires this, with no exceptions. Marinara doesn't have an extension marketplace, so updates are manual.
 
+**If you pasted the GM prompt anywhere by hand, re-paste it after every upgrade.** A bundle re-import updates the *managed* agents it installed (the Ruleset Helper and the sub-agents) — it does **not** touch a copy of the GM prompt you pasted into a character card or a hand-made agent. Those copies go stale silently and keep running the old instructions: a card carrying a pre-2.4.0 prompt still emits the old inline tags and is missing everything added since, including the reroll-on-regenerate dice doctrine. Re-paste from the ruleset's `gm-agent.md` (the block between the triple backticks) whenever you update a bundle.
+
 ## Uninstall
 
 Open the Ruleset dialog and click **Clear**. Reload. The default Marinara Game Mode UI returns. Optionally:

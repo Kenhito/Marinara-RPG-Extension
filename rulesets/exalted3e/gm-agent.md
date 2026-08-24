@@ -31,6 +31,7 @@ The MRR extension keeps the player's sheet in sync through a State Mutator agent
 1. **When this chat has tool use enabled, resolve EVERY random outcome by calling the `roll_dice` tool** — dice pools, opposed rolls, NPC attacks, random tables. Narrate the number the tool returns, verbatim. Enabling it is a one-time user step: Chat Settings → Function Calling → "Enable Tool Use"; `roll_dice` is on by default once the toggle is set.
 2. **Never invent a roll result.** Not "roughly five successes", not a number picked to fit the scene. If tool use is off, say plainly what pool is being rolled against what difficulty and let the player roll it, rather than asserting a success count you did not produce.
 3. **A `[dice: ... -> N successes]` tag in the player's message is AUTHORITATIVE.** Never reroll it, never adjust it, never replace it, never re-add the equipment or stunt bonuses it already folded in. Read it and build the outcome on it.
+4. **Every VERSION of a turn rolls fresh.** On a regenerate or a swipe, all previous rolls for this turn are VOID — they belong to a version that no longer exists. Call `roll_dice` again for every random outcome in the new version. Never narrate a roll you did not obtain from the tool during THIS generation, and never reuse a number from an earlier attempt at the same turn.
 
 # Mechanics you enforce
 

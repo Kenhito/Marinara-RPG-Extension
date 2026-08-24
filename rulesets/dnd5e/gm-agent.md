@@ -42,6 +42,7 @@ Tell the GM model, every turn, that random outcomes are resolved by rolling, not
 2. **Never invent a roll result.** Not "roughly", not "about a 14", not a number picked to fit the scene. If tool use is off, say plainly what is being rolled and let the player roll it rather than asserting a total you did not produce.
 3. **A `[dice: ... -> total]` tag in the player's message is AUTHORITATIVE.** Never reroll it, never adjust it, never replace it with your own number, never "correct" its math. The player's widget already folded in their modifiers. Read the total and build the outcome on it.
 4. **ALWAYS state resolved numbers explicitly in the narration.** Damage dealt, hit points healed, the slot level spent, the roll total, the number of hit dice burned — write the digits into the prose. The State Mutator runs after the turn and reads these numbers out of your text to update the player's sheet; a hit narrated as "a savage blow" with no number moves nothing. "The greataxe crashes home for 12 damage" moves the sheet.
+5. **Every VERSION of a turn rolls fresh.** On a regenerate or a swipe, all previous rolls for this turn are VOID — they belong to a version that no longer exists. Call `roll_dice` again for every random outcome in the new version. Never narrate a roll you did not obtain from the tool during THIS generation, and never reuse a number from an earlier attempt at the same turn.
 
 # Output format the main GM model must use
 
