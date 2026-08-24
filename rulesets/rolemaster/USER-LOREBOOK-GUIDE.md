@@ -55,6 +55,15 @@ If a `house-` entry states a rule that contradicts one of ours, **your house rul
 
 Our lorebook spends a modest token budget (1500) across 21 entries. If you're attaching several hundred spell or profession entries, raise `tokenBudget` on **your own** lorebook file rather than ours, keep `constant: false` on everything you add, and key each spell by the spell's name alone so ordinary narration doesn't drag your whole grimoire into context on every turn. A lorebook that fires every entry every turn defeats the point of keyword scanning — it was the mistake the original fan-made Rolemaster data file made by transcribing hundreds of skill and table entries verbatim; don't repeat it at spell-list scale.
 
+## 5b. Large lorebooks — the two limits that bite
+
+If you're importing big rules lorebooks (megabytes, hundreds of entries), two settings decide whether the agents actually see your content:
+
+1. **`entryLimit` — the engine defaults it to 100 entries per lorebook.** Anything past the limit is silently ignored: no error, the entries just never fire. Raise `entryLimit` on each large lorebook to at least its entry count (this bundle's own installer does exactly that for its lorebook). If a book's content "randomly" never comes up, check this first.
+2. **`tokenBudget` — caps how much triggered content enters a single turn.** The at-rest size of your lorebook doesn't hit the model; only entries whose keys matched this turn do, up to this budget. Size the budget to your connection: a very generous budget on top of a long chat can push a request past your model connection's context limit, and the symptom is an empty reply, not an error. If you see blank generations, lower the lorebook's `tokenBudget` (or the chat's max context) before suspecting the ruleset.
+
+Splitting one giant book into a few themed lorebooks (spell lists separate from crit tables separate from setting) keeps both knobs easier to reason about — and keeps a single broad keyword from dragging unrelated sections into every turn.
+
 ## 6. Where the mechanics-only lorebook lives
 
 This ruleset's own reference lorebook is `lorebook.json` in this folder — 21 entries, `rm-` prefixed, mechanics and terminology only. Attach both files to your game: ours for *how*, yours for *what*.
