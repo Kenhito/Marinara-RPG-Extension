@@ -34,7 +34,7 @@ Click the **Ruleset** button. The dialog has two ways to load a bundle:
 - **Option B — Fetch URL:**
   `https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/fate-core/bundle.json`
 
-This one import installs the ruleset (sheet + dice widget), the lorebook ("MRR: Fate Core Rules Reference") with 14 entries, the main GM agent, and the sub-agents. Bundles are data — no extension re-approval is triggered. The page reloads with the ruleset active.
+This one import installs the ruleset (sheet + dice widget), the lorebook ("Fate Core Rules Reference") with 14 entries, the main GM agent, and the sub-agents. Bundles are data — no extension re-approval is triggered. The page reloads with the ruleset active.
 
 ### 3. Attach the lorebook and enable the agents (per game)
 
