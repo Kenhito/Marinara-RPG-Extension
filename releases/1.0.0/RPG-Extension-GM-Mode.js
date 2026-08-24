@@ -13715,6 +13715,138 @@ function mrrMechanicRoutingLines() {
   return lines;
 }
 
+/* ─── Round-22: countable track ladders for the prompt ──────────────────
+   Retest-10 landed the read path (the narrator quoted motes/Willpower/Anima
+   verbatim), and exposed the one remaining content gap: the track family
+   reached the agents as damage TOTALS only ("0 bashing / 0 lethal /
+   0 aggravated"), never as the per-level BOX STRUCTURE. Ox-Body Technique
+   adds extra -1/-2/-0 boxes to the base ladder, so with only totals the
+   narrator cannot count how much punishment is actually left; Corey's GM
+   fell back to assuming the base template and said so honestly.
+
+   LADDER SOURCE OF TRUTH (two parts, and the sheet DOES distinguish them):
+     · BASE ladder — `derivedStat.track`, an array of `{label, penalty}`
+       cells declared by the ruleset (exalted3e: 7 cells, -0/-1/-1/-2/-2/
+       -4/Incapacitated, penalties 0/-1/-1/-2/-2/-4/-99).
+     · BONUS levels — `state.sheet.extraTrack[<track name>]`, the same cell
+       shape, stored on the SHEET. This is where Ox-Body additions live, and
+       because it is a separate array we can report the base/bonus split
+       exactly rather than guessing.
+     · FILL state — `state.sheet.trackCells[<track name>]`, positionally
+       aligned to the base+bonus cells AFTER they are sorted by penalty
+       DESCENDING (penalties are negative, so descending = least-hurt
+       first). Values are the damage type's LABEL ("B"/"L"/"A") or null.
+
+   The sort below deliberately mirrors mrrP3RenderDerivedTrack's exactly —
+   if the two ever diverge, fill state would be reported against the wrong
+   levels, which is worse than reporting nothing.
+
+   PURITY: this reads state and never writes it. It deliberately does NOT
+   call ensureTrackCells (which mutates state.sheet.trackCells and would
+   make prompt-building a side-effecting operation); the padding it needs
+   is done locally on a copy. */
+function mrrBuildTrackLadderLines() {
+  var out = [];
+  if (!state.sheet || !state.ruleset || !Array.isArray(state.ruleset.derivedStats)) return out;
+  var tracks = state.ruleset.derivedStats.filter(function (d) {
+    return d && d.renderAs === "track" && Array.isArray(d.track) && d.track.length;
+  });
+  if (!tracks.length) return out;
+
+  tracks.forEach(function (d) {
+    var name = d.name;
+    var baseCells = d.track.map(function (c) { return { cell: c, extra: false }; });
+    var extras = (state.sheet.extraTrack && Array.isArray(state.sheet.extraTrack[name]))
+      ? state.sheet.extraTrack[name].map(function (c) { return { cell: c, extra: true }; })
+      : [];
+    var tagged = baseCells.concat(extras);
+    /* Same comparator as the renderer — see the purity note above. */
+    tagged.sort(function (a, b) { return (b.cell.penalty || 0) - (a.cell.penalty || 0); });
+
+    var filled = (state.sheet.trackCells && Array.isArray(state.sheet.trackCells[name]))
+      ? state.sheet.trackCells[name].slice()
+      : [];
+    while (filled.length < tagged.length) filled.push(null);
+
+    var types = damageTypesFor(d);          /* severity-desc, or null for an untyped track */
+    var labelToId = Object.create(null);
+    if (types) types.forEach(function (t) { labelToId[t.label] = t.id; });
+
+    /* Group CONSECUTIVE cells sharing a label+penalty into one ladder level. */
+    var levels = [];
+    for (var i = 0; i < tagged.length; i++) {
+      var c = tagged[i].cell;
+      var lbl = String(c.label == null ? "?" : c.label);
+      var pen = c.penalty || 0;
+      var last = levels[levels.length - 1];
+      if (!last || last.label !== lbl || last.penalty !== pen) {
+        last = { label: lbl, penalty: pen, count: 0, bonus: 0, marks: Object.create(null), empty: 0 };
+        levels.push(last);
+      }
+      last.count++;
+      if (tagged[i].extra) last.bonus++;
+      var mark = filled[i];
+      if (mark) {
+        /* Typed tracks name the damage type; an UNTYPED track (fate-core
+           stress) has no type vocabulary, so its cells are reported simply
+           as "marked" rather than leaking whatever sentinel happens to be
+           stored in the cell. */
+        var key = types ? (labelToId[mark] || String(mark)) : "marked";
+        last.marks[key] = (last.marks[key] || 0) + 1;
+      } else {
+        last.empty++;
+      }
+    }
+
+    var totalBoxes = tagged.length;
+    var bonusBoxes = extras.length;
+    var baseBoxes = totalBoxes - bonusBoxes;
+
+    var parts = levels.map(function (L) {
+      var inner = [];
+      Object.keys(L.marks).forEach(function (k) { inner.push(L.marks[k] + " " + k); });
+      if (L.empty) inner.push(L.empty + " empty");
+      var bonusTag = L.bonus ? " (+" + L.bonus + " bonus)" : "";
+      return L.label + " x" + L.count + bonusTag + " [" + inner.join(", ") + "]";
+    });
+
+    /* Deepest filled level, reported as data (the ladder's own penalty
+       field) rather than as a rules ruling. */
+    var deepest = null;
+    for (var f = 0; f < tagged.length; f++) {
+      if (filled[f]) deepest = tagged[f].cell;
+    }
+    var deepestStr = deepest
+      ? " — deepest filled level: " + String(deepest.label) + " (penalty " + (deepest.penalty || 0) + ")"
+      : " — no damage marked (penalty 0)";
+
+    var totalsStr = "";
+    if (types) {
+      var totals = [];
+      types.forEach(function (t) {
+        var n = 0;
+        for (var q = 0; q < filled.length; q++) if (filled[q] === t.label) n++;
+        totals.push(n + " " + t.id);
+      });
+      totalsStr = "; totals " + totals.join(", ");
+    } else {
+      var markedCount = 0;
+      for (var w = 0; w < filled.length; w++) if (filled[w]) markedCount++;
+      totalsStr = "; " + markedCount + " of " + totalBoxes + " marked";
+    }
+
+    var header = name + " — " + totalBoxes + " boxes total ("
+      + baseBoxes + " base" + (bonusBoxes ? " +" + bonusBoxes + " bonus" : "") + ")";
+    out.push("- " + header + ": " + parts.join(" | ") + deepestStr + totalsStr);
+  });
+
+  if (out.length) {
+    out.unshift("Track ladders (COUNT THESE BOXES — do not assume the system's default ladder; bonus levels from abilities like Ox-Body Technique are already included in the counts below):");
+    out.push("");
+  }
+  return out;
+}
+
 function buildSheetForPrompt() {
   if (!state.sheet || !state.ruleset) return "";
   var current = state.characters.find(function (c) { return c.id === state.activeCharacterId; });
@@ -14143,6 +14275,10 @@ function buildSheetForPrompt() {
      extension also accepts case/punctuation variants and attribute
      abbreviations (DEX → Dexterity), but printing the canonical names
      keeps the agent's output predictable. */
+  /* Round-22: the countable ladder, immediately before the field
+     reference so the agent reads structure then grammar. */
+  Array.prototype.push.apply(lines, mrrBuildTrackLadderLines());
+
   var refLines = [];
   function pushFieldRef(map, defs) {
     if (!Array.isArray(defs) || !defs.length) return;
