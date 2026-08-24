@@ -39,9 +39,9 @@ On macOS use `shasum -a 256 <file>`; on Windows, `certutil -hashfile <file> SHA2
 
 Expected values for this release:
 
-- `Marinara-RPG-Extension.extension.zip` — `<ZIP_SHA256>`
-- `RPG-Extension-GM-Mode.js` — `<LOADER_SHA256>`
-- **After import**, open the extension's page and confirm it lists **Full page access** — Marinara's **Review and Run** dialog should show exactly `sha256:<ENGINE_HASH>`. That is the engine's own hash of the code it is about to approve; if it reads anything else, you imported a different file.
+- `Marinara-RPG-Extension.extension.zip` — `755655e2a57fd2d97b76fc14bf2b2a4948243313c7b620cbd02ce5745a9f9409`
+- `RPG-Extension-GM-Mode.js` — `226024a40e4e241b8a83475297c493f074b863360c6d55cbb22acc8719d4d287`
+- **After import**, open the extension's page and confirm it lists **Full page access** — Marinara's **Review and Run** dialog should show exactly `sha256:37da46ca8c45a1fe3fb78fbceda1d2f8f97301cfcc3d5a2a0f12539a6ec75717`. That is the engine's own hash of the code it is about to approve; if it reads anything else, you imported a different file.
 
 If a hash does not match, stop and re-download rather than importing. (Marinara's own **Review and Run** step approves the code's hash separately, on the engine side — that pins what you approved, but only the two checks above tell you the file was the published one to begin with.)
 
