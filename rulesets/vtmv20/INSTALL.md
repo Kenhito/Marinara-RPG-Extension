@@ -71,6 +71,25 @@ Agents without an explicit connection resolve one at generation time and work
 normally. It is not the cause of missing agent output — that is the preset
 section step above.
 
+## Turn on tool use so the GM rolls real dice (recommended)
+
+**Chat Settings → Function Calling → "Enable Tool Use"** — on.
+
+This hands the main GM model Marinara's server-side `roll_dice` tool, a true RNG.
+`roll_dice` is enabled by default once the chat toggle is on; there is no separate
+grant to make. Without it the narrating model *invents* every pool it rolls — soak,
+Willpower, frenzy and Rötschreck checks, an antagonist's Celerity-fuelled attack —
+by picking a plausible number of successes. V20 runs on a d10 pool where a single
+1 can turn a good roll into a botch; a model choosing the result quietly deletes
+that risk. The same toggle gates this bundle's `vtmv20_reference` custom tool.
+
+**You do not need to grant `roll_dice` to the MRR agents themselves.**
+Agent-attached tools need the same chat toggle *plus* a per-agent grant in the
+Agents UI, and the bundle cannot ship that grant (the agent-import route strips
+`settings.enabledTools`). It is also unnecessary: the State Mutator reads the
+numbers out of the GM's finished narration and copies them verbatim — it never
+rolls, by design.
+
 ## Updating the ruleset later
 
 If you edit any source file (`ruleset.json`, `lorebook.json`, `gm-agent.md`, `agents/*.md`), regenerate `agents.json` and `bundle.json`:

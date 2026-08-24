@@ -30,13 +30,17 @@ Each ruleset folder has its own step-by-step `INSTALL.md`. This page is the orie
 4. **Enable the agents for your game**
    On Marinara 2.4.3+ the MRR agents behave like any custom agents: installed by the bundle, but enabled per game — **after the game launches, not mid-generation**. Go to **Settings -> Agents** (or the game's agent selection), find the agents named like `MRR: <System> — <Role>`, and enable the ones your table wants. A good minimal set: **Ruleset Helper + State Mutator** (the State Mutator is what makes narration update the character sheet). Each enabled agent costs one model call per turn.
 
+   ![Marinara's Agents panel for a launched game, listing the installed MRR agents by their `MRR: <System> — <Role>` names — Ruleset Helper, State Mutator, Combat Overseer, Context Fuser — each with an enable toggle at the right. The Ruleset Helper and State Mutator toggles are switched on (green); the rest are off.](screenshots/agents-enable-panel.png)
+
 5. **Add the MRR agent sections to your roleplay preset (roleplay chats, engine 2.4.0+)**
    **This step is not optional for roleplay chats, and skipping it fails silently.** Since Marinara 2.4.0 a roleplay preset *owns* agent placement: an agent's output is inserted only where a matching **Agent Data** marker section sits in the preset, and with no matching section the engine **discards that agent's output entirely** — no warning, no fallback. The agents still run, still cost tokens, and still show healthy rows in their run history, while the narrator never sees a word of it. If your agents seem to "do nothing", this is almost always why.
 
    - **One click (recommended):** open **Manage MRR Agents** → **Add agent sections to active preset**. It names the preset before changing anything, skips agents that already have a section, and never edits a preset without your confirmation.
    - **By hand:** **Preset Editor → Add Section → Agent Sections**, then pick each MRR agent.
 
-   **You only have to do this once — reinstalls repair themselves now.** Marinara can never change an existing agent's `type`, so re-importing a bundle recreates the agents under *new* types, and the marker sections you added would be left pointing at agents that no longer exist (agents run, output is discarded, no warning). Since round 28 the extension reconciles that automatically: after every bundle import — and whenever a chat's ruleset is confirmed — it repoints your existing MRR agent sections at the live agents and logs one line per section it fixed. Sections you added for non-MRR agents are never touched. The one case it cannot fix is the stock read-only **"Marinara Universal"** preset, which refuses every edit: save a copy, select the copy for the chat, and re-run the one-click assist.
+   ![The Marinara preset editor with the MRR agent sections in place. The section list shows one Agent Data marker per MRR agent — Ruleset Helper, Combat Overseer, Context Fuser, Pre-Input Transformer — sitting among the preset's ordinary sections, each labelled with the agent it carries. The State Mutator is deliberately absent from the list.](screenshots/preset-agent-sections.png)
+
+   **You only have to do this once — reinstalls repair themselves now.** Marinara can never change an existing agent's `type`, so re-importing a bundle recreates the agents under *new* types, and the marker sections you added would be left pointing at agents that no longer exist (agents run, output is discarded, no warning). Since round 28 the extension reconciles that automatically: after every bundle import — and whenever a chat's ruleset is confirmed — it repoints your existing MRR agent sections at the live agents and logs one line per section it fixed (`reconciled N orphaned agent marker(s)` in the browser console). The same pass re-derives a chat's ruleset stamp from the chat's own enabled MRR agents when applying a chat-preset wiped it. Sections you added for non-MRR agents are never touched. **First-time setup still uses the button above** — only the re-run after a reinstall became automatic. The one case it cannot fix is the stock read-only **"Marinara Universal"** preset, which refuses every edit: save a copy, select the copy for the chat, and re-run the one-click assist.
 
    **Roleplay only — Game mode is genuinely fine without it.** The preset assembler is skipped entirely for game and conversation chats, so those modes keep the older depth-0 injection fallback and their agent output is delivered as it always was. Only roleplay chats hand placement to the preset.
 
@@ -46,6 +50,8 @@ Each ruleset folder has its own step-by-step `INSTALL.md`. This page is the orie
 
 6. **Turn on tool use so the GM can roll real dice (recommended)**
    **Chat Settings → Function Calling → "Enable Tool Use"** — on.
+
+   ![The chat's Settings panel scrolled to the Function Calling section. A single "Enable Tool Use" switch sits at the top of the section, toggled on (green), with the available tools — including Marinara's built-in roll_dice — listed beneath it.](screenshots/chat-tool-use-toggle.png)
 
    This gives the main GM model Marinara's server-side `roll_dice` tool, which is a true RNG. `roll_dice` is enabled by default once the chat toggle is on; you do not need to grant it separately.
 
@@ -72,6 +78,8 @@ The character sheet state is per-chat (stored in browser `localStorage` keyed by
 If you used **Fetch URL** to install a ruleset, you can re-fetch it whenever the upstream version changes — Save-and-reload pulls the new `ruleset.json` into the active state.
 
 The extension itself updates by re-importing the package (same form as install) and re-approving the new hash via **Review and Run** — every code/CSS change requires this, with no exceptions. Marinara doesn't have an extension marketplace, so updates are manual.
+
+**Your preset's agent sections repair themselves — you don't re-run the button.** A bundle re-import recreates the MRR agents under new `type`s (Marinara can never change an existing agent's type), which used to orphan every **Agent Data** marker section you had added. Since round 28 the extension repoints them itself on every bundle import, logging `reconciled N orphaned agent marker(s)` to the browser console, and re-derives a wiped ruleset stamp from the chat's own enabled MRR agents. The only preset it cannot repair is the stock read-only "Marinara Universal" — save a copy, select the copy, and run the one-click assist against that.
 
 **If you pasted the GM prompt anywhere by hand, re-paste it after every upgrade.** A bundle re-import updates the *managed* agents it installed (the Ruleset Helper and the sub-agents) — it does **not** touch a copy of the GM prompt you pasted into a character card or a hand-made agent. Those copies go stale silently and keep running the old instructions: a card carrying a pre-2.4.0 prompt still emits the old inline tags and is missing everything added since, including the reroll-on-regenerate dice doctrine. Re-paste from the ruleset's `gm-agent.md` (the block between the triple backticks) whenever you update a bundle.
 

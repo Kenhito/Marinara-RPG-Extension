@@ -35,6 +35,14 @@ Installing is not activating. After you create/launch your game:
 1. **Attach the L&F lorebook to the game** (at setup or after launch). Required — without it the agents have no rules context and will not work correctly.
 2. **Enable the MRR agents for the game** — after it launches, not mid-generation: **Settings → Agents** → find the agents named like `MRR: Lasers & Feelings — <Role>` → enable the ones your table wants. A good minimal set: **Ruleset Helper + State Mutator**. Each enabled agent costs one model call per turn — on a provider that allows only one call at a time they run one after another.
 
+## Turn on tool use so the GM rolls real dice (recommended)
+
+**Chat Settings → Function Calling → "Enable Tool Use"** — on.
+
+This hands the main GM model Marinara's server-side `roll_dice` tool, a true RNG. `roll_dice` is enabled by default once the chat toggle is on; there is no separate grant to make. Without it the narrating model *invents* every die it rolls on its own — the ship's rolls, an NPC's reaction, whatever the fiction hands to chance — by picking a plausible number. L&F is one page of rules riding entirely on a d6 landing where it lands, and a model that picks the number tends to pick the kind one. The same toggle gates this bundle's `lasers_and_feelings_reference` custom tool.
+
+**You do not need to grant `roll_dice` to the MRR agents themselves.** Agent-attached tools need the same chat toggle *plus* a per-agent grant in the Agents UI, and the bundle cannot ship that grant (the agent-import route strips `settings.enabledTools`). It is also unnecessary: the State Mutator reads the numbers out of the GM's finished narration and copies them verbatim — it never rolls, by design.
+
 ## How it plays at the table — `stance-modal-pool`
 
 L&F uses the `stance-modal-pool` resolution mode. Each roll the player picks **one of two stances**:

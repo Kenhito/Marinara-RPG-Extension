@@ -83,6 +83,24 @@ Installing is not activating. After you create/launch your game:
    normally. It is not the cause of missing agent output — that is the preset
    section step above.
 
+5. **Turn on tool use so the GM rolls real dice (recommended).**
+   **Chat Settings → Function Calling → "Enable Tool Use"** — on.
+
+   This hands the main GM model Marinara's server-side `roll_dice` tool, a true
+   RNG. `roll_dice` is enabled by default once the chat toggle is on; there is no
+   separate grant to make. Without it the narrating model *invents* every 4dF it
+   rolls — opposition, NPC actions, contests it resolves off-screen — by picking
+   a plausible shift total. 4dF has a tight bell curve the whole ladder is tuned
+   against; a model choosing the result flattens it. The same toggle gates this
+   bundle's `fate_core_reference` custom tool.
+
+   **You do not need to grant `roll_dice` to the MRR agents themselves.**
+   Agent-attached tools need the same chat toggle *plus* a per-agent grant in the
+   Agents UI, and the bundle cannot ship that grant (the agent-import route strips
+   `settings.enabledTools`). It is also unnecessary: **the State Mutator needs no
+   dice.** It reads the numbers out of the GM's finished narration and copies them
+   verbatim — it never rolls, by design.
+
 ## Sanity check
 
 In a fresh Game Mode chat:

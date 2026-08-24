@@ -71,6 +71,27 @@ Agents without an explicit connection resolve one at generation time and work
 normally. It is not the cause of missing agent output — that is the preset
 section step above.
 
+## Turn on tool use so the GM rolls real dice (recommended)
+
+**Chat Settings → Function Calling → "Enable Tool Use"** — on.
+
+This hands the main GM model Marinara's server-side `roll_dice` tool, a true RNG.
+`roll_dice` is enabled by default once the chat toggle is on; there is no separate
+grant to make. Genesys' six symbol dice are not something `roll_dice` can model —
+that is exactly why the bundle runs `narrative-handled` and you report symbols
+yourself — but every *numeric* roll the GM makes behind the screen still needs a
+real one: the d100 Critical Injury result, initiative order, a random-table pick.
+Without the toggle the narrating model picks a plausible-looking number for each of
+those instead of rolling. The same toggle gates this bundle's `genesys_reference`
+custom tool.
+
+**You do not need to grant `roll_dice` to the MRR agents themselves.**
+Agent-attached tools need the same chat toggle *plus* a per-agent grant in the
+Agents UI, and the bundle cannot ship that grant (the agent-import route strips
+`settings.enabledTools`). It is also unnecessary: the State Mutator reads the
+numbers out of the GM's finished narration and copies them verbatim — it never
+rolls, by design.
+
 ## What the dice widget does (and doesn't do)
 
 Genesys uses **six custom symbol dice** that no native dice widget faithfully models. The bundle uses Marinara's `narrative-handled` resolution mode — the dice widget runs in **manual NdX mode** where you can roll any dice you like and report results to the AI.

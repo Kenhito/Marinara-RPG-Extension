@@ -92,6 +92,20 @@ unaffected by this step. If your chat has **no preset
 selected**, Marinara uses no sections whatsoever — pick one first, or let the
 one-click assist attach your default.
 
+**You only do this once — reinstalls repair themselves.** Marinara can never change an
+existing agent's `type`, so re-importing a bundle recreates the MRR agents under *new*
+types, and the marker sections you added would be left pointing at agents that no
+longer exist (agents run, output is discarded, no warning). The extension now reconciles
+that for you: after every bundle import — and whenever a chat's ruleset is confirmed —
+it repoints your existing MRR agent sections at the live agents and logs one line per
+section it fixed (`reconciled N orphaned agent marker(s)` in the browser console). It
+also re-derives a chat's ruleset stamp from the chat's own enabled MRR agents if
+applying a chat-preset wiped it. Sections you added for non-MRR agents are never
+touched. **First-time setup still uses the button above** — only the re-run is
+automatic. The one preset it cannot repair is the stock read-only **"Marinara
+Universal"**, which refuses every edit: save a copy, select the copy for the chat, and
+re-run the one-click assist.
+
 **The connection warning is harmless.** If Marinara warns that an MRR agent has no
 connection configured, that is a **billing/attribution notice, not an error**. Agents
 without an explicit connection resolve one at generation time and work normally. It is
@@ -100,6 +114,28 @@ never the cause of missing agent output.
 **Chat tools need the chat's own toggle.** If a ruleset ships custom tools, they only
 become available when that chat's **enableTools** setting is on — installing a bundle
 does not turn it on for you.
+
+## Step 4c — Turn on tool use so the GM rolls real dice (recommended)
+
+**Chat Settings → Function Calling → "Enable Tool Use"** — on.
+
+This is what gets you proper dice probabilities. The toggle hands the main GM model
+Marinara's server-side `roll_dice` tool, a true RNG; `roll_dice` is enabled by default
+once the chat toggle is on, so there is no separate grant to make. Leave it off and the
+narrating model *invents* every attack roll, save, and reaction check by picking a
+plausible-looking number — a model guessing at dice is a biased die, and reliably a
+kinder one than the real thing. With it on, the GM rolls real dice server-side and the
+narration reports what actually came up. It is the same toggle that gates a ruleset's
+own custom tools.
+
+**You do not need to grant `roll_dice` to the MRR agents themselves.** Agent-attached
+tools need this chat toggle *plus* a per-agent grant in the Agents UI, and the bundle
+cannot ship that grant (the agent-import route strips `settings.enabledTools`). It is
+also unnecessary: the State Mutator reads the numbers out of the GM's finished
+narration and copies them verbatim — it never rolls, by design.
+
+*(Screenshots of this and the other install steps are in the repo's `README.md` and
+`docs/INSTALL.md` — they are not packaged into this release folder.)*
 
 ## Step 5 — Build a character
 
@@ -167,6 +203,10 @@ Marinara's chat IDs rotate per chat. Sheets in localStorage are keyed by chat ID
 2. Reinstall your ruleset's `bundle.json` via the Ruleset dialog (bundles are data — no approval prompt).
 
 Your sheets, characters, conditions, etc. all persist in localStorage. The update path doesn't lose data.
+
+**Your preset's agent sections are repaired for you.** The bundle re-import recreates the MRR agents under new types, which used to orphan every **Agent Data** marker section you had added. The extension now repoints them on every import and logs `reconciled N orphaned agent marker(s)` to the browser console, so you do not re-run **Add agent sections to active preset** after an update. The stock read-only "Marinara Universal" preset is the one exception — save a copy, select the copy, and run the one-click assist against that.
+
+**Re-paste any hand-pasted GM prompt after upgrading.** The re-import updates the *managed* agents the bundle installed — it does **not** touch a copy of the GM prompt you pasted into a character card or a hand-made agent by hand. Those copies go stale silently and keep running the old instructions (a stale card still emits the old inline tags and lacks everything added since, including the reroll-on-regenerate dice doctrine). Re-paste from the ruleset's `gm-agent.md` — the block between the triple backticks — every time you update the bundle.
 
 ## Done
 

@@ -60,6 +60,28 @@ Installing is not activating. After you create/launch your game:
    enabled agent costs one extra model call per turn — on a provider
    that allows only one call at a time they run one after another.
 
+## Turn on tool use so the GM rolls real dice (recommended)
+
+**Chat Settings → Function Calling → "Enable Tool Use"** — on.
+
+This hands the main GM model Marinara's server-side `roll_dice`
+tool, a true RNG. `roll_dice` is enabled by default once the chat
+toggle is on; there is no separate grant to make. Without it the
+narrating model *invents* every pool it rolls — soak, Willpower,
+an antagonist's attack, a botch that should have landed — by
+picking a plausible number of successes. This is a d10 pool game
+where one stray 1 turns a good roll into a botch, and a model
+choosing the result quietly deletes that risk. The same toggle
+gates this bundle's `exwod_reference` custom tool.
+
+**You do not need to grant `roll_dice` to the MRR agents
+themselves.** Agent-attached tools need the same chat toggle *plus*
+a per-agent grant in the Agents UI, and the bundle cannot ship that
+grant (the agent-import route strips `settings.enabledTools`). It
+is also unnecessary: the State Mutator reads the numbers out of the
+GM's finished narration and copies them verbatim — it never rolls,
+by design.
+
 ## First-character setup
 
 The sheet is type-agnostic so it serves all nine Exalt types. After

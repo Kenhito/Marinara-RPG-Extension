@@ -1,6 +1,6 @@
 # Exalted 3e GM Agent Prompt
 
-Paste the contents below into Marinara Engine -> Settings -> Agents -> "Create Custom Agent".
+Paste the contents below into Marinara Engine's Game Mode as the ruleset's main narrator agent (this file ships automatically via the bundle's `additionalAgents`/`gmAgent` install path — you do not need to paste it by hand if you installed the bundle).
 
 - **Name:** Exalted 3e Ruleset Override
 - **Description:** Enforces Exalted 3rd Edition d10 dice-pool resolution, mote/willpower/anima tracking, and stunt economy in Game Mode narration.

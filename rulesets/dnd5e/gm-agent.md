@@ -1,6 +1,8 @@
 # D&D 5e GM Agent Prompt
 
-Paste ONLY the fenced ` ```text ... ``` ` "Prompt template" block below into Marinara Engine -> Settings -> Agents -> "Create Custom Agent" — NOT the whole file. Round-12 finding: this is the confirmed source of a live leak (T1's sole-writer filter caught "MRR: Dungeons & Dragons 5th Edition Ruleset Helper" emitting `[mrr-state:]` text) — the "State-mutator tags" section far below is DOCUMENTATION about a DIFFERENT agent (the State Mutator) and was never meant to be pasted into this one, but its literal `[mrr-state: field="xp" ...]` example syntax is exactly the kind of content that leaks into a live agent's own output when copy-pasted past the fence. See that section's own header for the correction.
+Paste the contents below into Marinara Engine's Game Mode as the ruleset's main narrator agent (this file ships automatically via the bundle's `additionalAgents`/`gmAgent` install path — you do not need to paste it by hand if you installed the bundle).
+
+**If you do paste by hand, paste ONLY the fenced ` ```text ... ``` ` "Prompt template" block below — NOT the whole file.** Round-12 finding: this is the confirmed source of a live leak (T1's sole-writer filter caught "MRR: Dungeons & Dragons 5th Edition Ruleset Helper" emitting `[mrr-state:]` text) — the "State-mutator tags" section far below is DOCUMENTATION about a DIFFERENT agent (the State Mutator) and was never meant to be pasted into this one, but its literal `[mrr-state: field="xp" ...]` example syntax is exactly the kind of content that leaks into a live agent's own output when copy-pasted past the fence. See that section's own header for the correction.
 
 - **Name:** D&D 5e Ruleset Override
 - **Description:** Enforces D&D 5e (SRD 5.1) skill resolution and dice formatting in Game Mode narration.

@@ -71,6 +71,26 @@ Agents without an explicit connection resolve one at generation time and work
 normally. It is not the cause of missing agent output — that is the preset
 section step above.
 
+## Turn on tool use so the GM rolls real dice (recommended)
+
+**Chat Settings → Function Calling → "Enable Tool Use"** — on.
+
+This hands the main GM model Marinara's server-side `roll_dice` tool, a true RNG.
+`roll_dice` is enabled by default once the chat toggle is on; there is no separate
+grant to make. Without it the narrating model *invents* every roll it makes on its
+own side of the table — fortune rolls, engagement rolls, NPC and hazard rolls — by
+picking a plausible number. Blades is a game about living with the position you
+took; a GM who quietly chooses the number is deciding the score instead of the
+dice. The same toggle gates this bundle's `blades_in_the_dark_reference` custom
+tool.
+
+**You do not need to grant `roll_dice` to the MRR agents themselves.**
+Agent-attached tools need the same chat toggle *plus* a per-agent grant in the
+Agents UI, and the bundle cannot ship that grant (the agent-import route strips
+`settings.enabledTools`). It is also unnecessary: the State Mutator reads the
+numbers out of the GM's finished narration and copies them verbatim — it never
+rolls, by design.
+
 ## What the dice widget does (and doesn't do)
 
 Blades' Nd6-take-highest mechanic is mechanically simple, but the dice widget runs in **manual NdX mode** because the game's resolution lives in the combination of dice + Position + Effect — not just dice. Roll 6-sided dice physically (or via any d6 roller), tell the AI your highest result, and the GM agent will narrate the outcome from there.
