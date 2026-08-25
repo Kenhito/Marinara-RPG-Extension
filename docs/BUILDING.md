@@ -286,7 +286,7 @@ The generated agent recognizes those patterns and annotates each matching turn w
 
 **Purpose:** assemble the canonical agent pool — `combat-overseer` (pre_generation), `context-fuser` (pre_generation), `state-mutator` (**post_processing** as of round 25) — plus the per-system `main` Ruleset Helper, plus any per-system parallel-phase overlays. Output is a structured payload usable by either GM-mode (where `build-bundle.mjs` embeds it into the bundle) or RP-mode (where users import it through Marinara's Import Agents dialog). On Marinara 2.4.3+ ALL custom agents — both modes — are enabled per game by the user after launch (Settings → Agents); the emitted `enabled` flag does not activate anything by itself.
 
-**Override surface:** drop `agents/<role>.md` into a per-ruleset directory to override the shared baseline for that ruleset. Roles can also be introduced per-ruleset (no shared baseline required) — this is how `exalted3e` ships its parallel-phase `anima-banner-monitor` and `charm-cooldown-tracker`, and how `vtmv20` ships `blood-pool-tracker`.
+**Override surface:** drop `agents/<role>.md` into a per-ruleset directory to override the shared baseline for that ruleset. Roles can also be introduced per-ruleset (no shared baseline required) — this is how `exalted3e` ships its parallel-phase `essence-manager`, and how `vtmv20` ships `blood-pool-tracker`.
 
 See `docs/AUTHORING.md` Step 5 for the agent-prompt authoring guide.
 
@@ -423,7 +423,7 @@ Some rulesets ship additional **`parallel`-phase** agents that track system-spec
 
 | Ruleset | Parallel overlay(s) | Tracks |
 |---------|---------------------|--------|
-| `exalted3e` | `anima-banner-monitor`, `charm-cooldown-tracker` | Anima banner level per character, Charm cooldown state per scene. |
+| `exalted3e` | `essence-manager` | One block per character: once-per-scene Charms used, Simple lock, the scene's Personal/Peripheral mote totals, and the current anima banner level. |
 | `vtmv20` | `blood-pool-tracker` | Per-Kindred blood pool current value, per-turn generation cap, recent significant changes. |
 
 ### Per-turn cost

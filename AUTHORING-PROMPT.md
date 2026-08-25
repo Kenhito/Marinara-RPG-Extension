@@ -140,7 +140,7 @@ GM-mode bundles SHIP the canonical sub-agent pool in `additionalAgents[]`, all `
 Optional additions when the ruleset needs them:
 
 - `pre-input-transformer` (pre_generation) — auto-derived from `ruleset.vocabularyHints[]` (or a full author override at `ruleset.preInputTransformerAgent`). Translates D&D-flavored player input into ruleset vocabulary.
-- Per-system parallel-phase overlays (e.g. `anima-banner-monitor` and `charm-cooldown-tracker` for `exalted3e`; `blood-pool-tracker` for `vtmv20`) — system-specific resource trackers that run alongside the narrator without blocking it.
+- Per-system parallel-phase overlays (e.g. `essence-manager` for `exalted3e`; `blood-pool-tracker` for `vtmv20`) — system-specific resource trackers that run alongside the narrator without blocking it.
 
 Reference prompts for the three universal agents live at `agents/<role>.md`. Drop a per-system override at `rulesets/<your-system>/agents/<role>.md` to tune any of them; otherwise the shared baseline applies. Per-system parallel overlays live only at `rulesets/<your-system>/agents/<role>.md` — they're not shared because the resources they track are unique to that system. Each sub-agent has its own `role`-based idempotency key (`mrrAgentRole`) so the installer matches and updates in place on re-install instead of accumulating duplicates.
 

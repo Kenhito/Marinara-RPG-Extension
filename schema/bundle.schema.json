@@ -93,7 +93,7 @@
     },
     "additionalAgents": {
       "type": "array",
-      "description": "Additional agents installed alongside the main gmAgent. The canonical GM-mode pool is combat-overseer (pre_generation), context-fuser (pre_generation), state-mutator (post_processing), optionally a pre-input-transformer (pre_generation), and any per-system parallel-phase overlays (e.g. anima-banner-monitor for exalted3e, blood-pool-tracker for vtmv20). Idempotency: each agent's settings carry mrrAgentRole=<role> so re-install matches by (rulesetId, role). GM-mode bundles ship every additional agent with enabled:true since GM-mode has no per-agent toggle UI.",
+      "description": "Additional agents installed alongside the main gmAgent. The canonical GM-mode pool is combat-overseer (pre_generation), context-fuser (pre_generation), state-mutator (post_processing), optionally a pre-input-transformer (pre_generation), and any per-system parallel-phase overlays (e.g. essence-manager for exalted3e, blood-pool-tracker for vtmv20). Idempotency: each agent's settings carry mrrAgentRole=<role> so re-install matches by (rulesetId, role). GM-mode bundles ship every additional agent with enabled:true since GM-mode has no per-agent toggle UI.",
       "items": {
         "type": "object",
         "required": [
