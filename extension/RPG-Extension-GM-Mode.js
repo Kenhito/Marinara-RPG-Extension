@@ -1389,6 +1389,75 @@ function findManagedAgent(agents, rulesetId, authorId, role) {
   return null;
 }
 
+/* ═══ IMPORT SETTINGS-PRESERVATION (2026-08-25, R-B) ═══════════════════════
+   Companion to the R-A re-adoption pass (see the block above
+   mrrParseManagedPromptPrefix for the full defect story). R-A heals a
+   stripped row at the next reconcile; R-B makes sure an IMPORT does not
+   re-break it, and does not lose the user's own configuration either way.
+
+   Two distinct losses happen at every re-import today:
+
+     · SETTINGS. The engine REPLACES an agent's settings wholesale on PATCH
+       (agents.storage.ts:249-253 — `updateFields.settings =
+       JSON.stringify({ ...data.settings })`, no merge with the stored row).
+       Our install bodies build settings from the bundle alone, so the
+       output cap the user set in Settings -> Agents (stored as
+       `settings.maxTokens`) is destroyed on every reinstall.
+     · CONNECTION. `connectionId` is a top-level column, and the install
+       bodies set it to an auto-picked default. Since updateAgentConfigSchema
+       is `.partial()` and the storage layer writes every DEFINED field, that
+       silently reassigns a connection the user deliberately chose.
+
+   Ownership rule, applied by the two helpers below: the mrr* keys are
+   always OURS (re-stamped, never carried over — a stale mrrAgentRole must
+   not survive) · promptTemplate is always OURS (it is the identity anchor
+   R-A depends on) · EVERYTHING ELSE belongs to the outgoing row and beats
+   the bundle's own defaults. */
+
+/* The row an import is about to replace for (rulesetId, role): the managed
+   one if the tags are intact, otherwise a stripped-but-mappable row. Without
+   the second half, an import run BEFORE the next reconcile does not see the
+   stripped row, creates a second one beside it, and reproduces the 10-agent
+   duplication this round exists to end. */
+function mrrFindReplaceableAgent(agents, rulesetId, authorId, role) {
+  var managed = findManagedAgent(agents, rulesetId, authorId, role);
+  if (managed) return managed;
+  var wanted = role || "main";
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var hit = mrrStrippedManagedRow(list[i], rulesetId);
+    if (hit && hit.role === wanted && hit.authorId === authorId) return list[i];
+  }
+  return null;
+}
+
+/* Settings for a row being created or replaced. `outgoing` may be null (a
+   genuine first install), in which case this is just the bundle's settings
+   plus our keys — today's behaviour, unchanged. */
+function mrrPreservedAgentSettings(outgoing, bundleSettings, mrrKeys) {
+  var merged = {};
+  var b = (bundleSettings && typeof bundleSettings === "object") ? bundleSettings : {};
+  for (var k in b) if (Object.prototype.hasOwnProperty.call(b, k)) merged[k] = b[k];
+  var cur = outgoing ? parseAgentSettings(outgoing) : null;
+  if (cur) {
+    for (var c in cur) {
+      if (!Object.prototype.hasOwnProperty.call(cur, c)) continue;
+      if (c.indexOf("mrr") === 0) continue;   /* our namespace — re-stamped below, never carried */
+      merged[c] = cur[c];                     /* the user's key wins over the bundle default */
+    }
+  }
+  var m = (mrrKeys && typeof mrrKeys === "object") ? mrrKeys : {};
+  for (var q in m) if (Object.prototype.hasOwnProperty.call(m, q)) merged[q] = m[q];
+  return merged;
+}
+
+/* The connection to write. A deliberate choice on the outgoing row always
+   beats the installer's auto-pick; absent one, the auto-pick stands. */
+function mrrPreservedConnectionId(outgoing, fallbackConnectionId) {
+  if (outgoing && typeof outgoing.connectionId === "string" && outgoing.connectionId) return outgoing.connectionId;
+  return fallbackConnectionId;
+}
+
 function findManagedLorebook(lorebooks, rulesetId) {
   if (!Array.isArray(lorebooks)) return null;
   for (var i = 0; i < lorebooks.length; i++) {
@@ -1753,7 +1822,9 @@ function installBundle(bundle, progressCb) {
         return;
       }
       progress("Installing GM agent...");
-      var existingAgent = findManagedAgent(agents, rulesetId, authorId);
+      /* R-B: also matches a stripped-but-mappable row, so a reinstall
+         UPDATES the row an engine UI edit detached instead of duplicating it. */
+      var existingAgent = mrrFindReplaceableAgent(agents, rulesetId, authorId, null);
       var ag = bundle.gmAgent;
       var promptTemplate = prefix + " " + (ag.promptTemplate || "");
       var body = {
@@ -1762,17 +1833,29 @@ function installBundle(bundle, progressCb) {
         description: ag.description || "",
         phase: ag.phase || "pre_generation",
         enabled: true,
-        connectionId: connectionId,
+        /* R-B: a connection the user picked outranks the auto-pick. */
+        connectionId: mrrPreservedConnectionId(existingAgent, connectionId),
         promptTemplate: promptTemplate,
-        settings: Object.assign({}, ag.settings || {}, {
+        /* R-B: the outgoing row's foreign keys (output cap, engine-UI
+           anything) ride across; mrr keys and promptTemplate stay ours. */
+        settings: mrrPreservedAgentSettings(existingAgent, ag.settings, {
           mrrManaged: true,
           mrrBundleSchema: BUNDLE_SCHEMA_ID,
           mrrRulesetId: rulesetId,
           mrrAuthorId: authorId
         })
       };
+      /* R-B: `type` is CREATE-only. The engine collision-suffixes a type at
+         creation and never mutates it afterwards, so an existing row's type
+         may legitimately differ from the base — and now that the lookup above
+         also finds stripped rows, re-asserting the base type could rename a
+         second ruleset's row onto a type another ruleset already owns.
+         PATCH is partial (updateAgentConfigSchema is `.partial()`), so
+         omitting it simply leaves the row's own type alone. */
+      var bodyForUpdate = Object.assign({}, body);
+      delete bodyForUpdate.type;
       return existingAgent
-        ? apiFetch("/agents/" + existingAgent.id, { method: "PATCH", body: JSON.stringify(body) })
+        ? apiFetch("/agents/" + existingAgent.id, { method: "PATCH", body: JSON.stringify(bodyForUpdate) })
         : apiFetch("/agents", { method: "POST", body: JSON.stringify(body) });
     }).then(function () {
       /* Install optional additionalAgents (state-reminder, combat-adjudicator,
@@ -1786,7 +1869,8 @@ function installBundle(bundle, progressCb) {
       return subAgents.reduce(function (chain, ag) {
         return chain.then(function () {
           var role = ag.role;
-          var existingSub = findManagedAgent(agents, rulesetId, authorId, role);
+          /* R-B: managed OR stripped-but-mappable — see mrrFindReplaceableAgent. */
+          var existingSub = mrrFindReplaceableAgent(agents, rulesetId, authorId, role);
           var subPrefix = "[mrr-v1:" + authorId + "/" + rulesetId + ":" + role + "]";
           var subPromptTemplate = subPrefix + " " + (ag.promptTemplate || "");
           /* Sub-agents install DISABLED by default. Bundle authors can opt
@@ -1802,9 +1886,12 @@ function installBundle(bundle, progressCb) {
             description: ag.description || "",
             phase: ag.phase || "pre_generation",
             enabled: ag.enabled === true,
-            connectionId: connectionId,
+            /* R-B: a connection the user picked outranks the auto-pick. */
+            connectionId: mrrPreservedConnectionId(existingSub, connectionId),
             promptTemplate: subPromptTemplate,
-            settings: Object.assign({}, ag.settings || {}, {
+            /* R-B: the outgoing row's foreign keys (output cap, engine-UI
+               anything) ride across; mrr keys and promptTemplate stay ours. */
+            settings: mrrPreservedAgentSettings(existingSub, ag.settings, {
               mrrManaged: true,
               mrrBundleSchema: BUNDLE_SCHEMA_ID,
               mrrRulesetId: rulesetId,
@@ -1815,9 +1902,12 @@ function installBundle(bundle, progressCb) {
           /* On re-install (PATCH), preserve the user's enabled-toggle —
              the user may have flipped this sub-agent on/off in Settings →
              Agents and we don't want to clobber that. enabled is only
-             carried on the initial CREATE (POST). */
+             carried on the initial CREATE (POST).
+             R-B adds `type` to the create-only set for the same reason as
+             the gmAgent body above: the engine owns an existing row's type. */
           var subBodyForUpdate = Object.assign({}, subBody);
           delete subBodyForUpdate.enabled;
+          delete subBodyForUpdate.type;
           return existingSub
             ? apiFetch("/agents/" + existingSub.id, { method: "PATCH", body: JSON.stringify(subBodyForUpdate) })
             : apiFetch("/agents", { method: "POST", body: JSON.stringify(subBody) });
@@ -5853,11 +5943,35 @@ function importAgents(payload, progressCb) {
         ? connections[0].id
         : null;
 
+      /* R-B, delete-then-recreate half. This path DELETES the ruleset's rows
+         and POSTs fresh ones, so preservation has to be captured BEFORE the
+         delete — after it, the outgoing settings are gone for good.
+         The sweep is widened to stripped-but-mappable rows for the same
+         reason the upsert path was: a row an engine UI edit detached is
+         invisible to the mrrManaged filter, so it survived the delete and
+         then sat beside its freshly-created replacement. That is the
+         duplication half of the ex31507 chain, on this path. */
       var existing = (Array.isArray(agents) ? agents : []).filter(function (a) {
         var s = parseAgentSettings(a);
-        return s.mrrManaged === true && s.mrrRulesetId === rulesetId;
+        if (s.mrrManaged === true && s.mrrRulesetId === rulesetId) return true;
+        return !!mrrStrippedManagedRow(a, rulesetId);
       });
       var existingIds = existing.map(function (a) { return a.id; });
+      /* role -> the row about to be deleted, so its foreign keys can ride
+         across to the row that replaces it. First row per role wins, matching
+         findManagedAgent's own convention. */
+      var outgoingByRole = Object.create(null);
+      existing.forEach(function (a) {
+        var s = parseAgentSettings(a);
+        var r;
+        if (s && s.mrrManaged === true) {
+          r = (typeof s.mrrAgentRole === "string" && s.mrrAgentRole) ? s.mrrAgentRole : "main";
+        } else {
+          var hit = mrrStrippedManagedRow(a, rulesetId);
+          r = hit ? hit.role : null;
+        }
+        if (r && !outgoingByRole[r]) outgoingByRole[r] = a;
+      });
 
       var deletePhase = existingIds.length
         ? (progress("Deleting " + existingIds.length + " existing agent(s)..."), deleteManagedAgents(existingIds, progressCb))
@@ -5871,15 +5985,20 @@ function importAgents(payload, progressCb) {
             var role = ag.role;
             var prefix = MRR_PROMPT_PFX + authorId + "/" + rulesetId + (role && role !== "main" ? ":" + role : "") + "]";
             var promptTemplate = prefix + " " + (ag.promptTemplate || "");
+            /* R-B: the row this one replaces, captured before the delete. */
+            var outgoing = outgoingByRole[role || "main"] || null;
             var body = {
               type: mrrAgentTypeForRole(role), /* round-20 F1 — per-role type */
               name: "MRR: " + (ag.name || rulesetId + " " + role),
               description: ag.description || "",
               phase: ag.phase || "pre_generation",
               enabled: ag.enabled === true,
-              connectionId: connectionId,
+              /* R-B: a connection the user picked outranks the auto-pick. */
+              connectionId: mrrPreservedConnectionId(outgoing, connectionId),
               promptTemplate: promptTemplate,
-              settings: Object.assign({}, ag.settings || {}, {
+              /* R-B: foreign keys ride across the delete/recreate; mrr keys
+                 and promptTemplate stay ours. */
+              settings: mrrPreservedAgentSettings(outgoing, ag.settings, {
                 mrrManaged: true,
                 mrrBundleSchema: MRR_AGENTS_SCHEMA_ID,
                 mrrRulesetId: rulesetId,
@@ -17294,6 +17413,185 @@ function mrrRoleForOrphanType(orphanType, roleTypes) {
   return best;
 }
 
+/* ═══ RE-ADOPTION (2026-08-25, R-A) ════════════════════════════════════════
+   THE DEFECT (log-proven, ex31507): editing an agent in the engine's
+   Settings -> Agents UI — changing its connection, or its output cap —
+   REPLACES that row's settings JSON and strips our management tags
+   (mrrManaged / mrrRulesetId / mrrAuthorId / mrrAgentRole). Every consumer
+   in this file matches on those tags, so one UI edit silently detaches the
+   row from the extension. The observed chain: prompt-sync went 6 rows -> 4;
+   mrrResolveMutatorConfigId found no managed state-mutator and logged
+   "sole-writer filter inactive"; the uninstall sweep (which filters on
+   mrrManaged) walked straight past the stripped rows; and the next import,
+   whose findManagedAgent also filters on mrrManaged, created SECOND copies
+   of them — Corey's 10-agent morning.
+
+   THE IDENTITY PROBLEM, and why type-matching alone cannot solve it.
+   The obvious repair is "a row whose TYPE maps to a managed role but whose
+   settings lack the tags". It does not work, for two independent reasons:
+
+     1. CIRCULARITY. mrrRoleForOrphanType resolves a type against
+        `roleTypes`, and mrrManagedRoleTypes builds roleTypes from rows that
+        are STILL MANAGED. A stripped row is by definition not managed, so
+        its own role is missing from the candidate set and the type resolves
+        to null. r28's R5 probe pins exactly this ("dropped-role orphan
+        resolves to null when the role is absent"). The one case we need to
+        heal is the one case type-matching declines. Nor can the bundle's
+        role list rescue it: that list exists ONLY on the install path (the
+        local library caches ruleset.json, not additionalAgents — see the
+        S1-E note below), and this pass must heal a mid-session UI edit at
+        the next activation, with no bundle in hand.
+
+     2. CROSS-RULESET MIS-ADOPTION — the dangerous one. A type does not name
+        a ruleset. main's type is the bare MRR_AGENT_TYPE for whichever
+        ruleset installed first; a second ruleset's main gets a collision
+        suffix. So if D&D's main row were stripped while Exalted is active,
+        a type-only rule would adopt D&D's row INTO Exalted, rewriting its
+        mrrRulesetId and handing Exalted a foreign agent. That is a worse
+        bug than the one being fixed.
+
+   THE DURABLE IDENTITY we use instead is the promptTemplate PREFIX. Every
+   row this extension creates is prefixed by both writers (the bundle
+   installer ~:1636/:1790 and the agent-import path ~:5872) with
+   `[mrr-v1:<authorId>/<rulesetId>]` for main, or
+   `[mrr-v1:<authorId>/<rulesetId>:<role>]` for a sub-agent. It names the
+   author, the RULESET and the ROLE explicitly, and it lives in
+   promptTemplate — a different column from settings, untouched by the
+   settings replacement that causes this defect.
+
+   Both signals must AGREE before a row is adopted: the prefix supplies the
+   candidate (author, ruleset, role), and the row's type must then resolve
+   back to that same role through mrrRoleForOrphanType — the existing
+   semantics, including its collision-suffix grammar and its longest-base
+   rule. Requiring both is strictly narrower than either alone: a prefix
+   whose ruleset is not the active one is declined, and a prefix whose role
+   disagrees with the type is declined. A row with no parseable prefix is
+   never adopted (conservative by design: we would be guessing).
+
+   mrrAuthorId is re-stamped alongside the other three even though the spec
+   lists only mrrManaged/mrrRulesetId/mrrAgentRole, because findManagedAgent
+   — the installer's upsert lookup, i.e. the very duplication this round
+   exists to stop — ALSO requires mrrAuthorId. Restoring three of four keys
+   would re-arm the sole-writer filter and still duplicate on the next
+   import. The prefix carries the authorId, so it is restored from evidence,
+   never invented. */
+
+/* Parse a managed promptTemplate prefix. Returns { authorId, rulesetId, role }
+   or null. Grammar (both writers, unchanged since round 20):
+     [mrr-v1:<authorId>/<rulesetId>]            -> role "main"
+     [mrr-v1:<authorId>/<rulesetId>:<role>]     -> that role
+   authorId and rulesetId may not contain "/", ":" or "]"; role may not
+   contain ":" or "]". Anything else parses to null. */
+function mrrParseManagedPromptPrefix(promptTemplate) {
+  if (typeof promptTemplate !== "string" || !promptTemplate) return null;
+  if (promptTemplate.indexOf(MRR_PROMPT_PFX) !== 0) return null;
+  var close = promptTemplate.indexOf("]");
+  if (close === -1) return null;
+  var inner = promptTemplate.slice(MRR_PROMPT_PFX.length, close);
+  var slash = inner.indexOf("/");
+  if (slash <= 0) return null;
+  var authorId = inner.slice(0, slash);
+  var rest = inner.slice(slash + 1);
+  if (!authorId || authorId.indexOf(":") !== -1) return null;
+  var role = "main";
+  var rulesetId = rest;
+  var colon = rest.indexOf(":");
+  if (colon !== -1) {
+    rulesetId = rest.slice(0, colon);
+    role = rest.slice(colon + 1);
+    if (!role) return null;
+  }
+  if (!rulesetId) return null;
+  return { authorId: authorId, rulesetId: rulesetId, role: role };
+}
+
+/* Is this row one of OURS for `rulesetId`, whose management tags have been
+   stripped? Returns { role, authorId } when both the prefix and the type
+   agree, else null. Never returns for a row that is still tagged managed —
+   healthy rows are not touched, and a row managed by ANOTHER ruleset is
+   left to that ruleset. */
+function mrrStrippedManagedRow(agent, rulesetId) {
+  if (!agent || typeof agent !== "object") return null;
+  if (typeof agent.type !== "string" || !agent.type) return null;
+  /* Never adopt a row outside our type namespace, whatever its prompt says. */
+  if (agent.type.indexOf(MRR_AGENT_TYPE) !== 0) return null;
+  var s = parseAgentSettings(agent);
+  /* Already tagged for ANY ruleset -> not stripped -> never touched. */
+  if (s && s.mrrManaged === true) return null;
+  var pfx = mrrParseManagedPromptPrefix(agent.promptTemplate);
+  if (!pfx) return null;
+  if (pfx.rulesetId !== rulesetId) return null;   /* another ruleset's row — never adopted */
+  /* The type must independently resolve back to the prefix's role, through
+     the existing orphan-type semantics (collision suffixes included). */
+  var candidate = Object.create(null);
+  candidate[pfx.role] = mrrAgentTypeForRole(pfx.role);
+  if (mrrRoleForOrphanType(agent.type, candidate) !== pfx.role) return null;
+  return { role: pfx.role, authorId: pfx.authorId };
+}
+
+/* Every stripped row of `rulesetId`, as { agent, role, authorId }. Pure. */
+function mrrStrippedManagedRows(agents, rulesetId) {
+  var out = [];
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var hit = mrrStrippedManagedRow(list[i], rulesetId);
+    if (hit) out.push({ agent: list[i], role: hit.role, authorId: hit.authorId });
+  }
+  return out;
+}
+
+/* The settings body for a re-adoption: the row's CURRENT settings, spread,
+   with our four keys added. MERGE, never replace — every foreign key
+   (maxOutputTokens, connectionId, anything the engine UI or a future engine
+   version writes) survives byte-for-byte. Replacing wholesale here would be
+   us committing the exact crime this pass exists to heal. */
+function mrrReadoptionSettings(agent, rulesetId, role, authorId) {
+  var cur = parseAgentSettings(agent);
+  var merged = {};
+  for (var k in cur) if (Object.prototype.hasOwnProperty.call(cur, k)) merged[k] = cur[k];
+  merged.mrrManaged = true;
+  merged.mrrRulesetId = rulesetId;
+  merged.mrrAuthorId = authorId;
+  merged.mrrAgentRole = role;
+  return merged;
+}
+
+/* Re-adopt every stripped row of `rulesetId`, sequentially (same
+   predictable-load discipline as the installer's sub-agent loop). Resolves
+   to the list of adopted { role, id }; NEVER rejects — a failed adoption
+   leaves that row stripped and the next pass retries it.
+
+   The PATCH carries ONLY `settings`, so no other column is even at risk of
+   being rewritten by this pass. `agent.settings` is updated in place on
+   success so every later stage of THIS reconcile pass (the managed-agent
+   signature, retirement detection, the preset-marker pass) sees the healed
+   world without a second GET /agents. */
+function mrrReadoptStrippedRows(agents, rulesetId, progress) {
+  var stripped = mrrStrippedManagedRows(agents, rulesetId);
+  if (!stripped.length) return Promise.resolve([]);
+  if (progress) progress("Re-adopting " + stripped.length + " agent row(s)...");
+  var adopted = [];
+  return stripped.reduce(function (chain, hit) {
+    return chain.then(function () {
+      var merged = mrrReadoptionSettings(hit.agent, rulesetId, hit.role, hit.authorId);
+      return apiFetch("/agents/" + hit.agent.id, {
+        method: "PATCH",
+        body: JSON.stringify({ settings: merged })
+      }).then(function () {
+        hit.agent.settings = merged;   /* in place: later stages of this pass read it */
+        adopted.push({ role: hit.role, id: hit.agent.id });
+        log("reconcile: re-adopted the '" + hit.role + "' agent (row " + hit.agent.id + ", type '" +
+            hit.agent.type + "') for ruleset " + rulesetId + " — an engine UI edit had stripped its " +
+            "management tags; settings were MERGED, so every foreign key it carried " +
+            "(output cap, connection, anything else) was preserved.");
+      }).catch(function (e) {
+        warn("reconcile: could not re-adopt the '" + hit.role + "' agent (row " + hit.agent.id + "): " +
+             (e && e.message ? e.message : e) + " — it stays detached until the next pass");
+      });
+    });
+  }, Promise.resolve()).then(function () { return adopted; });
+}
+
 /* ═══ RETIRED-ROLE CLEANUP (2026-08-25, S1-E) ══════════════════════════════
    The gap this closes, found by reading the install path rather than
    theorizing: the installer UPSERTS `bundle.additionalAgents` by
@@ -17628,10 +17926,25 @@ function mrrReconcileAgentBindings(opts) {
     /* ROUND B harvest site #3 — the standing reconciliation's chat read. */
     if (typeof mrrNoteChatRow === "function") mrrNoteChatRow(chatId, chat, "binding reconciliation chat read");
 
+    /* R-A: heal UI-stripped management tags FIRST. Everything below derives
+       from the managed set — the signature, retirement detection, the marker
+       pass — so re-adoption has to land before any of them read it. This is
+       also what re-arms the sole-writer filter: mrrResolveMutatorConfigId
+       looks for a MANAGED state-mutator, so restoring the tag is the whole
+       fix; the cache invalidation below is what makes it visible this cycle
+       rather than on the next ruleset switch. Note the signature is computed
+       AFTER this, i.e. over the healed roster — a re-adoption is a real
+       change to the managed set and should read as one. */
+    return mrrReadoptStrippedRows(agents, rulesetId, progress).then(function (adopted) {
+    out.readopted = adopted.map(function (a) { return a.role; });
+
     var sig = mrrManagedAgentSignatureFor(agents, rulesetId);
     var prevSig = mrrManagedAgentSig[rulesetId];
-    if (opts.force || (prevSig !== undefined && prevSig !== sig)) {
-      mrrInvalidateMutatorCache("managed agent rows changed for ruleset '" + rulesetId + "' (" + reason + ")");
+    if (opts.force || adopted.length || (prevSig !== undefined && prevSig !== sig)) {
+      mrrInvalidateMutatorCache(adopted.length
+        ? ("re-adopted " + adopted.length + " row(s) whose tags an engine UI edit had stripped, for ruleset '" +
+           rulesetId + "' (" + reason + ")")
+        : ("managed agent rows changed for ruleset '" + rulesetId + "' (" + reason + ")"));
     }
     mrrManagedAgentSig[rulesetId] = sig;
 
@@ -17682,6 +17995,7 @@ function mrrReconcileAgentBindings(opts) {
     }).then(function () {
       return mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progress, retired);
     }).then(function () { return out; });
+    });   /* close the R-A re-adoption .then */
   }).catch(function (e) {
     mrrReconcileDoneKey = null;
     warn("mrrReconcileAgentBindings failed (" + reason + "): " + (e && e.message ? e.message : e));
