@@ -49,6 +49,16 @@ explicitly when they do).
   already-active system without a fake switch. Chats with managed agents
   still derive their binding; stamped chats are byte-identical to before
   (probed by two-fragment comparison). (8 new probes + 33 regression.)
+- **Per-system character records (Round A).** Every character now stores one
+  sheet PER SYSTEM (`(character, ruleset)` composite records). Existing
+  records migrate automatically on first load in a confirmed chat — each to
+  the system its sheet already belonged to, which permanently resolves the
+  "same character in two systems freezes the sheet" collision — with a
+  visible, dismissible notice when it happens. Copy-verify-then-retract
+  migration: a failed write or failed verification always leaves the
+  original untouched. Bundles with '@' in character ids are now rejected
+  (reserved separator). (20 new probes incl. a negative control that
+  reproduces the old freeze; 48 regression probes across 3 suites.)
 - **Dead-plumbing tombstones trimmed** (−657 B source): the round-26/27
   `isChildListOrigin` removal narration is gone; the load-bearing lesson
   survives as a forward invariant — never rewrite a message element's

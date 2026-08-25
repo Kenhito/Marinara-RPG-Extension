@@ -410,7 +410,12 @@ function lsDelRaw(key) { try { localStorage.removeItem(key); return true; } catc
    Key classification (allowlist — everything else stays LOCAL, i.e. the
    original localStorage-only behavior is preserved unchanged):
      SYNCED:
-       - LS_CHARACTER_PFX  "mrr-character-<id>"        character sheets
+       - LS_CHARACTER_PFX  "mrr-character-<id>@<rulesetId>"  character sheets
+         (ROUND A: the record key is COMPOSITE — one sheet per (character,
+         ruleset) pair. The bare "mrr-character-<id>" spelling is the LEGACY
+         home, still read as a fallback and migrated forward on first load
+         under a confirmed chat. Both spellings share this prefix, so the
+         classifier below covers them with the one existing test.)
        - LS_RULESET        "marinara-rpg-ruleset"      active ruleset id
        - LS_SPELLBOOK_LB_PFX "mrr-spellbook-lb-<chatId>" spellbook lorebook-id cache
        - MRR_CHARS_PFX     "mrr-chars-<chatId>"        per-chat character roster
@@ -690,7 +695,13 @@ function mrrReconcileFromOtherTabs() {
      through the SAME functions activation/switch already uses
      (loadSheet/loadCharacters/loadActiveCharacterId) and re-render —
      never a parallel ad-hoc merge of the in-memory object. */
-  var activeSheetKey = state.activeCharacterId ? characterKey(state.activeCharacterId) : null;
+  /* ROUND A: the active character's record can be sitting in EITHER home —
+     the composite one for the active ruleset (the steady state) or the
+     pre-Round-A shared one (not yet migrated, because this chat has not
+     confirmed). Another tab's edit to either is an edit to the sheet this
+     tab is rendering, so both spellings arm the reload below. */
+  var activeSheetKey = state.activeCharacterId ? mrrWriteRecordKey(state.activeCharacterId) : null;
+  var legacySheetKey = state.activeCharacterId ? characterKey(state.activeCharacterId) : null;
   var rosterKey = state.chatId ? ("mrr-chars-" + state.chatId) : null;
   var activeCharPtrKey = state.chatId ? ("mrr-active-char-" + state.chatId) : null;
   var adoptedActiveSheet = false, adoptedRoster = false, adoptedActiveCharPtr = false;
@@ -699,6 +710,7 @@ function mrrReconcileFromOtherTabs() {
     var adopted = mrrAdoptLsIfNewer(key, tsMap[key] || 0, false);
     if (!adopted) return;
     if (activeSheetKey && key === activeSheetKey) adoptedActiveSheet = true;
+    else if (legacySheetKey && key === legacySheetKey) adoptedActiveSheet = true;
     if (rosterKey && key === rosterKey) adoptedRoster = true;
     if (activeCharPtrKey && key === activeCharPtrKey) adoptedActiveCharPtr = true;
   });
@@ -1925,16 +1937,263 @@ function getChatId() {
 }
 
 /* Legacy chat-scoped sheet key (pre-character-library). Retained as the
-   migration source — loadSheet auto-copies into characterKey() on first
-   load, then never reads from here again. */
+   migration source — loadSheet auto-copies it forward on first load (into
+   the composite record key under a confirmed chat, else the legacy
+   ruleset-agnostic one), then never reads from here again. */
 function sheetKey(chatId, characterId) {
   return LS_SHEET_PFX + chatId + "-" + characterId;
 }
 
-/* Character-library key — the post-v0.4.1 home for sheet data. Decoupled
-   from chatId so the same character can be loaded into any chat. */
+/* LEGACY character-library key — the post-v0.4.1, pre-Round-A home for sheet
+   data. Decoupled from chatId so the same character can be loaded into any
+   chat, but ruleset-AGNOSTIC, which is the r24 collision (one character
+   deliberately played in two systems shares one record). Round A demotes this
+   to the migration SOURCE and the read-only fallback; nothing writes a NEW
+   record here any more except the two pure key-SHAPE moves that carry no
+   ruleset decision at all (loadCharacters' legacy "player" id split, and
+   loadSheet's chat-scoped copy-forward in an unconfirmed chat). */
 function characterKey(characterId) {
   return LS_CHARACTER_PFX + characterId;
+}
+
+/* ═══ ROUND A — COMPOSITE PER-RULESET CHARACTER RECORDS ═══════════════════
+   SPEC: Plans/2026-08-25_records-and-card-binding-spec.md §2.1.
+
+   THE PROBLEM THIS RETIRES. Round 24 documented its own accepted debt in
+   full (see the round-24 header above): "the same library character
+   DELIBERATELY loaded under two different rulesets still shares ONE
+   'mrr-character-<id>' record". Round 24 made the ACCIDENTAL cross-ruleset
+   write impossible by installing a write-HOLD, but a hold is a freeze, not
+   a fix — the user is told to go away and activate the other system. The
+   structural answer is that (character, system) is the record's identity,
+   not (character).
+
+   THE KEY. "mrr-character-<charId>@<rulesetId>". The "@" is a legal
+   discriminator because NO id-minting path in this file can produce one:
+   newCharacterId() is "char-" + Date.now() + "-" + base36, the one legacy
+   literal is the bare "player" (loadCharacters splits it into a fresh
+   minted id), and importFromRpExtension takes ids from the retired RP
+   extension's identically-shaped minter. The only way a foreign "@" could
+   reach the keyspace is a HAND-EDITED bundle, which validateBundle now
+   rejects by name — so the discriminator is enforced at the one door
+   foreign ids come through rather than merely assumed.
+
+   THE PREFIX IS UNCHANGED, deliberately: composite keys still begin with
+   LS_CHARACTER_PFX, so mrrIsSyncedKey, mrrIsCharacterFamilyKey,
+   mrrRunMigration's B1 scan and the size-guard quarantine all keep working
+   with no new arm (probed, not assumed — rA suite S1/S2).
+
+   THE RESOLVER IS THE CHOKEPOINT. Every read of a sheet record goes through
+   mrrResolveRecordRaw (composite-for-the-asked-ruleset first, LEGACY key
+   second); every write goes through mrrWriteRecordKey. characterKey()
+   survives only as the legacy-key spelling those two share.
+
+   `sheet._rulesetId` stays (spec §2.1 "belt"), and so does round 24's hold
+   (spec §2.1: "it should now never fire; if it does, that's a bug siren").
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Not a constant for tidiness — it is named so the key BUILDER and the
+   bundle-import REJECTER below can never drift from each other. */
+var MRR_RECORD_RULESET_SEP = "@";
+
+function mrrRecordKey(characterId, rulesetId) {
+  return LS_CHARACTER_PFX + characterId + MRR_RECORD_RULESET_SEP + rulesetId;
+}
+
+/* The active ruleset's id, or null. Split out so every resolver call site
+   states the same "no ruleset means no composite home" rule once. */
+function mrrActiveRulesetId() {
+  return (state.ruleset && typeof state.ruleset.id === "string" && state.ruleset.id) ? state.ruleset.id : null;
+}
+
+/* THE READ CHOKEPOINT. Answers "where does this character's sheet for this
+   ruleset actually live right now, and what is in it?" — composite first,
+   legacy second. Returns { characterId, rulesetId, key, raw, legacy }:
+     key     the key the value came from, or (on a miss) the key a write
+             WOULD go to, so a caller that needs a name for the record in a
+             log line always has one;
+     raw     the stored string, or null;
+     legacy  true when the answer came from the pre-Round-A bare key.
+   Deliberately a plain read: it NEVER migrates, writes or warns. Migration
+   is a separate, explicitly-gated act (mrrMigrateRecordsForChat) because it
+   must not happen in an unconfirmed or virgin chat — round 33's ruling. */
+function mrrResolveRecordRaw(characterId, rulesetId) {
+  var rid = rulesetId || mrrActiveRulesetId();
+  var out = { characterId: characterId || null, rulesetId: rid || null, key: null, raw: null, legacy: false };
+  if (!characterId) return out;
+  if (rid) {
+    out.key = mrrRecordKey(characterId, rid);
+    out.raw = lsGet(out.key);
+    if (out.raw) return out;
+  }
+  var lk = characterKey(characterId);
+  var lraw = lsGet(lk);
+  if (lraw) { out.key = lk; out.raw = lraw; out.legacy = true; return out; }
+  /* Nothing anywhere. Report the composite key when we have a ruleset (that
+     is where a write would land) and the legacy key when we do not. */
+  if (!out.key) out.key = lk;
+  return out;
+}
+
+function mrrReadRecordRaw(characterId, rulesetId) {
+  return mrrResolveRecordRaw(characterId, rulesetId).raw;
+}
+
+/* "Does this character have a sheet record for this ruleset?" — the exact
+   question B19's three existence gates ask. Composite-or-legacy by
+   construction, which is the ONE deliberate semantic widening of Round A:
+   an un-migrated legacy record still counts as a record, because it still
+   holds the user's data and is still what a load would hydrate from. */
+function mrrRecordExists(characterId, rulesetId) {
+  return !!mrrReadRecordRaw(characterId, rulesetId);
+}
+
+/* THE WRITE CHOKEPOINT. A write ALWAYS goes to the composite home when a
+   ruleset is known. The only fallback is "no ruleset at all", which in
+   practice means a pre-activation code path; the legacy key is then the
+   only addressable home and carries no ruleset claim, which is exactly the
+   property round 33 needs. */
+function mrrWriteRecordKey(characterId, rulesetId) {
+  var rid = rulesetId || mrrActiveRulesetId();
+  return rid ? mrrRecordKey(characterId, rid) : characterKey(characterId);
+}
+
+/* Display label for the visible migration notice (Corey ruling R-3). The
+   roster is the only place a character's NAME lives outside the sheet; a
+   character being migrated for another chat's roster falls back to its id,
+   which is still actionable. */
+function mrrCharacterLabel(characterId) {
+  var list = state.characters;
+  if (Array.isArray(list)) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] && list[i].id === characterId && list[i].name) return list[i].name;
+    }
+  }
+  return characterId;
+}
+
+/* Warn-once bookkeeping for the ambiguous both-homes-populated case below.
+   Keyed by destination key so a session cannot spam one line per load. */
+var mrrRecordMigrationWarned = Object.create(null);
+
+/* ─── ONE record, legacy home -> composite home ───────────────────────────
+   COPY-NOT-MOVE, per B1 doctrine: write the composite, VERIFY it reads back
+   byte-identical, and only then lsDel the legacy key — which through the
+   storage adapter is a real {t, v:null} tombstone, not a local forget, so
+   the record is retracted server-side instead of resurrected by the next
+   hydrate merge.
+
+   THE DESTINATION RULESET IS THE RECORD'S OWN STAMP when it has one, NOT
+   the active ruleset. That single choice is what RESOLVES the r24
+   collision rather than merely relocating it: an exalted3e-stamped legacy
+   sheet loaded under fate-core migrates to "<id>@exalted3e", the fate-core
+   slot then reads ABSENT, and the user gets a fresh fate-core sheet with no
+   freeze and no data loss. An UNSTAMPED record (every sheet written before
+   round 24) cannot be judged — no heuristic is invented for it, exactly as
+   round 24 invented none — so it is filed under the CONFIRMED ruleset of
+   the chat we are standing in, which is the only ruleset claim the file is
+   ever entitled to make.
+
+   BOTH HOMES POPULATED is left alone on purpose. It is reachable (roll the
+   extension back, play, roll forward; or an unconfirmed chat-scoped
+   copy-forward landing beside an existing composite), and which side is
+   newer is genuinely unknowable from here. Deleting either would be a
+   guess that destroys bytes, so: composite wins reads (resolver order),
+   legacy is kept, and the user is TOLD once. */
+function mrrMigrateOneRecord(characterId, activeRulesetId) {
+  if (!characterId || !activeRulesetId) return null;
+  var legacyKey = characterKey(characterId);
+  var legacyRaw = lsGet(legacyKey);
+  if (!legacyRaw) return null;
+  var parsed = safeParse(legacyRaw);
+  var stamped = (parsed && typeof parsed._rulesetId === "string" && parsed._rulesetId) ? parsed._rulesetId : null;
+  var destRulesetId = stamped || activeRulesetId;
+  var destKey = mrrRecordKey(characterId, destRulesetId);
+
+  if (lsGet(destKey)) {
+    if (!mrrRecordMigrationWarned[destKey]) {
+      mrrRecordMigrationWarned[destKey] = true;
+      var amsg = "character " + mrrCharacterLabel(characterId) + " has BOTH a per-system record (" + destKey +
+                 ") and an older shared record (" + legacyKey + "). The per-system one is being used; the shared one is " +
+                 "left untouched rather than guessed at — export the character if you need to recover it.";
+      if (typeof mrrPanelWarn === "function") mrrPanelWarn(amsg); else warn(amsg);
+    }
+    return null;
+  }
+
+  if (!lsSet(destKey, legacyRaw)) {
+    warn("record migration: write failed for " + destKey + " (quota or private mode?) — legacy record left in place, nothing lost");
+    return null;
+  }
+  /* VERIFY before retracting. lsGet re-reads through the adapter (server
+     cache when one exists, physical LS otherwise) — the same path every
+     later load will use, so this proves the value is readable where it now
+     has to be read from, not merely that setItem did not throw. */
+  if (lsGet(destKey) !== legacyRaw) {
+    warn("record migration: read-back verification FAILED for " + destKey + " — legacy record left in place, nothing lost");
+    return null;
+  }
+  lsDel(legacyKey);
+  /* The r24 hold, if one was installed by the pre-confirm load, described a
+     record that no longer exists at that key. Clear it here so the judgement
+     is re-made from the NEW resolution on the very next load — leaving it
+     would freeze writes to a character whose collision we just resolved. */
+  mrrClearSheetHold(characterId);
+  log("record migration: " + legacyKey + " -> " + destKey + " (" +
+      (stamped ? "record's own stamp '" + stamped + "'" : "unstamped, filed under the confirmed ruleset '" + activeRulesetId + "'") +
+      ") bytes=" + legacyRaw.length + " — legacy key tombstoned through the storage adapter");
+  return { id: characterId, rulesetId: destRulesetId, key: destKey, stamped: !!stamped };
+}
+
+/* ─── the per-chat-entry sweep ────────────────────────────────────────────
+   GATE: a CONFIRMED chat only. In a virgin or still-unconfirmed chat the
+   legacy record is read-only fallback and nothing is written — round 33's
+   ruling, one indirection out: filing an unstamped record under the
+   ambient globally-active ruleset is precisely the guess that ruling
+   abolished, and it would be an irreversible one.
+
+   SCOPE: this chat's roster plus the active character. Records belonging to
+   characters not in this chat stay legacy until a chat that actually holds
+   them binds — and they keep resolving through the legacy fallback in the
+   meantime, so B19's pointer, the continue-offer and adopt all keep working
+   against un-migrated records.
+
+   FIRES ONCE PER RECORD BY CONSTRUCTION, not by a flag: after a successful
+   migration the legacy key is gone, so the second call's lsGet answers null
+   and the sweep is a handful of reads with no writes and no notice. That is
+   a stronger property than a "done" flag, which would go stale the moment a
+   character joined the roster (adopt, import, add).
+
+   NOTICE (Corey ruling R-3): ONE batched, dismissible warn-strip line per
+   sweep, because Corey's own edge case is deliberately giving a character a
+   new sheet — a record moving must be SEEN, not merely logged. Per-record
+   console lines are emitted above as well. */
+function mrrMigrateRecordsForChat(activeRulesetId, why) {
+  if (!activeRulesetId) return 0;
+  if (!state.chatId || mrrRulesetConfirmedChatId !== state.chatId) return 0;
+  var ids = [], seen = Object.create(null);
+  if (Array.isArray(state.characters)) {
+    state.characters.forEach(function (c) {
+      if (c && c.id && !seen[c.id]) { seen[c.id] = true; ids.push(c.id); }
+    });
+  }
+  if (state.activeCharacterId && !seen[state.activeCharacterId]) {
+    seen[state.activeCharacterId] = true;
+    ids.push(state.activeCharacterId);
+  }
+  if (!ids.length) return 0;
+  var moved = [];
+  ids.forEach(function (id) {
+    var r = mrrMigrateOneRecord(id, activeRulesetId);
+    if (r) moved.push(r);
+  });
+  if (!moved.length) return 0;
+  var labels = moved.map(function (m) { return mrrCharacterLabel(m.id) + " → " + m.rulesetId; });
+  var msg = "Migrated " + moved.length + " character record" + (moved.length === 1 ? "" : "s") +
+            " to per-system storage — " + labels.join(", ");
+  if (typeof mrrPanelWarn === "function") mrrPanelWarn(msg); else warn(msg);
+  log("record migration: " + moved.length + " record(s) moved to per-ruleset keys (" + (why || "load") + ")");
+  return moved.length;
 }
 
 /* ─── Round-13 T5-b: version-stamped sheet migration ───────────────────────
@@ -2082,12 +2341,16 @@ function mrrMigrateIfNeeded(parsed, ruleset) {
              loadSheet, so even an unconfirmed or undetectable mismatch
              can never merge one ruleset's sheet into another's shape.
 
-   KNOWN LIMITATION — documented deliberately, NOT fixed here: the same
-   library character DELIBERATELY loaded under two different rulesets
-   still shares ONE "mrr-character-<id>" record. Per-ruleset character
-   records (characterId x rulesetId) are the structural fix and are
-   queued for the Phase-B replan. This round makes the ACCIDENTAL
-   cross-ruleset write impossible; the deliberate one remains design debt.
+   KNOWN LIMITATION — RETIRED BY ROUND A (2026-08-25), text kept as the
+   record of what the debt was: the same library character DELIBERATELY
+   loaded under two different rulesets used to share ONE
+   "mrr-character-<id>" record. Per-ruleset character records
+   (characterId x rulesetId) were named here as the structural fix and are
+   now implemented — see the ROUND A block at mrrRecordKey. This round made
+   the ACCIDENTAL cross-ruleset write impossible; Round A makes the
+   deliberate one impossible too, and everything below survives as the
+   safety net the spec explicitly kept: post-migration the hold should never
+   fire, so if it ever does, that warn is a BUG SIREN.
 
    Legacy records (written before this round) carry no `_rulesetId` and
    therefore cannot be judged by Part 3 at all. Parts 1+2 close that
@@ -2216,6 +2479,38 @@ function mrrConfirmChatRuleset(chatId, why) {
   mrrClearAutoswitchGuard();
   log("ruleset latch: chat " + chatId + " confirmed for ruleset " +
       (state.ruleset && state.ruleset.id ? state.ruleset.id : "(none)") + " — " + why);
+  /* ═══ ROUND A — the composite-record migration, at the binding moment ═══
+     THIS ORDERING IS LOAD-BEARING, three ways.
+
+     (1) It is AHEAD of mrrStampLastCharacter, whose round-32 guard
+         (mrrStampBlockedByForeignSheet) reads the character's record: it
+         must see the POST-migration world, or it would judge a record that
+         is about to move and decline a perfectly good pointer.
+     (2) It is AHEAD of the deferred-save replay: the replay writes through
+         saveSheet into the composite home, and the legacy record must
+         already be retracted by then or the same character would briefly
+         own two records — which is the ambiguous both-homes case
+         mrrMigrateOneRecord deliberately refuses to adjudicate.
+     (3) It is BEHIND the latch open (mrrRulesetConfirmedChatId = chatId,
+         three lines up), because mrrMigrateRecordsForChat's own r33 gate
+         tests exactly that variable. Confirmation is the first instant the
+         file is entitled to file an unstamped record under any ruleset at
+         all; nothing earlier may write one, and this is the earliest
+         anything may.
+
+     NOTHING RE-LOADS state.sheet HERE, and that is a proof rather than an
+     omission: migration cannot change what a load under the ACTIVE ruleset
+     would produce. An unstamped record moves to "<id>@<active>" — same bytes
+     at the resolved key, same merge. A record stamped for the active ruleset
+     moves to "<id>@<that same id>" — likewise. A record stamped for ANOTHER
+     ruleset moves to "<id>@<other>", so the active slot now reads ABSENT and
+     the load yields a blankSheet — which is EXACTLY what the pre-confirm
+     load already returned, because round 24's hold blanked it. In all three
+     cases state.sheet is already the correct object, so re-deriving it would
+     be a no-op that could only do harm (it would destroy an unsaved edit
+     made while the chat was unconfirmed, which lives in state.sheet alone
+     until the replay below writes it). */
+  mrrMigrateRecordsForChat(state.ruleset && state.ruleset.id, "chat ruleset confirmed");
   /* B19 round-30 FIX 1 — THE STAMP ORDERING HOLE.
      mrrStampLastCharacter used to fire ONLY from saveActiveCharacterId, and
      saveActiveCharacterId fires during init()/watchRouteChanges — i.e. BEFORE
@@ -2361,16 +2656,32 @@ function mrrStoredSheetForeignRuleset(parsed, ruleset) {
   return stored;
 }
 
-function mrrSheetRulesetHoldCheck(parsed, ruleset, characterId) {
+/* ROUND A adds `migrationPending`: true when the record being judged is a
+   pre-Round-A SHARED record (the resolver's legacy arm). The HOLD itself is
+   unchanged — no merge, no write, the record sits untouched — but the WARN's
+   advice ("activate '<stored>' to edit this character") is now false: the
+   composite migration files that record under its own stamp the instant this
+   chat confirms, which frees the active ruleset's slot with no user action at
+   all. Telling a user to go do work the file is about to do for them is worse
+   than saying nothing, so the pending case gets a log line and the WARN is
+   reserved for what it now means: a record whose key and in-sheet stamp
+   disagree, i.e. the bug siren spec §2.1 kept this machinery for. */
+function mrrSheetRulesetHoldCheck(parsed, ruleset, characterId, migrationPending) {
   var stored = mrrStoredSheetForeignRuleset(parsed, ruleset);
   if (!stored) return null;
   var activeId = ruleset && ruleset.id;
   mrrSheetHold[characterId] = stored;
   if (mrrSheetHoldWarned[characterId] !== stored) {
     mrrSheetHoldWarned[characterId] = stored;
-    warn("sheet for character " + characterId + " was saved under ruleset '" + stored +
-         "', active is '" + activeId + "' — holding the stored sheet untouched to prevent cross-ruleset bleed " +
-         "(no merge, no write; activate '" + stored + "' to edit this character)");
+    if (migrationPending) {
+      log("sheet for character " + characterId + " is a pre-per-system shared record saved under ruleset '" + stored +
+          "', active is '" + activeId + "' — held untouched (no merge, no write) until this chat confirms its ruleset, " +
+          "at which point it migrates to its own per-system key and this ruleset gets a fresh sheet");
+    } else {
+      warn("sheet for character " + characterId + " was saved under ruleset '" + stored +
+           "', active is '" + activeId + "' — holding the stored sheet untouched to prevent cross-ruleset bleed " +
+           "(no merge, no write; activate '" + stored + "' to edit this character)");
+    }
   }
   return stored;
 }
@@ -2388,17 +2699,34 @@ function loadSheet(chatId, ruleset) {
     log("loadSheet -> blank: no activeCharacterId");
     return blankSheet(ruleset);
   }
-  /* Try the character-library key first. */
-  var key = characterKey(state.activeCharacterId);
-  var raw = lsGet(key);
+  var rulesetId = (ruleset && typeof ruleset.id === "string" && ruleset.id) ? ruleset.id : null;
+  /* ROUND A — THE MIGRATION TRIGGER, spec §2.1 "on first load under a
+     confirmed chat". It sits at the TOP of the load, before anything reads a
+     record, so the very load that discovers a legacy record is the one that
+     files it. mrrMigrateRecordsForChat re-checks the confirmation gate
+     itself (single statement of the rule); the cheap check here is only to
+     avoid the roster walk on the unconfirmed path. */
+  if (rulesetId && state.chatId && mrrRulesetConfirmedChatId === state.chatId) {
+    mrrMigrateRecordsForChat(rulesetId, "sheet load in chat " + state.chatId);
+  }
+  /* Resolve through the Round-A chokepoint: composite home for THIS
+     ruleset first, the pre-Round-A shared key second. In a virgin or
+     unconfirmed chat the legacy arm is a pure READ — the migration above
+     did not run, so nothing was written under a ruleset nobody chose. */
+  var res = mrrResolveRecordRaw(state.activeCharacterId, rulesetId);
+  var key = res.key;
+  var raw = res.raw;
   if (raw) {
     var parsed = safeParse(raw);
     if (parsed) {
       /* Round-24 Part 3: judge the record's OWN ruleset stamp before the
-         merge, never after — mergeSheet is the thing that does the damage. */
-      if (mrrSheetRulesetHoldCheck(parsed, ruleset, state.activeCharacterId)) return blankSheet(ruleset);
+         merge, never after — mergeSheet is the thing that does the damage.
+         Round A RETAINS this as a bug siren (spec §2.1): a composite record
+         is filed under the ruleset in its own key, so a hold firing on one
+         means the key and the in-sheet stamp disagree, which is a defect. */
+      if (mrrSheetRulesetHoldCheck(parsed, ruleset, state.activeCharacterId, res.legacy)) return blankSheet(ruleset);
       mrrClearSheetHold(state.activeCharacterId);
-      log("loadSheet hydrated key=" + key + " bytes=" + raw.length);
+      log("loadSheet hydrated key=" + key + " bytes=" + raw.length + (res.legacy ? " (legacy shared record, read-only fallback)" : ""));
       return mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(parsed, ruleset));
     }
     warn("loadSheet -> blank: parse failed for " + key);
@@ -2411,8 +2739,17 @@ function loadSheet(chatId, ruleset) {
     var legacyKey = sheetKey(chatId, state.activeCharacterId);
     var legacyRaw = lsGet(legacyKey);
     if (legacyRaw) {
-      lsSet(key, legacyRaw);
-      log("loadSheet auto-migrated " + legacyKey + " -> " + key + " bytes=" + legacyRaw.length);
+      /* ROUND A: under a CONFIRMED chat this lands straight in the composite
+         home for the confirmed ruleset — one hop instead of two. Otherwise it
+         goes to the ruleset-AGNOSTIC legacy key, which is a pure key-SHAPE
+         move that makes no ruleset claim (round 33 stays satisfied); the
+         composite sweep files it the moment the chat binds. */
+      var fwdKey = (rulesetId && state.chatId && mrrRulesetConfirmedChatId === state.chatId)
+        ? mrrRecordKey(state.activeCharacterId, rulesetId)
+        : characterKey(state.activeCharacterId);
+      lsSet(fwdKey, legacyRaw);
+      key = fwdKey;
+      log("loadSheet auto-migrated " + legacyKey + " -> " + fwdKey + " bytes=" + legacyRaw.length);
       var legacyParsed = safeParse(legacyRaw);
       if (legacyParsed) {
         /* Round-24 Part 3: same gate on the legacy path. A pre-v0.4.1
@@ -2535,7 +2872,12 @@ function saveSheet(chatId, sheet) {
     }
     return;
   }
-  var key = characterKey(state.activeCharacterId);
+  /* ROUND A: the write ALWAYS lands in the composite home for the ACTIVE
+     ruleset — and by the time we are past the write gate above, the active
+     ruleset IS this chat's confirmed ruleset (that is what the latch means),
+     so this key is never a guess. The in-sheet `_rulesetId` stamp below
+     stays as the belt to this key's suspenders (spec §2.1). */
+  var key = mrrWriteRecordKey(state.activeCharacterId, mrrActiveRulesetId());
   /* Round-13 T5-d: conservative destructive-write guard, targeting the
      hypothesis flagged in the T4+T5 investigation — a failed or partial
      load path can leave state.sheet as a freshly-built blankSheet(),
@@ -2550,7 +2892,13 @@ function saveSheet(chatId, sheet) {
      blank-check compares the sheet's true content, not a stamp that
      would otherwise always differ. */
   if (state.ruleset && mrrIsPristineBlankSheet(sheet, state.ruleset)) {
-    var existingRaw = lsGet(key);
+    /* ROUND A: ask the RESOLVER, not the write key. If a legacy shared
+       record is still un-migrated (an unconfirmed-chat path got here, or the
+       sweep's both-homes case declined to touch it), the substantive data at
+       risk lives THERE — reading only the composite key would answer "no
+       stored value" and silently disarm the guard for exactly the record it
+       exists to protect. */
+    var existingRaw = mrrReadRecordRaw(state.activeCharacterId, mrrActiveRulesetId());
     if (existingRaw) {
       var existingParsed = safeParse(existingRaw);
       if (existingParsed && !mrrIsPristineBlankSheet(existingParsed, state.ruleset)) {
@@ -2646,6 +2994,12 @@ function loadCharacters(chatId) {
         var legacyKey = sheetKey(chatId, "player");
         var legacyRaw = lsGet(legacyKey);
         if (legacyRaw) {
+          /* ROUND A: deliberately still the LEGACY (ruleset-agnostic) key.
+             loadCharacters runs at init/route-change, BEFORE the chat's
+             ruleset is confirmed — filing this under the ambient active
+             ruleset would be exactly the guess round 33 abolished. This is a
+             pure id-SHAPE move ("player" -> a minted id); the composite
+             sweep files it under a real ruleset the moment the chat binds. */
           lsSet(characterKey(newId), legacyRaw);
           log("migrated character: " + chatId + "/player -> " + newId + " bytes=" + legacyRaw.length);
         }
@@ -2926,7 +3280,12 @@ function mrrLastCharKey(rulesetId) { return MRR_LAST_CHAR_PFX + rulesetId; }
    for the same reason round 24 invented none. */
 function mrrStampBlockedByForeignSheet(characterId) {
   if (!characterId || !state.ruleset || !state.ruleset.id) return false;
-  var raw = lsGet(characterKey(characterId));
+  /* ROUND A: through the resolver. Post-migration this is a dead guard by
+     construction — the composite record for the active ruleset cannot be
+     foreign to it — which is the point (spec §2.1: the r24 machinery becomes
+     a bug siren). It still bites on an UN-migrated legacy record, which is
+     precisely the state a chat that has not confirmed yet is in. */
+  var raw = mrrReadRecordRaw(characterId);
   if (!raw) return false;
   var parsed = safeParse(raw);
   if (!parsed) return false;
@@ -3090,8 +3449,10 @@ function mrrRosterIsEmpty() {
      read as touched. */
   if (list[0]._bootstrap === true) return true;
   /* FIX D, arm 2 (the ORIGINAL test, unchanged): an entry that never got a
-     library record cannot have been used. */
-  return !lsGet(characterKey(list[0].id));
+     library record cannot have been used.
+     ROUND A: "a library record" now means "a record for the ACTIVE ruleset,
+     or a not-yet-migrated shared one" — mrrRecordExists states that once. */
+  return !mrrRecordExists(list[0].id);
 }
 
 /* Returns the record to offer, or null. Every condition is a hard gate;
@@ -3114,7 +3475,11 @@ function mrrContinueOfferCandidate() {
   /* The pointed-at character was deleted from the library (or never got a
      record). No offer, no throw — a stale pointer is an expected state,
      not an error, and it self-heals on the next activation. */
-  if (!lsGet(characterKey(rec.id))) return null;
+  /* ROUND A: composite-for-the-active-ruleset, legacy fallback second. This
+     is also the gate that keeps the offer honest under per-system records —
+     a character whose only sheet is in ANOTHER system has no record here and
+     is not offered. */
+  if (!mrrRecordExists(rec.id)) return null;
   return rec;
 }
 
@@ -3213,7 +3578,7 @@ function mrrAdoptLastCharacter(rec) {
   if (!rec || !rec.id || !state.chatId) return;
   /* Re-check at click time: the library record could have been deleted
      between render and click (another tab, the remove button). */
-  if (!lsGet(characterKey(rec.id))) {
+  if (!mrrRecordExists(rec.id)) {
     mrrRenderContinueOffer(); /* condition no longer holds — take the offer down */
     return;
   }
@@ -3258,7 +3623,12 @@ function mrrAdoptLastCharacter(rec) {
          written under. */
       state.characters.forEach(function (c) {
         if (!c || !c.id) return;
-        var phRaw = lsGet(characterKey(c.id));
+        /* ROUND A: resolve, then delete the key the value ACTUALLY came from
+           — composite home or the not-yet-migrated shared one. Deleting a
+           key we did not read would either miss the orphan or destroy a
+           record we never inspected. */
+        var phRes = mrrResolveRecordRaw(c.id);
+        var phRaw = phRes.raw;
         if (!phRaw) return;
         var phParsed = safeParse(phRaw);
         if (!phParsed || !state.ruleset || !mrrIsPristineBlankSheet(phParsed, state.ruleset)) {
@@ -3267,9 +3637,9 @@ function mrrAdoptLastCharacter(rec) {
               "_bootstrap flag alone; only the roster entry is dropped");
           return;
         }
-        lsDel(characterKey(c.id));
+        lsDel(phRes.key);
         log("B19 continuity: deleted the pristine bootstrap sheet record for placeholder " + c.id +
-            " (tombstoned through the storage adapter) — adopting must not leave an orphan in the library");
+            " at " + phRes.key + " (tombstoned through the storage adapter) — adopting must not leave an orphan in the library");
       });
       state.characters = [];
     }
@@ -3338,7 +3708,11 @@ function collectBundle() {
        Try the modern key first; fall back to the legacy chat-scoped
        key so a user with one unmigrated character (never loaded
        since v0.2.1) still exports cleanly. */
-    var raw = lsGet(characterKey(c.id));
+    /* ROUND A: the bundle declares ONE ruleset (`ruleset: {id}` below), so
+       the sheets it carries are the ACTIVE ruleset's records — resolver
+       order gives exactly that, with the pre-Round-A shared record as the
+       fallback for a character not yet migrated. */
+    var raw = mrrReadRecordRaw(c.id);
     if (!raw && state.chatId) raw = lsGet(sheetKey(state.chatId, c.id));
     if (raw) {
       var parsed = safeParse(raw);
@@ -3367,6 +3741,17 @@ function validateBundle(b) {
   for (var i = 0; i < b.characters.length; i++) {
     var c = b.characters[i];
     if (!c || !c.id || !c.name) return "character " + i + " missing id or name";
+    /* ROUND A: "@" is the (charId, rulesetId) discriminator in the record
+       key. No id-minting path in this file or in the retired RP extension can
+       produce one, so this rejects exactly one thing: a hand-edited bundle
+       that would make "mrr-character-a@b" + "@c" ambiguous against
+       "mrr-character-a" + "@b@c". Enforced at the ONE door foreign ids come
+       through, so the rest of the file may rely on the invariant instead of
+       re-deriving it. */
+    if (String(c.id).indexOf(MRR_RECORD_RULESET_SEP) !== -1) {
+      return "character " + i + " has an id containing \"" + MRR_RECORD_RULESET_SEP +
+             "\" (" + c.id + "), which is reserved as the per-system record separator";
+    }
   }
   return null;
 }
@@ -3388,8 +3773,15 @@ function applyBundle(b) {
      library key (post-v0.2.1) and the legacy chat-scoped key, in case
      a never-loaded legacy entry would otherwise resurface on next
      loadSheet via its auto-migration fallback. */
+  /* ROUND A: validateBundle + the guard above have already established
+     b.ruleset.id === state.ruleset.id, so the composite home being cleared
+     is unambiguously the one this bundle is about. Other systems' records
+     for the same characters are NOT touched — that is the whole point of
+     per-ruleset records, and clearing them would be the cross-system data
+     loss this round exists to make impossible. */
   state.characters.forEach(function (c) {
-    lsDel(characterKey(c.id));
+    lsDel(mrrWriteRecordKey(c.id));
+    lsDel(characterKey(c.id));  /* pre-Round-A shared home, if still un-migrated */
     if (state.chatId) lsDel(sheetKey(state.chatId, c.id));
   });
 
@@ -3407,7 +3799,7 @@ function applyBundle(b) {
      next load and we avoid an O(n*m) lookup. */
   b.characters.forEach(function (c) {
     var sheet = b.sheets && b.sheets[c.id];
-    if (sheet) lsSet(characterKey(c.id), JSON.stringify(sheet));
+    if (sheet) lsSet(mrrWriteRecordKey(c.id), JSON.stringify(sheet));
   });
 
   var nextActive = b.activeCharacterId;
@@ -3485,10 +3877,16 @@ function importFromRpExtension() {
   state.characters.forEach(function (c) { existing[c.id] = true; });
   var imported = 0, skipped = 0;
   ids.forEach(function (cid) {
-    if (lsGet(characterKey(cid))) { skipped++; return; }  /* preserve existing mrr sheet */
+    /* ROUND A: no-clobber asks the RESOLVER (composite for the active
+       ruleset, then the pre-Round-A shared record), and the write lands in
+       the composite home for the ruleset the user has selected — the
+       function already refused to run without one. The RP extension's own
+       minter has the same shape as newCharacterId(), so these ids carry no
+       "@" either. */
+    if (mrrRecordExists(cid)) { skipped++; return; }  /* preserve existing mrr sheet */
     var nm = names[cid] || (sheets[cid] && (sheets[cid].name || sheets[cid].characterName)) || ("Imported " + cid.slice(0, 8));
     if (!existing[cid]) { state.characters.push({ id: cid, name: nm }); existing[cid] = true; }
-    lsSet(characterKey(cid), JSON.stringify(sheets[cid]));  /* mrr-character-<id>, never mrrp- */
+    lsSet(mrrWriteRecordKey(cid), JSON.stringify(sheets[cid]));  /* mrr-character-<id>@<rulesetId>, never mrrp- */
     imported++;
   });
   if (imported) saveCharacters();
@@ -4145,7 +4543,7 @@ function removeActiveCharacter() {
        sheetKey(chatId,id) home is read only as a fallback for un-migrated
        saves. Reading the wrong key silently skipped ability-lorebook
        cleanup and orphaned the real sheet in localStorage. */
-    var raw = lsGet(characterKey(current.id)) || lsGet(sheetKey(state.chatId, current.id));
+    var raw = mrrReadRecordRaw(current.id) || lsGet(sheetKey(state.chatId, current.id));
     if (raw) {
       var saved = JSON.parse(raw);
       if (saved && saved.abilities && typeof saved.abilities === "object") {
@@ -4159,9 +4557,16 @@ function removeActiveCharacter() {
       }
     }
   } catch (e) { /* malformed save — skip cleanup but proceed with delete */ }
-  /* P0-4: delete BOTH the real (characterKey) and legacy (sheetKey) homes so
-     the sheet can't survive removal and resurrect for a future same-id char. */
-  lsDel(characterKey(current.id));
+  /* P0-4: delete BOTH the real and legacy (sheetKey) homes so the sheet
+     can't survive removal and resurrect for a future same-id char.
+     ROUND A: "the real home" is now the composite record for the ACTIVE
+     ruleset. Records this character owns in OTHER systems are deliberately
+     left alone — removing a character from a D&D chat is not a statement
+     about their Exalted sheet, and the confirm text ("Their sheet will be
+     deleted") is about the sheet on screen. Cross-system identity cleanup
+     belongs to the Round-B binding registry, not here. */
+  lsDel(mrrWriteRecordKey(current.id));
+  lsDel(characterKey(current.id));  /* pre-Round-A shared home, if still un-migrated */
   lsDel(sheetKey(state.chatId, current.id));
   state.characters = state.characters.filter(function (c) { return c.id !== current.id; });
   saveCharacters();
