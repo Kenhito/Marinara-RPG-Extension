@@ -31,7 +31,14 @@ explicitly when they do).
   any stamp writer succeeds (one choke-point helper on all three writers,
   cached only on PATCH success), so the offer appears in the same session
   with no chat re-entry; plus three B19 console lines (pointer stamped /
-  chat bound / offer shown) so the chain is traceable. (23 probes.)
+  chat bound / offer shown) so the chain is traceable. (23 probes.) Round
+  32: the pointer can no longer be poisoned — stamping declines for a
+  character whose stored sheet belongs to another ruleset (same rule as the
+  round-24 write guard) and for legacy untouched "Player" placeholders; and
+  "untouched roster" is now an explicit bootstrap flag cleared only by
+  deliberate use (sheet edits, rename, bundle apply, state mutations,
+  adopt) instead of a byte-compare that per-ruleset normalizers defeated.
+  All stamp declines log their reason. (33 probes.)
 - **Dead-plumbing tombstones trimmed** (−657 B source): the round-26/27
   `isChildListOrigin` removal narration is gone; the load-bearing lesson
   survives as a forward invariant — never rewrite a message element's

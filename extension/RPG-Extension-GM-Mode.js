@@ -2284,11 +2284,30 @@ function mrrConsumeDeliberateSwitchIntent(rulesetId) {
    it belongs to.
    An UNSTAMPED record (every sheet saved before this round) returns null —
    it cannot be judged, and Parts 1+2 are what cover it. */
-function mrrSheetRulesetHoldCheck(parsed, ruleset, characterId) {
+/* ─── Round 32: the r24 rule, extracted ───────────────────────────────────
+   THE RULE ITSELF — "does this STORED record explicitly belong to some
+   OTHER ruleset than the one we are asking about?" — returns the stored
+   ruleset id, or null when the record may be treated as ours. Pure: no
+   hold installed, no warn, no state touched, so a caller that only wants
+   the JUDGEMENT (round 32's B19 stamp guard) can ask without acquiring
+   round-24's write-hold side effects.
+   Extracted from mrrSheetRulesetHoldCheck's first four lines rather than
+   restated beside them: one rule, one statement of it. An UNSTAMPED
+   record (every sheet saved before round 24) returns null here for
+   exactly the reason documented on mrrSheetRulesetHoldCheck below — it
+   cannot be judged, and no heuristic is invented for it. */
+function mrrStoredSheetForeignRuleset(parsed, ruleset) {
   var stored = parsed && parsed._rulesetId;
   if (typeof stored !== "string" || !stored) return null;
   var activeId = ruleset && ruleset.id;
   if (!activeId || stored === activeId) return null;
+  return stored;
+}
+
+function mrrSheetRulesetHoldCheck(parsed, ruleset, characterId) {
+  var stored = mrrStoredSheetForeignRuleset(parsed, ruleset);
+  if (!stored) return null;
+  var activeId = ruleset && ruleset.id;
   mrrSheetHold[characterId] = stored;
   if (mrrSheetHoldWarned[characterId] !== stored) {
     mrrSheetHoldWarned[characterId] = stored;
@@ -2535,8 +2554,16 @@ function newCharacterId() {
   return "char-" + Date.now() + "-" + Math.random().toString(36).slice(2, 11);
 }
 
+/* OUR bootstrap placeholder's name — a literal this file writes, not a
+   string the engine ever supplies and not subject to engine i18n. Named
+   because round 32 has TWO readers of it: loadCharacters, which writes it,
+   and mrrStampBlockedByLegacyPlaceholder, which recognises a legacy
+   (pre-`_bootstrap`) placeholder by it. One constant, so the recogniser can
+   never drift from the writer. */
+var MRR_BOOTSTRAP_PLACEHOLDER_NAME = "Player";
+
 function loadCharacters(chatId) {
-  if (!chatId) return [{ id: newCharacterId(), name: "Player" }];
+  if (!chatId) return [{ id: newCharacterId(), name: MRR_BOOTSTRAP_PLACEHOLDER_NAME }];
   var raw = lsGet("mrr-chars-" + chatId);
   if (raw) {
     var parsed = safeParse(raw);
@@ -2576,16 +2603,137 @@ function loadCharacters(chatId) {
      keyed to a new character ID). Now: persist the fresh array AND the
      active-char pointer immediately so subsequent refreshes find stable
      IDs and hydrate properly. Affects EVERY ruleset, not just V20. */
-  var fresh = [{ id: newCharacterId(), name: "Player" }];
+  /* Round-32 FIX D — `_bootstrap` is an EXPLICIT lifecycle flag on the
+     ROSTER ENTRY (not on the sheet), meaning "this placeholder has never
+     been deliberately used". It exists because round 30's FIX 2 inferred
+     that fact from the STORED SHEET instead — deep-equal to blankSheet()
+     — and ruleset-specific normalizers that run at RENDER time (Exalted's
+     reconcileCommittedMotes is the live one: it writes
+     sheet.committedMotes and saves) mutate the bootstrap sheet before the
+     round-24 deferred replay ever persists it. The stored record is then
+     structurally different from a fresh blankSheet() through no user
+     action at all, mrrIsPristineBlankSheet says "touched", and the offer
+     could never render (live trace char_carryover2107.log, chats
+     pGSmSE6UMooErPm9XE8JL / lmU1V5oUYYO_upDS8gVGh: bootstrap + persist,
+     then "saved key=mrr-character-… bytes=1470" at confirm, and no
+     "continue-as offer shown" line ever).
+     Byte/structure inference cannot distinguish a normalizer from a
+     player. A flag can: it is SET here, at the one place a placeholder is
+     born, and CLEARED only by mrrClearBootstrapFlag's enumerated
+     deliberate-use signals. Replay saves, normalizer saves and
+     prompt-sync never touch it.
+     The flag rides the roster entry, so it syncs with the roster
+     (MRR_CHARS_PFX is a synced key) and is monotonic — set once at
+     creation, cleared once, never re-set. Rosters written before this
+     round carry no flag and therefore read as TOUCHED: existing chats
+     keep their current behaviour exactly. */
+  var fresh = [{ id: newCharacterId(), name: MRR_BOOTSTRAP_PLACEHOLDER_NAME, _bootstrap: true }];
   lsSet("mrr-chars-" + chatId, JSON.stringify(fresh));
   lsSet("mrr-active-char-" + chatId, fresh[0].id);
-  log("bootstrapped fresh character " + fresh[0].id + " for chat " + chatId + " (persisted to localStorage immediately)");
+  log("bootstrapped fresh character " + fresh[0].id + " for chat " + chatId + " (persisted to localStorage immediately, flagged _bootstrap)");
   return fresh;
 }
 
 function saveCharacters() {
   if (!state.chatId) return;
   lsSet("mrr-chars-" + state.chatId, JSON.stringify(state.characters));
+}
+
+/* ═══ Round-32 FIX D — clearing the `_bootstrap` lifecycle flag ═══════════
+   The flag set by loadCharacters means "never deliberately used". This is
+   the ONE place it is cleared, and it is called only from the enumerated
+   deliberate-use signals:
+
+     (a) a user interaction with the sheet panel  — mrrNoteSheetPanelUse
+     (b) renameActiveCharacter
+     (c) applyBundle
+     (d) finalizeMutation (the applyStateMutation apply path)
+     (e) mrrAdoptLastCharacter — by CONSTRUCTION, see its own note
+
+   Deliberately NOT called from: the round-24 deferred-save replay, any
+   ruleset normalizer's save, scheduleAutoSync/prompt-sync, or saveSheet
+   itself. Those are the writes that defeated round 30's structural
+   inference; a flag they never touch is the whole point.
+
+   Scoped to the ACTIVE character: the flag only ever exists on a chat's
+   sole bootstrap placeholder, and "the placeholder was used" is only
+   knowable when the placeholder is the character being acted on. Cheap
+   enough for an event handler — one array scan and a property test, and
+   it writes only on the single transition from flagged to cleared. */
+function mrrClearBootstrapFlag(why) {
+  if (!state.chatId || !state.activeCharacterId) return;
+  var list = state.characters;
+  if (!Array.isArray(list)) return;
+  var entry = null;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i] && list[i].id === state.activeCharacterId) { entry = list[i]; break; }
+  }
+  if (!entry || entry._bootstrap !== true) return;
+  delete entry._bootstrap;
+  saveCharacters();
+  log("B19: bootstrap flag cleared on " + entry.id + " — deliberate use (" + (why || "unspecified") + ")");
+}
+
+/* The DOM surfaces whose controls edit the character sheet. `.mrr-sheet`
+   is the panel mount itself (both the docked and the floating variant);
+   `.mrr-spellbook` is the class shared by the three body-level sheet
+   editors — the spellbook, the item bag and the intimacies tray — which
+   are appended to document.body and are therefore NOT inside mountEl.
+   Ad-hoc dialogs (`.mrr-dialog-backdrop`) are deliberately absent: every
+   one of them is OPENED by a click that already landed inside one of
+   these two roots, so including them would add no signal, and the ruleset
+   library dialog shares that class while being no kind of sheet edit. */
+var MRR_SHEET_USE_ROOT_SELECTOR = ".mrr-sheet, .mrr-spellbook";
+
+/* True when an event on `node` is a user's deliberate use of the sheet.
+   Split out from the listener so the DECISION is probe-addressable while
+   the listener stays a three-line dispatcher.
+   The continue-offer row is EXCLUDED, and that exclusion is load-bearing
+   rather than cosmetic: the listener runs in the capture phase, so a
+   click on "Continue as <name>" would otherwise clear the flag BEFORE
+   mrrAdoptLastCharacter's own mrrRosterIsEmpty() check runs, the
+   placeholder would no longer read as an untouched bootstrap, and adopt
+   would append beside it instead of replacing it — leaving exactly the
+   orphan "Player" the feature exists to remove. "Not now" is excluded for
+   the same reason in the other direction: declining an offer is not use.
+   The warn strip is excluded on the same principle — dismissing a
+   degradation warning is not playing a character. */
+function mrrIsSheetUseTarget(node) {
+  if (!node || typeof node.closest !== "function") return false;
+  if (!node.closest(MRR_SHEET_USE_ROOT_SELECTOR)) return false;
+  if (mrrContinueOfferEl && typeof mrrContinueOfferEl.contains === "function" && mrrContinueOfferEl.contains(node)) return false;
+  if (mrrWarnStripEl && typeof mrrWarnStripEl.contains === "function" && mrrWarnStripEl.contains(node)) return false;
+  return true;
+}
+
+function mrrNoteSheetPanelUse(node, evt) {
+  if (!mrrIsSheetUseTarget(node)) return;
+  mrrClearBootstrapFlag((evt || "interaction") + " inside the sheet panel");
+}
+
+/* Clear point (a). There is no single chokepoint that separates a USER
+   sheet write from a SYSTEM one — ~90 saveSheet call sites, and the
+   normalizer writes go through the identical function — so the signal is
+   taken one layer earlier, at the panel's own event layer, exactly as a
+   UI-vs-system-indistinguishable write path requires.
+   ONE delegated capture listener per event type on `document`, installed
+   once for the session: mountEl is destroyed and rebuilt by every full
+   render (mrrP3RenderSheet), so a listener bound to the panel node would
+   have to be re-bound on each one. Capture phase so a handler that stops
+   propagation cannot hide the interaction. "input" and "change" cover the
+   typed/selected fields; "click" covers the steppers, trackers, toggles
+   and pickers, which are buttons and are the primary edit mechanism on
+   this sheet. */
+var mrrSheetUseWatchInstalled = false;
+function mrrWatchSheetPanelUse() {
+  if (mrrSheetUseWatchInstalled) return;
+  if (typeof document === "undefined" || typeof document.addEventListener !== "function") return;
+  mrrSheetUseWatchInstalled = true;
+  ["input", "change", "click"].forEach(function (evt) {
+    document.addEventListener(evt, function (e) {
+      try { mrrNoteSheetPanelUse(e && e.target, evt); } catch (err) { /* never let bookkeeping break an edit */ }
+    }, true);
+  });
 }
 
 function loadActiveCharacterId(chatId, fallback) {
@@ -2678,6 +2826,90 @@ function mrrNoteChatStamp(chatId, rulesetId, source) {
 
 function mrrLastCharKey(rulesetId) { return MRR_LAST_CHAR_PFX + rulesetId; }
 
+/* ═══ Round-32 DEFECT C — the poisoned continuity pointer ════════════════
+   Live trace fate2115.log:
+
+     :106  B19: last-character pointer stamped -> Player
+           (char-1787623825969-e2nf8bh12) for ruleset fate-core
+     :112  character char-1787623825969's stored sheet belongs to ruleset
+           'exalted3e' … refusing to write
+
+   Six lines apart, about the same character. A DELIBERATE ruleset switch
+   (mrrMarkDeliberateRulesetSwitch → reload) confirms the chat under the
+   NEWLY chosen ruleset while the chat's active character is still the one
+   from the OLD ruleset. Round 30's FIX 1 fires the stamp from that
+   confirm chokepoint — correctly, for every other case — and files a
+   cross-ruleset character under the new ruleset's pointer. Round 24's
+   own hold then refuses to write that character's sheet one breath later,
+   which is the whole tell: the file already KNOWS the record belongs
+   elsewhere, and the pointer was written anyway.
+   Left alone the pointer is a trap with a delay on it: the next fresh
+   fate-core chat offers "Continue as Player", the user accepts, and an
+   exalted3e-shaped record is adopted into a fate-core chat — the round-24
+   collision, recreated through the front door and with the user's own
+   consent.
+
+   The judgement is NOT restated here. mrrStoredSheetForeignRuleset is the
+   round-24 hold's own rule, extracted so both callers share one
+   statement of it; what differs is only the consequence — the hold
+   installs a write-block and warns, this logs and declines to stamp.
+   An ABSENT record, an unparseable one, or one with no `_rulesetId`
+   (every pre-round-24 sheet) all answer "not foreign" and stamp exactly
+   as before: no heuristic is invented for records that cannot be judged,
+   for the same reason round 24 invented none. */
+function mrrStampBlockedByForeignSheet(characterId) {
+  if (!characterId || !state.ruleset || !state.ruleset.id) return false;
+  var raw = lsGet(characterKey(characterId));
+  if (!raw) return false;
+  var parsed = safeParse(raw);
+  if (!parsed) return false;
+  var other = mrrStoredSheetForeignRuleset(parsed, state.ruleset);
+  if (!other) return false;
+  log("B19: not stamping " + characterId + " for " + state.ruleset.id + " — its sheet belongs to " + other);
+  return true;
+}
+
+/* ═══ Round-32 — the LEGACY companion to FIX D ═══════════════════════════
+   Round 30's FIX 2 gave mrrStampLastCharacter its "an untouched bootstrap
+   roster is not a stamp-worthy activation" gate, and round 32 moved the
+   predicate behind that gate onto the `_bootstrap` flag. Chats whose roster
+   was written BEFORE this round carry no flag, so mrrRosterIsEmpty answers
+   "not empty" for them and the confirm-time stamp (round-30 FIX 1) would
+   file their untouched "Player" placeholder as the ruleset's last-played
+   character — clobbering a perfectly good pointer on first open after the
+   upgrade, on every legacy chat at once.
+
+   THE RECORD CANNOT ADJUDICATE THIS. The obvious remedy — decline when the
+   stored sheet is still pristine-blank — is the very inference FIX D exists
+   to abolish: on any Exalted chat reconcileCommittedMotes has already
+   mutated that placeholder's record from the resources render, so it is NOT
+   pristine and the check would wave it straight through. Deliberately no
+   pristine test here.
+
+   What IS reliable is the roster's own shape, matched against the literal
+   this file wrote: exactly one entry, it is the active one, it carries no
+   `_bootstrap` flag (post-round-32 placeholders are already caught by the
+   mrrRosterIsEmpty gate above — this arm is only for legacy ones), and its
+   name is still MRR_BOOTSTRAP_PLACEHOLDER_NAME. A RENAMED single character
+   stamps normally, which is exactly how a legacy chat primes its pointer.
+
+   ACCEPTED, DOCUMENTED EDGE: someone who genuinely plays a never-renamed
+   single "Player" character does not prime the pointer from an ambient
+   confirm. They prime it on the next real activation event instead
+   (switchCharacter, addCharacter, applyBundle, adopt), so the cost is a
+   delay, not a loss — and it is bounded by the legacy rosters that exist
+   today, since every roster written from now on carries the flag. */
+function mrrStampBlockedByLegacyPlaceholder(characterId) {
+  var list = state.characters;
+  if (!Array.isArray(list) || list.length !== 1) return false;
+  var entry = list[0];
+  if (!entry || entry.id !== characterId) return false;
+  if (entry._bootstrap === true) return false;
+  if (entry.name !== MRR_BOOTSTRAP_PLACEHOLDER_NAME) return false;
+  log("B19: not stamping " + characterId + " — roster is an unflagged bootstrap-shaped placeholder (legacy chat)");
+  return true;
+}
+
 /* Stores id + name. The name is denormalized ON PURPOSE: rendering
    "Continue as <name>" must not require reading (and JSON-parsing) the
    whole character sheet record just to learn a label. */
@@ -2704,6 +2936,11 @@ function mrrStampLastCharacter() {
      leaves a roster this returns false for, so those still stamp. */
   if (mrrRosterIsEmpty()) return;
   var activeId = state.activeCharacterId;
+  /* Round-32 DEFECT C — the poisoned pointer. */
+  if (mrrStampBlockedByForeignSheet(activeId)) return;
+  /* Round-32 — FIX D's legacy companion: the pre-flag equivalent of the
+     mrrRosterIsEmpty gate above. */
+  if (mrrStampBlockedByLegacyPlaceholder(activeId)) return;
   var entry = state.characters.find(function (c) { return c && c.id === activeId; });
   var name = (entry && entry.name) ? entry.name : activeId;
   lsSet(mrrLastCharKey(state.ruleset.id), JSON.stringify({ id: activeId, name: name }));
@@ -2733,6 +2970,30 @@ function mrrReadLastCharacter(rulesetId) {
    its own in the character library. The moment the user touches that
    sheet, saveSheet writes the library record and the offer stops
    qualifying — which is correct, there is now something to lose. */
+/* ROUND-32 FIX D SUPERSEDES ROUND-30 FIX 2 (kept below as the record of
+   why the structural test existed at all). FIX 2 asked the STORED SHEET
+   "are you still byte-for-byte a fresh blankSheet()?" and took that as
+   proof the placeholder was untouched. Ruleset normalizers break that
+   proof: Exalted's reconcileCommittedMotes runs from the RESOURCES
+   RENDER (mrrP3RenderResourcesSection), writes sheet.committedMotes and
+   calls saveSheet — so on a brand-new Exalted chat the round-24 latch
+   defers that save, the confirm replays it, and the record that lands is
+   normalizer-shaped, not blank-shaped. Live trace char_carryover2107.log
+   shows exactly that on two fresh chats: bootstrap + persist, a deferred
+   save raised from reconcileCommittedMotes' stack, "saved
+   key=mrr-character-… bytes=1470" at confirm, and no "continue-as offer
+   shown" line at all despite the pointer existing, the chat being bound
+   and the roster being an untouched bootstrap.
+   No structural test can separate a normalizer from a player, so the
+   question moves off the sheet entirely: the ROSTER ENTRY carries an
+   explicit `_bootstrap` lifecycle flag (loadCharacters sets it,
+   mrrClearBootstrapFlag's enumerated deliberate-use signals clear it).
+   The no-record test is kept as the second arm — a roster entry that
+   never got a record cannot have been used either, and that arm is what
+   still answers correctly on a chat whose bootstrap save never landed.
+   mrrIsPristineBlankSheet survives in exactly ONE place now:
+   mrrAdoptLastCharacter's record DELETION, where destroying bytes needs
+   the strict proof and a flag alone is not enough. */
 /* Round-30 FIX 2 — "no library record" was too strict, because on every
    fresh chat there IS one by the time anything renders. Live trace
    char_carryover2030.log: line 84 a pre-confirm saveSheet is refused by the
@@ -2757,14 +3018,13 @@ function mrrRosterIsEmpty() {
   var list = state.characters;
   if (!Array.isArray(list) || !list.length) return true;
   if (list.length !== 1 || !list[0] || !list[0].id) return false;
-  var raw = lsGet(characterKey(list[0].id));
-  if (!raw) return true;
-  /* A materialized record with no ruleset to judge it against is opaque —
-     treat it as substance (the conservative answer: no offer, no delete). */
-  if (!state.ruleset) return false;
-  var parsed = safeParse(raw);
-  if (!parsed) return false;
-  return mrrIsPristineBlankSheet(parsed, state.ruleset);
+  /* FIX D, arm 1: the explicit lifecycle flag. Strictly `=== true` so a
+     legacy roster (no property) and a cleared one (property deleted) both
+     read as touched. */
+  if (list[0]._bootstrap === true) return true;
+  /* FIX D, arm 2 (the ORIGINAL test, unchanged): an entry that never got a
+     library record cannot have been used. */
+  return !lsGet(characterKey(list[0].id));
 }
 
 /* Returns the record to offer, or null. Every condition is a hard gate;
@@ -2916,15 +3176,40 @@ function mrrAdoptLastCharacter(rec) {
          is deliberately NOT touched: a fresh bootstrap placeholder cannot
          have one, and blind-deleting it would risk real pre-v0.4.1 data
          that this pristine check never inspected. */
+      /* Round-32 FIX D, the one surviving mrrIsPristineBlankSheet use.
+         mrrRosterIsEmpty no longer certifies "byte-for-byte a fresh
+         blankSheet()" — it now answers off the roster entry's
+         `_bootstrap` flag, which is deliberately tolerant of the ruleset
+         normalizers that touch a bootstrap sheet before it is ever
+         persisted. Dropping a roster entry is recoverable; DELETING a
+         library record is not, so the destructive half keeps the strict
+         structural proof it always had. A normalizer-touched placeholder
+         record therefore survives the adopt: the roster entry is still
+         dropped (that is what the offer promised), and the record is
+         left behind with a log line saying so, rather than being
+         destroyed on a weaker warrant than the one this branch was
+         written under. */
       state.characters.forEach(function (c) {
         if (!c || !c.id) return;
-        if (!lsGet(characterKey(c.id))) return;
+        var phRaw = lsGet(characterKey(c.id));
+        if (!phRaw) return;
+        var phParsed = safeParse(phRaw);
+        if (!phParsed || !state.ruleset || !mrrIsPristineBlankSheet(phParsed, state.ruleset)) {
+          log("B19 continuity: LEFT placeholder " + c.id + "'s sheet record in the library — it is no longer a " +
+              "pristine blank sheet (a ruleset normalizer touched it), so deleting it is not safe on the " +
+              "_bootstrap flag alone; only the roster entry is dropped");
+          return;
+        }
         lsDel(characterKey(c.id));
         log("B19 continuity: deleted the pristine bootstrap sheet record for placeholder " + c.id +
             " (tombstoned through the storage adapter) — adopting must not leave an orphan in the library");
       });
       state.characters = [];
     }
+    /* Round-32 FIX D, clear point (e): the adopted entry must never carry
+       `_bootstrap`. It cannot — this is a fresh two-field literal, not the
+       placeholder object, and the placeholder is dropped above rather than
+       renamed in place. Guaranteed by construction; nothing to clear. */
     state.characters.push({ id: rec.id, name: rec.name });
   }
   saveCharacters();
@@ -3063,6 +3348,14 @@ function applyBundle(b) {
     nextActive = state.characters[0].id;
   }
   state.activeCharacterId = nextActive;
+  /* Round-32 FIX D, clear point (c). The roster was rebuilt wholesale from
+     the bundle above (`b.characters.map` copies id and name ONLY), so no
+     `_bootstrap` flag can survive an import — this call is defence against
+     that map ever becoming a spread, and it must run BEFORE
+     saveActiveCharacterId, which stamps the continuity pointer and reads
+     mrrRosterIsEmpty on the way. Costs one array scan when there is
+     nothing to clear. */
+  mrrClearBootstrapFlag("character bundle imported");
   saveActiveCharacterId();
 
   state.sheet = loadSheet(state.chatId, state.ruleset);
@@ -3756,6 +4049,12 @@ function renameActiveCharacter() {
   var newName = (window.prompt("Rename character:", current.name) || "").trim();
   if (!newName || newName === current.name) return;
   current.name = newName;
+  /* Round-32 FIX D, clear point (b): naming a character is a deliberate
+     use of it — a placeholder the user bothered to rename is no longer an
+     untouched bootstrap. Called before saveCharacters so the entry is
+     already renamed when the clear persists it; the second write below is
+     the same bytes. */
+  mrrClearBootstrapFlag("character renamed");
   saveCharacters();
   renderSheet();
 }
@@ -16455,6 +16754,12 @@ function resolveSheetField(sheet, field) {
    be confusing UI noise. */
 function finalizeMutation(attrs) {
   if (!mrrJournalSuppressed) {
+    /* Round-32 FIX D, clear point (d): a state mutation landing on this
+       character IS the character being played — the narrator just changed
+       their sheet. Inside the `!mrrJournalSuppressed` branch on purpose:
+       a revert/reapply replay is bookkeeping over mutations that already
+       fired this clear the first time, and replays must not clear. */
+    mrrClearBootstrapFlag("state mutation applied to this character");
     saveSheet(state.chatId, state.sheet);
     renderSheet();
     if (!Array.isArray(state.mutationLog)) state.mutationLog = [];
@@ -18397,6 +18702,7 @@ function init() {
   watchRouteChanges();
   watchLifecycleSaves();
   watchChatMessages();
+  mrrWatchSheetPanelUse();   /* round-32 FIX D clear point (a) — installs once per session */
   exposeDebug();
   log("activated ruleset " + rs.id + " v" + rs.version + " on chat " + (state.chatId || "(none)") + " as " + state.activeCharacterId);
   /* Initial sync so the overlay agents (and the field-reference lorebook
