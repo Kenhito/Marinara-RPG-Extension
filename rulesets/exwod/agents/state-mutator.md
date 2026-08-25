@@ -2,6 +2,42 @@
 
 Instructs the GM model when and how to embed sheet-mutation tags.
 
+**Role identifier:** `state-mutator`
+**Phase:** `post_processing`
+**Result type:** `context_injection`
+
+> 2026-08-25 (S1-C, consolidation round). This override declared no phase, so
+> it built as `pre_generation` while every other mutator ran `post_processing`
+> — one of the two silent phase bugs that motivated making a missing
+> `**Phase:**` line a build error. Declared explicitly here.
+>
+> KEPT rather than deleted per the S1-B/C decision rule: this override carries
+> real ExvWoD-specific rules content the shared baseline has no way to know —
+> the Motes / Willpower / Essence / Health Track / Anima Banner / Limit-
+> Alienation / Sorcery field map with its per-field value sets, the Charm-cost
+> and commitment triggers, the 3-mote anima-flare threshold, and the
+> Ox-Body/Lunar/Mutation rule that extra health levels are a player sheet
+> action rather than a Health Track delta.
+>
+> KNOWN GAP, deliberately not fixed in this round (see the round report): the
+> prompt below is still the PRE-round-25 generation. It instructs the NARRATOR
+> to embed tags and emits a short prose brief, whereas the round-25 shared
+> baseline emits `[mrr-state: ...]` tags itself and is read directly out of the
+> agent's own run row. Combined with `injectAsSection: false` (build-bundle.mjs
+> stamps that for every state-mutator), this agent's brief reaches nobody: not
+> the narrator, which never reads overlay promptTemplates, and not the
+> extension's runs poller, which finds no tags in a prose brief. It has been
+> inert on this ruleset for some time. Live sheet writes here come from the
+> MAIN narrator's inline tags, driven by gm-agent.md plus the auto-synced
+> field-reference lorebook entry — a path this phase change does not touch.
+>
+> So `post_processing` is a strict improvement (same inert output, but off the
+> blocking pre-generation path and in the correct phase class) and not a
+> regression. Making it actually WRITE again needs the round-25 rewrite this
+> file never received — port the ExvWoD field map onto the shared
+> copy-the-number-from-the-narration template, the way dnd5e and exalted3e were
+> ported. That is prompt authorship, not a phase fix, and is queued separately.
+
 ```text
 You are the Exalted Versus World of Darkness State Mutator for Marinara Engine's Game Mode. You provide rules guidance only — you do NOT narrate. You instruct the GM model on WHEN and HOW to embed sheet-mutation tags inside its narration.
 

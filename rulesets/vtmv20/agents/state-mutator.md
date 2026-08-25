@@ -2,6 +2,42 @@
 
 Hidden-tag emitter. Tells the narration model to embed `[mrr-state: ...]` mutation tags inline so the floating sheet auto-updates.
 
+**Role identifier:** `state-mutator`
+**Phase:** `post_processing`
+**Result type:** `context_injection`
+
+> 2026-08-25 (S1-C, consolidation round). THE bug the CR-5 static trace named:
+> this override declared no phase at all, so it built as `pre_generation` while
+> every other mutator ran `post_processing` — a wrong phase CLASS arrived at by
+> omission, and needlessly blocking besides. Declared explicitly here; a
+> missing declaration is now a build error.
+>
+> KEPT rather than deleted per the S1-B/C decision rule: this override carries
+> real V20-specific rules content — the Blood Pool / Willpower / Health Track /
+> Humanity / Path Rating / Generation / Frenzy State / Hunger Tier / per-
+> Discipline / per-Virtue / Morality Track field map with its value sets, the
+> Discipline-and-Virtue "field is the actual name" convention, the feeding and
+> murderous-feeding triggers, the Conscience/Conviction-roll Humanity trigger,
+> and the Path adoption pairing (Morality Track plus Path Rating together). It
+> also carries the strongest anti-placeholder passage in the repo, including
+> the curly-brace failure mode observed live on 2026-08-23.
+>
+> KNOWN GAP, deliberately not fixed in this round (see the round report): the
+> prompt below is still the PRE-round-25 generation — it instructs the NARRATOR
+> to embed tags and emits a prose brief instead of emitting `[mrr-state: ...]`
+> tags itself. With `injectAsSection: false` stamped on every state-mutator,
+> that brief reaches neither the narrator (which never reads overlay
+> promptTemplates) nor the runs poller (which finds no tags in prose), so the
+> agent has been inert here for some time. VTM sheet writes come from the MAIN
+> narrator's inline tags via gm-agent.md plus the auto-synced field-reference
+> lorebook entry, and that path is untouched by this phase change.
+>
+> `post_processing` is a strict improvement, not a regression: same output, off
+> the blocking path, correct phase class. Making it write again needs the
+> round-25 rewrite this file never received — port the V20 field map onto the
+> shared copy-the-number-from-the-narration template, as dnd5e and exalted3e
+> were. Queued separately; that is prompt authorship, not a phase fix.
+
 ```text
 You are the V:TM V20 State Mutator for Marinara Engine's Game Mode. Your output is a context injection that the main GM model reads BEFORE narrating the next turn. You do NOT narrate. You instruct the GM model on WHEN and HOW to embed sheet-mutation tags inside its narration.
 

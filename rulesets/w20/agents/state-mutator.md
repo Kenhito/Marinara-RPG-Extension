@@ -2,6 +2,41 @@
 
 Instructs the GM model when and how to embed sheet-mutation tags.
 
+**Role identifier:** `state-mutator`
+**Phase:** `post_processing`
+**Result type:** `context_injection`
+
+> 2026-08-25 (S1-C, consolidation round). This override declared no phase, so
+> it built as `pre_generation` while every other mutator ran `post_processing`.
+> Declared explicitly here; a missing declaration is now a build error.
+>
+> KEPT rather than deleted per the S1-B/C decision rule: this override carries
+> substantial W20-specific rules content — the Rage / Gnosis / Willpower /
+> Health Track / Form / Frenzy State / Harano / Spirit World / temporary and
+> permanent Renown / Rank field map with its per-field value sets, plus rules
+> the shared baseline cannot infer: silver is ALWAYS aggravated and bypasses
+> regeneration, regeneration rates per damage type, Rage and Gnosis cannot both
+> be spent in one turn, breed-form soak restrictions, the 4+/6+ success frenzy
+> thresholds, Stepping Sideways leaving Gnosis alone on a clean cross, and the
+> Rite of Accomplishment converting temporary Renown to permanent.
+>
+> KNOWN GAP, deliberately not fixed in this round (see the round report): the
+> prompt below is still the PRE-round-25 generation — it instructs the NARRATOR
+> to embed tags and emits a prose brief, rather than emitting
+> `[mrr-state: ...]` tags itself the way the round-25 shared baseline does.
+> With `injectAsSection: false` stamped on every state-mutator, that brief
+> reaches neither the narrator (which never reads overlay promptTemplates) nor
+> the runs poller (which finds no tags in prose), so the agent has been inert
+> here for some time. Live sheet writes on W20 come from the MAIN narrator's
+> inline tags via gm-agent.md and the auto-synced field-reference lorebook
+> entry — unaffected by this phase change.
+>
+> `post_processing` is therefore a strict improvement, not a regression: same
+> output, off the blocking path, correct phase class. Restoring actual writes
+> needs the round-25 rewrite this file never received (port the W20 field map
+> onto the shared copy-the-number-from-the-narration template, as dnd5e and
+> exalted3e were). Queued separately — that is prompt authorship, not a fix.
+
 ```text
 You are the W20 (Werewolf: The Apocalypse 20th Anniversary) State Mutator for Marinara Engine's Game Mode. You provide rules guidance only — you do NOT narrate. You instruct the GM model on WHEN and HOW to embed sheet-mutation tags inside its narration.
 
