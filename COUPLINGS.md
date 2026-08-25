@@ -64,7 +64,7 @@ paragraph as the authority and fix what you find.
 content signature is computed, and the write is applied to that character's own
 composite record (`mrr-character-<charId>@<rulesetId>`) inside a synchronous binding
 that swaps `state.sheet` / `state.activeCharacterId` and restores both in a
-`finally`. Ginny's damage moves Ginny's sheet while Tester is active. Full design:
+`finally`. Mira's damage moves Mira's sheet while Tester is active. Full design:
 `AGENTS.md` §5.6.
 
 **No new engine coupling.** This is the load-bearing claim for this ledger: party

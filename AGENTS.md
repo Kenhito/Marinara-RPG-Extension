@@ -390,7 +390,7 @@ These exist in production builds. Use them for diagnosis when debugging localSto
 every earlier statement in this repo that the applier ignores `target=`.
 
 A `[mrr-state:]` tag names its character and the write lands on **that character's**
-record. Ginny's damage moves Ginny's sheet while Tester is the active character, in
+record. Mira's damage moves Mira's sheet while Tester is the active character, in
 both RP and Game mode, through both transports, with dedup and swipe-revert staying
 correct per character.
 

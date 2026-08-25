@@ -13,7 +13,7 @@ explicitly when they do).
 
 - **Party writes — `target=` honored end to end.** A `[mrr-state:]` tag can now
   name any roster member, and the write lands on **that** character's sheet:
-  Ginny's damage hits Ginny while Tester is active, through both transports, in
+  Mira's damage hits Mira while Tester is active, through both transports, in
   RP and game mode. The applier resolves targets against the chat's roster
   (exact name or id after deterministic normalization — fuzzy matching is
   banned by design), and an unresolvable or ambiguous target is **dropped with

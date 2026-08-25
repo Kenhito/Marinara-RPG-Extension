@@ -1,4 +1,4 @@
-# Marinara RPG Rulesets (v1.1.0)
+# Marinara RPG Rulesets (v1.2.0)
 
 Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara-Engine)'s Game Mode. Run a D10 dice-pool game (Exalted 3e), a d20 game (D&D 5e), a 4dF narrative game (Fate Core), or **author your own ruleset for any tabletop RPG** — without forking Marinara, without writing TypeScript, without waiting for upstream feature requests.
 
@@ -14,7 +14,7 @@ Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara
 
 ## Quick start (5 minutes)
 
-The fastest path: grab the self-contained release at [`releases/1.1.0/`](releases/1.1.0/) and follow [`releases/1.1.0/INSTALL-GUIDE.md`](releases/1.1.0/INSTALL-GUIDE.md). It includes:
+The fastest path: grab the self-contained release at [`releases/1.2.0/`](releases/1.2.0/) and follow [`releases/1.2.0/INSTALL-GUIDE.md`](releases/1.2.0/INSTALL-GUIDE.md). It includes:
 
 - **The importable extension package** (`Marinara-RPG-Extension.extension.zip`) for Marinara's External Extensions import
 - **Two complete reference rulesets** (D&D 5e and Exalted 3e) with bundle + agents pre-built, ready to import
@@ -23,7 +23,7 @@ The fastest path: grab the self-contained release at [`releases/1.1.0/`](release
 
 If you just want to play D&D or Exalted, install the extension and import the ruleset bundle and you're on your way. Other systems are being added as requested and you can submit a PR to add one you've created to the repo.
 
-If you want a system the framework doesn't ship, see [`releases/1.1.0/BUILD-YOUR-OWN-RULESET.md`](releases/1.1.0/BUILD-YOUR-OWN-RULESET.md) — options for AI-assisted or manual authoring.
+If you want a system the framework doesn't ship, see [`releases/1.2.0/BUILD-YOUR-OWN-RULESET.md`](releases/1.2.0/BUILD-YOUR-OWN-RULESET.md) — options for AI-assisted or manual authoring.
 
 ## Available rulesets (grab-and-go)
 
@@ -58,7 +58,7 @@ Every ruleset ships as a single `bundle.json`, right here on GitHub — no build
 
    e.g. `.../main/rulesets/exalted3e/bundle.json`. (If your Marinara server blocks outbound fetches, use one of the other two ways.)
 2. **Download from GitHub.** Click the bundle link in the table above, then the **Raw** button (top-right of the file view), then save the page (Ctrl+S / Cmd+S) as a `.json` file. In the **Ruleset** dialog use **Choose file…** to pick it, then **Save and reload**.
-3. **From the release folder.** Every bundle is also in [`releases/1.1.0/install-files/`](releases/1.1.0/install-files/) as `<id>-bundle.json` — if you downloaded the release, they're already on your disk.
+3. **From the release folder.** Every bundle is also in [`releases/1.2.0/install-files/`](releases/1.2.0/install-files/) as `<id>-bundle.json` — if you downloaded the release, they're already on your disk.
 
 After the import: attach the ruleset's lorebook to your game and enable the MRR agents after the game launches (Step 6 below) — importing installs, but each game activates its own.
 
@@ -67,6 +67,17 @@ After the import: attach the ruleset's lorebook to your game and enable the MRR 
 Marinara Engine ships a Game Mode where an AI Game Master runs the table. By default the engine's GM is biased toward d20 / D&D-style mechanics: six attributes (STR/DEX/CON/INT/WIS/CHA), single-roll resolution, DC ladder. This repo adds a thin overlay that lets you swap the GM's mechanical brain (and the player-facing character sheet) for a different RPG system entirely.
 
 The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps insert ruleset instructions while a rules lore book will provide Marinara with instructions on how to run the selected system. This allows systems to be created based around existing dice mechanics. Build instructions are present to allow an AI Agent, chat or CLI, to create a ruleset featuring a character sheet, GM Agent Prompt, and Lore book with the core mechanics.
+
+## What's new in v1.2.0
+
+- **Party writes — state tags reach the right character.** A `[mrr-state:]` tag can name any roster member and the write lands on *that* character's sheet, while someone else is active, in both roleplay and game mode. Unknown or ambiguous names are dropped with a visible notice — never guessed onto the active sheet. Swipe revert/redo works per character across everyone a message touched. `target="player"` keeps its old meaning, so existing rulesets work unchanged.
+- **Honest dice on connections that can't roll.** Some connection types (Claude subscription / SDK) structurally cannot deliver the `roll_dice` tool — an engine boundary documented in Marinara v2.4.4. Every GM doctrine now carries a no-tool fallback: never invent dice faces; name the pool, hand the roll to the player's dice widget with the outcomes precomputed, and apply the reported face exactly. The extension shows a one-time notice when a chat's narrator connection can never roll. Eight systems that shipped without any dice doctrine received their first.
+- **A leaner agent fleet.** Exalted vs. WoD and Werewolf 20th retire their legacy agent generation (8 → 4 agents each; blocking model calls per turn drop 8 → 3). Exalted 3e's anima and charm trackers merge into one **Essence Manager** (6 → 5 agents), and the canonical anima model — event-stepped ignition, timed decay, book-verbatim — now lives in exactly one place, the lorebook, with the agents querying it.
+- **Agents heal themselves after engine-UI edits.** Editing a managed agent in Marinara's UI strips the extension's management tags (an engine settings-save behavior), which used to silently break sheet syncs and duplicate agents on reinstall. The extension now re-adopts stripped rows automatically, preserving your output caps and connection choices, and re-imports carry existing settings forward instead of resetting them.
+- **Preset cleanup, on your terms.** The agent-manager dialog can list stale **Agent Data** sections left behind by retired agents and remove them — only with your explicit confirmation, and never touching sections it doesn't own.
+- **Per-system character records + card binding** (started in the 1.1.x cycle, completed here): one sheet per character per system, sheets follow their card or persona into new chats and branches, whole-party restore, consent-only ruleset binding for fresh chats, and "Continue as" continuity across games.
+
+> **Upgrading from 1.1.0? Import the new zip, then re-import every system's `bundle.json` + agents — all 16 changed this release** (dice doctrine, roster changes, prompt updates). From the table above or `releases/1.2.0/install-files/`. Your characters and sheets are untouched. Verify the install by the approval-dialog hash published on the [v1.2.0 release](https://github.com/Kenhito/Marinara-RPG-Extension/releases/tag/v1.2.0) — the approval hash, not the zip hash, is the verification of record.
 
 ## What's new in v1.1.0
 
@@ -81,7 +92,7 @@ The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps
 - **A smaller download.** The packaged loader is comment-stripped at build time (comments and nothing else, with every literal verified identical afterward): 623 KB packaged, down from 760 KB in 1.0.0, well clear of the engine's 1 MiB ceiling.
 - **Docs overhaul.** Five systems that shipped without an install guide now have one (CoC 7e, GURPS Lite, Pathfinder 2e, The Stewpot, Trophy Dark); all sixteen cover the dice-tool toggle and the preset agent-sections step; six screenshots walk the install flow; and both release-folder guides publish SHA-256 download hashes.
 
-> **Upgrading from 1.0.0? Re-import your ruleset bundles — this one is required.** The compatibility fixes above are split across the extension and the ruleset bundles, so a bundle downloaded with 1.0.0 misbehaves against the 1.1.0 extension: its state-writing agent still runs on the old pre-narration timing and invents dice results, it lacks the GM dice doctrine, and it predates the self-repairing preset reconciliation. Import the new zip, **Review and Run** the new code hash, then re-import the current `bundle.json` for every system you play — from the table above, or from `releases/1.1.0/install-files/`. Your characters and sheets are untouched, and the extension repairs your preset's agent bindings on its own afterward.
+> **Upgrading from 1.0.0? Re-import your ruleset bundles — this one is required.** The compatibility fixes above are split across the extension and the ruleset bundles, so a bundle downloaded with 1.0.0 misbehaves against the 1.1.0 extension: its state-writing agent still runs on the old pre-narration timing and invents dice results, it lacks the GM dice doctrine, and it predates the self-repairing preset reconciliation. Import the new zip, **Review and Run** the new code hash, then re-import the current `bundle.json` for every system you play — from the table above, or from `releases/1.2.0/install-files/`. Your characters and sheets are untouched, and the extension repairs your preset's agent bindings on its own afterward.
 
 **Known notes.** Multi-mechanic dice is wiring and preview (two of nine resolution modes, one pilot ruleset). Game mode is expected to work but was not played through before shipping — the live testing behind these fixes ran in roleplay mode. And **Vampire 20th, Werewolf 20th, and Exalted Versus World of Darkness still run the previous-generation state flow**: their sheet-writing agent stays on the older pre-narration timing and can still guess at dice, and their transcripts still show raw `[mrr-state: ...]` tags. Each needs its own pass.
 
@@ -105,7 +116,7 @@ The framework is **system-agnostic by design**. A GM Mode Prompt Injection helps
 - **CSP-safe formula evaluator.** The `{StatName}*N+M` parser uses recursive descent instead of `new Function`. Marinara pages with strict CSP that blocks `'unsafe-eval'` now compute bar maxes correctly.
 - **State-mutator field-name normalization** + max-clamp on numeric deltas + persisted dedupe across reloads.
 - **Lorebook install path rewritten** to fix the silent-failure bulk endpoint. Per-entry POST with delete-then-add for clean re-installs.
-- **Self-contained release folder** at `releases/1.1.0/` with seven AI-feedable build docs, two complete reference systems, and drop-in install files.
+- **Self-contained release folder** at `releases/1.2.0/` with seven AI-feedable build docs, two complete reference systems, and drop-in install files.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for the full list.
 
@@ -175,8 +186,8 @@ If you just want to use the extension and don't have Node, npm, or git installed
 
 **Step 3 — Import the extension into Marinara.** MRR loads through the **External Extensions** lane (Full page access). Before importing, confirm both gates are on: `ENABLE_EXTERNAL_EXTENSIONS=true` on the engine host, and **Settings -> Advanced -> Danger Zone -> Allow third-party extension imports**. Then go to **Settings -> Addons -> External Extensions -> Import** and use ONE of these forms:
 
-- **Zip import (primary).** Import `releases/1.1.0/Marinara-RPG-Extension.extension.zip` directly — it's packaged in Marinara's own canonical export layout (`Extensions/<name>/manifest.json` + `extension.js` + a `marinara-extensions.json` envelope).
-- **Folder import.** Point **Import Folder** at the extracted `releases/1.1.0/Extensions/Marinara-RPG-Extension/` folder.
+- **Zip import (primary).** Import `releases/1.2.0/Marinara-RPG-Extension.extension.zip` directly — it's packaged in Marinara's own canonical export layout (`Extensions/<name>/manifest.json` + `extension.js` + a `marinara-extensions.json` envelope).
+- **Folder import.** Point **Import Folder** at the extracted `releases/1.2.0/Extensions/Marinara-RPG-Extension/` folder.
 - **Manifest-only import.** Import the `manifest.json` from that same folder.
 
 **Do NOT use a loose single-file `.js` import.** At 2.4.3, importing `RPG-Extension-GM-Mode.js` by itself builds a **sandboxed Worker extension** with no DOM and no same-origin API access — it "succeeds" but MRR cannot run in that sandbox. Always use one of the three forms above.

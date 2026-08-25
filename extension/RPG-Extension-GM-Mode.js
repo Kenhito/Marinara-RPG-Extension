@@ -2504,7 +2504,7 @@ function mrrMigrateRecordsForChat(activeRulesetId, why) {
                      nameHint } ] }
    TWO UNIQUENESS RULES, and they are different in kind:
      - one binding per charId — a sheet answers to ONE card. Re-binding
-       REPLACES, because that is exactly Corey's "new Ginny card, same
+       REPLACES, because that is exactly Corey's "new Mira card, same
        character" case.
      - one binding per engineId — a card carries ONE sheet. Two sheets
        claiming one card would make Tier-1 restore ambiguous, so the latest
@@ -2932,7 +2932,7 @@ function mrrResolveBindings(chatId, why) {
   /* LIVENESS + NAMES in one call. The batch summaries POST is required by
      §3.4 for the bound ids; sending EVERY present card id in the same
      request is a strict superset at identical cost and is what makes the
-     bind dropdown able to say "Ginny (card)" instead of a raw nanoid. Once
+     bind dropdown able to say "Mira (card)" instead of a raw nanoid. Once
      per chat, per session. POST needs x-marinara-csrf — the compat shim
      adds it to every non-GET. */
   mrrBindingResolveInFlightChatId = chatId;
@@ -3025,8 +3025,8 @@ function mrrApplyBindingRestores(chatId, cands, why, relabel) {
   /* ═══ ROUND C, C-1 — THE PLACEHOLDER RULE, RESTATED ══════════════════════
      Round B's version activated live[0] whenever the roster was an untouched
      placeholder, no matter how many characters were coming back, and it did
-     that BEFORE appending the rest. Live trace ex30523: Ginny adopted at log
-     line 11, Casey and Tester appended at lines 19-20, "restored 3" at 21 —
+     that BEFORE appending the rest. Live trace ex30523: Mira adopted at log
+     line 11, Vex and Tester appended at lines 19-20, "restored 3" at 21 —
      and the user saw ONE character.
 
      THE MECHANISM, precisely, because it is not the obvious one. Nothing
@@ -3307,7 +3307,7 @@ function mrrRenderBindPrompt() {
    unlabelled option the user can still pick beats a missing one.
 
    onChange IS the confirm (Corey direction): picking a different card is
-   the "new Ginny card, same character" re-bind, and no second dialog is
+   the "new Mira card, same character" re-bind, and no second dialog is
    raised for it. */
 function mrrRenderBindingField(parent) {
   if (!parent || !state.activeCharacterId) return null;
@@ -4234,7 +4234,7 @@ function saveSheet(chatId, sheet) {
     /* PARTY WRITES §4.2 — THE WRITE-GATE DEFERRAL EDGE. mrrDeferredSaveWanted
        is a GLOBAL replay flag: whatever it replays later fires under whoever
        is active at that moment. Under a party binding that is a mis-route
-       waiting to happen — Ginny's blocked write would land on the active
+       waiting to happen — Mira's blocked write would land on the active
        character when the chat confirms. So a bound write DROPS instead of
        deferring. In practice unreachable (state tags only apply on confirmed
        chats, and the gate guards the pre-confirm window), but a global replay
@@ -16707,13 +16707,13 @@ function mrrMutatorPartyRoutingClause(info) {
              "real: the extension applies the write to the character you named, not to " + activeName + ".");
   lines.push("3. A character who is NOT in that list — an NPC, or a party member with no sheet in this system — gets " +
              "NO tag. State the change in prose instead, on its own line, prefixed \"PARTY:\" and naming the character " +
-             "and the change exactly as the narration stated it — e.g. PARTY: Ginny took 7 slashing damage (GM narrated 7). " +
+             "and the change exactly as the narration stated it — e.g. PARTY: Mira took 7 slashing damage (GM narrated 7). " +
              "A tag with an unrecognised target is DROPPED, not guessed at, so the change would simply be lost.");
   lines.push("4. NO RETROACTIVE CORRECTIONS. Your tags describe THIS turn's narrated changes and nothing else. If a " +
              "number on a sheet disagrees with what earlier narration implied, do NOT emit a tag to reconcile it — the " +
              "sheet is the source of truth, and only current-turn narration moves it. Report the disagreement in prose " +
              "instead, on its own line, prefixed \"DISCREPANCY:\" and naming the character, the field, the sheet value " +
-             "and the value the narration implied — e.g. DISCREPANCY: Ginny's Peripheral Motes reads 11, earlier " +
+             "and the value the narration implied — e.g. DISCREPANCY: Mira's Peripheral Motes reads 11, earlier " +
              "narration implied 6. The humans decide what to do about it. A catch-up tag added to a legitimate new " +
              "change applies BOTH, which is how a 5-point spend moves a pool by 10.");
   lines.push("5. This ADDS routing and two narrowly-shaped prose lines. It relaxes NOTHING above: numbers are still " +
@@ -18686,8 +18686,8 @@ var mrrTargetWarnSeen = Object.create(null);
 
    Order is fixed: trim -> strip surrounding quotes -> strip trailing
    sentence punctuation -> collapse internal whitespace -> NFKC -> fold
-   case. Quotes come off before punctuation so `"Ginny".` reduces the same
-   way `Ginny.` does. */
+   case. Quotes come off before punctuation so `"Mira".` reduces the same
+   way `Mira.` does. */
 function mrrNormalizeTargetString(raw) {
   if (raw == null) return "";
   var s = String(raw).trim();
@@ -18981,7 +18981,7 @@ function mrrApplyResolvedMutation(attrs, res, sheetCache) {
    Per normalized mutation, in this exact order:
      1. resolve target (§3.1)              -> a canonical charId, or a DROP
      2. compute the sig on CANONICALIZED attrs (target= stamped back first,
-        so "Ginny", "ginny.", "\"Ginny\"" and the raw charId from three
+        so "Mira", "mira.", "\"Mira\"" and the raw charId from three
         different agents on two transports all collide to ONE signature)
      3. per-sig dedup key (unchanged: anchorId::sig::occIdx)
      4. per-(bucket, target) claim (§3.2)
@@ -20392,7 +20392,7 @@ function showMutationToast(attrs, nameLabel) {
      `__mrrToastLabel` is a pre-built label for a notice that is not a
      mutation at all (a DROPPED tag has no field to format); `nameLabel`
      prefixes a real mutation's label with the TARGET's display name, so a
-     party write reads as "Ginny: BASHING +3" and is visibly a party write.
+     party write reads as "Mira: BASHING +3" and is visibly a party write.
      Neither is set on the active-character path, so solo play's toast text
      is byte-identical to every build before this one. */
   var label = (attrs && attrs.__mrrToastLabel) ? attrs.__mrrToastLabel : formatMutationLabel(attrs);
@@ -20595,7 +20595,7 @@ function finalizeMutation(attrs) {
     if (!mrrRenderSuppressed) renderSheet();
     if (!Array.isArray(state.mutationLog)) state.mutationLog = [];
     /* PARTY WRITES §4.2 trap 2. A party write has to be VISIBLY a party
-       write — "Ginny: BASHING +3", not an unattributed toast the player
+       write — "Mira: BASHING +3", not an unattributed toast the player
        reads as their own character taking damage. mrrBoundApplyCharId is
        null on the active path, so solo toast text is byte-identical to
        every build before this one. charId on the log entry is unconditional
