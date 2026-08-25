@@ -18,10 +18,18 @@
  * (validateAgentImport):
  *   { schema: "mrr-agents", version: 1, rulesetId, rulesetName, authorId,
  *     agents: [{role, name, description, phase, enabled, promptTemplate, settings}] }
+ *
+ * Roster + phase resolution moved to tools/lib/agent-roster.mjs on 2026-08-25
+ * so this file and build-bundle.mjs cannot disagree about which agents a
+ * ruleset has or what phase they run in. See that module's header for why the
+ * missing-declaration default had to die.
  */
 import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, basename, join } from "node:path";
+import {
+  loadRosterManifest, resolveRoster, phaseForRole, phaseSummary
+} from "./lib/agent-roster.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -46,31 +54,6 @@ function extractPromptBlock(md) {
   );
 }
 
-/* Vector 7 enabler. The agent .md convention declares phase as a bold-prefixed
-   line in the prose body — `**Phase:** parallel`, `**Phase:** pre_generation`,
-   etc. Earlier versions of this generator hardcoded pre_generation regardless
-   of what the source declared, which silently downgraded parallel-phase agents
-   to pre_generation and broke the V7 path. We honor the declaration here;
-   anything outside the engine's accepted enum falls back to pre_generation
-   (defensive default — keeps existing seven shared agents unchanged).
-
-   Round-25 correction: the ALLOWED set carried `post_generation`, which is
-   NOT a value the engine accepts. The engine's enum is exactly
-   ["pre_generation", "parallel", "post_processing"] — see
-   ~/Marinara-Engine/packages/shared/src/schemas/agent.schema.ts:8 and
-   packages/shared/src/types/agent.ts:20. `post_generation` appears in the
-   engine only as an SSE *event* label (generate.routes.ts:8185), never as a
-   phase. Declaring it would have fallen through to pre_generation here while
-   looking accepted, so the typo was latent-but-real: it blocked the only
-   correct spelling of the post phase. Fixed to mirror the engine enum. */
-function extractPhase(md) {
-  const m = md.match(/^\s*\*\*Phase:\*\*\s*`?([a-zA-Z_]+)`?/m);
-  if (!m) return "pre_generation";
-  const declared = (m[1] || "").trim().toLowerCase();
-  const ALLOWED = new Set(["pre_generation", "parallel", "post_processing"]);
-  return ALLOWED.has(declared) ? declared : "pre_generation";
-}
-
 function titleCase(s) {
   return s.split(/[-_]/).map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(" ");
 }
@@ -78,23 +61,13 @@ function titleCase(s) {
 function loadRoleAgents(rulesetName, rulesetDir) {
   const sharedDir = resolve(root, "agents");
   const overrideDir = join(rulesetDir, "agents");
-  const roles = new Set();
-  function collectFrom(dir) {
-    try {
-      for (const f of readdirSync(dir)) {
-        if (f.endsWith(".md")) roles.add(f.replace(/\.md$/, ""));
-      }
-    } catch (e) { /* directory absent — fine */ }
-  }
-  collectFrom(sharedDir);
-  collectFrom(overrideDir);
-  return Array.from(roles).sort().map(function (role) {
-    const overridePath = join(overrideDir, role + ".md");
-    let md, isOverride;
-    try { md = readFileSync(overridePath, "utf8"); isOverride = true; }
-    catch (e) { md = readFileSync(join(sharedDir, role + ".md"), "utf8"); isOverride = false; }
+  const manifest = loadRosterManifest(rulesetDir);
+  return resolveRoster(sharedDir, overrideDir, manifest).map(function (entry) {
+    const role = entry.role;
+    const isOverride = entry.isOverride;
+    const md = readFileSync(entry.sourcePath, "utf8");
     const promptTemplate = extractPromptBlock(md);
-    const phase = extractPhase(md);
+    const phase = phaseForRole(role, md, entry.sourcePath, manifest, root);
     const firstHeading = (md.match(/^#\s+(.+)$/m) || [])[1] || titleCase(role);
     const tunedNote = isOverride ? " — tuned for " + rulesetName : " — shared baseline";
     return {
@@ -138,7 +111,7 @@ function buildAgents(dir) {
 
   const outPath = join(dir, "agents.json");
   writeFileSync(outPath, JSON.stringify(out, null, 2) + "\n");
-  return { outPath, count: out.agents.length };
+  return { outPath, count: out.agents.length, summary: phaseSummary(out.agents) };
 }
 
 const args = process.argv.slice(2);
@@ -161,8 +134,12 @@ if (args[0] === "--all") {
 let failed = 0;
 for (const dir of dirs) {
   try {
-    const { outPath, count } = buildAgents(dir);
-    console.log("PASS " + basename(dir) + " -> " + outPath + " (" + count + " agents)");
+    /* The phase summary rides the PASS line rather than a separate report so
+       roster drift is visible in the same scrollback that shows the build —
+       "8 agents: 8 blocking / 0 parallel / 0 post" is the shape of the exwod
+       bug, and it would have been readable on any build day since. */
+    const { outPath, summary } = buildAgents(dir);
+    console.log("PASS " + basename(dir) + " -> " + outPath + " (" + summary + ")");
   } catch (e) {
     console.error("FAIL " + basename(dir) + " — " + e.message);
     failed++;

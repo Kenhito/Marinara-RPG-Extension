@@ -21,6 +21,9 @@ import buildCustomTools from "./build-custom-tools.mjs";
 import buildLorebookExpansions from "./build-lorebook-expansions.mjs";
 import buildPreInputTransformer from "./build-pre-input-transformer.mjs";
 import buildScenarioDefault from "./build-scenario-default.mjs";
+import {
+  loadRosterManifest, resolveRoster, phaseForRole, phaseSummary
+} from "./lib/agent-roster.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -75,46 +78,28 @@ function titleCase(s) {
   return s.split(/[-_]/).map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(" ");
 }
 
-/* See build-agents.mjs for the source of truth. Kept in sync here defensively
-   — loadAdditionalAgents below is currently dead in GM-mode but used to be
-   the bundle-side install path and may be revived; either way, both should
-   parse Phase identically so a future revival doesn't silently regress. */
-function extractPhase(md) {
-  const m = md.match(/^\s*\*\*Phase:\*\*\s*`?([a-zA-Z_]+)`?/m);
-  if (!m) return "pre_generation";
-  const declared = (m[1] || "").trim().toLowerCase();
-  /* Round-25: mirrors the engine enum exactly — see build-agents.mjs's
-     extractPhase comment for why `post_generation` was wrong and removed. */
-  const ALLOWED = new Set(["pre_generation", "parallel", "post_processing"]);
-  return ALLOWED.has(declared) ? declared : "pre_generation";
-}
-
 function loadAdditionalAgents(rulesetName, rulesetDir) {
-  /* Resolve agent prompts with per-ruleset override precedence:
-     prefer rulesets/<id>/agents/<role>.md, fall back to <repo>/agents/<role>.md.
-     Roles are the union of files in both directories — a per-ruleset override
-     can introduce a role that doesn't exist as a shared baseline, and a shared
-     agent applies to rulesets without overrides. */
+  /* Roster + phase now come from tools/lib/agent-roster.mjs, shared with
+     build-agents.mjs. This function used to carry its own copy of the union
+     walk and the phase parser under a comment promising they were "kept in
+     sync defensively" — the promise held for the code and failed for the
+     tolerances, which is where the 2026-08-25 phase bugs lived. One module,
+     one set of rules, one place to change them.
+
+     Override precedence is unchanged: rulesets/<id>/agents/<role>.md wins over
+     the shared agents/<role>.md, and the role set is the union of both dirs
+     minus whatever agents.manifest.json suppresses. */
   const sharedDir = resolve(root, "agents");
   const overrideDir = join(rulesetDir, "agents");
-  const roles = new Set();
-  function collectFrom(dir) {
-    try {
-      for (const f of readdirSync(dir)) {
-        if (f.endsWith(".md")) roles.add(f.replace(/\.md$/, ""));
-      }
-    } catch (e) { /* directory absent — fine */ }
-  }
-  collectFrom(sharedDir);
-  collectFrom(overrideDir);
-  if (roles.size === 0) return [];
-  return Array.from(roles).sort().map(function (role) {
-    const overridePath = join(overrideDir, role + ".md");
-    let md, isOverride;
-    try { md = readFileSync(overridePath, "utf8"); isOverride = true; }
-    catch (e) { md = readFileSync(join(sharedDir, role + ".md"), "utf8"); isOverride = false; }
+  const manifest = loadRosterManifest(rulesetDir);
+  const roster = resolveRoster(sharedDir, overrideDir, manifest);
+  if (roster.length === 0) return [];
+  return roster.map(function (entry) {
+    const role = entry.role;
+    const isOverride = entry.isOverride;
+    const md = readFileSync(entry.sourcePath, "utf8");
     const promptTemplate = extractPromptBlock(md);
-    const phase = extractPhase(md);
+    const phase = phaseForRole(role, md, entry.sourcePath, manifest, root);
     const firstHeading = (md.match(/^#\s+(.+)$/m) || [])[1] || titleCase(role);
     const tunedNote = isOverride
       ? " — tuned for " + rulesetName
@@ -325,7 +310,16 @@ function buildBundle(dir) {
     regexCount: (bundle.regexScripts || []).length,
     toolCount: (bundle.customTools || []).length,
     addAgentCount: (bundle.additionalAgents || []).length,
-    scenarioBytes: (bundle.scenarioDefault || "").length
+    scenarioBytes: (bundle.scenarioDefault || "").length,
+    /* Counts the gmAgent alongside additionalAgents, i.e. everything this
+       bundle actually installs. Note this can legitimately exceed the count
+       build-agents.mjs reports for the same ruleset: agents.json carries only
+       the role agents, while a bundle ALSO ships the derived
+       pre-input-transformer where one exists (vtmv20 and exalted3e today). The
+       two numbers describe two different artifacts, and both are correct. */
+    phaseSummary: phaseSummary(
+      [{ phase: "pre_generation" }].concat(bundle.additionalAgents || [])
+    )
   };
 }
 
@@ -349,8 +343,9 @@ if (args[0] === "--all") {
 let failed = 0;
 for (const dir of dirs) {
   try {
-    const { outPath, entryCount, handAuthoredCount, derivedCount, regexCount, toolCount, addAgentCount, scenarioBytes } = buildBundle(dir);
-    console.log("PASS " + basename(dir) + " -> " + outPath + " (" + entryCount + " entries [" + handAuthoredCount + " hand + " + derivedCount + " derived], " + regexCount + " regex scripts, " + toolCount + " custom tools, " + addAgentCount + " add'l agents, " + scenarioBytes + " scenario bytes)");
+    const b = buildBundle(dir);
+    console.log("PASS " + basename(dir) + " -> " + b.outPath + " (" + b.entryCount + " entries [" + b.handAuthoredCount + " hand + " + b.derivedCount + " derived], " + b.regexCount + " regex scripts, " + b.toolCount + " custom tools, " + b.addAgentCount + " add'l agents, " + b.scenarioBytes + " scenario bytes)");
+    console.log("     roster: " + b.phaseSummary);
   } catch (e) {
     console.error("FAIL " + basename(dir) + " — " + e.message);
     failed++;
