@@ -57,6 +57,7 @@ Rules for state:
 # Hard rules (apply across both sections)
 
 - NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.
+- REPORT SHEET-DERIVED NUMBERS ONLY. Never infer, interpret, or stack a bonus from the player's phrasing — "spend 5 motes on an excellency to add 5 dice" is ONE effect described twice, not two separate +5s. Report the values the sheet and established narration actually carry; pool size and bonus arithmetic belong to the Ruleset Helper and the Combat Overseer, who interpret what you report.
 - DO NOT roll dice or decide outcomes.
 - DO NOT mutate the character sheet. State writes happen via the State Mutator (post-processing) or the extension's Edit-this-character flow.
 - Track player characters only — NPCs are the Combat Overseer's surface.
