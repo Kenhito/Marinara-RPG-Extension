@@ -3642,6 +3642,56 @@ function mrrClearSheetHold(characterId) {
   if (mrrSheetHoldWarned[characterId]) delete mrrSheetHoldWarned[characterId];
 }
 
+/* ─── THE SHARED HYDRATION STEP ───────────────────────────────────────────
+   Extracted from loadSheet (party-writes §4.2) so that the party-write path
+   reads a record through the SAME judgement loadSheet applies, rather than a
+   second copy of it that can drift: judge the record's own ruleset stamp
+   BEFORE the merge (round-24 Part 3 — mergeSheet is the thing that does the
+   damage), clear the hold when key and stamp agree, then hydrate.
+
+   Returns { held, sheet }. `held` is the OTHER ruleset's id when the record
+   belongs to a different system, in which case `sheet` is the blank
+   loadSheet also returns; callers that must not write a blank over a foreign
+   record (mrrLoadSheetRecordFor) read `held` and decline instead. The
+   caller keeps its own logging because the two call sites log different
+   things about different keys — behaviour is unchanged at both. */
+function mrrHydrateSheetRecord(parsed, ruleset, characterId, migrationPending) {
+  var held = mrrSheetRulesetHoldCheck(parsed, ruleset, characterId, migrationPending);
+  if (held) return { held: held, sheet: blankSheet(ruleset) };
+  mrrClearSheetHold(characterId);
+  return { held: null, sheet: mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(parsed, ruleset)) };
+}
+
+/* ─── PARTY WRITES §4.2 — READ ANY ROSTER MEMBER'S SHEET FOR WRITING ──────
+   The write-side companion to Round D's read-only mrrPartyMemberSheet. Same
+   resolver, same hold judgement, same hydration — but it exists to hand the
+   applier a sheet object it is about to MUTATE, so its failure cases are
+   stricter than the read path's:
+
+     - no record for (charId, active ruleset)  -> null   (§3.1 recordless)
+     - record present but unparseable          -> null + warn
+     - record stamped for ANOTHER ruleset      -> null   ("no sheet for this
+       system", the same verdict mrrPartyMemberSheet reaches). Returning the
+       blank here would invite a write that erases a record belonging to a
+       different game — the exact corruption round 24 exists to abolish, and
+       saveSheet's own hold gate would refuse it anyway.
+
+   NEVER creates a record. A narrated change is not consent to mint a sheet
+   (r33 lineage); PARTY: prose is the sanctioned channel for an unsheeted
+   member. */
+function mrrLoadSheetRecordFor(characterId) {
+  if (!characterId || !state.ruleset) return null;
+  var res = mrrResolveRecordRaw(characterId, mrrActiveRulesetId());
+  if (!res.raw) return null;
+  var parsed = safeParse(res.raw);
+  if (!parsed) {
+    warn("party writes: the stored record for character " + characterId + " (" + res.key + ") did not parse — no write is routed to it");
+    return null;
+  }
+  var hyd = mrrHydrateSheetRecord(parsed, state.ruleset, characterId, res.legacy);
+  return hyd.held ? null : hyd.sheet;
+}
+
 function loadSheet(chatId, ruleset) {
   if (!state.activeCharacterId) {
     log("loadSheet -> blank: no activeCharacterId");
@@ -3672,10 +3722,10 @@ function loadSheet(chatId, ruleset) {
          Round A RETAINS this as a bug siren (spec §2.1): a composite record
          is filed under the ruleset in its own key, so a hold firing on one
          means the key and the in-sheet stamp disagree, which is a defect. */
-      if (mrrSheetRulesetHoldCheck(parsed, ruleset, state.activeCharacterId, res.legacy)) return blankSheet(ruleset);
-      mrrClearSheetHold(state.activeCharacterId);
+      var hyd = mrrHydrateSheetRecord(parsed, ruleset, state.activeCharacterId, res.legacy);
+      if (hyd.held) return hyd.sheet;
       log("loadSheet hydrated key=" + key + " bytes=" + raw.length + (res.legacy ? " (legacy shared record, read-only fallback)" : ""));
-      return mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(parsed, ruleset));
+      return hyd.sheet;
     }
     warn("loadSheet -> blank: parse failed for " + key);
   }
@@ -3705,9 +3755,7 @@ function loadSheet(chatId, ruleset) {
            no-op today — but the copy-forward above means the record is
            now the modern one, and this branch must not become a hole
            the moment a stamped record reaches it by any future route. */
-        if (mrrSheetRulesetHoldCheck(legacyParsed, ruleset, state.activeCharacterId)) return blankSheet(ruleset);
-        mrrClearSheetHold(state.activeCharacterId);
-        return mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(legacyParsed, ruleset));
+        return mrrHydrateSheetRecord(legacyParsed, ruleset, state.activeCharacterId).sheet;
       }
       warn("loadSheet: migrated bytes but parse failed for " + legacyKey);
     }
@@ -3812,7 +3860,24 @@ function saveSheet(chatId, sheet) {
        while the chat is still open. Leaving the chat unbound drops it, which
        is correct — there is no ruleset to file it under, and inventing one
        is the exact guess round 24 exists to abolish. */
-    if (writeBlock.code === "latch" || writeBlock.code === "unbound") mrrDeferredSaveWanted = true;
+    /* PARTY WRITES §4.2 — THE WRITE-GATE DEFERRAL EDGE. mrrDeferredSaveWanted
+       is a GLOBAL replay flag: whatever it replays later fires under whoever
+       is active at that moment. Under a party binding that is a mis-route
+       waiting to happen — Ginny's blocked write would land on the active
+       character when the chat confirms. So a bound write DROPS instead of
+       deferring. In practice unreachable (state tags only apply on confirmed
+       chats, and the gate guards the pre-confirm window), but a global replay
+       flag next to a character binding is exactly the pair that bites two
+       rounds from now. */
+    if (writeBlock.code === "latch" || writeBlock.code === "unbound") {
+      if (mrrBoundApplyCharId) {
+        warn("saveSheet: a party-routed write for " + mrrCharacterLabel(mrrBoundApplyCharId) + " (" + mrrBoundApplyCharId +
+             ") hit the '" + writeBlock.code + "' gate — DROPPED, not deferred. The deferred-replay flag is global and would " +
+             "later fire under whoever is active then, writing this character's change onto someone else's sheet.");
+      } else {
+        mrrDeferredSaveWanted = true;
+      }
+    }
     var warnKey = (state.chatId || "-") + "|" + (state.activeCharacterId || "-") + "|" + writeBlock.code;
     if (mrrLatchWarnedReason !== warnKey) {
       mrrLatchWarnedReason = warnKey;
@@ -15238,6 +15303,55 @@ function mrrWithSheetBound(sheet, characterId, fn) {
   }
 }
 
+/* ═══ PARTY WRITES §4.2 — THE WRITE-SIDE BINDING ══════════════════════════
+   Round D reads inside a binding. This writes inside one, which is a much
+   sharper knife, so it gets its own wrapper and three latches.
+
+   THE SYNCHRONICITY MANDATE. The binding is correct ONLY because the entire
+   mutation pipeline is synchronous. applyStateMutation never yields, and
+   saveSheet computes its record key from state.activeCharacterId AT CALL
+   TIME (see saveSheet's `var key = mrrWriteRecordKey(...)`) followed by a
+   synchronous write. Introduce one await, one setTimeout, one .then inside
+   a binding and the save lands on whoever is active when the continuation
+   runs — a silent cross-character write with no stack trace pointing here.
+   NOTHING inside a binding may defer work. The thenable guard below is the
+   tripwire for a future edit that forgets; it cannot fire on any path that
+   exists today, which is exactly why it must exist before one does.
+
+   THE THREE LATCHES, all save/restore rather than set/clear, so a nested or
+   re-entrant call cannot strand a flag:
+     mrrRenderSuppressed  — trap 1: finalizeMutation renders unconditionally,
+       and painting the TARGET's sheet into a panel showing the ACTIVE
+       character is a lie the player has no way to detect. Journaling stays
+       ON (that is the difference from the revert path's latch — a party
+       write must be swipe-revertible like any other).
+     mrrBoundApplyCharId  — traps 2 and 3 plus the write-gate edge: it is
+       how finalizeMutation knows to attribute the toast and the mutation
+       log to the target, and how saveSheet knows a blocked write must not
+       arm the GLOBAL deferred-replay flag. */
+var mrrRenderSuppressed = false;
+var mrrBoundApplyCharId = null;
+
+function mrrWithSheetBoundApply(sheet, characterId, fn) {
+  var prevRender = mrrRenderSuppressed;
+  var prevBound = mrrBoundApplyCharId;
+  mrrRenderSuppressed = true;
+  mrrBoundApplyCharId = characterId;
+  try {
+    var result = mrrWithSheetBound(sheet, characterId, fn);
+    if (result && typeof result.then === "function") {
+      warn("party writes: a bound-apply region returned a THENABLE for character " + characterId +
+           " — the binding has already been restored, so any deferred work will run against whoever is active THEN, " +
+           "not this target. The mutation pipeline must stay fully synchronous inside a binding (spec §4.2). " +
+           "This is a defect in whatever was just added to the apply path, not a recoverable condition.");
+    }
+    return result;
+  } finally {
+    mrrRenderSuppressed = prevRender;
+    mrrBoundApplyCharId = prevBound;
+  }
+}
+
 /* The sheet formatter. Called with no arguments it renders the ACTIVE sheet
    exactly as it always has (the pre-Round-D single-sheet behaviour, byte for
    byte). Called with (sheet, characterId) it renders THAT sheet through the
@@ -17473,12 +17587,27 @@ var appliedMutationKeys = Object.create(null);
    gets re-opened with real data behind it.
 
    Key = the journal bucket key (journalKey, i.e. "<msgId>:<idx>", falling
-   back to plain anchorId when the swipe index is unresolvable). Value =
-   "dom" | "poller". Session-only, per chat: reset at the same two
+   back to plain anchorId when the swipe index is unresolvable) PLUS the
+   resolved target charId, joined on NUL - see MRR_CLAIM_SEP below.
+   PARTY-WRITES (spec §3.2) re-keyed this from bucket-level to
+   (bucket, target). The r23 rationale — cross-model echoes never sig-match,
+   so only a bucket-level claim can stop a double-apply — still holds, but
+   it holds PER CHARACTER. Live evidence ex30642:132: one bucket carried the
+   active character's Anima Banner write on one channel and a distinct
+   `delta=-5 field="Peripheral Motes" target=…` write for another member on
+   the other, and the bucket-level claim suppressed the second — a genuinely
+   distinct write LOST, exactly the case the r23 telemetry header asked to
+   be reported with real data. Keying on (bucket, target) suppresses the
+   echo and admits the other character's write.
+   The delimiter is NUL because it is a byte neither component can contain
+   (same aliasing defense as the E-2 memo signature) — never "::" or any
+   other typeable string, which a charId or a msgId could in principle
+   carry. Value = "dom" | "poller". Session-only, per chat: reset at the same two
    loadProcessedMessageIds chokepoints appliedMutationKeys resets at, and
    DELETED for a bucket whenever that bucket is reverted (mrrRevertBucket) —
-   otherwise a swipe-back re-admitted through the other channel would be
-   wrongly suppressed. Re-SET after a journal reapply (the
+   now a PREFIX delete of every (bucket, *) claim, since one bucket can hold
+   a claim per character — otherwise a swipe-back re-admitted through the
+   other channel would be wrongly suppressed. Re-SET after a journal reapply (the
    reappliedFromJournal paths bypass applyStateTagsWithDedup entirely), so a
    late echo from the other channel still can't slip in behind it.
 
@@ -17494,6 +17623,189 @@ var appliedMutationKeys = Object.create(null);
    writes, so claims are populated but the channel always matches — behavior
    is byte-identical to pre-round-23. */
 var mrrBucketChannelClaims = Object.create(null);
+
+/* The (bucket, target) claim delimiter. A NUL byte: neither a journal
+   bucket key nor a charId can contain one, so no pair of components can
+   alias into another pair's key. Written as the \u0000 ESCAPE, never as a
+   raw byte — the loader is a text file that has to survive editors, git
+   and the package builder unharmed. */
+var MRR_CLAIM_SEP = "\u0000";
+
+function mrrClaimKey(bucketKey, characterId) {
+  return String(bucketKey) + MRR_CLAIM_SEP + String(characterId);
+}
+
+/* Release EVERY character's claim on one bucket. Replaces round 23's single
+   `delete mrrBucketChannelClaims[bucketKey]` now that a bucket holds one
+   claim per target (spec §3.2). */
+function mrrReleaseBucketClaims(bucketKey) {
+  var prefix = String(bucketKey) + MRR_CLAIM_SEP;
+  var released = 0;
+  for (var k in mrrBucketChannelClaims) {
+    if (Object.prototype.hasOwnProperty.call(mrrBucketChannelClaims, k) && k.indexOf(prefix) === 0) {
+      delete mrrBucketChannelClaims[k];
+      released++;
+    }
+  }
+  return released;
+}
+
+/* ─── PARTY WRITES §3.5 — THE PER-TAG OUTCOME ENUM ────────────────────────
+   Every mutation leaves applyStateTagsWithDedup with exactly ONE of these.
+   Three consumers, one vocabulary: the per-bucket tally log line, the
+   toast/warn surfaces, and every pw-suite probe (which asserts OUTCOMES,
+   never log-string prefixes — a probe that greps a log message is testing
+   the message, not the behaviour). Implicit before this build, explicit
+   now. */
+var MRR_TAG_OUTCOME = {
+  APPLIED:            "APPLIED",
+  DEDUPED:            "DEDUPED",
+  CLAIM_SUPPRESSED:   "CLAIM_SUPPRESSED",
+  DROPPED_UNKNOWN:    "DROPPED_UNKNOWN",
+  DROPPED_AMBIGUOUS:  "DROPPED_AMBIGUOUS",
+  DROPPED_RECORDLESS: "DROPPED_RECORDLESS",
+  DROPPED_MALFORMED:  "DROPPED_MALFORMED"
+};
+
+/* The outcome tally of the MOST RECENT applyStateTagsWithDedup call, keyed
+   by MRR_TAG_OUTCOME value, plus `targets` (charId -> count of APPLIED).
+   applyStateTagsWithDedup's public contract is still "returns the number
+   applied" — every call site does `applied += …` — so the richer report
+   lives here rather than in the return value. Read by the tally log line
+   and by probes. */
+var mrrLastApplyOutcomes = null;
+
+/* Session telemetry for §3.1's backward-compat arm: how many tags arrived
+   with NO target= at all. Every one of the 16 shipped rulesets' examples
+   writes target="player", so an absent target means an agent went off the
+   contract — harmless (it routes to the active character exactly as it
+   always did) but worth knowing about. One summary log line per session,
+   on the first occurrence; the running count rides the tally object. */
+var mrrAbsentTargetCount = 0;
+var mrrAbsentTargetLogged = false;
+
+/* Warn-once-per-unseen-name bookkeeping (§3.1). NPC-heavy narration must
+   not turn the console into spam: the FIRST time a given normalized target
+   string fails to resolve, the full warn (with the valid-values list) is
+   emitted; every later occurrence of that same string is silent. */
+var mrrTargetWarnSeen = Object.create(null);
+
+/* ─── PARTY WRITES §3.1 — DETERMINISTIC TARGET NORMALIZATION ──────────────
+   CANONICALIZATION, NOT GUESSING. Every step here removes a difference that
+   is provably not information: surrounding quotes the tag parser left on,
+   a sentence's trailing period, doubled spaces, a compatibility codepoint,
+   letter case. What it does NOT do — and MUST NEVER do — is bridge a gap
+   that carries meaning.
+
+   FUZZY, PREFIX AND EDIT-DISTANCE MATCHING ARE BANNED. This is spec law
+   (§3.1), written here so no future session "improves" resolution into
+   guessing. The failure mode being bought off is precise: a guess that
+   lands one character away writes a real number onto the WRONG player's
+   sheet, silently, which is the exact unrecoverable corruption the D-3
+   clause existed to prevent. A drop is visible and repairable; a wrong
+   write is neither.
+
+   Order is fixed: trim -> strip surrounding quotes -> strip trailing
+   sentence punctuation -> collapse internal whitespace -> NFKC -> fold
+   case. Quotes come off before punctuation so `"Ginny".` reduces the same
+   way `Ginny.` does. */
+function mrrNormalizeTargetString(raw) {
+  if (raw == null) return "";
+  var s = String(raw).trim();
+  s = s.replace(/^[\"'`‘’“”]+/, "").replace(/[\"'`‘’“”]+$/, "").trim();
+  s = s.replace(/[.,;:!]+$/, "");
+  s = s.replace(/\s+/g, " ").trim();
+  if (typeof s.normalize === "function") {
+    try { s = s.normalize("NFKC"); } catch (e) { /* pre-ES6 host: the other five steps still apply */ }
+  }
+  return s.toLowerCase();
+}
+
+/* The role-words that mean "whoever is active right now". `player` is the
+   one every shipped ruleset's examples use, so this arm is what makes the
+   whole build a zero-bundle-edit change. */
+var MRR_TARGET_SELF_WORDS = { "": true, "player": true, "active": true, "self": true };
+
+/* ─── PARTY WRITES §3.1 — THE RESOLVER ────────────────────────────────────
+   Runs BEFORE normalizeStateAttrs and before the content signature, inside
+   applyStateTagsWithDedup's loop. Returns one of:
+
+     { ok:true,  charId, active:bool, absent:bool }
+     { ok:false, outcome: MRR_TAG_OUTCOME.DROPPED_UNKNOWN   | …AMBIGUOUS,
+                 raw, normalized, candidates:[…] }
+
+   Resolution order on the NORMALIZED string:
+     (a) absent / player / active / self  -> the active character
+     (b) exact charId match               -> that member
+     (c) exact name match, UNIQUE         -> that member
+     (d) name matches two or more members -> AMBIGUOUS
+     (e) nothing matches                  -> UNKNOWN
+
+   AMBIGUOUS and UNKNOWN are deliberately DISTINCT outcomes: they have
+   different repairs (rename a character vs. correct the narration), so
+   collapsing them would cost the human the one piece of information that
+   tells them which repair to make.
+
+   `quiet` suppresses the telemetry side effects so a diagnostic caller can
+   re-resolve a tag without emitting a second warn or bumping a counter. */
+function mrrResolveTagTarget(attrs, quiet) {
+  var raw = (attrs && attrs.target != null) ? attrs.target : null;
+  var norm = mrrNormalizeTargetString(raw);
+  var roster = mrrPartyRosterOrder();
+  var activeId = state.activeCharacterId || null;
+
+  if (Object.prototype.hasOwnProperty.call(MRR_TARGET_SELF_WORDS, norm)) {
+    if (raw == null && !quiet) {
+      mrrAbsentTargetCount++;
+      if (!mrrAbsentTargetLogged) {
+        mrrAbsentTargetLogged = true;
+        log("party writes: a state tag arrived with no target= — routed to the ACTIVE character, exactly as every pre-party-writes build did. " +
+            "Every shipped ruleset's examples emit target=\"player\", so this is prompt-compliance telemetry, not an error. " +
+            "This session's running count rides each apply tally as absentTarget=N.");
+      }
+    }
+    if (!activeId) {
+      return { ok: false, outcome: MRR_TAG_OUTCOME.DROPPED_UNKNOWN, raw: raw, normalized: norm, candidates: [] };
+    }
+    return { ok: true, charId: activeId, active: true, absent: raw == null };
+  }
+
+  var i;
+  /* (b) charId. Both sides go through the SAME normalizer so the comparison
+     is symmetric rather than "raw input vs. cooked id". */
+  for (i = 0; i < roster.length; i++) {
+    if (mrrNormalizeTargetString(roster[i].id) === norm) {
+      return { ok: true, charId: roster[i].id, active: roster[i].id === activeId, absent: false };
+    }
+  }
+
+  /* (c)/(d) name. Collect ALL matches before deciding — a unique match is a
+     match, two matches are ambiguous, and the count is the whole decision. */
+  var hits = [];
+  for (i = 0; i < roster.length; i++) {
+    if (mrrNormalizeTargetString(roster[i].name) === norm) hits.push(roster[i]);
+  }
+  if (hits.length === 1) {
+    return { ok: true, charId: hits[0].id, active: hits[0].id === activeId, absent: false };
+  }
+
+  var valid = [];
+  for (i = 0; i < roster.length; i++) valid.push(roster[i].name);
+  var outcome = hits.length > 1 ? MRR_TAG_OUTCOME.DROPPED_AMBIGUOUS : MRR_TAG_OUTCOME.DROPPED_UNKNOWN;
+  if (!quiet && !mrrTargetWarnSeen[norm]) {
+    mrrTargetWarnSeen[norm] = true;
+    if (hits.length > 1) {
+      warn("party writes: target '" + String(raw) + "' matches " + hits.length + " roster members whose names normalize identically — " +
+           "the mutation is DROPPED, never guessed. Rename one of them, or address the write by character id. " +
+           "Valid targets: " + valid.join(", ") + " (or \"player\" for the active character).");
+    } else {
+      warn("party writes: target '" + String(raw) + "' matches no character in this chat's roster — the mutation is DROPPED, never " +
+           "routed to the active character (a guess writes a real number onto the wrong sheet, silently). " +
+           "Valid targets: " + valid.join(", ") + " (or \"player\" for the active character).");
+    }
+  }
+  return { ok: false, outcome: outcome, raw: raw, normalized: norm, candidates: hits.map(function (h) { return h.id; }) };
+}
 
 function mutationContentSig(attrs) {
   if (!attrs || typeof attrs !== "object") return "";
@@ -17583,27 +17895,92 @@ function normalizeStateAttrs(attrs) {
    Diagnostic ONLY — never gates, never mutates, and swallows its own throws
    (normalizeStateAttrs walks state.ruleset.derivedStats and CAN throw on
    malformed ruleset data; see the round-12 F2 note at the poller call site).
-   Suppression must stand regardless of whether this line can be produced. */
-function mrrWarnCrossChannelMismatch(bucketKey, tags, anchorId, claimedBy, chan) {
+   Suppression must stand regardless of whether this line can be produced.
+
+   PARTY WRITES (§4.1): suppression is now per (bucket, TARGET), so this
+   fires per suppressed target and NAMES the character. The proxy test is
+   unchanged — the sigs are handed in by the apply loop, which already
+   computed them under the canonicalized attrs, rather than re-walking the
+   tag list here: re-resolving a tag a second time would re-fire the §3.1
+   drop toasts and warns as a side effect of a diagnostic, which a
+   diagnostic must never do. */
+function mrrWarnCrossChannelMismatch(bucketKey, anchorId, claimedBy, chan, characterId, sigs) {
   try {
     var occ = Object.create(null);
     var missing = [];
-    for (var i = 0; i < tags.length; i++) {
-      var normalized = normalizeStateAttrs(tags[i].attrs);
-      for (var n = 0; n < normalized.length; n++) {
-        var sig = mutationContentSig(normalized[n]);
-        var idx = (occ[sig] = (occ[sig] || 0) + 1) - 1;
-        if (appliedMutationKeys[String(anchorId) + "::" + sig + "::" + idx]) continue;
-        missing.push(sig.length > 120 ? sig.slice(0, 120) + "…" : sig);
-      }
+    for (var i = 0; i < sigs.length; i++) {
+      var sig = sigs[i];
+      var idx = (occ[sig] = (occ[sig] || 0) + 1) - 1;
+      if (appliedMutationKeys[String(anchorId) + "::" + sig + "::" + idx]) continue;
+      missing.push(sig.length > 120 ? sig.slice(0, 120) + "…" : sig);
     }
     if (!missing.length) return; /* every incoming sig was already applied under this anchor — a clean exact-duplicate echo, nothing to report */
-    warn("cross-channel: bucket " + bucketKey + " — " + missing.length + " suppressed " + chan +
+    warn("cross-channel: bucket " + bucketKey + " target " + mrrCharacterLabel(characterId) + " (" + characterId + ") — " +
+         missing.length + " suppressed " + chan +
          " mutation(s) have no matching apply from the claiming '" + claimedBy + "' channel: " + missing.join(" ; ") +
          " — either a differently-worded echo (expected, harmless) or a genuinely distinct write that is now LOST for this turn (accepted round-23 trade-off; report this line so it can be re-opened with real data)");
   } catch (e) {
     warn("cross-channel: mismatch telemetry threw for bucket '" + bucketKey + "' (" + (e && e.message ? e.message : e) + ") — suppression itself is unaffected");
   }
+}
+
+/* §3.1's visibility rule. A DROP trades a double-apply for an under-apply,
+   and a silent under-apply is the worse of the two failures — so the human
+   repair path has to be visible IN THE PANEL, not only in the console. This
+   rides the existing mutation-toast surface rather than inventing a second
+   notification widget. Never allowed to break the pipeline: a host with no
+   DOM (probe harness, headless smoke) must still drop correctly. */
+function mrrShowTargetDropToast(res) {
+  try {
+    var what = (res.outcome === MRR_TAG_OUTCOME.DROPPED_AMBIGUOUS) ? "ambiguous target"
+             : (res.outcome === MRR_TAG_OUTCOME.DROPPED_RECORDLESS) ? "no sheet for this system"
+             : "unknown target";
+    showMutationToast({
+      __mrrToastLabel: {
+        prefix: "DROPPED",
+        change: what,
+        reason: res.raw == null ? "(no target named)" : "'" + String(res.raw) + "'"
+      }
+    });
+  } catch (e) { /* toast surface unavailable — the drop itself already happened */ }
+}
+
+/* §3.1 recordless gate + §4.2's one-load-per-target cache, in one place.
+   Returns true when the target has a usable sheet for the ACTIVE ruleset.
+   The cache holds `null` for a target already judged recordless, so a
+   message carrying five tags for an unsheeted member asks storage once and
+   drops five times, not five lookups and five identical warns. */
+function mrrEnsureTargetSheet(res, sheetCache) {
+  if (Object.prototype.hasOwnProperty.call(sheetCache, res.charId)) return sheetCache[res.charId] !== null;
+  var sheet = mrrLoadSheetRecordFor(res.charId);
+  sheetCache[res.charId] = sheet;
+  if (!sheet) {
+    warn("party writes: " + mrrCharacterLabel(res.charId) + " (" + res.charId + ") has no sheet for this system — " +
+         "the mutation is DROPPED. A sheet is never auto-created for a narrated change (consent doctrine); " +
+         "state it as a PARTY: prose line, or create the character's sheet for this ruleset first.");
+  }
+  return sheet !== null;
+}
+
+/* THE ROUTING SEAM (§4.2). The active character takes exactly the path it
+   always took. Every other target is applied inside a binding, so the whole
+   pipeline below — applyStateMutation, the journal, finalizeMutation,
+   saveSheet's record key — believes that character is the active one for
+   the duration of one synchronous call. Returns an MRR_TAG_OUTCOME.
+
+   A THROW is deliberately NOT swallowed: it propagates exactly as it did
+   before this build (the caller's finally still claims the bucket), and
+   mrrWithSheetBound's own finally still restores the binding on the way
+   out. Turning a throw into an outcome would hide a real defect behind a
+   counter. */
+function mrrApplyResolvedMutation(attrs, res, sheetCache) {
+  if (res.active) {
+    return applyStateMutation(attrs) ? MRR_TAG_OUTCOME.APPLIED : MRR_TAG_OUTCOME.DROPPED_MALFORMED;
+  }
+  var ok = mrrWithSheetBoundApply(sheetCache[res.charId], res.charId, function () {
+    return applyStateMutation(attrs);
+  });
+  return ok ? MRR_TAG_OUTCOME.APPLIED : MRR_TAG_OUTCOME.DROPPED_MALFORMED;
 }
 
 /* Apply a parsed [mrr-state:] tag list with cross-transport dedup. Returns
@@ -17619,35 +17996,93 @@ function mrrWarnCrossChannelMismatch(bucketKey, tags, anchorId, claimedBy, chan)
    Round-23: `channel` ("dom" | "poller") names the transport making this
    call and drives the bucket-level sole-writer claim — see
    mrrBucketChannelClaims' header for the EX3_2052 double-apply evidence and
-   why per-sig content dedup structurally cannot catch a cross-model echo. */
+   why per-sig content dedup structurally cannot catch a cross-model echo.
+
+   ─── PARTY WRITES §4.1 — THE ROUTING ORDER ────────────────────────────────
+   Per normalized mutation, in this exact order:
+     1. resolve target (§3.1)              -> a canonical charId, or a DROP
+     2. compute the sig on CANONICALIZED attrs (target= stamped back first,
+        so "Ginny", "ginny.", "\"Ginny\"" and the raw charId from three
+        different agents on two transports all collide to ONE signature)
+     3. per-sig dedup key (unchanged: anchorId::sig::occIdx)
+     4. per-(bucket, target) claim (§3.2)
+     5. apply, bound to the target when it is not the active character (§4.2)
+
+   THE ORDER OF 3 AND 4 IS LOAD-BEARING. A claim-suppressed mutation must
+   NOT be marked in appliedMutationKeys — round 23's gate returned before
+   ever touching that map, and the r23 telemetry's whole proxy test is
+   "is this sig missing from appliedMutationKeys?". Marking it would make
+   every suppression look like a clean echo and blind the one diagnostic
+   that can re-open the trade-off. So: read the dedup map, then check the
+   claim, and only then write the dedup map.
+
+   The whole-call suppression round 23 used is GONE, replaced by per-target
+   suppression. That is the direct fix for ex30642:132 — one bucket carrying
+   the active character's write on one channel and a party member's on the
+   other no longer loses the second. Within ONE character, r23's echo
+   suppression is untouched (spec §5). */
 function applyStateTagsWithDedup(tags, anchorId, journalKey, channel) {
   if (!tags || !tags.length) return 0;
   var bucketKey = journalKey || anchorId;
   var chan = channel || "dom"; /* defensive default: an un-passed channel behaves as the historic single-writer (narrator) path */
-  var claimedBy = mrrBucketChannelClaims[bucketKey];
-  if (claimedBy && claimedBy !== chan) {
-    /* Round-23 sole-writer gate: this bucket's state writes already came
-       from the other transport this turn. Suppress the WHOLE call — not
-       per-sig — because the two channels' sigs are authored by different
-       models and never match (free-text reason=, delta-vs-absolute forms). */
-    log("cross-channel: bucket " + bucketKey + " already applied by " + claimedBy + " — suppressing " + tags.length + " tag(s) from " + chan);
-    mrrWarnCrossChannelMismatch(bucketKey, tags, anchorId, claimedBy, chan);
-    return 0;
-  }
   var occ = Object.create(null);
   var applied = 0;
+  var tally = mrrNewOutcomeTally();
+  mrrLastApplyOutcomes = tally;
+  var touched = Object.create(null);        /* charId -> true; claimed once each in the finally (§3.2) */
+  var suppressed = Object.create(null);     /* charId -> {claimedBy, sigs[]} for the r23 telemetry */
+  var sheetCache = Object.create(null);     /* charId -> hydrated sheet; ONE load per target per pass (§4.2) */
   var prevJournalBucketKey = mrrCurrentJournalBucketKey;
   mrrCurrentJournalBucketKey = journalKey || anchorId;
   try {
     for (var i = 0; i < tags.length; i++) {
+      var rawAttrs = tags[i] && tags[i].attrs;
+      if (!rawAttrs || typeof rawAttrs !== "object") { tally[MRR_TAG_OUTCOME.DROPPED_MALFORMED]++; continue; }
+      /* §3.1 runs BEFORE normalizeStateAttrs: a multi-type tag splits into
+         several canonical mutations, and all of them inherit ONE target
+         decision — resolving per split would ask the same question twice
+         and could answer it twice in the console. */
+      var res = mrrResolveTagTarget(rawAttrs);
+      if (!res.ok) {
+        tally[res.outcome]++;
+        mrrShowTargetDropToast(res);
+        continue;
+      }
+      if (res.absent) tally.absentTarget++;
+      /* §3.1's recordless rule, checked ONCE per target per pass. The ACTIVE
+         character is deliberately exempt: state.sheet is already hydrated in
+         memory and a brand-new character legitimately has no record until
+         its first save, so dropping there would be a regression, not a
+         guard. For everybody else "no sheet for this system" is exactly the
+         verdict mrrPartyMemberSheet already reaches for a foreign-stamped
+         record, and auto-creating one is banned (consent doctrine, r33). */
+      if (!res.active && !mrrEnsureTargetSheet(res, sheetCache)) {
+        tally[MRR_TAG_OUTCOME.DROPPED_RECORDLESS]++;
+        mrrShowTargetDropToast({ outcome: MRR_TAG_OUTCOME.DROPPED_RECORDLESS, raw: res.charId });
+        continue;
+      }
       /* Normalize BEFORE the signature so equivalent surface forms from
          different agents collide (see normalizeStateAttrs). */
-      var normalized = normalizeStateAttrs(tags[i].attrs);
+      var normalized = normalizeStateAttrs(rawAttrs);
       for (var n = 0; n < normalized.length; n++) {
-        var sig = mutationContentSig(normalized[n]);
+        /* Copy before stamping: normalizeStateAttrs returns the CALLER's
+           attrs object untouched on the pass-through path, and a diagnostic
+           has no business rewriting the tag list it was handed. */
+        var cand = Object.assign({}, normalized[n]);
+        cand.target = res.charId;                       /* §3.1 canonical stamp, BEFORE the sig */
+        var sig = mutationContentSig(cand);
         var idx = (occ[sig] = (occ[sig] || 0) + 1) - 1;
         var key = String(anchorId) + "::" + sig + "::" + idx;
-        if (appliedMutationKeys[key]) continue; /* other transport already applied this exact mutation for this turn */
+        if (appliedMutationKeys[key]) { tally[MRR_TAG_OUTCOME.DEDUPED]++; continue; } /* other transport already applied this exact mutation for this turn */
+        var claimKey = mrrClaimKey(bucketKey, res.charId);
+        var claimedBy = mrrBucketChannelClaims[claimKey];
+        if (claimedBy && claimedBy !== chan) {
+          tally[MRR_TAG_OUTCOME.CLAIM_SUPPRESSED]++;
+          if (!suppressed[res.charId]) suppressed[res.charId] = { claimedBy: claimedBy, sigs: [] };
+          suppressed[res.charId].sigs.push(sig);
+          continue;                                     /* NOT marked applied — see the header's "order of 3 and 4" note */
+        }
+        touched[res.charId] = true;
         appliedMutationKeys[key] = true;
         /* Round-10 fix A: thread the EXACT dedup sig this call is applying
            under into whatever journal entry it produces (mrrJournalMutation
@@ -17663,7 +18098,13 @@ function applyStateTagsWithDedup(tags, anchorId, journalKey, channel) {
         var prevApplySig = mrrCurrentApplySig;
         mrrCurrentApplySig = sig;
         try {
-          if (applyStateMutation(normalized[n])) applied++;
+          var outcome = mrrApplyResolvedMutation(cand, res, sheetCache);
+          tally[outcome]++;
+          if (outcome === MRR_TAG_OUTCOME.APPLIED) {
+            applied++;
+            tally.targets[res.charId] = (tally.targets[res.charId] || 0) + 1;
+            if (res.active) tally.activeTouched = true; else tally.boundApplies++;
+          }
         } finally {
           mrrCurrentApplySig = prevApplySig;
         }
@@ -17671,16 +18112,62 @@ function applyStateTagsWithDedup(tags, anchorId, journalKey, channel) {
     }
   } finally {
     mrrCurrentJournalBucketKey = prevJournalBucketKey;
-    /* Round-23: claim the bucket for this channel. In the finally on
-       purpose — a mutation that THREW still applied whatever came before it,
-       so the bucket is this channel's either way (the throwing row is
-       retried by the SAME channel next poll, where the claim matches and
-       changes nothing). Claimed even when `applied` ends at 0: a call whose
-       tags were all swallowed by per-sig exact dedup within this same
-       channel still means this bucket belongs to this channel. */
-    mrrBucketChannelClaims[bucketKey] = chan;
+    /* Round-23: claim the bucket for this channel, now once per (bucket,
+       TARGET) touched. In the finally on purpose — a mutation that THREW
+       still applied whatever came before it, so the bucket is this
+       channel's either way (the throwing row is retried by the SAME
+       channel next poll, where the claim matches and changes nothing).
+       Claimed even when `applied` ends at 0: a call whose tags were all
+       swallowed by per-sig exact dedup within this same channel still means
+       this bucket belongs to this channel. A target the OTHER channel
+       already claimed is not in `touched` — stealing its claim would undo
+       the very suppression that just fired. */
+    for (var cid in touched) {
+      if (Object.prototype.hasOwnProperty.call(touched, cid)) mrrBucketChannelClaims[mrrClaimKey(bucketKey, cid)] = chan;
+    }
   }
+  /* r23 telemetry, per suppressed target. Outside the finally: it reads
+     appliedMutationKeys, which the loop above has just finished writing. */
+  for (var scid in suppressed) {
+    if (!Object.prototype.hasOwnProperty.call(suppressed, scid)) continue;
+    log("cross-channel: bucket " + bucketKey + " target " + scid + " already applied by " + suppressed[scid].claimedBy +
+        " — suppressing " + suppressed[scid].sigs.length + " mutation(s) from " + chan);
+    mrrWarnCrossChannelMismatch(bucketKey, anchorId, suppressed[scid].claimedBy, chan, scid, suppressed[scid].sigs);
+  }
+  mrrLogOutcomeTally(bucketKey, chan, tally);
   return applied;
+}
+
+/* §3.5's tally object. `targets` counts APPLIED per charId; the three extra
+   counters are telemetry the enum itself does not carry. */
+function mrrNewOutcomeTally() {
+  return {
+    APPLIED: 0, DEDUPED: 0, CLAIM_SUPPRESSED: 0,
+    DROPPED_UNKNOWN: 0, DROPPED_AMBIGUOUS: 0, DROPPED_RECORDLESS: 0, DROPPED_MALFORMED: 0,
+    targets: Object.create(null), absentTarget: 0, boundApplies: 0, activeTouched: false
+  };
+}
+
+/* The per-bucket outcome line (§3.5). SILENT in solo play: with a
+   one-character roster there is no routing decision to report and every
+   outcome is the one every pre-party-writes build produced, so a solo
+   session's console stays byte-identical (the spec's solo anti-criterion).
+   It speaks the moment there is a party OR anything other than a clean
+   apply/dedup happened — i.e. exactly when a human would want to know. */
+function mrrLogOutcomeTally(bucketKey, chan, tally) {
+  var noisy = tally.CLAIM_SUPPRESSED || tally.DROPPED_UNKNOWN || tally.DROPPED_AMBIGUOUS ||
+              tally.DROPPED_RECORDLESS || tally.DROPPED_MALFORMED;
+  if (!noisy && mrrPartyRosterOrder().length < 2) return;
+  var parts = [];
+  var order = ["APPLIED", "DEDUPED", "CLAIM_SUPPRESSED", "DROPPED_UNKNOWN", "DROPPED_AMBIGUOUS", "DROPPED_RECORDLESS", "DROPPED_MALFORMED"];
+  for (var i = 0; i < order.length; i++) if (tally[order[i]]) parts.push(order[i] + "=" + tally[order[i]]);
+  var who = [];
+  for (var cid in tally.targets) {
+    if (Object.prototype.hasOwnProperty.call(tally.targets, cid)) who.push(mrrCharacterLabel(cid) + ":" + tally.targets[cid]);
+  }
+  log("state-tags: bucket " + bucketKey + " via " + chan + " — " + (parts.length ? parts.join(" ") : "no outcomes") +
+      (who.length ? " | targets " + who.join(", ") : "") +
+      " | absentTarget=" + mrrAbsentTargetCount + " (session)");
 }
 
 function loadProcessedMessageIds(chatId) {
@@ -18711,8 +19198,17 @@ function formatMutationLabel(attrs) {
    Container is created once and reused. Each toast fades in, holds ~3.5s,
    fades out, removes itself. Multiple toasts queue vertically — useful
    when one assistant turn establishes several state changes. */
-function showMutationToast(attrs) {
-  var label = formatMutationLabel(attrs);
+function showMutationToast(attrs, nameLabel) {
+  /* PARTY WRITES §4.2 trap 2 + §3.1's drop visibility, both riding this one
+     surface rather than growing a second notification widget.
+     `__mrrToastLabel` is a pre-built label for a notice that is not a
+     mutation at all (a DROPPED tag has no field to format); `nameLabel`
+     prefixes a real mutation's label with the TARGET's display name, so a
+     party write reads as "Ginny: BASHING +3" and is visibly a party write.
+     Neither is set on the active-character path, so solo play's toast text
+     is byte-identical to every build before this one. */
+  var label = (attrs && attrs.__mrrToastLabel) ? attrs.__mrrToastLabel : formatMutationLabel(attrs);
+  if (nameLabel) label = { prefix: nameLabel + ": " + label.prefix, change: label.change, reason: label.reason };
   var container = document.getElementById("mrr-toast-container");
   if (!container) {
     container = document.createElement("div");
@@ -18904,7 +19400,11 @@ function finalizeMutation(attrs) {
        fired this clear the first time, and replays must not clear. */
     mrrClearBootstrapFlag("state mutation applied to this character");
     saveSheet(state.chatId, state.sheet);
-    renderSheet();
+    /* PARTY WRITES §4.2 trap 1. Under a binding this would paint the TARGET's
+       sheet into a panel that is showing the ACTIVE character — a silent lie.
+       The apply loop repaints the (restored) active sheet once after the whole
+       tag pass, and only when the active character was actually touched. */
+    if (!mrrRenderSuppressed) renderSheet();
     if (!Array.isArray(state.mutationLog)) state.mutationLog = [];
     state.mutationLog.push({
       timestamp: Date.now(),
