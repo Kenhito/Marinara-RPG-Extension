@@ -16087,45 +16087,75 @@ function buildPartySheetBlock() {
   return out;
 }
 
-/* D-3 — THE MUTATOR'S LIMITS CLAUSE. Generated here and injected ONLY into
-   the agent whose settings.mrrAgentRole is "state-mutator" (see
-   syncSheetToAgents), so no ruleset's hand-written agent file is touched and
-   no other role's prompt gains a line.
+/* ═══ PARTY WRITES §4.6 — THE MUTATOR'S ROUTING CLAUSE ════════════════════
+   SUPERSEDES the D-3 limits clause. Same D-3 mechanism, unchanged: generated
+   here at the sync layer and injected ONLY into the agent whose
+   settings.mrrAgentRole is "state-mutator" (see syncSheetToAgents), so no
+   ruleset's hand-written agent file is touched, no other role's prompt gains
+   a line, and a solo prompt stays byte-identical.
 
-   WHY IT IS NEEDED, precisely: applyStateTagsWithDedup ignores the tag's
-   `target` attribute completely. Every tag the mutator emits lands on the
-   ACTIVE character's sheet regardless of who it names. In solo play that is
-   invisible; with a party on screen it means a well-intentioned tag for
-   another player's character SILENTLY CORRUPTS the active sheet. Round D
-   makes the other sheets visible, so this clause has to ship in the same
-   round the temptation does.
+   WHAT CHANGED AND WHY. D-3 existed because applyStateTagsWithDedup ignored
+   `target=` — every tag landed on the ACTIVE character's sheet no matter
+   whose name was in it, so the only safe instruction was "don't try". That
+   is no longer true: §3.1/§4.1 resolve the target and §4.2 applies the write
+   to that character's own record. The clause therefore had to be rewritten
+   in the same build, and NO TEXT ANYWHERE may still claim target= is
+   ignored — a prompt that teaches a false mechanism is worse than no prompt.
 
-   PARTY MODE ONLY: with a one-character roster there is no other member to
-   name, and a solo prompt stays byte-identical to pre-Round-D. It ADDS a
-   restriction on WHICH sheet may be written and one narrowly-shaped prose
-   line; it relaxes nothing in the copy-and-cite contract, and says so. */
-function mrrMutatorPartyLimitsClause(info) {
+   POINT 4 IS THE ANTI-DOUBLE-DIP RULE, and it is the prompt-layer half of a
+   two-layer fix for a live defect (log ex30653: a 5-mote spend moved the
+   pool by 10). The cause was agent-side reconciliation — the mutator saw the
+   injected party sheet unchanged versus the fiction and emitted a catch-up
+   plus the new spend on the next turn that character was active. §4.1 kills
+   the TRIGGER by landing writes the turn they are narrated; this kills the
+   BEHAVIOUR by forbidding retroactive corrections outright and giving the
+   model a prose escape hatch (DISCREPANCY:) so it is never cornered into
+   choosing between silence and a wrong tag.
+
+   HONEST RESIDUAL, accepted with the ruling: this is a prompt-layer
+   mitigation and a stochastic model can violate it. The pipeline CANNOT
+   dedup a catch-up re-emitted on a LATER message — each message is a new
+   dedup anchor BY DESIGN, which is exactly what lets "take 5 damage" happen
+   legitimately twice. What makes the residual acceptable is that the trigger
+   is gone, the DISCREPANCY: training gives the model somewhere to put the
+   observation, and §4.2's attributed toast makes a stray write visible —
+   the same repair path a mis-narrated number already has. */
+function mrrMutatorPartyRoutingClause(info) {
   if (!info || !info.partyCount) return "";
   var order = mrrPartyRosterOrder();
   var activeName = order.length ? order[0].name : "the active character";
+  /* The valid-values list is generated FROM THE ROSTER, verbatim — the same
+     names the party block headers show, so "use the exact name in the
+     header" is checkable by the model against text it can see. */
+  var names = [];
+  for (var i = 0; i < order.length; i++) names.push("\"" + order[i].name + "\"");
   var lines = [];
-  lines.push("STATE-TAG LIMITS — PARTY MODE (read before emitting anything)");
+  lines.push("STATE-TAG ROUTING — PARTY MODE (read before emitting anything)");
   lines.push("");
-  lines.push("The party block above lists " + info.partyCount + " other character sheet(s) beside the " +
-             MRR_PARTY_LABEL_ACTIVE + ", " + activeName + ". Your tags can reach exactly one of them.");
+  lines.push("The party block above carries " + (info.partyCount) + " character sheet(s). The " +
+             MRR_PARTY_LABEL_ACTIVE + " is " + activeName + "; the rest are " + MRR_PARTY_LABEL_MEMBER +
+             "s. Your tags can reach ANY of them, and target= is how you choose.");
   lines.push("");
-  lines.push("1. EVERY [mrr-state: ...] tag you emit is applied to " + activeName + "'s sheet. The extension does not " +
-             "route tags by character; whatever you write lands there no matter whose name is in target=.");
-  lines.push("2. Therefore emit tags ONLY for changes to " + activeName + "'s own sheet. A tag written for a " +
-             MRR_PARTY_LABEL_MEMBER + " does not update that member — it writes a wrong number onto " + activeName +
-             "'s sheet instead, silently, which is the exact unrecoverable failure the copy-and-cite rules exist to prevent.");
-  lines.push("3. When the narration clearly changes a " + MRR_PARTY_LABEL_MEMBER + "'s state, emit NO tag for it. " +
-             "State it in prose instead, on its own line, prefixed \"PARTY:\" and naming the character and the change " +
-             "exactly as the narration stated it — e.g. PARTY: Ginny took 7 slashing damage (GM narrated 7). " +
-             "That line is the GM's and players' record for a sheet the extension cannot touch; they apply it by hand.");
-  lines.push("4. This limits WHICH sheet you may write and adds that one prose line. It relaxes NOTHING above: numbers " +
-             "are still copied from the narration, still cited in reason=, and a change with no stated number still " +
-             "emits no tag at all. If the turn produced no tags, still print NO STATE CHANGE, with any PARTY: lines beneath it.");
+  lines.push("1. EVERY [mrr-state: ...] tag MUST carry target=. The only valid values are these, spelled exactly as " +
+             "the party block headers spell them: " + names.join(", ") + ". You may also write target=\"player\" as " +
+             "shorthand for the " + MRR_PARTY_LABEL_ACTIVE + ", " + activeName + ". Nothing else is a valid target.");
+  lines.push("2. A tag naming a " + MRR_PARTY_LABEL_MEMBER + " updates THAT member's sheet, now, this turn. Routing is " +
+             "real: the extension applies the write to the character you named, not to " + activeName + ".");
+  lines.push("3. A character who is NOT in that list — an NPC, or a party member with no sheet in this system — gets " +
+             "NO tag. State the change in prose instead, on its own line, prefixed \"PARTY:\" and naming the character " +
+             "and the change exactly as the narration stated it — e.g. PARTY: Ginny took 7 slashing damage (GM narrated 7). " +
+             "A tag with an unrecognised target is DROPPED, not guessed at, so the change would simply be lost.");
+  lines.push("4. NO RETROACTIVE CORRECTIONS. Your tags describe THIS turn's narrated changes and nothing else. If a " +
+             "number on a sheet disagrees with what earlier narration implied, do NOT emit a tag to reconcile it — the " +
+             "sheet is the source of truth, and only current-turn narration moves it. Report the disagreement in prose " +
+             "instead, on its own line, prefixed \"DISCREPANCY:\" and naming the character, the field, the sheet value " +
+             "and the value the narration implied — e.g. DISCREPANCY: Ginny's Peripheral Motes reads 11, earlier " +
+             "narration implied 6. The humans decide what to do about it. A catch-up tag added to a legitimate new " +
+             "change applies BOTH, which is how a 5-point spend moves a pool by 10.");
+  lines.push("5. This ADDS routing and two narrowly-shaped prose lines. It relaxes NOTHING above: numbers are still " +
+             "copied from the narration, still cited in reason=, and a change with no stated number still emits no tag " +
+             "at all. If the turn produced no tags, still print NO STATE CHANGE, with any PARTY: or DISCREPANCY: lines " +
+             "beneath it.");
   return lines.join("\n");
 }
 
@@ -16188,7 +16218,7 @@ function syncSheetToAgents() {
   /* D-3: generated once here, appended ONLY to the state-mutator's copy
      below. No other role's prompt changes, and no ruleset's hand-written
      agent file is edited to carry it. */
-  var mutatorClause = mrrMutatorPartyLimitsClause(party);
+  var mutatorClause = mrrMutatorPartyRoutingClause(party);
   var rulesetId = state.ruleset.id;
 
   /* ═══ ROUND E-2 (a) — THE CONTENT GATE ════════════════════════════════════
@@ -16285,7 +16315,7 @@ function syncSheetToAgents() {
           " agent prompts for ruleset " + rulesetId +
           " (collapsed: " + party.collapsed.length + ")" +
           (party.missing.length ? " (no sheet for this system: " + party.missing.join(", ") + ")" : "") +
-          (mutatorCount ? " (state-tag limits clause -> " + mutatorCount + " mutator prompt)" : ""));
+          (mutatorCount ? " (state-tag routing clause -> " + mutatorCount + " mutator prompt)" : ""));
     });
   }).then(function () {
     /* ROUND E-2 — settle. Two-argument .then rather than .then().catch() so
