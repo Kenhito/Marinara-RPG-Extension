@@ -2444,9 +2444,15 @@ function mrrNoteChatRow(chatId, chat, source) {
      previous entry — the first harvest of a chat is not a "change". */
   var changed = !!prev && mrrPresentSetSignature(prev) !== mrrPresentSetSignature(entry);
   mrrPresentSets[chatId] = entry;
-  log("binding: present set for chat " + chatId + " — " + entry.characterIds.length + " card(s)" +
-      (entry.gameGmCharacterId ? " + GM card " + entry.gameGmCharacterId : "") +
-      (entry.personaId ? " + persona " + entry.personaId : "") + " (" + (source || "harvest") + ")");
+  /* Post-Round-D polish: the preset watcher re-harvests every tick, and an
+     unchanged set logged every time buried the real signal in Corey's
+     morning logs (ex30546: 14 identical lines). Log the FIRST harvest of a
+     chat and every CHANGE; a repeat harvest of an identical set is silent. */
+  if (!prev || changed) {
+    log("binding: present set for chat " + chatId + " — " + entry.characterIds.length + " card(s)" +
+        (entry.gameGmCharacterId ? " + GM card " + entry.gameGmCharacterId : "") +
+        (entry.personaId ? " + persona " + entry.personaId : "") + " (" + (source || "harvest") + ")");
+  }
   if (changed) {
     /* Re-open the per-entry gate. Resolution is idempotent by construction
        (its candidate list excludes anything already in the roster), so
@@ -15125,7 +15131,55 @@ function mrrBuildTrackLadderLines() {
   return out;
 }
 
-function buildSheetForPrompt() {
+/* ═══ ROUND D — READ-ONLY PARTY VISIBILITY ════════════════════════════════
+   THE LIVE FINDING (owner's narrator diagnostic + log ex30534, "synced sheet
+   into 7 agent prompts" — singular "sheet"). With a three-character roster
+   the GM, narrator, overseer and fuser all received exactly ONE sheet: the
+   ACTIVE character's. The other party members reached the model as engine
+   character cards — prose, no numbers — and the agents themselves reported
+   that resolving anything for them would mean FABRICATING their stats.
+
+   THE ONE-FRAME REBIND. buildSheetForPrompt and every stat helper it leans on
+   (statContext, tierForSkill, equippedBonuses, computeCommittedMotes,
+   mrrP3ComputeBarMax, getAbilitiesConfig, mrrBuildTrackLadderLines …) read
+   `state.sheet` off the global. Threading a sheet argument through all of them
+   would be a ~40-call-site refactor whose only proof of correctness is that
+   the output did not change — so instead the sheet is REBOUND for the
+   duration of one synchronous call and restored in a `finally`. That gives
+   the formatter a sheet ARGUMENT (this function's public signature) with the
+   global as its default, by construction produces byte-identical output for
+   the active sheet (it IS the same code path with the same globals), and
+   cannot leak: every function it wraps is straight-line synchronous with no
+   await, no timer and no promise — the rD suite's S2 byte-compare and S9
+   restore probe both hold this claim down.
+
+   NOT REENTRANT ACROSS A YIELD, deliberately: never pass a rebound frame
+   anything that defers work (setTimeout/Promise). Today's two callers —
+   buildSheetForPrompt itself and mrrPartyMemberSummaryLines — are both pure
+   string builders. */
+function mrrWithSheetBound(sheet, characterId, fn) {
+  var prevSheet = state.sheet;
+  var prevActive = state.activeCharacterId;
+  if (sheet) state.sheet = sheet;
+  if (characterId) state.activeCharacterId = characterId;
+  try {
+    return fn();
+  } finally {
+    state.sheet = prevSheet;
+    state.activeCharacterId = prevActive;
+  }
+}
+
+/* The sheet formatter. Called with no arguments it renders the ACTIVE sheet
+   exactly as it always has (the pre-Round-D single-sheet behaviour, byte for
+   byte). Called with (sheet, characterId) it renders THAT sheet through the
+   identical code — the party block never duplicates one line of formatting. */
+function buildSheetForPrompt(sheetArg, characterIdArg) {
+  if (sheetArg || characterIdArg) {
+    return mrrWithSheetBound(sheetArg, characterIdArg, function () {
+      return buildSheetForPrompt();
+    });
+  }
   if (!state.sheet || !state.ruleset) return "";
   var current = state.characters.find(function (c) { return c.id === state.activeCharacterId; });
   var charName = (current && current.name) || "Character";
@@ -15618,6 +15672,281 @@ function buildSheetForPrompt() {
   return lines.join("\n").trim();
 }
 
+/* ═══ ROUND D · THE PARTY BLOCK ═══════════════════════════════════════════
+   D-1. Every roster member's sheet, rendered through the SAME formatter as
+   the active one (see the one-frame rebind above — there is exactly one
+   sheet formatter in this file and the party block does not own a second
+   copy of a single line of it).
+
+   LABELS. Exactly one member is marked ACTIVE PLAYER CHARACTER: it is the
+   sheet the dice widget rolls from, the sheet loadSheet/saveSheet own, and
+   the ONLY sheet a [mrr-state:] tag can reach (the tag applier ignores
+   `target` entirely — see applyStateTagsWithDedup). Everyone else is a
+   PARTY MEMBER, present for READING. Round D adds no party WRITE path and
+   no character attribution to tag handling; that is a separate spec.
+
+   ORDER. Active first, then roster order — stable, so a re-sync produces a
+   byte-identical block for an unchanged roster and the agent's promptTemplate
+   PATCH is skipped (injectSheetIntoPromptTemplate's no-change short circuit).
+
+   NO SILENT OMISSION, NO FABRICATION. A roster member with no record for the
+   ACTIVE ruleset is still listed, by name, marked "(no sheet for this
+   system)" — because the failure this round exists to kill is agents
+   inventing numbers, and a silently-omitted character is exactly the
+   invitation to invent. */
+
+/* D-2 — the budget. MEASURED, not guessed: a fully-populated exalted3e sheet
+   rendered per SHIPPED ruleset by the rD suite's D6 probe (2026-08-25 run:
+   attributes + skills + bars + inventory + xp populated) —
+   w20 4,872 · exalted3e 4,408 · exwod 4,249 · rolemaster 4,083 · vtmv20
+   3,956 · coc7e 3,405 · pathfinder2e 3,327 · ose 3,064 · gurps-lite 2,981 ·
+   dnd5e 2,971 · fate-core 2,296 · genesys 2,282 · blades 1,426 · trophy-dark
+   1,244 · stewpot 1,084 · lasers-and-feelings 834 bytes. A mature campaign
+   sheet runs larger than that fixture (custom skills and lores, intimacies,
+   charms, a full inventory), so the working assumption is roughly double the
+   heaviest — call it ~8 KB for a long-running exalted3e character.
+
+   The THREE-character exalted3e party this round was reported from assembles
+   at 13,853 bytes on the same fixture. 24 KiB therefore holds that party with
+   ~40% headroom, a five-or-six character party in a mid-weight system, and
+   three MATURE heavy sheets at the doubled estimate — while leaving the
+   promptTemplate well clear of any model's context window. Above that the
+   block degrades deterministically instead of growing without bound.
+
+   D6 re-measures every run, so a future ruleset or a fatter formatter moves
+   these numbers in the probe output rather than leaving this comment stale.
+
+   PER-MEMBER FLOOR: a member is NEVER dropped. The smallest representation
+   any member can degrade to is the one-line bar summary below, so a party
+   large enough to blow the cap even fully collapsed goes over budget LOUDLY
+   (a warn naming the overage) rather than being truncated in silence —
+   project doctrine, and the same choice round 25 made for the artifact
+   guard. */
+var MRR_PARTY_BLOCK_MAX_BYTES = 24576;
+
+var MRR_PARTY_LABEL_ACTIVE = "ACTIVE PLAYER CHARACTER";
+var MRR_PARTY_LABEL_MEMBER = "PARTY MEMBER";
+
+/* One member's section header. Fixed shape so the block is machine-readable
+   (the rD suite parses it) as well as human-readable. */
+function mrrPartySectionHeader(label, name, note) {
+  return "═══ " + label + " — " + name + " ═══" + (note ? "  " + note : "");
+}
+
+/* A party member's sheet for the ACTIVE ruleset, or null when they have none.
+   A PURE READ, deliberately: it resolves through the Round-A chokepoint and
+   hydrates exactly the way loadSheet does, but it NEVER migrates, never
+   writes, never sets or clears a hold and never warns. Round D is read-only
+   party visibility; a prompt sync must not be able to mutate storage.
+
+   A record whose own stamp names a DIFFERENT ruleset reads as "no sheet for
+   this system" — the same verdict round 24's hold reaches, minus the hold's
+   side effects. That record belongs to another system and its numbers would
+   be wrong here, which is worse than absent. */
+function mrrPartyMemberSheet(characterId, ruleset) {
+  if (!characterId || !ruleset) return null;
+  var rid = (typeof ruleset.id === "string" && ruleset.id) ? ruleset.id : null;
+  var res = mrrResolveRecordRaw(characterId, rid);
+  if (!res.raw) return null;
+  var parsed = safeParse(res.raw);
+  if (!parsed) return null;
+  if (mrrStoredSheetForeignRuleset(parsed, ruleset)) return null;
+  return mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(parsed, ruleset));
+}
+
+/* Active first, then roster order, de-duplicated by id. The active character
+   is included even when the roster does not contain it (a state the restore
+   paths can transiently produce) so the block always names exactly one
+   ACTIVE PLAYER CHARACTER. */
+function mrrPartyRosterOrder() {
+  var roster = Array.isArray(state.characters) ? state.characters : [];
+  var activeId = state.activeCharacterId || null;
+  var out = [];
+  var seen = Object.create(null);
+  if (activeId) {
+    out.push({ id: activeId, name: mrrCharacterLabel(activeId), active: true });
+    seen[activeId] = true;
+  }
+  for (var i = 0; i < roster.length; i++) {
+    var c = roster[i];
+    if (!c || !c.id || seen[c.id]) continue;
+    seen[c.id] = true;
+    out.push({ id: c.id, name: c.name || c.id, active: false });
+  }
+  return out;
+}
+
+/* D-2's collapsed form: the ruleset's BAR-type derived stats as current/max,
+   nothing else. Rendered inside a rebound frame so the bar max comes from the
+   same mrrP3ComputeBarMax the panel uses (per-sheet derivedMax override,
+   then maxFormula against THAT sheet's stats) rather than from the active
+   character's numbers.
+
+   Systems with no bar-type derived stat (fate-core, w20 — stress/health are
+   TRACKS there) fall back to a track summary, which is the same "how much of
+   the pool is gone" question in that system's vocabulary. A system with
+   neither says so plainly; it never invents a substitute number. */
+function mrrPartyMemberSummaryLines(sheet, characterId) {
+  return mrrWithSheetBound(sheet, characterId, function () {
+    var defs = (state.ruleset && Array.isArray(state.ruleset.derivedStats)) ? state.ruleset.derivedStats : [];
+    var lines = [];
+    defs.forEach(function (d) {
+      if (!d || !d.name || d.renderAs !== "bar") return;
+      var cur = (state.sheet.derived && state.sheet.derived[d.name]) || 0;
+      var max = mrrP3ComputeBarMax(d);
+      lines.push("- " + d.name + ": " + cur + " / " + max);
+    });
+    if (!lines.length) {
+      defs.forEach(function (d) {
+        if (!d || !d.name || d.renderAs !== "track" || !Array.isArray(d.track) || !d.track.length) return;
+        /* Same two stores the ladder renderer reads: declared boxes plus any
+           ability-granted extras, marked cells in trackCells. */
+        var extras = (state.sheet.extraTrack && Array.isArray(state.sheet.extraTrack[d.name]))
+          ? state.sheet.extraTrack[d.name].length : 0;
+        var total = d.track.length + extras;
+        var cells = (state.sheet.trackCells && Array.isArray(state.sheet.trackCells[d.name]))
+          ? state.sheet.trackCells[d.name] : [];
+        var marked = 0;
+        for (var i = 0; i < cells.length; i++) if (cells[i]) marked++;
+        lines.push("- " + d.name + ": " + marked + " of " + total + " boxes marked");
+      });
+    }
+    if (!lines.length) lines.push("- (this system declares no bar-type stat — no summary numbers exist to quote)");
+    return lines;
+  });
+}
+
+/* THE ASSEMBLED BLOCK. Returns { text, partyCount, collapsed[], missing[],
+   bytes, over } — the counts feed D-5's log line, so what the console claims
+   is read off the same object the prompt was built from. */
+function buildPartySheetBlock() {
+  var out = { text: "", partyCount: 0, collapsed: [], missing: [], bytes: 0, over: false };
+  if (!state.sheet || !state.ruleset) return out;
+
+  var activeText = buildSheetForPrompt();
+  var order = mrrPartyRosterOrder();
+  var others = order.slice(1);
+  /* SOLO PLAY IS UNCHANGED, byte for byte: one character in the roster means
+     no party preamble, no headers, no wrapper — exactly the block every
+     pre-Round-D session got. 15 of 16 shipped rulesets are played solo. */
+  if (!others.length) {
+    out.text = activeText;
+    out.bytes = mrrByteLength(activeText);
+    return out;
+  }
+
+  var activeName = order[0].name;
+  var sections = others.map(function (m) {
+    var sheet = mrrPartyMemberSheet(m.id, state.ruleset);
+    if (!sheet) {
+      out.missing.push(m.name);
+      return {
+        member: m,
+        kind: "missing",
+        text: mrrPartySectionHeader(MRR_PARTY_LABEL_MEMBER, m.name, "(no sheet for this system)") + "\n" +
+          "No sheet record exists for " + m.name + " under " + state.ruleset.name + ". This character has NO numbers here. " +
+          "Do not invent any — resolve their actions narratively, or ask the player to create a sheet for this system."
+      };
+    }
+    return {
+      member: m,
+      kind: "full",
+      full: mrrPartySectionHeader(MRR_PARTY_LABEL_MEMBER, m.name) + "\n" + buildSheetForPrompt(sheet, m.id),
+      small: mrrPartySectionHeader(MRR_PARTY_LABEL_MEMBER, m.name, "(collapsed — over the party-block budget)") + "\n" +
+        mrrPartyMemberSummaryLines(sheet, m.id).join("\n") + "\n" +
+        "Full sheet omitted to stay inside the prompt budget. These are current/max pool values only; " +
+        "anything not listed is NOT available here — do not invent it."
+    };
+  });
+
+  var preamble = [
+    "PARTY ROSTER — " + order.length + " character(s) in this chat under " + state.ruleset.name + " v" + state.ruleset.version + ".",
+    "Each character's sheet appears below under its own header. EXACTLY ONE is the " + MRR_PARTY_LABEL_ACTIVE +
+      " (" + activeName + "): that is the sheet the player's dice widget rolls from and the only sheet the extension can write. " +
+      "The others are " + MRR_PARTY_LABEL_MEMBER + "s — their numbers are given here so you never have to invent them. " +
+      "A member listed with no sheet for this system has no numbers at all; say so rather than making any up.",
+    ""
+  ].join("\n");
+
+  function assemble() {
+    var parts = [preamble, mrrPartySectionHeader(MRR_PARTY_LABEL_ACTIVE, activeName) + "\n" + activeText];
+    sections.forEach(function (s) {
+      parts.push(s.kind === "full" ? s.full : (s.kind === "collapsed" ? s.small : s.text));
+    });
+    return parts.join("\n\n");
+  }
+
+  var text = assemble();
+  /* DETERMINISTIC DEGRADE: collapse from the FURTHEST-from-active member
+     backwards (the tail of roster order), one at a time, re-measuring after
+     each. The active member is not in `sections` at all, so it can never
+     collapse — that is the invariant, enforced structurally rather than by a
+     guard someone can delete. */
+  for (var i = sections.length - 1; i >= 0 && mrrByteLength(text) > MRR_PARTY_BLOCK_MAX_BYTES; i--) {
+    if (sections[i].kind !== "full") continue;
+    sections[i].kind = "collapsed";
+    out.collapsed.push(sections[i].member.name);
+    log("party block: collapsed " + sections[i].member.name + " to a bar summary — assembled block exceeded " +
+        MRR_PARTY_BLOCK_MAX_BYTES + " bytes");
+    text = assemble();
+  }
+
+  out.text = text;
+  out.bytes = mrrByteLength(text);
+  out.partyCount = sections.length;
+  if (out.bytes > MRR_PARTY_BLOCK_MAX_BYTES) {
+    /* Everything that CAN collapse already has. Going over is reported, never
+       hidden: a truncated sheet is a sheet with wrong numbers in it. */
+    out.over = true;
+    warn("party block: " + out.bytes + " bytes with every party member already collapsed — " +
+         (out.bytes - MRR_PARTY_BLOCK_MAX_BYTES) + " bytes over the " + MRR_PARTY_BLOCK_MAX_BYTES +
+         "-byte budget. Nothing is truncated; consider splitting the party across chats.");
+  }
+  return out;
+}
+
+/* D-3 — THE MUTATOR'S LIMITS CLAUSE. Generated here and injected ONLY into
+   the agent whose settings.mrrAgentRole is "state-mutator" (see
+   syncSheetToAgents), so no ruleset's hand-written agent file is touched and
+   no other role's prompt gains a line.
+
+   WHY IT IS NEEDED, precisely: applyStateTagsWithDedup ignores the tag's
+   `target` attribute completely. Every tag the mutator emits lands on the
+   ACTIVE character's sheet regardless of who it names. In solo play that is
+   invisible; with a party on screen it means a well-intentioned tag for
+   another player's character SILENTLY CORRUPTS the active sheet. Round D
+   makes the other sheets visible, so this clause has to ship in the same
+   round the temptation does.
+
+   PARTY MODE ONLY: with a one-character roster there is no other member to
+   name, and a solo prompt stays byte-identical to pre-Round-D. It ADDS a
+   restriction on WHICH sheet may be written and one narrowly-shaped prose
+   line; it relaxes nothing in the copy-and-cite contract, and says so. */
+function mrrMutatorPartyLimitsClause(info) {
+  if (!info || !info.partyCount) return "";
+  var order = mrrPartyRosterOrder();
+  var activeName = order.length ? order[0].name : "the active character";
+  var lines = [];
+  lines.push("STATE-TAG LIMITS — PARTY MODE (read before emitting anything)");
+  lines.push("");
+  lines.push("The party block above lists " + info.partyCount + " other character sheet(s) beside the " +
+             MRR_PARTY_LABEL_ACTIVE + ", " + activeName + ". Your tags can reach exactly one of them.");
+  lines.push("");
+  lines.push("1. EVERY [mrr-state: ...] tag you emit is applied to " + activeName + "'s sheet. The extension does not " +
+             "route tags by character; whatever you write lands there no matter whose name is in target=.");
+  lines.push("2. Therefore emit tags ONLY for changes to " + activeName + "'s own sheet. A tag written for a " +
+             MRR_PARTY_LABEL_MEMBER + " does not update that member — it writes a wrong number onto " + activeName +
+             "'s sheet instead, silently, which is the exact unrecoverable failure the copy-and-cite rules exist to prevent.");
+  lines.push("3. When the narration clearly changes a " + MRR_PARTY_LABEL_MEMBER + "'s state, emit NO tag for it. " +
+             "State it in prose instead, on its own line, prefixed \"PARTY:\" and naming the character and the change " +
+             "exactly as the narration stated it — e.g. PARTY: Ginny took 7 slashing damage (GM narrated 7). " +
+             "That line is the GM's and players' record for a sheet the extension cannot touch; they apply it by hand.");
+  lines.push("4. This limits WHICH sheet you may write and adds that one prose line. It relaxes NOTHING above: numbers " +
+             "are still copied from the narration, still cited in reason=, and a change with no stated number still " +
+             "emits no tag at all. If the turn produced no tags, still print NO STATE CHANGE, with any PARTY: lines beneath it.");
+  return lines.join("\n");
+}
+
 var SHEET_INJECT_BEGIN = "<!-- MRR_SHEET_BEGIN -->";
 var SHEET_INJECT_END   = "<!-- MRR_SHEET_END -->";
 
@@ -15648,8 +15977,18 @@ function injectSheetIntoPromptTemplate(promptTemplate, sheetBlock) {
    the sheet directly in the agents' system prompts. */
 function syncSheetToAgents() {
   if (!state.ruleset) return;
-  var sheetBlock = buildSheetForPrompt();
+  /* ROUND D: the block is now the WHOLE party (active + every roster member
+     with a record for this ruleset), assembled once and given to every
+     managed agent — so the GM, the narrator helper, the combat overseer and
+     the context fuser all see the same numbers for the same people (D-4).
+     With a one-character roster this returns exactly what it always did. */
+  var party = buildPartySheetBlock();
+  var sheetBlock = party.text;
   if (!sheetBlock) return;
+  /* D-3: generated once here, appended ONLY to the state-mutator's copy
+     below. No other role's prompt changes, and no ruleset's hand-written
+     agent file is edited to carry it. */
+  var mutatorClause = mrrMutatorPartyLimitsClause(party);
   apiFetch("/agents").then(function (agents) {
     if (!Array.isArray(agents)) return;
     var rulesetId = state.ruleset.id;
@@ -15661,15 +16000,29 @@ function syncSheetToAgents() {
       log("syncSheetToAgents: no managed agents for ruleset " + rulesetId);
       return;
     }
+    var mutatorCount = 0;
     return Promise.all(managed.map(function (a) {
-      var newPrompt = injectSheetIntoPromptTemplate(a.promptTemplate, sheetBlock);
+      var s = parseAgentSettings(a);
+      var block = sheetBlock;
+      if (mutatorClause && s && s.mrrAgentRole === "state-mutator") {
+        block = sheetBlock + "\n\n" + mutatorClause;
+        mutatorCount++;
+      }
+      var newPrompt = injectSheetIntoPromptTemplate(a.promptTemplate, block);
       if (newPrompt === a.promptTemplate) return null;
       return apiFetch("/agents/" + a.id, {
         method: "PATCH",
         body: JSON.stringify({ promptTemplate: newPrompt })
       });
     })).then(function () {
-      log("synced sheet into " + managed.length + " agent prompts for ruleset " + rulesetId);
+      /* D-5: party-aware. The old line said "synced sheet into 7 agent
+         prompts" — singular — which is precisely how the one-sheet defect
+         hid in plain sight for a whole live session (log ex30534). */
+      log("synced ACTIVE + " + party.partyCount + " party sheet(s) into " + managed.length +
+          " agent prompts for ruleset " + rulesetId +
+          " (collapsed: " + party.collapsed.length + ")" +
+          (party.missing.length ? " (no sheet for this system: " + party.missing.join(", ") + ")" : "") +
+          (mutatorCount ? " (state-tag limits clause -> " + mutatorCount + " mutator prompt)" : ""));
     });
   }).catch(function (e) {
     warn("syncSheetToAgents failed: " + (e && e.message ? e.message : e));

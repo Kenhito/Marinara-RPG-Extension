@@ -82,6 +82,18 @@ explicitly when they do).
   chat shows its saved name, not a raw id. (15 new probes incl. a
   negative control replaying the live log's one-character-on-screen
   defect.)
+- **The whole party reaches the agents (Round D).** The agent prompts now
+  carry EVERY roster member's sheet for the active system — active
+  character flagged, party members labeled, a member without a sheet for
+  this system listed honestly instead of omitted. A budget guard collapses
+  the furthest party members to bar-stat summaries (never the active
+  character, never silently) if a big party threatens the prompt budget.
+  The State Mutator's prompt now states plainly that its tags can only
+  move the ACTIVE character's sheet — other members' changes go in prose
+  (`PARTY: <name> …`) until party-writes ship properly. Repeat harvests of
+  an unchanged card list no longer spam the console. (91 new probes; the
+  negative control reproduces the one-sheet-only state your narrator
+  diagnosed.)
 - **Dead-plumbing tombstones trimmed** (−657 B source): the round-26/27
   `isChildListOrigin` removal narration is gone; the load-bearing lesson
   survives as a forward invariant — never rewrite a message element's
