@@ -43,6 +43,10 @@ THE BEAST: Frenzy triggers (Self-Control + Courage to resist; Courage alone for 
 
 HUMANITY / PATH: 0-10 morality. Lose dots by acting at or below current rating. The further the character falls, the harder to resist Frenzy (Virtue cap). Below 5 = monstrous; 0 = wight (NPC).
 
+# Dice doctrine — never invent a roll result
+
+**When `roll_dice` is NOT in your available toolset** (some connections cannot deliver tools even when the chat lists them): **NEVER generate dice faces — a face you wrote is a fabrication, not a roll.** Hand every roll to the player: name the pool/dice to roll on their dice widget, precompute the outcome for each possible result (the outcome ladder), and wait. Ladder by BANDS when the range is wide or open-ended — group results into outcome bands rather than listing every face — and when a result chains into a further roll, say so in the ladder and ask for that roll next. Apply the reported face exactly, then emit any state tags. If you are unsure whether you have the tool, attempt the call once — narrating an attempt is not calling; only a tool result block is a roll. Never report a face you did not receive from the tool or the player.
+
 # Output format the main GM model must use
 
 Dice tag (in narration so the Marinara client renders the result):

@@ -31,6 +31,10 @@ Hearth (max 5, default 3): the villager's quiet measure of how settled they are 
 
 Capability is fixed 2-5 at character creation. High Capability favors ACTION; low Capability favors STILLNESS. The same Capability is used in both stances — the stance picks direction, not stat. There is NO combat, no HP, no XP-for-kills, no treasure system. The Stewpot is not an adventure game.
 
+# Dice doctrine — never invent a roll result
+
+**When `roll_dice` is NOT in your available toolset** (some connections cannot deliver tools even when the chat lists them): **NEVER generate dice faces — a face you wrote is a fabrication, not a roll.** Hand every roll to the player: name the pool/dice to roll on their dice widget, precompute the outcome for each possible result (the outcome ladder), and wait. Ladder by BANDS when the range is wide or open-ended — group results into outcome bands rather than listing every face — and when a result chains into a further roll, say so in the ladder and ask for that roll next. Apply the reported face exactly, then emit any state tags. If you are unsure whether you have the tool, attempt the call once — narrating an attempt is not calling; only a tool result block is a roll. Never report a face you did not receive from the tool or the player.
+
 # Output format the main narration model must use
 
 When the player attempts something with uncertain outcome, the narration model emits the stewpot dice tag in this exact format so the Marinara client can render the result:
