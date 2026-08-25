@@ -71,7 +71,17 @@ explicitly when they do).
   (never automatic). The extension never writes to engine cards or
   personas — bindings are local to your server by design. (37 new probes
   incl. a whole-flow proof that the only non-GET engine request is one
-  read-only name lookup; 68 regression probes across 4 suites.)
+  read-only name lookup; 68 regression probes across 4 suites.) Round C
+  (morning live-fire): a multi-character restore now paints the whole
+  party (the first restore no longer activates mid-batch and hides the
+  rest — with 2+ restores the placeholder stays put and you pick);
+  resolution passes always report themselves, including "restored 0 …
+  already present" (no more silent passes); adding/removing a card or
+  switching personas mid-chat now re-runs restoration and repaints the
+  dropdown immediately; a binding whose card or persona is not in this
+  chat shows its saved name, not a raw id. (15 new probes incl. a
+  negative control replaying the live log's one-character-on-screen
+  defect.)
 - **Dead-plumbing tombstones trimmed** (−657 B source): the round-26/27
   `isChildListOrigin` removal narration is gone; the load-bearing lesson
   survives as a forward invariant — never rewrite a message element's

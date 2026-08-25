@@ -2395,6 +2395,20 @@ function mrrIsCardId(id) {
   return typeof id === "string" && !!id && id.indexOf("npc:") !== 0;
 }
 
+/* ROUND C, C-3: a stable signature of a present set, so "this harvest says
+   something DIFFERENT from the last one" is a comparison and not a guess.
+   characterIds is sorted because the engine's array order is not a fact about
+   the chat — a re-ordered row is the same party — and an order-sensitive
+   signature would fire a spurious re-resolution on every harvest.
+   The persona is part of the signature: ex30513 line 220 is a live trace of a
+   persona SWAP inside one chat (hMm39… replacing LJJ3Z…), which is exactly the
+   change that must re-resolve. */
+function mrrPresentSetSignature(e) {
+  if (!e) return "";
+  var ids = (Array.isArray(e.characterIds) ? e.characterIds.slice() : []).sort();
+  return ids.join(",") + "|" + (e.gameGmCharacterId || "") + "|" + (e.personaId || "");
+}
+
 function mrrNoteChatRow(chatId, chat, source) {
   if (!chatId || !chat || typeof chat !== "object") return null;
   /* A metadata PATCH answers with a partial row on some routes. Harvest
@@ -2419,13 +2433,50 @@ function mrrNoteChatRow(chatId, chat, source) {
       if (evict !== chatId) delete mrrPresentSets[evict];
     }
   }
+  /* ROUND C — C-3. Round B OBSERVED set changes and did nothing with them:
+     the preset watcher's harvest replaced the cached entry, logged the new
+     shape, and then hit mrrResolveBindings' `mrrBindingResolveDoneChatId ===
+     chatId` gate, which had been armed by the FIRST harvest of this chat
+     entry. Live proof: ex30513 line 220, where the persona changes under a
+     settled chat and nothing whatsoever re-resolves. A card that JOINS a chat
+     mid-session is the same defect wearing a different hat.
+     Computed BEFORE the cache is replaced, obviously, and only against a
+     previous entry — the first harvest of a chat is not a "change". */
+  var changed = !!prev && mrrPresentSetSignature(prev) !== mrrPresentSetSignature(entry);
   mrrPresentSets[chatId] = entry;
   log("binding: present set for chat " + chatId + " — " + entry.characterIds.length + " card(s)" +
       (entry.gameGmCharacterId ? " + GM card " + entry.gameGmCharacterId : "") +
       (entry.personaId ? " + persona " + entry.personaId : "") + " (" + (source || "harvest") + ")");
+  if (changed) {
+    /* Re-open the per-entry gate. Resolution is idempotent by construction
+       (its candidate list excludes anything already in the roster), so
+       re-running it is safe; what it is NOT is free, which is why this is
+       driven by an actual signature change and never by a tick.
+       The liveness ledger is re-opened too, and for the same reason it exists:
+       the new ids in this set have never been name-looked-up or liveness-
+       checked, and the dropdown would otherwise offer them as raw nanoids.
+       ONE refire per change — the ledger is re-armed by the resolution that
+       follows, so a set that stops changing stops asking. A set that flaps
+       between two shapes costs one read-only POST per flap, which is the
+       stated §3.4 budget, not a poll. */
+    log("binding: present set CHANGED for chat " + chatId + " — re-resolving and re-rendering (" +
+        (source || "unspecified") + ")");
+    if (mrrBindingResolveDoneChatId === chatId) mrrBindingResolveDoneChatId = null;
+    mrrBindingLivenessDone[chatId] = false;
+    /* If a resolution is mid-flight right now, the call below will bounce off
+       its in-flight gate — so record the change and let that flight's own
+       completion re-run it. See mrrBindingResolveRerunIfDirty. */
+    if (mrrBindingResolveInFlightChatId === chatId) mrrBindingResolveDirtyChatId = chatId;
+    /* Immediate re-render so the "Bound to" dropdown describes the set that is
+       in the chat NOW. The resolution below re-renders again once the names
+       land; this one is what keeps the field from lying in the meantime. */
+    if (state.chatId === chatId && state.mountEl && typeof renderSheet === "function") renderSheet();
+  }
   /* Harvesting is also a resolution trigger: on a chat whose confirm landed
      before any row did, THIS is the moment the flow becomes possible. */
-  mrrResolveBindings(chatId, "chat row harvested (" + (source || "unspecified") + ")");
+  mrrResolveBindings(chatId, changed
+    ? ("present set changed (" + (source || "unspecified") + ")")
+    : ("chat row harvested (" + (source || "unspecified") + ")"));
   return entry;
 }
 
@@ -2454,6 +2505,7 @@ function mrrPresentCardIds(chatId) {
    prevent. */
 var mrrBindingResolveDoneChatId = null;      /* resolution completed for this chat entry */
 var mrrBindingResolveInFlightChatId = null;  /* a restore decision is pending — the B19 offer waits */
+var mrrBindingResolveDirtyChatId = null;     /* ROUND C: a present-set change landed MID-FLIGHT */
 var mrrBindingPresentFetchedChatId = null;   /* the ONE explicit GET /chats/:id, per chat entry */
 var mrrBindingLivenessDone = Object.create(null); /* chatId -> true, per session */
 var mrrBindingLivenessWarned = false;
@@ -2463,6 +2515,7 @@ var mrrCardDangling = Object.create(null);   /* engineId -> true; a card the eng
 function mrrResetBindingResolution() {
   mrrBindingResolveDoneChatId = null;
   mrrBindingResolveInFlightChatId = null;
+  mrrBindingResolveDirtyChatId = null;
   mrrBindingPresentFetchedChatId = null;
   mrrBindPrompt = null;
   mrrBindPromptDismissed = false;
@@ -2477,6 +2530,23 @@ function mrrResetBindingResolution() {
    user who has never bound anything. */
 function mrrBindingRestorePending(chatId) {
   return !!chatId && mrrBindingResolveInFlightChatId === chatId;
+}
+
+/* ROUND C, C-3 tail case. A present-set change that lands WHILE the liveness
+   round-trip is in flight would otherwise be swallowed: mrrResolveBindings
+   returns at its in-flight gate, and the flight that completes a moment later
+   arms the done-gate with a candidate list computed from the OLD set — so the
+   change is observed, logged, and then buried by the very flight it raced.
+   One DEFERRED re-run closes that window. The flag is cleared before the
+   re-run, so a further change during the re-run schedules exactly one more:
+   still one resolution per set-change, never one per tick. */
+function mrrBindingResolveRerunIfDirty(chatId) {
+  if (!chatId || mrrBindingResolveDirtyChatId !== chatId) return;
+  mrrBindingResolveDirtyChatId = null;
+  mrrBindingResolveDoneChatId = null;
+  mrrBindingLivenessDone[chatId] = false;
+  log("binding: a present-set change for chat " + chatId + " landed while resolution was in flight — re-resolving now");
+  mrrResolveBindings(chatId, "present set changed while resolution was in flight");
 }
 
 /* Candidates = present engine ids that (a) have a registry binding, (b)
@@ -2502,6 +2572,32 @@ function mrrBindingRestoreCandidates(chatId) {
   return out;
 }
 
+/* ROUND C, C-2. The bound characters that are ALREADY in this chat's roster.
+   mrrBindingRestoreCandidates drops them silently (correctly — there is
+   nothing to restore), and that silence is exactly what made the live logs
+   unreadable: a chat where every bound sheet was already present produced no
+   candidates, no restores and no summary, which in a trace is
+   indistinguishable from resolution never having run at all. Counting them
+   turns "restored 0" into "restored 0 of 3 that were already here", which is
+   a different sentence about a different world. */
+function mrrBindingAlreadyPresentCount(chatId) {
+  var e = mrrPresentSetFor(chatId);
+  if (!e) return 0;
+  var roster = Array.isArray(state.characters) ? state.characters : [];
+  var n = 0, seen = Object.create(null);
+  function consider(engineId, kind) {
+    if (!engineId || seen[kind + ":" + engineId]) return;
+    seen[kind + ":" + engineId] = true;
+    var b = mrrBindingForEngineId(engineId);
+    if (!b || b.kind !== kind) return;
+    if (!roster.some(function (c) { return c && c.id === b.charId; })) return;
+    n++;
+  }
+  mrrPresentCardIds(chatId).forEach(function (id) { consider(id, "character"); });
+  consider(e.personaId, "persona");
+  return n;
+}
+
 /* THE ENTRY POINT. Idempotent, cheap, and safe to call from every trigger:
    the confirm chokepoint, every present-set harvest, and any registry write.
    Fires ONLY in a chat that is bound and confirmed — round 33's ruling is
@@ -2524,6 +2620,13 @@ function mrrResolveBindings(chatId, why) {
        dormant for this entry, which is the pre-Round-B behaviour. */
     if (mrrBindingPresentFetchedChatId === chatId) return;
     mrrBindingPresentFetchedChatId = chatId;
+    /* ROUND C, C-2 (observability doctrine): say that resolution DEFERRED.
+       This is the one exit that does not end the flow — the read below
+       re-enters through mrrNoteChatRow and the summary prints then — but a
+       trace that goes quiet here and a trace that never ran must not look the
+       same. Once per chat entry, guarded by the line above. */
+    log("binding: resolution for chat " + chatId + " is waiting on a chat row — issuing the one explicit read (" +
+        (why || "unspecified") + ")");
     apiFetch("/chats/" + encodeURIComponent(chatId)).then(function (chat) {
       if (state.chatId !== chatId) return;
       mrrNoteChatRow(chatId, chat, "explicit read for binding resolution");
@@ -2547,8 +2650,14 @@ function mrrResolveBindings(chatId, why) {
      empty chat short-circuits. */
   var needIdentity = !mrrBindingLivenessDone[chatId] && !!(cardIds.length || present.personaId);
   if (!cands.length && !needIdentity) {
+    /* ROUND C, C-2. This used to `return` here, silently — the second of the
+       two mute exits that made resolution invisible in dnd0515 / dnd0524 /
+       ex30513. It is now routed through the ONE summary printer instead of
+       short-circuiting past it: mrrApplyBindingRestores with an empty
+       candidate list does exactly what this branch did (arm nothing, render
+       the prompt) and additionally says so. */
     mrrBindingResolveDoneChatId = chatId;
-    mrrRenderBindPrompt();
+    mrrApplyBindingRestores(chatId, [], why, false);
     return;
   }
 
@@ -2615,11 +2724,13 @@ function mrrResolveBindings(chatId, why) {
     if (state.chatId !== chatId) return;
     mrrBindingResolveDoneChatId = chatId;
     mrrApplyBindingRestores(chatId, cands, why, needIdentity);
+    mrrBindingResolveRerunIfDirty(chatId);
   }).catch(function (e) {
     mrrBindingResolveInFlightChatId = null;
     mrrBindingResolveDoneChatId = chatId;
     warn("binding: resolution failed for chat " + chatId + " (" + (e && e.message ? e.message : e) + ")");
     if (typeof mrrRenderContinueOffer === "function") mrrRenderContinueOffer();
+    mrrBindingResolveRerunIfDirty(chatId);
   });
 }
 
@@ -2638,30 +2749,56 @@ function mrrApplyBindingRestores(chatId, cands, why, relabel) {
   });
   mrrArmRebindPrompt(chatId, dangling);
 
-  if (!live.length) {
-    if (typeof mrrRenderContinueOffer === "function") mrrRenderContinueOffer();
-    mrrRenderBindPrompt();
-    /* Nothing came back, but the identity pass may have learned the names the
-       bind field renders its options from — the panel was built before they
-       landed, so it is rebuilt once to pick them up. */
-    if (relabel && state.mountEl && typeof renderSheet === "function") renderSheet();
-    return;
-  }
+  /* ROUND C, C-2: counted BEFORE the roster is touched, so "already present"
+     means "was here when resolution started", not "is here because resolution
+     just put it here". */
+  var alreadyPresent = mrrBindingAlreadyPresentCount(chatId);
 
-  /* THE PLACEHOLDER RULE. mrrRosterIsEmpty is B19's own predicate for "this
-     chat's roster is still the untouched bootstrap placeholder" (round-32's
-     `_bootstrap` flag, arm 1). When it holds, activating the restored
-     character must REPLACE that placeholder rather than sit beside it —
-     which is exactly what mrrAdoptLastCharacter already does, including the
-     pristine-record deletion and the flushSave ordering it had to get right.
-     So it is CALLED, not re-implemented: one adopt code path, two callers.
-     With several restores the FIRST one takes the slot (leaving "Player"
-     active beside a restored party is the orphan the adopt path exists to
-     remove) and the rest are appended without touching the active pointer. */
+  /* ═══ ROUND C, C-1 — THE PLACEHOLDER RULE, RESTATED ══════════════════════
+     Round B's version activated live[0] whenever the roster was an untouched
+     placeholder, no matter how many characters were coming back, and it did
+     that BEFORE appending the rest. Live trace ex30523: Ginny adopted at log
+     line 11, Casey and Tester appended at lines 19-20, "restored 3" at 21 —
+     and the user saw ONE character.
+
+     THE MECHANISM, precisely, because it is not the obvious one. Nothing
+     re-read or clobbered the roster: mrrAdoptLastCharacter never reloads
+     (loadCharacters is called from exactly three places — init, the
+     route-change watcher, and the other-tab reconcile — none of which run
+     inside this flow), and the appended entries DID reach localStorage. What
+     the user saw was the PANEL, and the panel's last paint was
+     switchCharacter -> renderSheet, fired from inside the adopt call at a
+     moment when mrrAdoptLastCharacter had just executed `state.characters =
+     []` and pushed exactly one entry. The post-batch render that would have
+     corrected it was suppressed by the very `!adopted` guard that used to sit
+     at the bottom of this function. One survivor, two invisible.
+
+     Two things follow, and both are now enforced here:
+       (1) THE LONE-RESTORE RULE (spec §3.3). Replacing the placeholder is a
+           choice about which character is ACTIVE, and with two or more
+           restores there is no basis for that choice — so it is not made. The
+           placeholder stays, untouched and active, beside the restored party,
+           and the user picks. No picker is invented; the character select
+           already is one.
+       (2) THE ADOPT AND THE BATCH BECOME MUTUALLY EXCLUSIVE. Rule (1) makes
+           `adopted` imply live.length === 1, so the append loop below is
+           provably empty whenever an adopt ran, and the single
+           saveCharacters() after it is the batch's ONE persist. Nothing is
+           ever appended after an activation. The shape of the code is
+           deliberately UNCHANGED from Round B — adopt, then loop, then one
+           persist — because that is what makes the rule the load-bearing
+           line: delete it and the function is Round B again, defect and all,
+           which is precisely what probe C-NEG1 does with one line removal. */
   var placeholder = (typeof mrrRosterIsEmpty === "function") && mrrRosterIsEmpty();
-  var adopted = null;
-  if (placeholder) {
-    adopted = live[0];
+  var adopted = live.length ? live[0] : null;
+  if (!placeholder) adopted = null;
+  if (live.length !== 1) adopted = null;   /* C-1 LONE-RESTORE RULE — 2+ restores never take the slot */
+
+  if (adopted) {
+    /* mrrAdoptLastCharacter owns the whole lone case: it drops the
+       placeholder entry, deletes its pristine library record, persists the
+       roster, and activates through switchCharacter. One adopt code path, two
+       callers — it is CALLED, not re-implemented. */
     log("binding: restored " + (adopted.nameHint || adopted.charId) + " (" + adopted.charId + ") via " +
         adopted.kind + " " + adopted.engineId + " — activating it in place of this chat's untouched placeholder");
     mrrAdoptLastCharacter({ id: adopted.charId, name: mrrBindingDisplayName(adopted) });
@@ -2675,15 +2812,43 @@ function mrrApplyBindingRestores(chatId, cands, why, relabel) {
     appended++;
     log("binding: restored " + (c.nameHint || c.charId) + " (" + c.charId + ") via " + c.kind + " " + c.engineId);
   });
-  if (appended) saveCharacters();
+  if (appended) saveCharacters();   /* ONE persist for the whole batch */
+  if (adopted && appended) {
+    /* Unreachable under the lone-restore rule, and stated rather than assumed:
+       if this ever fires, the rule has been weakened and the panel below is
+       about to describe a stale roster (that is exactly ex30523). */
+    warn("binding: a restore batch both activated a character and appended " + appended +
+         " more — the lone-restore rule has been weakened and this chat's panel may be showing a stale roster");
+  }
+  /* Read the outcome rather than assuming it: the adopt path re-checks the
+     library record at call time and can decline (another tab deleted it). */
+  var restored = appended + ((adopted && state.characters.some(function (x) { return x && x.id === adopted.charId; })) ? 1 : 0);
+  if (live.length > 1 && placeholder) {
+    log("binding: this chat's roster is still the untouched placeholder and " + live.length +
+        " characters were restored — the placeholder stays active and untouched, because which of the " +
+        live.length + " should be yours is not a judgement this extension gets to make. Pick one from the " +
+        "character select.");
+  }
 
-  log("binding: resolution for chat " + chatId + " restored " + live.length + " character(s), skipped " +
-      dangling.length + " dangling (" + (why || "unspecified") + ")");
+  /* ROUND C, C-2 — THE SUMMARY IS UNCONDITIONAL. Round B printed it only on
+     the path where something was restored; every chat whose bound characters
+     were already in the roster (dnd0515, dnd0524, ex30513 — the common case
+     for anyone who has played the chat before) returned above it and left no
+     trace at all, which is the failure mode this project has been burned by
+     repeatedly. "restored 0, skipped 0, 3 already present" and silence are
+     different facts and must look different. */
+  log("binding: resolution for chat " + chatId + " restored " + restored + " character(s), skipped " +
+      dangling.length + " dangling, " + alreadyPresent + " already present (" + (why || "unspecified") + ")");
 
   /* The roster changed under B19's feet: re-evaluate the offer (its
      mrrRosterIsEmpty gate now answers "not empty", so a chat that restored
      someone shows no Continue-as row) and rebuild the panel so the sheet,
-     the character select and the bind field all describe the new roster. */
+     the character select and the bind field all describe the new roster.
+     The `!adopted` guard is correct ONLY because of the lone-restore rule
+     above: an adopt means switchCharacter's own renderSheet already painted
+     the FINAL roster, since nothing can be appended after it. Delete that
+     rule and this line becomes the C-1 display defect verbatim — which is
+     what probe C-NEG1 reproduces. */
   if (typeof mrrRenderContinueOffer === "function") mrrRenderContinueOffer();
   if (!adopted && (appended || relabel) && typeof renderSheet === "function") renderSheet();
   mrrRenderBindPrompt();
@@ -2907,8 +3072,21 @@ function mrrRenderBindingField(parent) {
   if (present && present.personaId) addOpt(present.personaId, "persona");
   /* A binding whose card is NOT in this chat still has to be selectable —
      otherwise opening the sheet somewhere else would silently preselect
-     "(unbound)" and one stray change event would destroy the binding. */
-  if (current) addOpt(current.engineId, current.kind);
+     "(unbound)" and one stray change event would destroy the binding.
+     ROUND C, C-3: and it must be READABLE. addOpt labels off mrrCardNames,
+     which is populated by the liveness pass for cards in THIS chat — an
+     absent target has no entry there, so the option rendered as a raw nanoid:
+     the user was asked to keep or discard a binding to "hMm39Ygq315zgT4WrQJgv".
+     The registry has stored `nameHint` since Round B for exactly this, so it
+     is used here — as a LABEL, never as a key and never as a matcher (§4). */
+  if (current && !seen[current.kind + ":" + current.engineId]) {
+    seen[current.kind + ":" + current.engineId] = true;
+    options.push({
+      value: current.kind + ":" + current.engineId,
+      label: (mrrCardNames[current.engineId] || current.nameHint || current.engineId) +
+             " (" + (current.kind === "persona" ? "persona" : "card") + ", not in this chat)"
+    });
+  }
 
   var currentValue = current ? (current.kind + ":" + current.engineId) : "";
   options.forEach(function (o) {
