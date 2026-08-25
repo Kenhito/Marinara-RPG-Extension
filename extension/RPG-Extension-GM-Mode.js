@@ -1814,11 +1814,21 @@ function installBundle(bundle, progressCb) {
          to re-run "Add agent sections to active preset" by hand.
          force:true also clears the mutator config-id cache, whose ids the
          reinstall just invalidated. Never fails the install. */
+      /* S1-E: the bundle's role list travels with the reconcile call. This is
+         the ONLY moment the extension knows which roles a ruleset currently
+         ships — the local library caches ruleset.json, not additionalAgents —
+         so retirement detection has to happen on the install path or not at
+         all. `main` is implicit and added by the helper. */
+      var bundleRoles = (Array.isArray(bundle.additionalAgents) ? bundle.additionalAgents : [])
+        .map(function (a) { return a && a.role; })
+        .filter(function (r) { return typeof r === "string" && r; });
+
       progress("Reconciling agent bindings...");
       return mrrReconcileAgentBindings({
         rulesetId: rulesetId,
         reason: "bundle install",
         force: true,
+        bundleRoles: bundleRoles,
         progressCb: progressCb
       }).catch(function () { return null; });
     }).then(function () {
@@ -16849,6 +16859,82 @@ function mrrRoleForOrphanType(orphanType, roleTypes) {
   return best;
 }
 
+/* ═══ RETIRED-ROLE CLEANUP (2026-08-25, S1-E) ══════════════════════════════
+   The gap this closes, found by reading the install path rather than
+   theorizing: the installer UPSERTS `bundle.additionalAgents` by
+   (rulesetId, role) and never prunes. Nothing anywhere deletes, disables, or
+   de-activates a managed row whose role the bundle has STOPPED shipping.
+
+   So when the 08-25 consolidation retired exwod's and w20's four legacy
+   roles (combat-adjudicator, lore-query, npc-bookkeeper, state-reminder),
+   re-importing the rebuilt bundle would have installed the new four and left
+   the old four exactly as they were: rows still present, still enabled, and
+   — this is the part that matters — their TYPES still sitting in the chat's
+   `activeAgentIds`. The engine fires an agent when its `cfg.type` is in that
+   per-chat set (agent-resolution.ts:405), so all eight would have kept
+   running. The retirement would have bought nothing at all, and the "input
+   lock window visibly shorter" acceptance in the migration plan would have
+   failed with no obvious cause.
+
+   Note the two existing passes both decline this case BY DESIGN, which is why
+   it needed new code rather than a fix:
+     · mrrRoleForOrphanType resolves only roles that exist RIGHT NOW, so a
+       marker for a dropped role returns null and is skipped ("a role that no
+       longer exists" — its own comment).
+     · reconcileActiveAgents UNIONS managed types in; only the cross-ruleset
+       rebind branch ever removes anything.
+
+   Scope is deliberately narrow. Removing a retired type from activeAgentIds
+   is enough to stop it running, is reversible (a re-import of an older bundle
+   simply re-unions it), and uses the PATCH /chats/:id/metadata call the
+   extension already makes. The agent ROWS are left alone: deleting a user's
+   agent rows is destructive, not required to stop them firing, and not what
+   the migration plan asked for. They remain visible in Settings -> Agents as
+   inert clutter the user can delete by hand. */
+
+/* Managed rows for this ruleset whose role the bundle no longer ships.
+   `bundleRoles` is the authority and must come from the bundle being
+   installed — absent it (a standing reconcile pass with no install in hand)
+   this returns nothing, because "I don't know the roster" and "the roster is
+   empty" must never be confused. Roles are read from the settings tag, the
+   only identity that survives a reinstall. `main` is never retired. */
+function mrrRetiredManagedAgents(agents, rulesetId, bundleRoles) {
+  if (!Array.isArray(bundleRoles) || !bundleRoles.length) return [];
+  var keep = Object.create(null);
+  for (var k = 0; k < bundleRoles.length; k++) {
+    if (typeof bundleRoles[k] === "string" && bundleRoles[k]) keep[bundleRoles[k]] = true;
+  }
+  keep["main"] = true;
+  var out = [];
+  var list = Array.isArray(agents) ? agents : [];
+  for (var i = 0; i < list.length; i++) {
+    var a = list[i];
+    if (!a) continue;
+    var s = parseAgentSettings(a);
+    if (!s || s.mrrManaged !== true || s.mrrRulesetId !== rulesetId) continue;
+    var role = (typeof s.mrrAgentRole === "string" && s.mrrAgentRole) ? s.mrrAgentRole : "main";
+    if (keep[role]) continue;
+    out.push({ role: role, type: a.type, id: a.id });
+  }
+  return out;
+}
+
+/* activeAgentIds minus the retired entries. Both the TYPE and the legacy row
+   ID are dropped: pre-round-20 installs pushed row ids into this list, and a
+   retirement is exactly the moment to stop carrying them. Everything else —
+   including foreign, non-MRR ids the user added — is preserved in order. */
+function mrrPruneRetiredActiveIds(activeAgentIds, retired) {
+  var active = Array.isArray(activeAgentIds) ? activeAgentIds : [];
+  if (!Array.isArray(retired) || !retired.length) return active.slice();
+  var drop = Object.create(null);
+  for (var i = 0; i < retired.length; i++) {
+    var r = retired[i];
+    if (r && typeof r.type === "string" && r.type) drop[r.type] = true;
+    if (r && typeof r.id === "string" && r.id) drop[r.id] = true;
+  }
+  return active.filter(function (id) { return !drop[id]; });
+}
+
 /* Signature of a ruleset's managed rows. A reinstall changes ids AND types,
    so a changed signature is exactly the condition under which every id-keyed
    cache downstream (the state-mutator config id) is stale. */
@@ -16949,7 +17035,7 @@ function mrrDeriveAndRestampChat(chatId, meta, opts) {
    two produces an empty section. `identifier` is deliberately NOT rewritten:
    updatePromptSectionSchema omits it (prompt.schema.ts:186-188), and it is
    inert for marker resolution. */
-function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progress) {
+function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progress, retired) {
   var presetId = chat && chat.promptPresetId;
   if (!presetId) {
     /* No preset on the chat: the server has no fallback, so there are no
@@ -16975,6 +17061,19 @@ function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progres
        engine mints ONE token per type and consumes it on first substitution,
        so a duplicate could never fill. */
     var claimed = mrrExistingAgentSectionTypes(sections);
+
+    /* S1-E: types belonging to roles the bundle has retired. Their rows are
+       still live, so the orphan logic below would skip them at `live[t]`;
+       they need naming explicitly. */
+    var retiredTypes = Object.create(null);
+    var retiredList = Array.isArray(retired) ? retired : [];
+    for (var q = 0; q < retiredList.length; q++) {
+      if (retiredList[q] && typeof retiredList[q].type === "string") {
+        retiredTypes[retiredList[q].type] = retiredList[q].role;
+      }
+    }
+    var staleMarkers = [];
+
     var work = [];
     for (var i = 0; i < sections.length; i++) {
       var sec = sections[i];
@@ -16984,6 +17083,17 @@ function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progres
       if (!mc || typeof mc !== "object" || mc.type !== "agent_data") continue;
       var t = mc.agentType;
       if (typeof t !== "string" || !t) continue;
+      if (retiredTypes[t]) {
+        /* Reported, deliberately NOT deleted. The section is inert the moment
+           the type leaves activeAgentIds — the agent stops running, so the
+           macro resolves to nothing. Removing it would mean issuing
+           DELETE /prompts/:presetId/sections/:sectionId, a call this
+           extension has never made, against a preset the USER owns and may
+           have hand-edited. Destructive and irreversible to buy the removal
+           of an empty section: not a trade to make without being asked. */
+        staleMarkers.push({ type: t, role: retiredTypes[t], name: sec.name || sec.id });
+        continue;
+      }
       if (live[t]) continue;                                  /* points at a live agent — leave alone */
       var role = mrrRoleForOrphanType(t, roleTypes);
       if (!role) continue;                                    /* not ours, or a role that no longer exists */
@@ -16997,6 +17107,14 @@ function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progres
       claimed[target] = true;
       work.push({ id: sec.id, from: t, to: target, role: role });
     }
+    if (staleMarkers.length) {
+      out.staleMarkers = staleMarkers.length;
+      log("reconcile: " + staleMarkers.length + " preset marker section(s) point at RETIRED role(s) (" +
+          staleMarkers.map(function (s) { return s.role + " -> \"" + s.name + "\""; }).join(", ") +
+          "). They are inert now that those agents no longer run, so they inject nothing — but they are " +
+          "still listed in the preset. Delete them in Preset Editor if you want the preset tidy.");
+    }
+
     if (!work.length) return;
     progress("Repointing " + work.length + " agent marker section(s)...");
     return work.reduce(function (c, w) {
@@ -17035,7 +17153,12 @@ function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progres
    case is a string compare and zero fetches. Two fetches when it does run
    (GET /chats/:id + GET /agents), plus one GET /prompts/:id/full when the
    chat actually has a preset. Never throws; never blocks its caller.
-   opts: { chatId, rulesetId, reason, force, rederiveStamp, progressCb }. */
+   opts: { chatId, rulesetId, reason, force, rederiveStamp, bundleRoles,
+           progressCb }.
+   `bundleRoles` (S1-E) is the role list of the bundle being installed. Supply
+   it ONLY from an install: it is what tells this pass which roles have been
+   RETIRED, and a standing pass has no bundle in hand. Omitted, retirement is
+   skipped entirely — never inferred. */
 function mrrReconcileAgentBindings(opts) {
   opts = opts || {};
   var rulesetId = opts.rulesetId || (state.ruleset && state.ruleset.id);
@@ -17072,6 +17195,39 @@ function mrrReconcileAgentBindings(opts) {
     }
     mrrManagedAgentSig[rulesetId] = sig;
 
+    /* S1-E: drop retired roles from this chat's active set BEFORE the marker
+       pass, so the marker pass sees the post-retirement world. Runs only when
+       the caller supplied the bundle's role list (i.e. an install) — see
+       mrrRetiredManagedAgents for why an absent list means "do nothing"
+       rather than "retire everything". */
+    var retired = mrrRetiredManagedAgents(agents, rulesetId, opts.bundleRoles);
+    out.retired = retired.map(function (r) { return r.role; });
+    var retireChain = Promise.resolve();
+    if (retired.length) {
+      var pruned = mrrPruneRetiredActiveIds(meta.activeAgentIds, retired);
+      var removedN = (Array.isArray(meta.activeAgentIds) ? meta.activeAgentIds.length : 0) - pruned.length;
+      var retiredNames = retired.map(function (r) { return r.role; }).join(", ");
+      if (removedN > 0) {
+        progress("Retiring " + retired.length + " dropped agent role(s)...");
+        retireChain = apiFetch("/chats/" + encodeURIComponent(chatId) + "/metadata", {
+          method: "PATCH",
+          body: JSON.stringify({ activeAgentIds: pruned })
+        }).then(function () {
+          out.retiredIdsRemoved = removedN;
+          log("reconcile: retired " + retired.length + " role(s) no longer in the " + rulesetId +
+              " bundle (" + retiredNames + ") — removed " + removedN + " entr(ies) from this chat's " +
+              "activeAgentIds so they stop running. Their agent rows are left in Settings -> Agents; " +
+              "delete them there if you want them gone entirely.");
+        }).catch(function (e) {
+          warn("reconcile: could not prune retired roles from chat " + chatId + " (" +
+               (e && e.message ? e.message : e) + ") — they may keep running until the next pass");
+        });
+      } else {
+        log("reconcile: " + retired.length + " retired role row(s) present for " + rulesetId +
+            " (" + retiredNames + ") but none active in this chat — nothing to prune");
+      }
+    }
+
     /* Stamp re-derivation runs here ONLY for triggers that reach a chat
        already past the stamp check (a mid-session preset apply). On chat
        entry the check itself does it, BEFORE reconcileActiveAgents can claim
@@ -17081,8 +17237,10 @@ function mrrReconcileAgentBindings(opts) {
       ? mrrDeriveAndRestampChat(chatId, meta, { force: true, agents: agents }).then(function (d) { out.restamped = d; })
       : Promise.resolve();
 
-    return stampChain.then(function () {
-      return mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progress);
+    return retireChain.then(function () {
+      return stampChain;
+    }).then(function () {
+      return mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progress, retired);
     }).then(function () { return out; });
   }).catch(function (e) {
     mrrReconcileDoneKey = null;

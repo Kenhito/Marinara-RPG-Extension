@@ -13,6 +13,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join, basename } from "node:path";
 import { isPatternSafe } from "./lib/regex-safety.mjs";
+import { lintAll, formatReport, rulesetDirs } from "./lint-agent-redundancy.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -89,4 +90,26 @@ for (const p of paths) {
     failed++;
   }
 }
+
+/* ─── Reference-redundancy lint — REPORT ONLY, never fails this run ───────
+   Deliberately not a gate. The council's 08-25 verdict is that rules TEXT
+   restated across prompts has to collapse into one canonical lorebook copy
+   that agents query, but that migration happens ruleset by ruleset and would
+   block every unrelated ship if it were enforced today. The v1 job is to make
+   the drift countable, so the migration has a worklist and a way to prove it
+   finished.
+
+   Wrapped whole: a lint crash must never turn a passing validation into a
+   failing one. Its exit status is discarded by construction — `failed` is not
+   touched below this line. */
+if (args[0] === "--all") {
+  try {
+    console.log("");
+    console.log("Reference-redundancy lint (report-only — does not affect the exit status):");
+    console.log(formatReport(lintAll(rulesetDirs("--all"))));
+  } catch (e) {
+    console.log("  lint skipped — " + (e && e.message ? e.message : e));
+  }
+}
+
 process.exit(failed === 0 ? 0 : 1);
