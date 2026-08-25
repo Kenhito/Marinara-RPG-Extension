@@ -9,6 +9,19 @@ explicitly when they do).
 
 ## [Unreleased]
 
+- **B19 — cross-game character continuity.** Activating a character now
+  stamps a per-ruleset "last played" pointer (synced across your browsers).
+  Opening a chat that's bound to that ruleset but has no character yet shows
+  an explicit "Continue as <name>" offer — one click adopts them into the
+  chat (replacing the untouched bootstrap placeholder), "Not now" saves
+  nothing and never nags past the session. Never auto-adopts. Stamping is
+  gated on the round-24 ruleset-confirmation latch so the pointer can't be
+  filed under the wrong system. (10-probe eval-extracted harness, incl. a
+  negative control.)
+- **Dead-plumbing tombstones trimmed** (−657 B source): the round-26/27
+  `isChildListOrigin` removal narration is gone; the load-bearing lesson
+  survives as a forward invariant — never rewrite a message element's
+  innerHTML (it detaches React's handlers; the dead-turn-buttons bug).
 - **GM dice doctrine completed for the last four rulesets** (fate-core,
   blades-in-the-dark, genesys, lasers-and-feelings): tool-first `roll_dice`
   rolls, never-invent, player rolls stay authoritative, fresh rolls on every

@@ -420,6 +420,16 @@ function lsDelRaw(key) { try { localStorage.removeItem(key); return true; } catc
          appears in the other after reload" — is unreachable, since a
          second browser couldn't see the chat's roster or which character
          is active even with the sheets themselves synced.)
+       - MRR_LAST_CHAR_PFX "mrr-last-char-<rulesetId>"  B19 continuity
+         pointer: the character last ACTIVATED under that ruleset, on any
+         device. GLOBAL (per ruleset, not per chat) by design — the whole
+         point is that a brand-new chat, or the same chat opened on a
+         second browser, can offer to continue as who you were last
+         playing in that system. Same class as the two above: small,
+         non-derivable user data. No mrrRunMigration task is needed for
+         it — the key did not exist before this round, so no legacy
+         instance can be sitting unsynced in localStorage; every write
+         goes through lsSet and is marked dirty normally.
      LOCAL (explicit per spec):
        - LS_PROCESSED_MSGS_PFX / LS_PROCESSED_RUNS_PFX  per-browser dedup sets
        - LS_MUTATION_JOURNAL_PFX "mrr-mutation-journal-<chatId>" — B2-R
@@ -486,6 +496,11 @@ var mrrQuarantinedKeys = {};        /* keys forced LS-only for the session after
    migration scan share one spelling. */
 var MRR_CHARS_PFX = "mrr-chars-";
 var MRR_ACTIVE_CHAR_PFX = "mrr-active-char-";
+/* B19 — last-character-per-ruleset continuity pointer. Keyed by RULESET
+   id, not chatId (see the SYNCED classification bullet above). Named here
+   with its siblings so the classifier and any future migration scan share
+   one spelling. */
+var MRR_LAST_CHAR_PFX = "mrr-last-char-";
 
 function mrrIsSyncedKey(key) {
   if (typeof key !== "string") return false;
@@ -494,6 +509,7 @@ function mrrIsSyncedKey(key) {
   if (key.indexOf(LS_SPELLBOOK_LB_PFX) === 0) return true;
   if (key.indexOf(MRR_CHARS_PFX) === 0) return true;
   if (key.indexOf(MRR_ACTIVE_CHAR_PFX) === 0) return true;
+  if (key.indexOf(MRR_LAST_CHAR_PFX) === 0) return true;
   return false;
 }
 
@@ -2165,6 +2181,12 @@ function mrrConfirmChatRuleset(chatId, why) {
      is a string compare, not a fetch. No stamp re-derivation from here: the
      stamp check has already done it on this chat's way in. */
   if (typeof mrrReconcileAgentBindings === "function") mrrReconcileAgentBindings({ reason: "chat ruleset confirmed" });
+  /* B19: the confirmation chokepoint is also the first moment the chat's
+     bound ruleset is knowable, and it lands AFTER init()/watchRouteChanges
+     already rendered the sheet — so the offer has to be (re)evaluated from
+     here or it would never appear on the render that matters. Cheap and
+     idempotent: with no candidate it mounts nothing. */
+  if (typeof mrrRenderContinueOffer === "function") mrrRenderContinueOffer();
 }
 
 /* The latch must reset on EVERY chat change — called from watchRouteChanges
@@ -2558,6 +2580,234 @@ function loadActiveCharacterId(chatId, fallback) {
 function saveActiveCharacterId() {
   if (!state.chatId || !state.activeCharacterId) return;
   lsSet("mrr-active-char-" + state.chatId, state.activeCharacterId);
+  /* B19: this is THE activation chokepoint — every path that makes a
+     character current in a chat (switchCharacter, addCharacter,
+     applyBundle, the two invalid-pointer fallbacks in init/route-change)
+     lands here. Stamping the per-ruleset continuity pointer from one
+     place rather than from each caller is the same reasoning saveSheet's
+     write gate uses. */
+  mrrStampLastCharacter();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   B19 — last-character-per-ruleset continuity.
+
+   PROBLEM: chat ids rotate (AGENTS.md §8.4), and a chat's roster lives
+   under "mrr-chars-<chatId>". Start a new chat in a system you have been
+   playing for weeks and the sheet panel greets you with a blank
+   bootstrap "Player" — the character library still holds your real
+   character, but nothing connects the two, so the user re-imports a
+   bundle or hand-picks from the roster every single time.
+
+   SHAPE: a GLOBAL, SYNCED pointer per ruleset ("mrr-last-char-
+   <rulesetId>", see mrrIsSyncedKey) stamped on activation, plus an
+   EXPLICIT one-click offer in the panel. Never a silent auto-adopt:
+   guessing which character belongs in a chat is exactly the kind of
+   name-matched inference that produced the round-24 cross-ruleset bleed,
+   and a wrong guess here would attach the wrong character to a chat's
+   roster — a persisted, user-visible mistake. The user says yes.
+
+   DECLINE PERSISTS NOTHING. `mrrContinueOfferDismissed` is a plain
+   in-memory session flag (same idiom as mrrWarnDismissed), so "not now"
+   costs zero storage writes and zero server patches; the offer simply
+   comes back next session if the situation still holds.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+var mrrContinueOfferDismissed = false; /* session-local; NEVER persisted — see the header note */
+var mrrContinueOfferEl = null;         /* the currently-mounted offer node, if any */
+/* chatId -> the mrrChatRulesetId this chat's metadata actually carried
+   (null = read, but the chat carries no stamp). Populated by the ONE
+   metadata read the chat already performs in mrrCheckChatRulesetStamp —
+   no new fetch. Absent entry = "not read yet", which reads as
+   not-bound, so the offer stays hidden until the chat's ruleset is
+   genuinely settled. */
+var mrrChatStampSeen = Object.create(null);
+
+function mrrLastCharKey(rulesetId) { return MRR_LAST_CHAR_PFX + rulesetId; }
+
+/* Stores id + name. The name is denormalized ON PURPOSE: rendering
+   "Continue as <name>" must not require reading (and JSON-parsing) the
+   whole character sheet record just to learn a label. */
+function mrrStampLastCharacter() {
+  if (!state.ruleset || !state.ruleset.id || !state.activeCharacterId) return;
+  /* Never stamp from an unconfirmed chat. state.ruleset is not yet known
+     to be THIS chat's ruleset during the stamp-check window (round-24's
+     entire premise), and a continuity pointer filed under the wrong
+     ruleset is the same cross-ruleset bleed the save latch exists to
+     prevent — just one indirection further out. */
+  if (state.chatId && mrrRulesetConfirmedChatId !== state.chatId) return;
+  var activeId = state.activeCharacterId;
+  var entry = state.characters.find(function (c) { return c && c.id === activeId; });
+  var name = (entry && entry.name) ? entry.name : activeId;
+  lsSet(mrrLastCharKey(state.ruleset.id), JSON.stringify({ id: activeId, name: name }));
+}
+
+function mrrReadLastCharacter(rulesetId) {
+  if (!rulesetId) return null;
+  var raw = lsGet(mrrLastCharKey(rulesetId));
+  if (!raw) return null;
+  var rec = safeParse(raw);
+  if (!rec || typeof rec !== "object" || typeof rec.id !== "string" || !rec.id) return null;
+  return { id: rec.id, name: (typeof rec.name === "string" && rec.name) ? rec.name : rec.id };
+}
+
+/* "Empty roster" in the sense the offer needs. It CANNOT be
+   `!state.characters.length`: loadCharacters' no-key branch bootstraps a
+   single "Player" entry AND PERSISTS IT IMMEDIATELY (see its own comment
+   — that persistence fixed a worse bug and is not up for revisiting), so
+   a literally empty mrr-chars-<chatId> is unobservable by the time
+   anything renders. The real signal for "this chat has never had a
+   character" is the bootstrap SHAPE: exactly one entry, with no record of
+   its own in the character library. The moment the user touches that
+   sheet, saveSheet writes the library record and the offer stops
+   qualifying — which is correct, there is now something to lose. */
+function mrrRosterIsEmpty() {
+  var list = state.characters;
+  if (!Array.isArray(list) || !list.length) return true;
+  if (list.length !== 1 || !list[0] || !list[0].id) return false;
+  return !lsGet(characterKey(list[0].id));
+}
+
+/* Returns the record to offer, or null. Every condition is a hard gate;
+   the order is cheapest-first so the steady state (a normal chat with a
+   real roster) costs one array length check and no storage reads. */
+function mrrContinueOfferCandidate() {
+  if (mrrContinueOfferDismissed) return null;
+  if (!state.chatId) return null;
+  if (!state.ruleset || !state.ruleset.id) return null;
+  /* BOUND = the chat's own metadata names THIS ruleset. A chat with no
+     stamp at all is deliberately excluded: it is not bound to anything,
+     so there is no basis for claiming it for the active ruleset's last
+     character (same reasoning as mrrCheckChatRulesetStamp's F4 branch). */
+  if (mrrChatStampSeen[state.chatId] !== state.ruleset.id) return null;
+  if (!mrrRosterIsEmpty()) return null;
+  var rec = mrrReadLastCharacter(state.ruleset.id);
+  if (!rec) return null;
+  /* Already present in this chat — nothing to continue. */
+  if (state.characters.some(function (c) { return c && c.id === rec.id; })) return null;
+  /* The pointed-at character was deleted from the library (or never got a
+     record). No offer, no throw — a stale pointer is an expected state,
+     not an error, and it self-heals on the next activation. */
+  if (!lsGet(characterKey(rec.id))) return null;
+  return rec;
+}
+
+/* Idempotent mount/unmount, modelled on mrrRenderWarnStrip: safe to call
+   on every render AND from the async confirm path, mounts as the top of
+   the panel, tears down with state.mountEl (marinara.addElement tracks
+   the node), and re-renders in place when the candidate changes. */
+function mrrRenderContinueOffer() {
+  if (mrrContinueOfferEl && !mrrContinueOfferEl.isConnected) mrrContinueOfferEl = null; /* orphaned by a full re-render */
+
+  var rec = mrrContinueOfferCandidate();
+  if (!rec) {
+    if (mrrContinueOfferEl && mrrContinueOfferEl.parentNode) mrrContinueOfferEl.parentNode.removeChild(mrrContinueOfferEl);
+    mrrContinueOfferEl = null;
+    return;
+  }
+  if (!state.mountEl) return; /* nothing to mount into yet — the next render calls us again */
+  if (mrrContinueOfferEl && mrrContinueOfferEl.parentNode) {
+    if (mrrContinueOfferEl.getAttribute("data-mrr-char-id") === rec.id) return; /* already showing this one */
+    mrrContinueOfferEl.parentNode.removeChild(mrrContinueOfferEl);
+    mrrContinueOfferEl = null;
+  }
+
+  /* Top of the panel, but never above the warn strip — a degradation
+     warning outranks an optional convenience. Captured BEFORE the append
+     below so the row can be moved into place. */
+  var before = (mrrWarnStripEl && mrrWarnStripEl.parentNode === state.mountEl)
+    ? mrrWarnStripEl.nextSibling
+    : state.mountEl.firstChild;
+  mrrContinueOfferEl = marinara.addElement(state.mountEl, "div", {
+    "class": "mrr-continue-offer",
+    "data-mrr-char-id": rec.id
+  });
+  if (!mrrContinueOfferEl) return;
+  if (before) state.mountEl.insertBefore(mrrContinueOfferEl, before);
+  /* Inline styles, same call as the warn strip made and for the same
+     reason: no embed-css/CSS pipeline round-trip for a single strip. */
+  mrrContinueOfferEl.style.display = "flex";
+  mrrContinueOfferEl.style.alignItems = "center";
+  mrrContinueOfferEl.style.gap = "8px";
+  mrrContinueOfferEl.style.width = "100%";
+  mrrContinueOfferEl.style.boxSizing = "border-box";
+  mrrContinueOfferEl.style.padding = "6px 10px";
+  mrrContinueOfferEl.style.marginBottom = "6px";
+  mrrContinueOfferEl.style.fontSize = "12px";
+  mrrContinueOfferEl.style.lineHeight = "1.3";
+  mrrContinueOfferEl.style.background = "var(--mrr-accent-soft)";
+  mrrContinueOfferEl.style.border = "1px solid var(--mrr-accent)";
+  mrrContinueOfferEl.style.borderRadius = "6px";
+
+  var textEl = marinara.addElement(mrrContinueOfferEl, "span", {
+    "class": "mrr-continue-offer__text",
+    textContent: "No character in this chat yet."
+  });
+  if (textEl) {
+    textEl.style.flex = "1 1 auto";
+    textEl.style.minWidth = "0";
+    textEl.style.overflowWrap = "break-word";
+  }
+
+  var yes = marinara.addElement(mrrContinueOfferEl, "button", {
+    "class": "mrr-char-btn mrr-continue-offer__yes",
+    type: "button",
+    textContent: "Continue as " + rec.name,
+    title: "Add " + rec.name + " to this chat and make them the active character"
+  });
+  if (yes) marinara.on(yes, "click", function () { mrrAdoptLastCharacter(rec); });
+
+  var no = marinara.addElement(mrrContinueOfferEl, "button", {
+    "class": "mrr-char-btn mrr-continue-offer__no",
+    type: "button",
+    textContent: "Not now",
+    title: "Dismiss for this session — nothing is saved"
+  });
+  if (no) {
+    marinara.on(no, "click", function () {
+      /* DECLINE = ZERO persisted writes. In-memory only, on purpose. */
+      mrrContinueOfferDismissed = true;
+      mrrRenderContinueOffer();
+    });
+  }
+}
+
+/* Adopt = roster + pointer, and nothing else. The pointer half deliberately
+   goes through switchCharacter — the one existing activation path — rather
+   than re-implementing "set activeCharacterId, load the sheet, re-render"
+   here, so this stays correct if that path grows another step. */
+function mrrAdoptLastCharacter(rec) {
+  if (!rec || !rec.id || !state.chatId) return;
+  /* Re-check at click time: the library record could have been deleted
+     between render and click (another tab, the remove button). */
+  if (!lsGet(characterKey(rec.id))) {
+    mrrRenderContinueOffer(); /* condition no longer holds — take the offer down */
+    return;
+  }
+  if (!state.characters.some(function (c) { return c && c.id === rec.id; })) {
+    /* mrrRosterIsEmpty gated the offer, so anything in the roster right
+       now is the untouched bootstrap placeholder (one entry, no library
+       record). Replacing it rather than appending is what keeps the chat
+       clean — an orphan "Player" beside the adopted character is exactly
+       the clutter this feature exists to remove. */
+    state.characters = mrrRosterIsEmpty() ? [] : state.characters;
+    state.characters.push({ id: rec.id, name: rec.name });
+  }
+  saveCharacters();
+  mrrContinueOfferDismissed = true; /* answered — don't re-offer this session */
+  /* switchCharacter opens with flushSave(), which would persist the
+     placeholder's pristine-blank sheet under ITS characterKey — creating
+     the orphan library record we just removed from the roster. Dropping
+     the in-memory sheet first makes flushSave's own `state.sheet` guard
+     skip the write (its mrrFlushPendingPatch half still runs); the very
+     next statement inside switchCharacter reassigns state.sheet from
+     loadSheet, and nothing in between reads it. Discarding is safe here
+     precisely BECAUSE the offer only renders over an untouched roster:
+     there is, by construction, no unsaved edit to lose. */
+  state.sheet = null;
+  switchCharacter(rec.id);
+  log("B19 continuity: adopted '" + rec.name + "' (" + rec.id + ") into chat " + state.chatId +
+      " for ruleset " + (state.ruleset && state.ruleset.id ? state.ruleset.id : "(none)"));
 }
 
 function migrateLegacySheet(chatId) {
@@ -6234,6 +6484,11 @@ function mrrP3RenderSheet() {
      Re-mount the warning strip (if any queued/undismissed warnings exist)
      as the very first child, before anything else below adds content. */
   mrrRenderWarnStrip();
+
+  /* B19: re-evaluate the continuity offer on every full re-render — the
+     previous node died with the old mountEl. Mounts directly under the
+     warn strip; a no-op whenever the offer's conditions aren't met. */
+  mrrRenderContinueOffer();
 
   /* Phase 5 step 5.5 — apply per-character density preset on render. CSS
      in RPG-Extension-GM-Mode.css branches the --mrr-density-* variables
@@ -14298,6 +14553,14 @@ function mrrCheckChatRulesetStamp(chatId) {
        one metadata read this chat already performs. */
     mrrAppliedChatPresetSeen[chatId] = (typeof meta.appliedChatPresetId === "string") ? meta.appliedChatPresetId : null;
 
+    /* B19: record what the chat's metadata actually said, on this same one
+       read — the continuity offer needs "is this chat BOUND, and to what"
+       synchronously at render time, and must never trigger a fetch of its
+       own. `null` here is a real answer ("read it; there is no stamp"),
+       distinct from an absent entry ("not read yet"). Set BEFORE decide(),
+       which can confirm the chat and render. */
+    mrrChatStampSeen[chatId] = (typeof stamp === "string" && stamp) ? stamp : null;
+
     if (stamp) { mrrStampCheckInFlightChatId = null; decide(stamp); return; }
 
     /* ── no stamp ──
@@ -14315,6 +14578,9 @@ function mrrCheckChatRulesetStamp(chatId) {
     mrrDeriveAndRestampChat(chatId, meta).then(function (derived) {
       mrrStampCheckInFlightChatId = null;
       if (state.chatId !== chatId) return;
+      /* B19: a successful re-derivation WROTE the stamp back to the chat's
+         metadata, so the chat is now genuinely bound — track that too. */
+      if (derived) mrrChatStampSeen[chatId] = derived;
       if (derived) { decide(derived); return; }
       mrrConfirmChatRuleset(chatId, "chat carries no ruleset stamp (nothing to disagree with)");
     });
@@ -16829,17 +17095,13 @@ function applyStateMutation(attrs) {
   return finalizeMutation(attrs);
 }
 
-/* Round-27: the vestigial `isChildListOrigin` second parameter is gone. Round
-   15 added it to gate a cosmetic hideStateTagsInElement(node) call at the tail
-   of this function; round 26 deleted that call and the function outright (its
-   `node.innerHTML = wrapped` re-parsed the whole message subtree, so React's
-   hover action bar came back as fiber-less clones — swipe/edit/regenerate
-   visible but completely inert, convicted live by the extension-off test on
-   2026-08-23) and left the parameter threaded through for one round. Nothing
-   read it after that, so the whole origin-tracking chain — this parameter,
-   watchChatMessages' pendingOrigin map, and the wasChildList threading through
-   schedule() — is unwound here. Detection, journaling, and apply logic never
-   depended on any of it. */
+/* NEVER rewrite a message element's innerHTML from here. Round 26 deleted
+   the cosmetic hideStateTagsInElement(node) call that used to sit at the
+   tail of this function: its `node.innerHTML = wrapped` re-parsed the whole
+   message subtree, so React's hover action bar came back as fiber-less
+   clones — swipe/edit/regenerate visible but completely inert, convicted
+   live by the extension-off test on 2026-08-23. Detection, journaling, and
+   apply logic never needed it. */
 function processChatMessage(node) {
   if (!node || !node.getAttribute) return;
   var msgId = node.getAttribute("data-message-id");
@@ -17757,11 +18019,6 @@ function watchChatMessages() {
      so pending parses cannot fire after the extension is disabled. */
   var pendingTokens = Object.create(null);
   var nextToken = 0;
-  /* Round-27: the `pendingOrigin` map that used to live here is gone. It was a
-     round-15 per-message "was any observation in this debounce window a
-     childList mutation" flag, OR-merged across schedule() calls, existing only
-     to gate round 26's deleted innerHTML rewrite. Nothing has read the origin
-     since. */
   /* Round-24: per-message re-deferral counter for the write-gate check in
      schedule()'s timer body. 20 tries x the 1500ms debounce = ~30s, the
      same order as MRR_AUTOSWITCH_GUARD_TTL_MS. */
