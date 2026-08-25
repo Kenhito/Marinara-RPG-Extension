@@ -1,0 +1,2562 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.4.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.7.0"
+  },
+  "ruleset": {
+    "id": "vtmv20",
+    "name": "Vampire: The Masquerade 20th Anniversary",
+    "version": "0.1.0",
+    "edition": "V:TM 20th Anniversary Edition (V20, 2011, Onyx Path)",
+    "license": "Original mechanics references; clan / Discipline / sect / path names belong to Paradox Interactive AB. No verbatim V20 corebook text reproduced. Distributed under the Dark Pack Agreement (worldofdarkness.com/dark-pack). Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved. This material is NOT official World of Darkness material.",
+    "summary": "Storyteller-system d10 dice pool. Pool = Attribute + Ability. Each die meeting or beating the Storyteller's difficulty is one success (default difficulty 6, varies 6-9). Botch on any roll showing zero successes AND at least one 1. Specialty bonus on rolls within the chosen specialty: each natural 10 is rerolled. Willpower spend = one automatic guaranteed success, max once per turn.",
+    "dice": {
+      "type": "d10",
+      "notation": "Xd10 vs <difficulty>"
+    },
+    "resolution": {
+      "mode": "dice-pool",
+      "poolFormula": "Attribute + Ability (+ specialty 10-rerolls when applicable, + Willpower auto-success once/turn, + Discipline rating dice)",
+      "target": 6,
+      "doubles": {
+        "face": 10,
+        "successes": 1
+      },
+      "botches": {
+        "onFace": 1,
+        "trigger": "any-on-zero-successes"
+      }
+    },
+    "difficulties": {
+      "Trivial": {
+        "threshold": 4,
+        "description": "Trivial for a competent character. Often waived."
+      },
+      "Routine": {
+        "threshold": 5,
+        "description": "Routine task; minor pressure."
+      },
+      "Standard": {
+        "threshold": 6,
+        "description": "V20 default. Average task under normal conditions."
+      },
+      "Challenging": {
+        "threshold": 7,
+        "description": "Pushes a competent character; pressure or distraction."
+      },
+      "Difficult": {
+        "threshold": 8,
+        "description": "Few succeed without bonuses or supernatural help."
+      },
+      "Nigh-Impossible": {
+        "threshold": 9,
+        "description": "Heroic; requires Willpower, Disciplines, or aid."
+      }
+    },
+    "attributes": [
+      {
+        "name": "Strength",
+        "abbreviation": "STR",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Raw muscle. Lifting, melee damage, brawling pools."
+      },
+      {
+        "name": "Dexterity",
+        "abbreviation": "DEX",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Agility, hand-eye coordination, attack accuracy, dodging."
+      },
+      {
+        "name": "Stamina",
+        "abbreviation": "STA",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Endurance, soak (bashing/lethal), resisting fatigue and damage."
+      },
+      {
+        "name": "Charisma",
+        "abbreviation": "CHA",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Force of personality, sincere charm, leadership presence."
+      },
+      {
+        "name": "Manipulation",
+        "abbreviation": "MAN",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Deceit, guile, indirect influence, getting others to act against their interest."
+      },
+      {
+        "name": "Appearance",
+        "abbreviation": "APP",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Beauty / presence; affects attraction, intimidation by allure, first-impression rolls."
+      },
+      {
+        "name": "Perception",
+        "abbreviation": "PER",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Spotting, hearing, noticing details and changes in environment."
+      },
+      {
+        "name": "Intelligence",
+        "abbreviation": "INT",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Reasoning, learning, recall, abstract analysis."
+      },
+      {
+        "name": "Wits",
+        "abbreviation": "WIT",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Reaction speed, on-the-fly thinking, initiative pool component."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Alertness",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Notice danger and details. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Athletics",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Climbing, running, jumping, swimming. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Awareness",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent (V20). Sense supernatural presence and disturbances in the Beast. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Brawl",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Unarmed combat; punches, grapples, claw strikes. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Empathy",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Read emotions, sense lies of the heart. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Expression",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Communicating ideas, art, oratory, written prose. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Intimidation",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Threats, looming presence, breaking will. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Leadership",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Inspiring loyalty, giving orders, rallying. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Streetwise",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Navigating urban underbelly, contacts, fences, gossip. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Subterfuge",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Lying, misleading, deflecting questions. Usable untrained at +1 difficulty."
+      },
+      {
+        "name": "Animal Ken",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Handling and training animals (a vampire's natural problem). Untrained: cannot roll."
+      },
+      {
+        "name": "Crafts",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Build, repair, and make physical things by hand. Untrained: cannot roll."
+      },
+      {
+        "name": "Drive",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Operate vehicles under stress. Untrained: cannot roll."
+      },
+      {
+        "name": "Etiquette",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Manners, protocol, the unwritten rules of Kindred and mortal society. Untrained: cannot roll."
+      },
+      {
+        "name": "Firearms",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Handguns, rifles, automatic weapons. Untrained: cannot roll."
+      },
+      {
+        "name": "Larceny",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill (V20). Lock-picking, sleight of hand, B&E, forgery. Untrained: cannot roll."
+      },
+      {
+        "name": "Melee",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Armed close combat; blades, clubs, improvised. Untrained: cannot roll."
+      },
+      {
+        "name": "Performance",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Singing, instrument, acting, dance — the art of performing for an audience. Untrained: cannot roll."
+      },
+      {
+        "name": "Stealth",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Move unseen and unheard. Untrained: cannot roll."
+      },
+      {
+        "name": "Survival",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Wilderness travel, foraging, weather. Untrained: cannot roll."
+      },
+      {
+        "name": "Academics",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material."
+      },
+      {
+        "name": "Computer",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Software, hardware, networks. Untrained: cannot roll."
+      },
+      {
+        "name": "Finance",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Money, markets, accounting, business law. Untrained: cannot roll."
+      },
+      {
+        "name": "Investigation",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll."
+      },
+      {
+        "name": "Law",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Statute, precedent, courtroom procedure, criminal law. Untrained: cannot roll."
+      },
+      {
+        "name": "Medicine",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Diagnosis, surgery, pharmacology — and what blood reveals. Untrained: cannot roll."
+      },
+      {
+        "name": "Occult",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Lore of the supernatural — vampires, mages, ghosts, the Antediluvians. Untrained: cannot roll."
+      },
+      {
+        "name": "Politics",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Government, faction, who-owes-whom in mortal AND Kindred society. Untrained: cannot roll."
+      },
+      {
+        "name": "Science",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll."
+      },
+      {
+        "name": "Technology",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll."
+      }
+    ],
+    "skillSpecialties": {
+      "enabled": true,
+      "valueLabel": "specialty (10s reroll)",
+      "valueKind": "dice",
+      "defaultValue": 0
+    },
+    "backgrounds": {
+      "enabled": true,
+      "label": "Backgrounds & Merits",
+      "min": 0,
+      "max": 5,
+      "default": 0
+    },
+    "header": {
+      "raceLabel": "Clan",
+      "classLabel": "Sect"
+    },
+    "derivedStats": [
+      {
+        "name": "Generation",
+        "formula": "Player-set; default 13th. Lower generation costs Background dots at character creation. Bounds the Blood Pool max and the per-turn Blood spend cap (see Generation Table lorebook entry).",
+        "default": 13,
+        "renderAs": "value",
+        "aliases": [
+          "gen",
+          "generation"
+        ]
+      },
+      {
+        "name": "Permanent Willpower",
+        "formula": "1-10. The character's permanent Willpower rating — the cap on the Willpower resource pool. V20 RAW: starts equal to Courage at character creation; grows via XP spend (current rating → next rating costs the current rating × 2 XP) or chargen freebies (one freebie per dot). Adjust this stepper directly: set to your Courage at chargen, then click + as you spend XP. Cap 10.",
+        "default": 3,
+        "renderAs": "value",
+        "aliases": [
+          "permanentWillpower",
+          "willpowerMax",
+          "willpowerRating"
+        ],
+        "max": 10
+      },
+      {
+        "name": "Animalism",
+        "formula": "Common Discipline 0-5. Beast-bond and primal command. Powers per dot are listed in the lorebook entry 'Discipline: Animalism'.",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "animalism"
+        ]
+      },
+      {
+        "name": "Auspex",
+        "formula": "Common Discipline 0-5. Heightened senses and supernatural perception. Powers per dot in the lorebook.",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "auspex"
+        ]
+      },
+      {
+        "name": "Celerity",
+        "formula": "Common Discipline 0-5. Vampiric speed; spend 1 Blood per turn for that many extra physical actions (= Celerity rating).",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "celerity"
+        ]
+      },
+      {
+        "name": "Dominate",
+        "formula": "Common Discipline 0-5. Mind control via eye contact and the imperative voice. Powers per dot in the lorebook.",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "dominate"
+        ]
+      },
+      {
+        "name": "Fortitude",
+        "formula": "Common Discipline 0-5. Each dot adds one die to soak rolls and lets the vampire soak even AGGRAVATED damage (fire, sunlight, supernatural claws). The only widely-available defense against aggravated.",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "fortitude"
+        ]
+      },
+      {
+        "name": "Obfuscate",
+        "formula": "Common Discipline 0-5. The art of being unseen, unheard, unremembered. Powers per dot in the lorebook.",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "obfuscate"
+        ]
+      },
+      {
+        "name": "Potence",
+        "formula": "Common Discipline 0-5. Vampiric strength; each dot grants ONE automatic success on Strength-based feats and brawl/melee damage rolls.",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "potence"
+        ]
+      },
+      {
+        "name": "Presence",
+        "formula": "Common Discipline 0-5. The supernatural force of personality — magnetism, awe, dread. Powers per dot in the lorebook.",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "presence"
+        ]
+      },
+      {
+        "name": "Protean",
+        "formula": "Common Discipline 0-5. Bodily transformation rooted in Beast and earth; signature of the Gangrel.",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "protean"
+        ]
+      },
+      {
+        "name": "Necromancy",
+        "formula": "Clan-unique Discipline (Giovanni and Hecata-adjacent). Path/Ritual structure parallel to Thaumaturgy. See lorebook for paths and rituals.",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "necromancy"
+        ]
+      },
+      {
+        "name": "Thaumaturgy",
+        "formula": "Clan-unique Discipline (Tremere). Path/Ritual structure: pick a primary Path rated 1-5, learn other Paths at 1 dot each, plus Rituals as separate spells. See lorebook.",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "thaumaturgy"
+        ]
+      },
+      {
+        "name": "Vicissitude",
+        "formula": "Clan-unique Discipline (Tzimisce; Sabbat-taught). Active fleshcrafting and bonecrafting. See lorebook for power tree.",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "vicissitude"
+        ]
+      },
+      {
+        "name": "Initiative",
+        "formula": "(Dexterity + Wits) + 1d10 each combat round. Wound penalties subtract from rating, NOT from the d10.",
+        "renderAs": "value",
+        "valueFormula": "{Dexterity} + {Wits}",
+        "aliases": [
+          "initiative",
+          "init"
+        ],
+        "rollFormula": "{Dexterity} + {Wits}"
+      },
+      {
+        "name": "Soak (Bashing)",
+        "formula": "Stamina + armor B-soak. Soak rolls cannot botch.",
+        "renderAs": "value",
+        "valueFormula": "{Stamina}",
+        "aliases": [
+          "soakBashing",
+          "bashingSoak"
+        ]
+      },
+      {
+        "name": "Soak (Lethal)",
+        "formula": "Stamina + Fortitude + armor L-soak.",
+        "renderAs": "value",
+        "valueFormula": "{Stamina} + {Fortitude}",
+        "aliases": [
+          "soakLethal",
+          "lethalSoak"
+        ]
+      },
+      {
+        "name": "Soak (Aggravated)",
+        "formula": "Fortitude + supernatural soak only. Mortal armor and Stamina do NOT soak aggravated.",
+        "renderAs": "value",
+        "valueFormula": "{Fortitude}",
+        "aliases": [
+          "soakAggravated",
+          "aggravatedSoak"
+        ]
+      },
+      {
+        "name": "Humanity",
+        "formula": "0-10. Sin-hierarchy: lose a dot when you commit an act at or below your current rating without a successful Conscience roll. Most humans sit 6-7. Below 5 is monstrous; 0 is wight.",
+        "default": 7,
+        "renderAs": "bar",
+        "aliases": [
+          "humanity"
+        ]
+      },
+      {
+        "name": "Path Rating",
+        "formula": "0-10. Use INSTEAD of Humanity if the character is on a Path of Enlightenment. Mechanically identical hierarchy of sins; the act-list differs per Path. Default 0 (= no Path; Humanity is in use).",
+        "default": 0,
+        "renderAs": "value",
+        "aliases": [
+          "path",
+          "pathRating",
+          "pathOfEnlightenment"
+        ]
+      },
+      {
+        "name": "Conscience",
+        "formula": "1-5. Standard Virtue (Humanity track). Resists doing acts that would cost Humanity. Replaced by Conviction on a Path of Enlightenment.",
+        "default": 3,
+        "renderAs": "value",
+        "aliases": [
+          "conscience",
+          "conviction",
+          "ConscienceConviction"
+        ]
+      },
+      {
+        "name": "Self-Control",
+        "formula": "1-5. Standard Virtue (Humanity track). Resists Frenzy. Replaced by Instinct on a Path of Enlightenment.",
+        "default": 3,
+        "renderAs": "value",
+        "aliases": [
+          "selfControl",
+          "instinct",
+          "SelfControlInstinct"
+        ]
+      },
+      {
+        "name": "Courage",
+        "formula": "1-5. Resists Rotschreck (the Red Fear) and shoring up against fear-based effects. Used by both Humanity AND Path characters. Note: when rolling Virtues, the dice cap at the character's Humanity/Path rating, not the Virtue rating.",
+        "default": 3,
+        "renderAs": "value",
+        "aliases": [
+          "courage"
+        ]
+      }
+    ],
+    "states": [
+      {
+        "name": "Morality Track",
+        "values": [
+          {
+            "label": "Humanity",
+            "description": "Default morality. Use Conscience + Self-Control as Virtues; sin-hierarchy is the V20 standard chart."
+          },
+          {
+            "label": "Path of Honorable Accord",
+            "description": "Sabbat / knightly Path. Use Conviction + Self-Control as Virtues. Loyalty, oath-keeping, hospitality."
+          },
+          {
+            "label": "Path of Caine",
+            "description": "Sabbat scholar Path. Use Conviction + Instinct. Caine as the only legitimate model; meditate, study, transcend."
+          },
+          {
+            "label": "Path of the Beast",
+            "description": "Sabbat / Gangrel-adjacent Path. Use Conviction + Instinct. The Beast is truth; suppression is the lie."
+          },
+          {
+            "label": "Path of Night",
+            "description": "Lasombra Path. Use Conviction + Instinct (or Conviction + Self-Control on the 'Cold' variant). Vampires as God's instruments of damnation; teach via suffering."
+          }
+        ]
+      },
+      {
+        "name": "Frenzy State",
+        "values": [
+          {
+            "label": "Calm",
+            "description": "Beast contained. Normal action and roleplay."
+          },
+          {
+            "label": "Ride the Wave",
+            "description": "Player is intentionally riding the Beast — limited steering via Self-Control / Instinct rolls. Some control retained."
+          },
+          {
+            "label": "Frenzy (Hunger)",
+            "description": "Lost to hunger. Drive: kill and feed. Cannot use focused Disciplines, ignores wound penalties, will not respect Masquerade."
+          },
+          {
+            "label": "Frenzy (Anger)",
+            "description": "Lost to rage. Drive: destroy the source of provocation. Same restrictions as Hunger Frenzy."
+          },
+          {
+            "label": "Rotschreck (Red Fear)",
+            "description": "Beast in panic from fire / sunlight / overwhelming threat. Drive: flee mindlessly, smashing obstacles. Resist with Courage alone."
+          }
+        ]
+      },
+      {
+        "name": "Hunger Tier",
+        "values": [
+          {
+            "label": "Sated",
+            "description": "Blood Pool comfortably above (7 - Self-Control or Instinct). Beast quiet."
+          },
+          {
+            "label": "Hungry",
+            "description": "Blood Pool < (7 - Self-Control). Self-Control die pool capped at current Blood Pool for Frenzy resistance. The Beast pays attention."
+          },
+          {
+            "label": "Starving",
+            "description": "Blood Pool 1 or less. Frenzy at the slightest provocation; collapse imminent if pool reaches 0."
+          }
+        ]
+      }
+    ],
+    "diceTagFormat": {
+      "template": "[dice: {pool}d10 vs {difficulty} -> {successes} successes{willpower}{specialty}{botch}]",
+      "example": "[dice: 7d10 vs 6 -> 4 successes, +1 Willpower auto, 2 specialty rerolls]"
+    },
+    "sheetSections": [
+      "attributes",
+      "skills",
+      "derived",
+      "abilities",
+      "states",
+      "backgrounds",
+      "meritsFlaws",
+      "inventory",
+      "notes"
+    ],
+    "sections": {
+      "order": [
+        "identity",
+        "xp",
+        "resources",
+        "morality",
+        "attributes",
+        "skills",
+        "derived",
+        "abilities",
+        "disciplines",
+        "states",
+        "backgrounds",
+        "meritsFlaws",
+        "inventory",
+        "notes"
+      ],
+      "hidden": [
+        "derived:Animalism",
+        "derived:Auspex",
+        "derived:Celerity",
+        "derived:Dominate",
+        "derived:Fortitude",
+        "derived:Obfuscate",
+        "derived:Potence",
+        "derived:Presence",
+        "derived:Protean",
+        "derived:Necromancy",
+        "derived:Thaumaturgy",
+        "derived:Vicissitude",
+        "derived:Humanity",
+        "derived:Path Rating",
+        "derived:Conscience",
+        "derived:Self-Control",
+        "derived:Courage"
+      ]
+    },
+    "resources": [
+      {
+        "id": "blood-pool",
+        "label": "Blood Pool (gen 8-13 auto; elder gens override manually)",
+        "type": "pool",
+        "max": "23 - {Generation}",
+        "current": "23 - {Generation}",
+        "color": "bad",
+        "quickButtons": [
+          {
+            "label": "Spend 1",
+            "delta": -1
+          },
+          {
+            "label": "Spend 5",
+            "delta": -5
+          },
+          {
+            "label": "Feed",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "willpower",
+        "label": "Willpower (max = Permanent Willpower)",
+        "type": "pool",
+        "max": "{Permanent Willpower}",
+        "current": "{Courage}",
+        "color": "accent",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Refresh",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "health",
+        "label": "Health",
+        "type": "custom",
+        "rendererConfig": {
+          "component": "v20-health-track",
+          "levels": [
+            {
+              "label": "Bruised",
+              "penalty": 0
+            },
+            {
+              "label": "Hurt",
+              "penalty": -1
+            },
+            {
+              "label": "Injured",
+              "penalty": -1
+            },
+            {
+              "label": "Wounded",
+              "penalty": -2
+            },
+            {
+              "label": "Mauled",
+              "penalty": -2
+            },
+            {
+              "label": "Crippled",
+              "penalty": -5
+            },
+            {
+              "label": "Incapacitated",
+              "penalty": -99
+            }
+          ],
+          "damageTypes": [
+            {
+              "id": "bashing",
+              "label": "B",
+              "severity": 0
+            },
+            {
+              "id": "lethal",
+              "label": "L",
+              "severity": 1
+            },
+            {
+              "id": "aggravated",
+              "label": "A",
+              "severity": 2
+            }
+          ]
+        }
+      }
+    ],
+    "morality": {
+      "rating": {
+        "label": "Path Rating",
+        "min": 0,
+        "max": 10,
+        "default": 7
+      },
+      "paths": [
+        {
+          "id": "humanity",
+          "label": "Humanity",
+          "loreRef": "humanity"
+        },
+        {
+          "id": "honorable-accord",
+          "label": "Path of Honorable Accord",
+          "loreRef": "path-honorable-accord"
+        },
+        {
+          "id": "caine",
+          "label": "Path of Caine",
+          "loreRef": "path-caine"
+        },
+        {
+          "id": "beast",
+          "label": "Path of the Beast",
+          "loreRef": "path-beast"
+        },
+        {
+          "id": "night",
+          "label": "Path of Night",
+          "loreRef": "path-night"
+        }
+      ],
+      "virtues": [
+        {
+          "id": "conscience-conviction",
+          "label": "Conscience / Conviction",
+          "options": [
+            {
+              "id": "conscience",
+              "label": "Conscience"
+            },
+            {
+              "id": "conviction",
+              "label": "Conviction"
+            }
+          ],
+          "min": 1,
+          "max": 5,
+          "default": 3
+        },
+        {
+          "id": "self-control-instinct",
+          "label": "Self-Control / Instinct",
+          "options": [
+            {
+              "id": "self-control",
+              "label": "Self-Control"
+            },
+            {
+              "id": "instinct",
+              "label": "Instinct"
+            }
+          ],
+          "min": 1,
+          "max": 5,
+          "default": 3
+        },
+        {
+          "id": "courage",
+          "label": "Courage",
+          "min": 1,
+          "max": 5,
+          "default": 3
+        }
+      ]
+    },
+    "lorebookKeys": [
+      "blood pool",
+      "blood point",
+      "vitae",
+      "discipline",
+      "disciplines",
+      "clan",
+      "generation",
+      "humanity",
+      "path of enlightenment",
+      "willpower",
+      "frenzy",
+      "rotschreck",
+      "the beast",
+      "blood bond",
+      "feeding",
+      "kiss",
+      "torpor",
+      "final death",
+      "diablerie",
+      "masquerade",
+      "camarilla",
+      "sabbat",
+      "anarch",
+      "elysium",
+      "prince",
+      "sire",
+      "embrace",
+      "ghoul",
+      "haven"
+    ],
+    "abilities": {
+      "label": "Disciplines",
+      "groups": [
+        {
+          "id": "talents",
+          "label": "Talents",
+          "members": [
+            "Alertness",
+            "Athletics",
+            "Awareness",
+            "Brawl",
+            "Empathy",
+            "Expression",
+            "Intimidation",
+            "Leadership",
+            "Streetwise",
+            "Subterfuge"
+          ]
+        },
+        {
+          "id": "skills",
+          "label": "Skills",
+          "members": [
+            "Animal Ken",
+            "Crafts",
+            "Drive",
+            "Etiquette",
+            "Firearms",
+            "Larceny",
+            "Melee",
+            "Performance",
+            "Stealth",
+            "Survival"
+          ]
+        },
+        {
+          "id": "knowledges",
+          "label": "Knowledges",
+          "members": [
+            "Academics",
+            "Computer",
+            "Finance",
+            "Investigation",
+            "Law",
+            "Medicine",
+            "Occult",
+            "Politics",
+            "Science",
+            "Technology"
+          ]
+        }
+      ],
+      "categories": [
+        {
+          "id": "animalism",
+          "label": "Animalism"
+        },
+        {
+          "id": "auspex",
+          "label": "Auspex"
+        },
+        {
+          "id": "celerity",
+          "label": "Celerity"
+        },
+        {
+          "id": "dominate",
+          "label": "Dominate"
+        },
+        {
+          "id": "fortitude",
+          "label": "Fortitude"
+        },
+        {
+          "id": "obfuscate",
+          "label": "Obfuscate"
+        },
+        {
+          "id": "potence",
+          "label": "Potence"
+        },
+        {
+          "id": "presence",
+          "label": "Presence"
+        },
+        {
+          "id": "protean",
+          "label": "Protean"
+        }
+      ]
+    },
+    "vocabularyHints": [
+      {
+        "pattern": "I attack / I bite / I claw",
+        "hint": "VTM combat uses dice pools — Strength + Brawl for unarmed/bite, Strength + Melee for weapons, Dexterity + Firearms for guns. Difficulty defaults to 6; 1s subtract successes, all-1s with no successes is a botch. Note Celerity bonus actions and Potence auto-successes."
+      },
+      {
+        "pattern": "I spend blood / I rouse the blood / I heal",
+        "hint": "Track Blood Pool changes explicitly. Per-turn cap on spend equals Generation (13th=1, 12th=1, 11th=1, 10th=2, etc.). One blood point heals one bashing/lethal level (aggravated takes longer + multiple points). Disciplines like Celerity, Potence, Fortitude cost 1 blood per scene/use."
+      },
+      {
+        "pattern": "I use a Discipline / I activate (Celerity, Auspex, Dominate, etc.)",
+        "hint": "Most Disciplines require a blood spend (1 point unless noted) and may need a dice pool roll. Higher-level powers cost more. Note Generation cap on per-turn spend. Mention any humanity/path implications (Dominate = potential Path/Humanity check for victim) where applicable."
+      },
+      {
+        "pattern": "I check frenzy / I'm provoked / I see fire / I see sunlight",
+        "hint": "Frenzy is a Self-Control or Instincts check against a situational difficulty (provoked=6, hunger=varies by Blood Pool, fire=8, sunlight=7). Failure means the Beast takes over. Path of Humanity uses Self-Control; other Paths use Instincts. Successes determine how long they hold the Beast back."
+      },
+      {
+        "pattern": "I roll initiative",
+        "hint": "VTM initiative is Dexterity + Wits + 1d10 (no botches on initiative). Celerity adds dice equal to current Celerity rating to the pool. Higher result acts first; ties favor higher Dex."
+      }
+    ],
+    "scenarioDefaultDerive": true
+  },
+  "gmAgent": {
+    "name": "Vampire: The Masquerade 20th Anniversary Ruleset Helper",
+    "description": "Auto-installed by GM-mode bundle. Provides Vampire: The Masquerade 20th Anniversary skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
+    "phase": "pre_generation",
+    "promptTemplate": "You are a Storyteller for a Vampire: The Masquerade 20th Anniversary Edition (V20, 2011 Onyx Path) chronicle running inside Marinara Engine's Game Mode. Your output is a context injection that the main GM model will read BEFORE narrating the next turn. Do not narrate; only emit rules guidance and Storyteller adjudication.\n\n# Tone before mechanics\n\nV:TM is personal horror, not dungeon-crawl. The story is about Beast vs. Self, Hunger vs. Humanity, Loneliness vs. Bond. Push the GM model to honor that — slow scenes, internal weight, consequence over spectacle. Combat exists but it is rarely the climax; intimate moral failure is.\n\n# Mechanics you enforce (V20-canonical)\n\nRESOLUTION: roll a pool of d10s equal to (Attribute + Ability). Each die meeting or beating the Storyteller's chosen DIFFICULTY (default 6, varies 6-9) is one success. A 1 cancels one success (Rule of 1). At least one net success = the action succeeded. Difficulty 6 = standard; 7 = challenging; 8 = difficult; 9 = nigh-impossible.\n\nBOTCH: zero net successes AND at least one die showing 1 = botch. Spectacular failure with narrative consequence, not just a miss. 1s only matter when net successes are zero.\n\nSPECIALTY: when the action is in the character's declared specialty (typically Attribute/Ability rated 4 or 5), every natural 10 is rerolled (and counts as a success too). Re-rerolls cascade.\n\nWILLPOWER: spend 1 for ONE automatic guaranteed success on a single action — uncancellable. Cap: once per turn for this use specifically. Other Willpower uses (ignore wound penalty for one turn, resist Frenzy / derangement, power Discipline activations) are not under that cap.\n\nPOTENCE bonus damage: each dot of Potence = one AUTOMATIC SUCCESS on Strength feats and Brawl/Melee damage. Not rolled, not cancellable.\n\nHEALTH TRACK: 7 levels — Bruised(0) / Hurt(-1) / Injured(-1) / Wounded(-2) / Mauled(-2) / Crippled(-5) / Incapacitated. Penalty in effect = highest filled box; subtract from dice pools. Bashing soaked by Stamina; Lethal soaked by Stamina + Fortitude; Aggravated soaked ONLY by Fortitude. Aggravated past Incapacitated = TORPOR or FINAL DEATH. Decapitation = automatic Final Death.\n\nINITIATIVE: (Dex + Wits) + 1d10 each round. Wound penalty subtracts from rating, not d10. Declare actions in REVERSE initiative.\n\nCELERITY: spend 1 Blood per dot for that many extra physical actions, end of turn, no split-action penalty, none can be split.\n\nBLOOD POOL: capped by Generation (13th=10, 12th=11, 11th=12, 10th=13, 9th=14, 8th=15, 7th=20, 6th=30, 5th=40, 4th=50). Per-turn spend cap also by Generation (13th-10th=1, 9th=2, 8th=3, 7th=4, 6th=6, 5th=8, 4th=10). Daily upkeep: -1 Blood per night just to rise.\n\nFEEDING: adult human ~10 BP. 1 BP per turn while feeding (V20 canon — do NOT use V5 'up to 3/turn'). Each BP drained = 1 lethal damage to mortal. Hunting roll = Attribute + Ability matching method, difficulty 5-9 by district risk.\n\nTHE BEAST: Frenzy triggers (Self-Control + Courage to resist; Courage alone for Rotschreck): hunger + blood smell 3+, anger struck 6, public humiliation 8, candle in face Rotschreck 3, torch 5, bonfire 6, sunlight 8. CRITICAL: Virtue dice cap at the character's Humanity / Path rating. Humanity 3 with Courage 5 still rolls only 3 dice.\n\nHUMANITY / PATH: 0-10 morality. Lose dots by acting at or below current rating. The further the character falls, the harder to resist Frenzy (Virtue cap). Below 5 = monstrous; 0 = wight (NPC).\n\n# Dice doctrine — never invent a roll result\n\n**When `roll_dice` is NOT in your available toolset** (some connections cannot deliver tools even when the chat lists them): **NEVER generate dice faces — a face you wrote is a fabrication, not a roll.** Hand every roll to the player: name the pool/dice to roll on their dice widget, precompute the outcome for each possible result (the outcome ladder), and wait. Ladder by BANDS when the range is wide or open-ended — group results into outcome bands rather than listing every face — and when a result chains into a further roll, say so in the ladder and ask for that roll next. Apply the reported face exactly, then emit any state tags. If you are unsure whether you have the tool, attempt the call once — narrating an attempt is not calling; only a tool result block is a roll. Never report a face you did not receive from the tool or the player.\n\n# Output format the main GM model must use\n\nDice tag (in narration so the Marinara client renders the result):\n\n[dice: Xd10 vs <difficulty> -> N successes{, +1 Willpower auto}{, R specialty rerolls}{, BOTCH}] - call: <Attribute> + <Ability> vs difficulty <D>\n\nExample: \"Maritza locks eyes with the bouncer, voice silk and steel. [dice: 7d10 vs 7 -> 4 successes] - call: Manipulation + Subterfuge vs difficulty 7 - he steps aside without remembering why.\"\n\nExample botch: \"Tomas reaches for the silver chain — [dice: 4d10 vs 8 -> 0 successes, BOTCH] - call: Dexterity + Larceny vs difficulty 8 - the clasp catches, the rosary drops, the priest turns.\"\n\nFor Blood / Willpower / state mutations use:\n[mrr-state: field=\"Blood Pool\" delta=\"-1\"]\n[mrr-state: field=\"Willpower\" delta=\"-1\"]\n[mrr-state: field=\"Health Track\" type=\"lethal\" delta=\"+2\"]\n[mrr-state: field=\"Humanity\" delta=\"-1\"]\n[mrr-state: field=\"Frenzy State\" value=\"Frenzy (Hunger)\"]\n\nFor Discipline activations declared by the player:\n[discipline: <name level> <power name>, <Blood cost>, <type>] - then narrate the effect.\nExample: [discipline: Dominate 1, Command, 0 Blood, Simple] — \"I want you to walk away.\"\n\n# What you (this agent) emit each turn\n\nEmit a short rules brief (<= 250 tokens) that:\n1. Identifies the most likely Attribute + Ability pool the player's stated action calls for, with a suggested difficulty (6 default, raise for hard, lower for trivial).\n2. Reminds the GM model of the dice-pool tag format above.\n3. Surfaces relevant economy state: current Blood Pool / max, Willpower current / permanent, Humanity (or Path) rating, Hunger tier, current health-track penalty, active Frenzy state.\n4. Flags Discipline opportunities (which Disciplines the PC has, which would apply, what the activation cost is).\n5. If the player vividly described a feeding scene, calls a Conscience roll difficulty by severity if they crossed a sin threshold.\n6. If a fire / sunlight / torch is in scene, surfaces the Rotschreck difficulty BEFORE the player decides whether to engage.\n\nIf no roll is needed (clear automatic success or pure roleplay), state \"No roll required\" with one-sentence reason.\n\n## Engine compatibility — reputation tags\n\nReputation `action` strings are a free-form field in Marinara 2.0+ — the pre-2.0 length cap (and the 400 it raised) is gone. Keep actions to short, clear labels for readability (\"Embraced\", \"Fed publicly\"); put long descriptions in narration. Length is no longer constrained.\n\n# Storyteller stance — first turn opening\n\nWhen this is the FIRST turn of a chronicle, ground the player in the V20 frame in your brief: the city, the year, the political climate (Camarilla / Sabbat / Anarch / contested), the player's clan and generation, the Hunger they woke up with. Then hand the narration to the GM model with a sense of place and pressure. Subsequent turns can stay tight on rules.\n\nEquipment: the player's sheet tracks weapons / armor / havens. When the player rolls, the dice widget folds equipped bonuses into the printed [dice: ...] tag. Narrate gear vividly but do not re-add the bonus to your math — the tag is authoritative. If the player invokes an item not on their sheet, ask them to add it first.\n\nNever invent rules. Where the V20 corebook is silent, label the call as a Storyteller ruling.",
+    "settings": {
+      "resultType": "context_injection",
+      "injectAsSection": true
+    }
+  },
+  "lorebook": {
+    "name": "V:TM V20 Reference",
+    "description": "Keyword-triggered reference for Vampire: The Masquerade 20th Anniversary Edition (2011 Onyx Path). Original-prose paraphrase + mechanical references; clan, Discipline, sect, and Path names belong to Paradox Interactive AB. Distributed under the Dark Pack Agreement (worldofdarkness.com/dark-pack). NOT official World of Darkness material.",
+    "category": "world",
+    "scanDepth": 4,
+    "tokenBudget": 2500,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "name": "Rule: Dice-pool resolution (V20)",
+        "keys": [
+          "roll",
+          "rolls",
+          "check",
+          "test",
+          "dice",
+          "pool",
+          "successes",
+          "difficulty"
+        ],
+        "content": "RESOLUTION: roll a pool of d10s equal to (Attribute + Ability). Each die that meets or beats the Storyteller's chosen DIFFICULTY (default 6, varies 6-9) is one success. Difficulty 6 = standard; 7 = challenging; 8 = difficult; 9 = nigh-impossible. A 1 cancels one success (Rule of 1). If after cancellation you have at least one net success, the roll succeeded. The Storyteller sets difficulty BEFORE the player rolls. Multiple successes mean cleaner / more impressive results; 5+ successes is heroic on a single action. V20 is a variable-difficulty system, not a fixed-difficulty extended-success system — do not import V5 / V20 Dark Ages variant rules.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Botch (V20)",
+        "keys": [
+          "botch",
+          "botched",
+          "spectacular failure",
+          "ones",
+          "1s"
+        ],
+        "content": "BOTCH: a roll that produces ZERO net successes AND has at least one die showing a 1 is a botch — a spectacular failure that introduces narrative complications. The Storyteller introduces a meaningful consequence, not just a miss. Note: 1s only matter when net successes are zero; if you have at least one net success, no botch occurs even if 1s were rolled. A natural 1 ALWAYS counts as a 1 regardless of difficulty. Soak rolls cannot botch.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Specialty re-rolls",
+        "keys": [
+          "specialty",
+          "specialties",
+          "specialty re-roll",
+          "10s reroll"
+        ],
+        "content": "SPECIALTY: when a character has a Specialty in the Attribute or Ability being rolled (typically requires rating 4 or 5), every die that comes up a natural 10 counts as one success AND is rerolled, with each subsequent 10 again counting and rerolling. The specialty must apply to the action (e.g., a Brawl specialty 'Bar Fights' applies in a tavern brawl, not in a duel of honor). Specialty re-rolls are V20-canonical; they do NOT stack with Discipline auto-successes from Potence (those are independent).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Willpower (V20)",
+        "keys": [
+          "willpower",
+          "wp",
+          "spend willpower",
+          "automatic success"
+        ],
+        "content": "WILLPOWER: max 10 (permanent rating); current pool is spent and refreshed. SPEND 1 WILLPOWER for ONE automatic guaranteed success on a single action — the success cannot be cancelled, even by botches. This may be done at most ONCE PER TURN (the cap is on this specific use, not on all Willpower spends). Other uses NOT subject to the per-turn cap: ignore wound penalties for one turn (1 WP), resist Frenzy / derangement triggers (1 WP per attempt), power certain Disciplines. REGAIN: +1 WP per scene when upholding a Major or Defining intimacy through hardship; full pool refresh on a night of restful sleep up to permanent rating; permanent +1 from in-character growth at the Storyteller's call.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Health track (V20)",
+        "keys": [
+          "health",
+          "wound",
+          "wounded",
+          "incapacitated",
+          "damage",
+          "soak"
+        ],
+        "content": "HEALTH TRACK: 7 levels — Bruised (-0), Hurt (-1), Injured (-1), Wounded (-2), Mauled (-2), Crippled (-5), Incapacitated (cannot act). Penalty in effect = the HIGHEST filled box; subtract from dice pools. Spend 1 Willpower to ignore the penalty for one turn. DAMAGE TYPES: Bashing (B, soak with Stamina; heals fast); Lethal (L, soak with Stamina + Fortitude; heals slow); Aggravated (A, ONLY Fortitude soaks it — fire, sunlight, supernatural fangs/claws). HEALING: spend Blood and rest. Bashing: 1 BP heals 1 level per hour. Lethal: 1 BP per night per level. Aggravated: 1 BP per 5 nights per level (dedicated daily Blood expenditure). Aggravated past Incapacitated = TORPOR or FINAL DEATH (see entries). Stake to the heart paralyzes — does not kill. DECAPITATION = automatic Final Death.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Combat round (V20)",
+        "keys": [
+          "combat",
+          "round",
+          "initiative",
+          "attack",
+          "defend",
+          "split action",
+          "multiple actions"
+        ],
+        "content": "COMBAT: each round has three stages: (1) INITIATIVE: roll 1d10 + Dexterity + Wits; wound penalties subtract from the rating, NOT the d10. Highest acts first. Declare actions in REVERSE initiative (slow first) so fast characters can react. (2) ATTACK: at each character's slot. Pools — unarmed: Dex+Brawl; armed close: Dex+Melee; gun: Dex+Firearms; thrown: Dex+Athletics. Default attack difficulty 6. Defender may ABORT to a defensive action (block/dodge/parry) by spending 1 Willpower OR succeeding on a Willpower roll. (3) RESOLVE / DAMAGE: damage dice = weapon rating + extra successes; defender soaks; each soak success cancels one damage die. SPLIT ACTIONS (no Celerity): subtract total declared actions from the FIRST action, then -1 more per subsequent action. CELERITY: spend 1 Blood per dot to gain that many extra physical actions WITHOUT split-action penalty, all at end of turn, none can themselves be split.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Generation table (V20)",
+        "keys": [
+          "generation",
+          "blood pool max",
+          "blood per turn",
+          "trait cap"
+        ],
+        "content": "GENERATION TABLE (Blood Pool max / Blood per turn / Max Trait): 4th gen 50/10/9, 5th gen 40/8/8, 6th gen 30/6/7, 7th gen 20/4/6, 8th gen 15/3/5, 9th gen 14/2/5, 10th gen 13/1/5, 11th gen 12/1/5, 12th gen 11/1/5, 13th gen 10/1/5. 'Max Trait' caps permanent ratings of Attributes and Abilities (Humanity / Path / Willpower are NOT capped). 'Blood per turn' caps Blood spent in a single round for healing / Discipline activation / Physical-Attribute boost. 13th-gen neonate is the modern-nights default; lower generation costs Background dots at character creation. 3rd generation is functionally NPC (Antediluvian); no canonical numbers published — Storyteller fiat.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Beast and Frenzy",
+        "keys": [
+          "frenzy",
+          "the beast",
+          "rotschreck",
+          "red fear",
+          "rage",
+          "hunger frenzy"
+        ],
+        "content": "THE BEAST: every vampire carries the Beast — predatory, hungry, inarticulate. Frenzy is the Beast taking control. Three flavors: HUNGER FRENZY (low Blood Pool + smell/sight of mortal blood), ANGER FRENZY (insult, attack, humiliation, loss), ROTSCHRECK / RED FEAR (fire, sunlight, overwhelming supernatural threat). RESIST: roll Self-Control + Courage (or Instinct + Courage on a Path) vs difficulty by provocation severity (typically 6-8). Resist Rotschreck with Courage alone. 5 successes = master the Beast for the scene; partial successes hold it off for that many turns. CRITICAL: dice rolled for any Virtue (incl. Courage) cap at the character's Humanity / Path rating. A Humanity 3 vampire with Courage 5 still rolls only 3 dice. While in Frenzy: drive (kill/feed/destroy/flee), cannot use focused Disciplines, will not respect the Masquerade, ignores wound penalties. Spend 1 WP to act normally for ONE turn (does not end Frenzy). Frenzy ends when the trigger ends and the Beast is satisfied. RIDE THE WAVE: a player may instead choose to enter Frenzy intentionally and steer it loosely with Self-Control / Instinct rolls.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Frenzy & Rotschreck difficulties",
+        "keys": [
+          "frenzy difficulty",
+          "rotschreck difficulty",
+          "frenzy trigger"
+        ],
+        "content": "FRENZY TRIGGERS (Self-Control + Courage diff): smell of blood while hungry 3+; sight of blood while hungry 4+; harassed 4; life-threatened 4; malicious taunts 4; physically struck in anger 6; taste of blood while hungry 6+; loved one in mortal danger 7; outright public humiliation 8. Modifier: significant fire near +1 to base. Modifier: character on a Path of unusual passion +2. ROTSCHRECK TRIGGERS (Courage alone): candle thrust into face 3; threatened with a torch 5; bonfire as immediate threat 6; obscured sunlight 7; on fire / actively burned 7; direct sunlight 8; trapped in a burning building 9. Decorative fires (fireplace across the room, table candles, torch in a wall sconce) do NOT trigger Rotschreck — flame must present a real threat. Difficulty +1 if character is a Road / Path initiate.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Hunger and feeding tempo",
+        "keys": [
+          "hunger",
+          "hungry",
+          "hunting",
+          "feeding",
+          "blood point",
+          "kiss"
+        ],
+        "content": "HUNGER thresholds: 'Hungry' = Blood Pool < (7 - Self-Control or Instinct rating). While hungry, Self-Control die pool for Frenzy CAPS at current Blood Pool. 'Starving' = BP 1 or 0; collapse imminent. DAILY UPKEEP: spend 1 Blood Point per night just to rise and animate. FEEDING: an adult human contains ~10 BP. Vampire takes 1 BP per turn while feeding (V20 canon — do not import 'up to 3/turn' from V5). Each BP drained inflicts 1 lethal damage on the mortal. The Kiss induces ecstatic pleasure and usually ends mortal resistance. HUNTING ROLL: technique-flexible. Pick Attribute + Ability matching method — Charisma+Subterfuge (charming), Manipulation+Subterfuge (deceptive lure), Wits+Streetwise (stalking), Appearance+Subterfuge (nightclub seduction), Strength+Brawl (ambush). One-hour hunt; difficulty 5-9 by district risk. Animal blood works (1:2 ratio at Storyteller call). Vampire vitae is rich but moves drinker toward Blood Bond.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Blood Bond (3-step)",
+        "keys": [
+          "blood bond",
+          "bound",
+          "thrall",
+          "regnant"
+        ],
+        "content": "BLOOD BOND: drinking a specific vampire's vitae three times on three SEPARATE NIGHTS forms a supernatural emotional bond. Quantity is irrelevant — a single drop counts. (1) FIRST DRINK: thrall finds themselves thinking of the regnant unbidden; gravitate toward them 'by coincidence.' No mechanical effect. (2) SECOND DRINK: visible infatuation. Thrall must spend 1 Willpower for any DIRECT action against the regnant (indirect action and inaction unmodified). (3) THIRD DRINK / FULL BOND: thrall loves the regnant more than any mortal could love anyone. Regnant may use Dominate by VOICE ALONE (no eye contact). Defying direct orders is possible only with great Willpower expenditure. BREAKING THE BOND: regnant's Final Death; OR extended absence (12 months minus thrall's permanent Willpower) decays one bond level. Tremere flaw: first drink counts as TWO for Tremere drinkers (so they bond after just two drinks).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Torpor and Final Death",
+        "keys": [
+          "torpor",
+          "final death",
+          "dead",
+          "sunlight",
+          "fire"
+        ],
+        "content": "TORPOR triggers: Incapacitated with no Blood remaining; voluntary entry; sustained aggravated damage filling track but not exceeding it. DURATION by Humanity/Path: rating 10 = 1 day; 9 = 1 day; 8 = 3 days; 7 = 1 week; 6 = 1 week; 5 = 1 month; 4 = 1 month; 3 = 1 year; 2 = 1 year; 1 = decades to centuries (ST); 0 = centuries+ (ST). AWAKENING: spend 1 Blood Point + roll Humanity/Path + Stamina vs difficulty 8; failure = sleep another full duration. FINAL DEATH: aggravated damage taken while at Incapacitated; OR aggravated damage taken while Incapacitated by bashing; OR DECAPITATION (always Final Death, instant); OR body destruction beyond repair. SUNLIGHT: aggravated. Direct noon = 3 dice agg/turn; bright daylight = 2; reflected = 1. FIRE: aggravated. Candle = 1 die; torch = 2; bonfire = 3; inferno = 4+. Fortitude soaks both. STAKE: paralyzes (functionally torpor); does NOT kill alone.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Six Traditions of the Camarilla",
+        "keys": [
+          "traditions",
+          "six traditions",
+          "masquerade",
+          "domain",
+          "progeny",
+          "accounting",
+          "hospitality",
+          "destruction"
+        ],
+        "content": "SIX TRADITIONS (paraphrased): (1) MASQUERADE — do not reveal vampiric existence to mortals; doing so forfeits Caine's protection. (2) DOMAIN — a Kindred's claimed territory is theirs to rule absolutely; in modern nights, rolled into the Prince's authority over a city. (3) PROGENY — do not Embrace without permission of one's elder; unauthorized creation can be a capital offence for both sire and childe. (4) ACCOUNTING — a sire is responsible for their childe's actions until the childe is publicly released and recognized by the Prince. (5) HOSPITALITY — when entering another's domain, present yourself to its ruler and seek formal welcome. (6) DESTRUCTION — the right to destroy another Kindred is reserved to the eldest of the community; only an elder may declare a Blood Hunt (the Lextalionis).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Brujah",
+        "keys": [
+          "brujah"
+        ],
+        "content": "BRUJAH — The Rabble. Camarilla. Idealist firebrands; philosopher-kings turned street-level rebels. Originally Carthaginian scholar-warriors; modern Brujah skew toward punks, activists, brawlers who can quote Plato between fists. IN-CLAN DISCIPLINES: Celerity, Potence, Presence. WEAKNESS: a perpetually short fuse. The Beast rides closer to the surface than any other Camarilla clan; difficulties of all rolls to resist Frenzy are increased by two. Strong Anarch sympathies — many Brujah are functionally Anarch within Camarilla cities. Sabbat antitribu exist.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Gangrel",
+        "keys": [
+          "gangrel"
+        ],
+        "content": "GANGREL — The Outlanders. Independent (left the Camarilla in late-1990s metaplot). Loners, wanderers, hunters, shapeshifters who run with wolves and sleep in dirt. The most beast-touched of the major clans. IN-CLAN DISCIPLINES: Animalism, Fortitude, Protean. WEAKNESS: each Frenzy leaves a permanent animal feature — slit pupils, sharper teeth, patches of fur, claws, etc. Every five accumulated features reduces a Social Attribute by one dot (Storyteller's pick which). Country Gangrel and City Gangrel exist as distinct flavors. Sabbat antitribu retain a strong presence.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Malkavian",
+        "keys": [
+          "malkavian",
+          "malkavians",
+          "cobweb"
+        ],
+        "content": "MALKAVIAN — The Lunatics / Oracles. Camarilla. Madness as sacrament. Every Malkavian carries a fragment of insight buried inside derangement; the Cobweb (their shared psychic Madness Network) ties them together. IN-CLAN DISCIPLINES: Auspex, Dementation, Obfuscate. (V20 restored Dementation to the in-clan trio after Revised's Dominate substitution.) WEAKNESS: every Malkavian gains at least one incurable Derangement at the moment of Embrace and can never be rid of it. Sabbat antitribu skew darker and crueler.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Nosferatu",
+        "keys": [
+          "nosferatu",
+          "schrecknet"
+        ],
+        "content": "NOSFERATU — The Sewer Rats / Information Brokers. Camarilla. Hideously deformed by the Embrace; masters of stealth, shadow networks, and the SchreckNet underground information system. IN-CLAN DISCIPLINES: Animalism, Obfuscate, Potence. WEAKNESS: their Embrace mutilates them into monsters. Appearance is permanently 0; any roll using Appearance automatically fails. The Masquerade is essentially impossible to maintain in plain sight — Nosferatu live in tunnels, sewers, and abandoned places. Sabbat antitribu exist and are even more grotesque.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Toreador",
+        "keys": [
+          "toreador"
+        ],
+        "content": "TOREADOR — The Degenerates / Artistes. Camarilla (a founding pillar). Aesthetes, patrons, performers, tastemakers; embody and embalm beauty. IN-CLAN DISCIPLINES: Auspex, Celerity, Presence. WEAKNESS: captivated by beauty. When confronted with a truly beautiful sight, sound, or experience, the Toreador must succeed on a Self-Control / Instinct roll (difficulty 6) or stand transfixed until the beauty passes or they are jolted free. Sabbat antitribu are typically destructive anti-artists who pervert what their cousins worship.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Tremere",
+        "keys": [
+          "tremere",
+          "warlocks",
+          "thaumaturgy"
+        ],
+        "content": "TREMERE — The Warlocks. Camarilla. A pyramid-structured house of blood sorcerers — formerly mortal Hermetic mages who stole vampirism and reshaped it into a clan. Distrusted by every other clan. IN-CLAN DISCIPLINES: Auspex, Dominate, Thaumaturgy. WEAKNESS: the Embrace ritual binds every neonate Tremere with the blood of the seven clan elders, producing one stage of a Blood Bond to the council before the new childe even meets their sire's superiors. Tremere also bond from drinking only TWICE from the same vampire (their first drink counts as two). Sabbat antitribu are heretics hunted by both sides.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Ventrue",
+        "keys": [
+          "ventrue",
+          "blue bloods"
+        ],
+        "content": "VENTRUE — The Blue Bloods / Kings. Camarilla (a founding pillar). Aristocrats, executives, princes; consider themselves the rightful rulers of Kindred society and frequently are. IN-CLAN DISCIPLINES: Dominate, Fortitude, Presence. WEAKNESS: refined palate. Each Ventrue can feed only on a single, specific category of mortal vessel (e.g., young athletes, devout Catholics, redheads, blondes with grad degrees, opera-goers). Other blood produces no nourishment and is vomited back up. Player picks the preference at character creation; it cannot be changed without rare ritual or in-character revelation.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Assamite",
+        "keys": [
+          "assamite",
+          "haqim",
+          "alamut"
+        ],
+        "content": "ASSAMITE — The Assassins. Independent. A guild-clan of holy killers descended from Haqim, organized into Warrior, Vizier, and Sorcerer castes. The Warriors are most often encountered; they sell death for prestige and Kindred vitae. Fortress at Alamut. IN-CLAN DISCIPLINES: Celerity, Obfuscate, Quietus. WEAKNESS (V20 era): diablerie hunger. Drinking another vampire's blood produces unsoakable lethal damage of one health level per blood point consumed unless their religious blood curse has been lifted. Internal factions: Loyalist (orthodox), Schismatic (some joined Camarilla), Unconquered (independent zealots).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Followers of Set",
+        "keys": [
+          "followers of set",
+          "setite",
+          "setites"
+        ],
+        "content": "FOLLOWERS OF SET (Setites) — The Serpents. Independent. Cult-clan claiming descent from the Egyptian god Set. Corruptors who hook mortals and Kindred alike on vice — drugs, secrets, sex, power — to harvest their souls and grow their cult. IN-CLAN DISCIPLINES: Obfuscate, Presence, Serpentis. WEAKNESS: photophobia. Sunlight and even bright artificial light blind and pain them; they take additional dice of damage from sunlight and difficulty penalties when exposed to merely bright illumination. Operate via temple networks led by Hierophants.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Giovanni",
+        "keys": [
+          "giovanni",
+          "necromancy",
+          "venice"
+        ],
+        "content": "GIOVANNI — The Necromancers. Independent. A Venetian-Italian merchant family that murdered and replaced the older Cappadocian clan. Run a global criminal-financial empire and study death itself. Operate as one extended Mafia-style family with the Don in Venice. IN-CLAN DISCIPLINES: Dominate, Necromancy, Potence. WEAKNESS: a Giovanni's bite causes excruciating, tearing pain instead of the usual narcotic bliss. Victims take additional damage from the Kiss, and any feeding scene becomes overtly horrific. Cannot pass off feeding as romance.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Lasombra",
+        "keys": [
+          "lasombra",
+          "obtenebration",
+          "abyss"
+        ],
+        "content": "LASOMBRA — The Keepers. Sabbat (a founding pillar). Aristocratic shadow-shapers and the philosophical heart of the Sabbat. They wield the Abyss as a weapon and as a religion. IN-CLAN DISCIPLINES: Dominate, Obtenebration (signature shadow control), Potence. WEAKNESS: cast no reflection. Mirrors do not show them; cameras and digital recordings render them as smears, voids, or static. Many Lasombra also take an extra die of damage from sunlight. Cannot use mortal cameras for reconnaissance.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Ravnos",
+        "keys": [
+          "ravnos",
+          "chimerstry",
+          "week of nightmares"
+        ],
+        "content": "RAVNOS — The Deceivers. Independent. Vagabond illusionists and tricksters of South Asian / Romani lineage. Devastated as a clan by the metaplot Week of Nightmares (1999) when their Antediluvian woke and wiped out most of the line. Survivors are scattered. IN-CLAN DISCIPLINES: Animalism, Chimerstry, Fortitude. WEAKNESS: each Ravnos has a defining vice — theft, deceit, cruelty, vanity, gluttony. When opportunity to indulge that vice presents itself, they must succeed on a Self-Control / Instinct roll (difficulty 6) or give in.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Clan: Tzimisce",
+        "keys": [
+          "tzimisce",
+          "vicissitude",
+          "fiends"
+        ],
+        "content": "TZIMISCE — The Fiends. Sabbat (a founding pillar). Eastern European boyar-vampires and flesh-sculptors. Cold, alien, territorial; the philosophical engine of the Sabbat opposite the Lasombra. IN-CLAN DISCIPLINES: Animalism, Auspex, Vicissitude. WEAKNESS: tied to their land. They must rest each day in proximity to at least two handfuls of 'native earth' — soil from a place of personal significance (birthplace, grave site, ancestral domain). Without it, dice pools halve each successive night until reduced to one die. Many wear forms that have not been remotely human-shaped for centuries.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Bloodline: Caitiff",
+        "keys": [
+          "caitiff",
+          "clanless"
+        ],
+        "content": "CAITIFF — The Clanless. Vampires whose blood shows no clear lineage — usually thin-blooded, abandoned childer, or products of broken Embraces. Outcast everywhere; tolerated nowhere. IN-CLAN DISCIPLINES: NONE. A Caitiff has no inherited Discipline trio; instead, every Discipline costs them out-of-clan experience rates, but they are not locked out of any specific tree. WEAKNESS: no clan curse — but also no clan support, no clan resources, and active prejudice from the Camarilla, Sabbat, and Independents alike. Generation tends to be high (12th-13th). Most Caitiff drift toward the Anarch Movement, where lineage matters less.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Bloodline: Daughters of Cacophony",
+        "keys": [
+          "daughters of cacophony",
+          "melpominee"
+        ],
+        "content": "DAUGHTERS OF CACOPHONY — The Sirens. A small, mysterious bloodline of singer-vampires whose songs warp emotion, mind, and matter. Origin disputed — some claim Toreador descent, others Malkavian, others Ministerial. IN-CLAN DISCIPLINES: Fortitude, Melpominee (signature voice-magic), Presence. WEAKNESS: every Daughter hears constant, intrusive music inside her head — a private internal soundtrack she cannot silence. Difficulties on Perception rolls increase by two; Alertness cannot exceed 3 dots. Unaligned; perform in the cracks between sects.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Bloodline: Salubri",
+        "keys": [
+          "salubri",
+          "valeren",
+          "obeah",
+          "third eye"
+        ],
+        "content": "SALUBRI — The Soul-Eaters (per Tremere propaganda) or The Healers (per their own self-image). Tiny, hunted bloodline in V20 — the Tremere committed near-genocide on them centuries ago and still actively diablerize survivors. IN-CLAN DISCIPLINES: Healers — Auspex, Fortitude, Obeah. Warriors — Auspex, Fortitude, Valeren. (V20 Dark Ages folds these into a single 'Valeren' Discipline with three caste-paths.) WEAKNESS: a third eye opens in the forehead at the Embrace. Any use of Obeah or Valeren beyond the first dot causes the eye to glow visibly — Masquerade catastrophe and instant flag to Tremere bloodhounds.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Bloodline: Samedi",
+        "keys": [
+          "samedi",
+          "thanatosis",
+          "stiffs"
+        ],
+        "content": "SAMEDI — The Stiffs / Bone Lords. Caribbean-rooted vampire-corpses whose flesh visibly rots even as it knits back together. Mortician-mystics with a mocking, gallows humor. IN-CLAN DISCIPLINES: Fortitude, Obfuscate, Thanatosis (signature death-sculpting). WEAKNESS: permanent and visible decay. Appearance is fixed at 0; any roll using Appearance automatically fails. Cannot pass for living mortals at any range closer than a darkened room. Loose ties to Giovanni (necromantic clientele) and Sabbat (mercenary work). Independent; few in number.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Animalism",
+        "keys": [
+          "animalism",
+          "feral whispers",
+          "beckoning",
+          "song of serenity",
+          "drawing out the beast",
+          "subsume the spirit"
+        ],
+        "content": "ANIMALISM — Beast-bond and primal command. (1) FERAL WHISPERS: speak with and command animals, one species at a time. (2) BECKONING: summon a specific kind of animal from the surrounding region. (3) SONG OF SERENITY: soothe and quiet a frenzying being (animal, vampire, or panicked mortal). (4) DRAWING OUT THE BEAST: force one's own Frenzy into another creature, sending it into rage instead. (5) SUBSUME THE SPIRIT (Sharing the Spirit): project consciousness fully into an animal host, riding it as a body. Common to: Gangrel, Nosferatu, Ravnos, Tzimisce.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Auspex",
+        "keys": [
+          "auspex",
+          "heightened senses",
+          "aura perception",
+          "spirit's touch",
+          "telepathy",
+          "psychic projection"
+        ],
+        "content": "AUSPEX — Heightened senses and the perception of things hidden. (1) HEIGHTENED SENSES: sharpen all five senses to supernatural acuity. (2) AURA PERCEPTION: read the swirling aura of any being — emotion, vampiric nature, diablerie, supernatural taint. (3) THE SPIRIT'S TOUCH: psychometry — handle an object and read recent events around it. (4) TELEPATHY: read surface thoughts; with effort, deeper memory. (5) PSYCHIC PROJECTION: send the consciousness travelling out of the body across long distances. Common to: Malkavian, Salubri, Toreador, Tremere, Tzimisce.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Celerity",
+        "keys": [
+          "celerity",
+          "speed"
+        ],
+        "content": "CELERITY — Vampiric speed bought one Blood Point at a time. Each dot purchased lets the vampire spend 1 Blood per turn for that many extra physical actions, taken at the END of turn after split-action declarations. Celerity actions are NOT subject to multi-action penalties and CANNOT themselves be split. Celerity may not be used for Mental or Social rolls — only physical actions. (1) +1 action / blood. (2) +2 actions / blood. (3) +3 actions; the elder begins to blur in motion. (4) +4 actions; arrows and small-arms fire become genuinely dodgeable. (5) +5 actions; the Kindred operates in a wholly faster timeframe than mortals. Common to: Assamite, Brujah, Toreador.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Dominate",
+        "keys": [
+          "dominate",
+          "command",
+          "mesmerize",
+          "forgetful mind",
+          "conditioning",
+          "possession"
+        ],
+        "content": "DOMINATE — Mind control through eye contact and the imperative voice. (1) COMMAND: one-word verbal command that the target must obey. (2) MESMERIZE: plant a complex post-hypnotic suggestion to trigger later. (3) THE FORGETFUL MIND: erase or rewrite recent memories. (4) CONDITIONING: long-term subliminal programming, building toward a one-sided psychological bond. (5) POSSESSION: eject the target's consciousness and inhabit their body directly. Eye contact normally required; Blood Bond removes the eye-contact requirement (regnant can Dominate by voice alone). Common to: Giovanni, Lasombra, Tremere, Ventrue.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Fortitude",
+        "keys": [
+          "fortitude"
+        ],
+        "content": "FORTITUDE — Supernatural toughness; the only widely-available defense against aggravated damage. Each dot adds one die to soak rolls — uniquely, those dice apply against AGGRAVATED damage from fire, sunlight, and supernatural claws. There are no separately-named powers in the basic ladder; each dot simply hardens the body further. (1)-(5) progressively higher soak. Without Fortitude, fire and sunlight ignore mortal Stamina entirely; Fortitude is the only thing standing between an unprotected vampire and the dawn. Common to: Daughters of Cacophony, Gangrel, Ravnos, Salubri, Samedi, Ventrue.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Obfuscate",
+        "keys": [
+          "obfuscate",
+          "cloak of shadows",
+          "unseen presence",
+          "mask of a thousand faces",
+          "vanish",
+          "cloak the gathering"
+        ],
+        "content": "OBFUSCATE — The art of being unseen, unheard, and unremembered. (1) CLOAK OF SHADOWS: step into shadow or stillness and become functionally invisible to passive observers. (2) UNSEEN PRESENCE: move and act while remaining unseen; observers' minds slide past. (3) MASK OF A THOUSAND FACES: project an entirely different appearance to viewers. (4) VANISH FROM THE MIND'S EYE: disappear in the middle of being actively watched. (5) CLOAK THE GATHERING: extend Obfuscation to companions, vehicles, even small crowds. Common to: Assamite, Followers of Set, Malkavian, Nosferatu, Samedi.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Potence",
+        "keys": [
+          "potence",
+          "strength"
+        ],
+        "content": "POTENCE — Raw vampiric strength. Each dot purchased grants ONE automatic success on every Strength-based feat and Brawl/Melee damage roll — automatic, not rolled, never cancellable. (1)-(5) escalating brute force; a 5-dot Potence vampire's punch shatters concrete and warps steel. Advanced expressions like Earthshock (creating a localized tremor) and Imprint (leaving fingerprints in solid rock) emerge at 6+ dots — Elder territory. Common to: Brujah, Giovanni, Lasombra, Nosferatu.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Presence",
+        "keys": [
+          "presence",
+          "awe",
+          "dread gaze",
+          "entrancement",
+          "summon",
+          "majesty"
+        ],
+        "content": "PRESENCE — The supernatural force of personality — magnetism, awe, dread. (1) AWE: become fascinating; charm and attract everyone in line of sight. (2) DREAD GAZE: project terrifying menace; targets recoil in fear. (3) ENTRANCEMENT: bind a target into emotional devotion (short of a Blood Bond, but powerful). (4) SUMMON: compel a known target to come to the user from any distance. (5) MAJESTY: project unassailable presence; mortals and lesser Kindred cannot bring themselves to attack or even meaningfully oppose. Common to: Brujah, Daughters of Cacophony, Followers of Set, Toreador, Ventrue.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Protean",
+        "keys": [
+          "protean",
+          "eyes of the beast",
+          "feral claws",
+          "earth meld",
+          "shape of the beast",
+          "mist form"
+        ],
+        "content": "PROTEAN — Bodily transformation rooted in earth and Beast. (1) EYES OF THE BEAST: glowing red eyes; perfect sight in total darkness. (2) FERAL CLAWS: grow vampiric claws that deal aggravated damage to other supernaturals. (3) EARTH MELD: sink into and rest within unworked earth; total protection from sunlight and most physical threats while inside. (4) SHAPE OF THE BEAST: take the form of a wolf or large bat (the classic Gangrel transformation). (5) MIST FORM: dissolve entirely into mist, immune to most physical harm and able to slip through tiny gaps. Common to: Gangrel.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Necromancy",
+        "keys": [
+          "necromancy",
+          "sepulchre path",
+          "bone path",
+          "ash path",
+          "wraith"
+        ],
+        "content": "NECROMANCY — Blood magic of the dead. Clan: Giovanni (signature); Hecata-adjacent bloodlines. Structured like Thaumaturgy: pick a primary PATH, advance it 1-5 dots, learn additional Paths at 1 dot each, plus formal RITUALS as separate spells learned individually. PRIMARY V20 PATHS: SEPULCHRE PATH (Giovanni default — detect, summon, compel, bind wraiths and ghosts; dot 1 senses recent dead, dot 5 binds named wraiths). BONE PATH (animate / command / harvest corpses; dot 1 numbs corpse against decay, dot 3 creates shambling minion, dot 5 imbues body with captured ghost as pilot). ASH PATH (cross the Shroud personally — view, project, eventually walk into the Underworld). Other Paths: Vitreous, Mortis, Cenotaph, Grave's Decay, Twilight Path. Activations: Willpower or Manipulation depending on power. Rituals require formal study (~1 week per dot) plus components — usually grave goods, body parts, or fluids of the dead.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Thaumaturgy",
+        "keys": [
+          "thaumaturgy",
+          "path of blood",
+          "rego vitae",
+          "thaumaturgical ritual"
+        ],
+        "content": "THAUMATURGY — Tremere blood sorcery, fusing vampiric vitae with Hermetic mage tradition. Splits into PATHS (always-active toolkit powers) and RITUALS (formal blood-magic spells). Every Tremere starts with one Path at the rating equal to their Thaumaturgy dots; may diversify into additional Paths at 1 dot each. Rituals are level 1-10, learned individually like spells in a grimoire. PRIMARY: most Tremere take the PATH OF BLOOD (Rego Vitae) — taste blood for information (dot 1), boil another's vitae from across a room (dot 3), steal blood directly out of a victim's veins (dot 4). Other Paths: Lure of Flames, Movement of the Mind, Path of Conjuring, Path of Corruption (Tlacique), Path of Elemental Mastery, Path of Mars, Spirit Manipulation, Weather Control, Green Path, Path of Father's Vengeance, Path of the Levinbolt. Sample Rituals: Deflection of Wooden Doom (lvl 1), Engaging the Vessel of Transference (lvl 1), Heart of Stone (lvl 5), Blood Contract, Ward versus Ghouls/Lupines/etc. Activation: Willpower; Rituals additionally require time and reagents.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Discipline: Vicissitude",
+        "keys": [
+          "vicissitude",
+          "fleshcraft",
+          "bonecraft",
+          "horrid form",
+          "bloodform"
+        ],
+        "content": "VICISSITUDE — Fleshcrafting and bonecrafting; active reshaping of living and undead tissue. Clan: Tzimisce (signature); Sabbat at large via Vaulderie tutelage. (1) MALLEABLE VISAGE: reshape one's own appearance in detail — face, voice, build (within mass). (2) FLESHCRAFT: reshape another living or vampiric body's flesh; classic horror sculpting, usually requires the subject be restrained. (3) BONECRAFT: add the skeleton to the canvas — lengthen claws, reinforce joints, shape weapons from one's own bones. (4) HORRID FORM: transform self into a hulking eight-foot war-shape — claws, fangs, armor plates, additional Strength and Stamina. (5) BLOODFORM: dissolve into living, sentient, intelligent vitae — a pool of self-aware blood that can re-form at will. Lore wrinkle: V20 preserves the older 'Vicissitude is actually an alien parasite from Beneath' subplot as one of several in-character explanations.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Sect: Camarilla",
+        "keys": [
+          "camarilla",
+          "prince",
+          "primogen",
+          "justicar",
+          "harpy",
+          "sheriff"
+        ],
+        "content": "CAMARILLA — Goals: preserve the Masquerade above all; maintain stable Kindred society modelled on European feudalism; suppress the Sabbat; contain the Anarchs; manage independent clans through diplomacy. STRUCTURE: a Prince rules each city as feudal lord, supported by the Primogen (council of clan elders). Below sit Sheriffs (law enforcers), Harpies (social arbiters), Scourges (purgers of the unwelcome), Whips (clan deputies). Above all sit the seven Justicars — one per founding clan — who travel between cities with Archon enforcers. The Inner Circle convenes once a generation in Venice to elect the Justicars. MEMBER CLANS: Brujah, Gangrel (officially withdrew mid-1990s), Malkavian, Nosferatu, Toreador, Tremere, Ventrue.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Sect: Sabbat",
+        "keys": [
+          "sabbat",
+          "vaulderie",
+          "pack",
+          "ductus",
+          "pack priest",
+          "regent",
+          "black hand"
+        ],
+        "content": "SABBAT — Goals: reject the Masquerade as cowardice; wage the Jyhad against the Antediluvians; liberate vampires from mortal morality through Vaulderie (mass blood-sharing) and pack loyalty. Religious mythology centers on Gehenna and the necessity of Cainite supremacy. STRUCTURE: organized in PACKS (3-10 vampires bound by Vaulderie). Multiple packs answer to a Bishop; Bishops to an Archbishop running a city; Archbishops to Cardinals running countries; Cardinals to the REGENT, the supreme leader (currently Melinda Galbraith). Each pack has a Ductus (warlord) and Pack Priest (ritual leader). The BLACK HAND is the Sabbat's elite warrior society. MEMBER CLANS: Lasombra, Tzimisce (founding); plus antitribu of nearly every Camarilla and Independent clan.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Sect: Anarchs",
+        "keys": [
+          "anarch",
+          "anarchs",
+          "anarch movement",
+          "anarch free state",
+          "baron"
+        ],
+        "content": "ANARCHS — Goals: reject elder rule and the feudal Camarilla hierarchy; distribute power; fight Antediluvian manipulation; treat young Kindred as equals. Less an opposed government than a movement-within-the-Camarilla. In California, the Anarchs run the Anarch Free State outright. STRUCTURE: deliberately loose. Local Anarch gangs and crews self-organize; a BARON may rule an Anarch domain (functionally equivalent to a Prince but without the pretensions). The Anarch Manifesto by Salvador Garcia is the closest thing they have to a charter. MEMBER CLANS: anyone — Brujah are the historical core, but Anarchs include Caitiff in disproportionate numbers, and any clan can participate.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Sect: Independent Clans",
+        "keys": [
+          "independent",
+          "independent clans"
+        ],
+        "content": "INDEPENDENT CLANS — Refuse to bend the knee to either Camarilla or Sabbat. Goals vary by clan. Assamites pursue Haqim's mandate and the unbroken blood curse. Setites build the cult of Set and corrupt the world toward Apophis. Giovanni grow the family business in death and money. Ravnos (post-Week of Nightmares) just survive. STRUCTURE: each clan governs itself. Assamites have a fortress at Alamut and a Caliph. Setites have Hierophants and a temple network. Giovanni run as one extended Mafia-style family with the Don in Venice. Ravnos answer only to extended kumpania family bonds. MEMBER CLANS: Assamite, Followers of Set, Giovanni, Ravnos. Sometimes-counted: Daughters of Cacophony, Salubri, Samedi.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Morality: Humanity hierarchy of sins",
+        "keys": [
+          "humanity",
+          "sin",
+          "sins",
+          "hierarchy of sins",
+          "conscience roll",
+          "lose humanity"
+        ],
+        "content": "HUMANITY — the standard V20 chart. A vampire at a given Humanity level rolls Conscience to avoid losing a dot whenever they commit an act listed at their level OR BELOW. Higher Humanity = more sensitive conscience = more things count as sin. Lvl 10: selfish or vain thoughts. Lvl 9: minor selfish acts; petty cruelty in thought. Lvl 8: injury to another (accidental or otherwise); minor theft or lie. Lvl 7: theft, vandalism, deliberate property damage. Lvl 6: accidental violation that causes harm; minor manslaughter through negligence. Lvl 5: intentional but non-premeditated killing (passion, feeding gone wrong). Lvl 4: cold-blooded, planned violence; intentional grievous harm. Lvl 3: premeditated murder. Lvl 2: casual, indifferent slaughter; killing without thought. Lvl 1: utter perversion or heinousness. Lvl 0: no human soul; becomes a wight (NPC controlled wholly by the Beast).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Path: Honorable Accord",
+        "keys": [
+          "path of honorable accord",
+          "honorable accord",
+          "knight path",
+          "templar path"
+        ],
+        "content": "PATH OF HONORABLE ACCORD — Virtues: Conviction + Self-Control. Adherents: Knights, Patriots, Canonici. PHILOSOPHY: a code of chivalry and oath-keeping for vampires whose word must mean something. Common among Sabbat templars but adoptable by Camarilla knights. Loyalty, hospitality, given word, obedience to recognized authority. HIERARCHY OF SINS (10 noblest -> 1 most permissive): 10 failing to act in accordance with one's recognized authority. 9 failing to extend hospitality to fellow members of one's order. 8 failing to observe a minor pack/order ritual. 7 failing to observe a major sect ritual. 6 acting against a recognized leader; failing to defend a fellow member. 5 putting personal welfare above the order's. 4 failing to honor a sworn agreement. 3 showing cowardice. 2 showing open disrespect to the sect. 1 breaking one's given word.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Path: Caine",
+        "keys": [
+          "path of caine",
+          "noddist"
+        ],
+        "content": "PATH OF CAINE — Virtues: Conviction + Instinct. Adherents: Noddists. PHILOSOPHY: Caine is the original vampire and the only legitimate model. Humanity is delusion; mortal morality is contemptible. Study Noddist scripture, reproduce Caine's circumstances, transcend through diablerie if necessary. Almost exclusive to Sabbat scholar-elders. HIERARCHY OF SINS: 10 failing to pursue evidence of Caine when doing so would cost your unlife. 9 failing to spend three hours each night in meditation. 8 acting against the Sabbat. 7 disrespect to elders; failing to pursue Caine despite moderate danger. 6 failing to take part in a War Party. 5 refusing to attempt destruction of Camarilla vampires; treating mortals as anything but food. 4 feeling remorse over killing a mortal; failing to pursue Caine despite minor danger. 3 failing to kill a mortal when need is clear. 2 relying on mortal allies or friends; failing to pursue Caine when no danger at all. 1 drinking animal blood when mortal blood is available.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Path: The Beast",
+        "keys": [
+          "path of the beast",
+          "beast path",
+          "wild ones"
+        ],
+        "content": "PATH OF THE BEAST — Virtues: Conviction + Instinct. Adherents: Beasts, the Wild Ones (NOT to be confused with Lupines). PHILOSOPHY: the Beast is not the enemy; the Beast is the truth. Suppressing it is the lie. Hunt as predators, integrate the rational mind with the primal drive, treat civilization's restraints as cages to be broken. Common among Gangrel (especially Sabbat antitribu) and certain Brujah and Nosferatu. HIERARCHY OF SINS (V20 reconstruction; specific wording varies): 10 hunting without using innate vampiric senses and powers. 9 mortal political intrigue. 8 risking unlife for any cause not involving slaying an enemy. 7 showing fear or weakness before lesser predators. 6 acting against another Beast follower without personal cause. 5 failing to feed when hungry. 4 refusing to hunt when opportunity arises. 3 showing compassion to prey. 2 acting against own instincts to please another. 1 denying the Beast utterly.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Path: Night",
+        "keys": [
+          "path of night",
+          "nihilist"
+        ],
+        "content": "PATH OF NIGHT — Virtues: Conviction + Instinct (or Conviction + Self-Control on the 'Cold' variant). Adherents: Nihilists, almost exclusively Lasombra. PHILOSOPHY: vampires exist as God's appointed instruments of damnation. Their role is to expose latent sin in mortals and force confrontation with it. Suffering is sacrament; pain is pedagogy. Killing is generally avoided — corpses can no longer be tormented. HIERARCHY OF SINS (V20 reconstruction): 10 failing to actively expose a mortal's latent sin when chance arises. 9 failing to teach a lesson through deserved suffering. 8 failing to test another's faith or moral conviction. 7 aiding the soul of a clearly virtuous mortal toward salvation. 6 acting against another follower of the Path. 5 showing kindness without corruptive purpose. 4 failing to terrorize a sinner in your power. 3 killing a target before their lesson is complete. 2 acting in any way that strengthens mortal society. 1 showing sincere mercy or compassion.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Sub-Agents — what they do and how to enable them",
+        "keys": [
+          "sub-agent",
+          "sub agent",
+          "sub-agents",
+          "agents",
+          "state-mutator",
+          "state mutator",
+          "combat-overseer",
+          "combat overseer",
+          "context-fuser",
+          "context fuser",
+          "enable agent",
+          "disable agent",
+          "agent toggle",
+          "pre-input-transformer",
+          "blood-pool-tracker"
+        ],
+        "content": "Besides the main Ruleset Helper, the bundle installs a small consolidated pool of sub-agents. IMPORTANT: installing the bundle does NOT activate them — like all custom agents on Marinara 2.4.3+, they must be ENABLED FOR EACH GAME at load time, after the game launches (Marinara -> Settings -> Agents, or the game's agent selection). The ruleset's lorebook must ALSO be attached to the game (during game setup or after launch) — without it the agents have no ruleset rules to follow and will not work correctly.\n\nThe pool: combat-overseer (one pre-generation agent covering combat-math framing AND NPC roster tracking). context-fuser (one pre-generation agent covering rules-question answers AND current player-state reminders). state-mutator (the ONLY agent that changes the character sheet — it emits hidden [mrr-state: ...] tags the extension applies; covers Blood Pool, Willpower, health levels, Humanity, Frenzy state).\npre-input-transformer (pre-generation; recasts player input in this system's vocabulary before the GM sees it).\nblood-pool-tracker (runs in parallel with narration; reports each Kindred's Blood Pool, per-turn generation cap, and hunger/torpor warnings).\n\nEach enabled agent costs one extra model call per turn; on a provider that allows only one call at a time, every agent call runs one after another — enable only what your table needs. Enable state-mutator if you want narration to drive the sheet automatically; it is the sole writer, and with it off, sheet changes are manual.",
+        "selective": false,
+        "constant": false,
+        "position": 1,
+        "tokenBudget": 2500
+      },
+      {
+        "name": "Path Lookup: humanity",
+        "keys": [
+          "humanity",
+          "path:humanity",
+          "humanity path"
+        ],
+        "content": "HUMANITY (default morality track). Virtues: Conscience + Self-Control + Courage. Most vampires use Humanity — it is the moral baseline borrowed from the mortal life left behind, and the only morality non-Sabbat Camarilla society broadly recognizes. Rating 0-10; lose a dot when you commit a sin at or below your current rating without a successful Conscience roll. Below 5 a vampire is visibly monstrous; 0 is a wight. See the 'Morality: Humanity hierarchy of sins' entry for the V20 sin chart.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Path Lookup: path-honorable-accord",
+        "keys": [
+          "path-honorable-accord",
+          "honorable accord",
+          "path of honorable accord"
+        ],
+        "content": "PATH OF HONORABLE ACCORD. Virtues: Conviction + Self-Control + Courage. A code of chivalry and oath-keeping for vampires whose word must mean something — common among Sabbat Lasombra and Tzimisce templars but adoptable elsewhere. Loyalty, hospitality, oaths sworn and oaths kept, obedience to recognized authority. See the 'Path: Honorable Accord' entry for the full V20 hierarchy of sins.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Path Lookup: path-caine",
+        "keys": [
+          "path-caine",
+          "path of caine",
+          "noddist"
+        ],
+        "content": "PATH OF CAINE. Virtues: Conviction + Instinct + Courage. Adherents (Noddists) hold that Caine is the only legitimate model — humanity is delusion, mortal morality is contemptible, and the only worthy goal is to study Noddist scripture, reproduce Caine's circumstances, and transcend through diablerie if necessary. Almost exclusive to Sabbat scholar-elders. See the 'Path: Caine' entry for the V20 hierarchy of sins.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Path Lookup: path-beast",
+        "keys": [
+          "path-beast",
+          "path of the beast",
+          "beast path"
+        ],
+        "content": "PATH OF THE BEAST. Virtues: Conviction + Instinct + Courage. The Beast is not the enemy — the Beast is the truth, and suppressing it is the lie. Adherents hunt as predators, integrate the rational mind with the primal drive, and treat civilization's restraints as cages to be broken. Common among Gangrel (especially Sabbat antitribu) and certain Brujah and Nosferatu. See the 'Path: The Beast' entry for the V20 hierarchy of sins.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Path Lookup: path-night",
+        "keys": [
+          "path-night",
+          "path of night",
+          "nihilist path"
+        ],
+        "content": "PATH OF NIGHT. Virtues: Conviction + Instinct + Courage (or Conviction + Self-Control + Courage on the 'Cold' variant). Adherents hold that vampires exist as God's appointed instruments of damnation — their role is to expose latent sin in mortals and force confrontation with it. Suffering is sacrament; pain is pedagogy. Killing is generally avoided because corpses can no longer be tormented. Almost exclusive to Lasombra. See the 'Path: Night' entry for the V20 hierarchy of sins.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Attribute: Strength (STR)",
+        "keys": [
+          "Strength",
+          "STR"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Strength (STR) [Physical] — Raw muscle. Lifting, melee damage, brawling pools.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DEX)",
+        "keys": [
+          "Dexterity",
+          "DEX"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Dexterity (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy, dodging.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Stamina (STA)",
+        "keys": [
+          "Stamina",
+          "STA"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Stamina (STA) [Physical] — Endurance, soak (bashing/lethal), resisting fatigue and damage.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Charisma (CHA)",
+        "keys": [
+          "Charisma",
+          "CHA"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Charisma (CHA) [Social] — Force of personality, sincere charm, leadership presence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Manipulation (MAN)",
+        "keys": [
+          "Manipulation",
+          "MAN"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Manipulation (MAN) [Social] — Deceit, guile, indirect influence, getting others to act against their interest.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Appearance (APP)",
+        "keys": [
+          "Appearance",
+          "APP"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Appearance (APP) [Social] — Beauty / presence; affects attraction, intimidation by allure, first-impression rolls.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Perception (PER)",
+        "keys": [
+          "Perception",
+          "PER"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Perception (PER) [Mental] — Spotting, hearing, noticing details and changes in environment.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (INT)",
+        "keys": [
+          "Intelligence",
+          "INT"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Intelligence (INT) [Mental] — Reasoning, learning, recall, abstract analysis.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Wits (WIT)",
+        "keys": [
+          "Wits",
+          "WIT"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary attribute. Wits (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative pool component.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Alertness",
+        "keys": [
+          "Alertness"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Alertness. Talent. Notice danger and details. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Athletics",
+        "keys": [
+          "Athletics"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Athletics. Talent. Climbing, running, jumping, swimming. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Awareness",
+        "keys": [
+          "Awareness"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Awareness. Talent (V20). Sense supernatural presence and disturbances in the Beast. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Brawl",
+        "keys": [
+          "Brawl"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Brawl. Talent. Unarmed combat; punches, grapples, claw strikes. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Empathy",
+        "keys": [
+          "Empathy"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Empathy. Talent. Read emotions, sense lies of the heart. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Expression",
+        "keys": [
+          "Expression"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Expression. Talent. Communicating ideas, art, oratory, written prose. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Intimidation",
+        "keys": [
+          "Intimidation"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Intimidation. Talent. Threats, looming presence, breaking will. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Leadership",
+        "keys": [
+          "Leadership"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Leadership. Talent. Inspiring loyalty, giving orders, rallying. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Streetwise",
+        "keys": [
+          "Streetwise"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Streetwise. Talent. Navigating urban underbelly, contacts, fences, gossip. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Subterfuge",
+        "keys": [
+          "Subterfuge"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Subterfuge. Talent. Lying, misleading, deflecting questions. Usable untrained at +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Animal Ken",
+        "keys": [
+          "Animal Ken"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Animal Ken. Skill. Handling and training animals (a vampire's natural problem). Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Crafts",
+        "keys": [
+          "Crafts"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Crafts. Skill. Build, repair, and make physical things by hand. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Drive",
+        "keys": [
+          "Drive"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Drive. Skill. Operate vehicles under stress. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Etiquette",
+        "keys": [
+          "Etiquette"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Etiquette. Skill. Manners, protocol, the unwritten rules of Kindred and mortal society. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Firearms",
+        "keys": [
+          "Firearms"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Firearms. Skill. Handguns, rifles, automatic weapons. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Larceny",
+        "keys": [
+          "Larceny"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Larceny. Skill (V20). Lock-picking, sleight of hand, B&E, forgery. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Melee",
+        "keys": [
+          "Melee"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Melee. Skill. Armed close combat; blades, clubs, improvised. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Performance",
+        "keys": [
+          "Performance"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Performance. Skill. Singing, instrument, acting, dance — the art of performing for an audience. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Stealth. Skill. Move unseen and unheard. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Survival. Skill. Wilderness travel, foraging, weather. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Academics",
+        "keys": [
+          "Academics"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Academics. Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Computer",
+        "keys": [
+          "Computer"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Computer. Knowledge. Software, hardware, networks. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Finance",
+        "keys": [
+          "Finance"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Finance. Knowledge. Money, markets, accounting, business law. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Investigation",
+        "keys": [
+          "Investigation"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Investigation. Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Law",
+        "keys": [
+          "Law"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Law. Knowledge. Statute, precedent, courtroom procedure, criminal law. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Medicine",
+        "keys": [
+          "Medicine"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Medicine. Knowledge. Diagnosis, surgery, pharmacology — and what blood reveals. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Occult",
+        "keys": [
+          "Occult"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Occult. Knowledge. Lore of the supernatural — vampires, mages, ghosts, the Antediluvians. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Politics",
+        "keys": [
+          "Politics"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Politics. Knowledge. Government, faction, who-owes-whom in mortal AND Kindred society. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Science",
+        "keys": [
+          "Science"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Science. Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Technology",
+        "keys": [
+          "Technology"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary skill. Technology. Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Generation",
+        "keys": [
+          "Generation"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Generation — formula: Player-set; default 13th. Lower generation costs Background dots at character creation. Bounds the Blood Pool max and the per-turn Blood spend cap (see Generation Table lorebook entry).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Permanent Willpower",
+        "keys": [
+          "Permanent Willpower"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Permanent Willpower — formula: 1-10. The character's permanent Willpower rating — the cap on the Willpower resource pool. V20 RAW: starts equal to Courage at character creation; grows via XP spend (current rating → next rating costs the current rating × 2 XP) or chargen freebies (one freebie per dot). Adjust this stepper directly: set to your Courage at chargen, then click + as you spend XP. Cap 10.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Animalism",
+        "keys": [
+          "Animalism"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Animalism — formula: Common Discipline 0-5. Beast-bond and primal command. Powers per dot are listed in the lorebook entry 'Discipline: Animalism'.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Auspex",
+        "keys": [
+          "Auspex"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Auspex — formula: Common Discipline 0-5. Heightened senses and supernatural perception. Powers per dot in the lorebook.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Celerity",
+        "keys": [
+          "Celerity"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Celerity — formula: Common Discipline 0-5. Vampiric speed; spend 1 Blood per turn for that many extra physical actions (= Celerity rating).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Dominate",
+        "keys": [
+          "Dominate"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Dominate — formula: Common Discipline 0-5. Mind control via eye contact and the imperative voice. Powers per dot in the lorebook.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Fortitude",
+        "keys": [
+          "Fortitude"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Fortitude — formula: Common Discipline 0-5. Each dot adds one die to soak rolls and lets the vampire soak even AGGRAVATED damage (fire, sunlight, supernatural claws). The only widely-available defense against aggravated.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Obfuscate",
+        "keys": [
+          "Obfuscate"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Obfuscate — formula: Common Discipline 0-5. The art of being unseen, unheard, unremembered. Powers per dot in the lorebook.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Potence",
+        "keys": [
+          "Potence"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Potence — formula: Common Discipline 0-5. Vampiric strength; each dot grants ONE automatic success on Strength-based feats and brawl/melee damage rolls.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Presence",
+        "keys": [
+          "Presence"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Presence — formula: Common Discipline 0-5. The supernatural force of personality — magnetism, awe, dread. Powers per dot in the lorebook.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Protean",
+        "keys": [
+          "Protean"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Protean — formula: Common Discipline 0-5. Bodily transformation rooted in Beast and earth; signature of the Gangrel.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Necromancy",
+        "keys": [
+          "Necromancy"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Necromancy — formula: Clan-unique Discipline (Giovanni and Hecata-adjacent). Path/Ritual structure parallel to Thaumaturgy. See lorebook for paths and rituals.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Thaumaturgy",
+        "keys": [
+          "Thaumaturgy"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Thaumaturgy — formula: Clan-unique Discipline (Tremere). Path/Ritual structure: pick a primary Path rated 1-5, learn other Paths at 1 dot each, plus Rituals as separate spells. See lorebook.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Vicissitude",
+        "keys": [
+          "Vicissitude"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Vicissitude — formula: Clan-unique Discipline (Tzimisce; Sabbat-taught). Active fleshcrafting and bonecrafting. See lorebook for power tree.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Initiative",
+        "keys": [
+          "Initiative"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Initiative — formula: {Dexterity} + {Wits}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Bashing)",
+        "keys": [
+          "Soak (Bashing)"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Soak (Bashing) — formula: {Stamina}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Lethal)",
+        "keys": [
+          "Soak (Lethal)"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Soak (Lethal) — formula: {Stamina} + {Fortitude}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Aggravated)",
+        "keys": [
+          "Soak (Aggravated)"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Soak (Aggravated) — formula: {Fortitude}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Humanity",
+        "keys": [
+          "Humanity"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Humanity — formula: 0-10. Sin-hierarchy: lose a dot when you commit an act at or below your current rating without a successful Conscience roll. Most humans sit 6-7. Below 5 is monstrous; 0 is wight.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Path Rating",
+        "keys": [
+          "Path Rating"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Path Rating — formula: 0-10. Use INSTEAD of Humanity if the character is on a Path of Enlightenment. Mechanically identical hierarchy of sins; the act-list differs per Path. Default 0 (= no Path; Humanity is in use).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Conscience",
+        "keys": [
+          "Conscience"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Conscience — formula: 1-5. Standard Virtue (Humanity track). Resists doing acts that would cost Humanity. Replaced by Conviction on a Path of Enlightenment.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Self-Control",
+        "keys": [
+          "Self-Control"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Self-Control — formula: 1-5. Standard Virtue (Humanity track). Resists Frenzy. Replaced by Instinct on a Path of Enlightenment.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Courage",
+        "keys": [
+          "Courage"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary derived stat. Courage — formula: 1-5. Resists Rotschreck (the Red Fear) and shoring up against fear-based effects. Used by both Humanity AND Path characters. Note: when rolling Virtues, the dice cap at the character's Humanity/Path rating, not the Virtue rating.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Vampire: The Masquerade 20th Anniversary difficulty ladder. Threshold values needed for success:\n- Trivial (threshold 4) — Trivial for a competent character. Often waived.\n- Routine (threshold 5) — Routine task; minor pressure.\n- Standard (threshold 6) — V20 default. Average task under normal conditions.\n- Challenging (threshold 7) — Pushes a competent character; pressure or distraction.\n- Difficult (threshold 8) — Few succeed without bonuses or supernatural help.\n- Nigh-Impossible (threshold 9) — Heroic; requires Willpower, Disciplines, or aid.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      }
+    ]
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s{0,20}dc=\"(\\d{1,6})\"\\s{1,20}rolls=\"(\\d{1,6})\"(?:\\s{1,20}modifier=\"([+-]?\\d{1,6})\")?(?:\\s{1,20}total=\"(-?\\d{1,6})\")?\\s{1,20}result=\"(success|failure|critical|fumble)\"\\s{0,20}\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Vampire: The Masquerade 20th Anniversary surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s{1,20}(\\d{1,6})\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → Vampire: The Masquerade 20th Anniversary difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "vtmv20_reference",
+      "description": "Returns canonical Vampire: The Masquerade 20th Anniversary reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Vampire: The Masquerade 20th Anniversary — canonical reference\n\nStoryteller-system d10 dice pool. Pool = Attribute + Ability. Each die meeting or beating the Storyteller's difficulty is one success (default difficulty 6, varies 6-9). Botch on any roll showing zero successes AND at least one 1. Specialty bonus on rolls within the chosen specialty: each natural 10 is rerolled. Willpower spend = one automatic guaranteed success, max once per turn.\n\n## Dice\n- Type: `d10`\n- Notation: `Xd10 vs <difficulty>`\n\n## Resolution\n- Mode: `dice-pool`\n- Pool formula: Attribute + Ability (+ specialty 10-rerolls when applicable, + Willpower auto-success once/turn, + Discipline rating dice)\n- Default target: 6\n\n## Difficulty ladder\n- **Trivial** (threshold 4) — Trivial for a competent character. Often waived.\n- **Routine** (threshold 5) — Routine task; minor pressure.\n- **Standard** (threshold 6) — V20 default. Average task under normal conditions.\n- **Challenging** (threshold 7) — Pushes a competent character; pressure or distraction.\n- **Difficult** (threshold 8) — Few succeed without bonuses or supernatural help.\n- **Nigh-Impossible** (threshold 9) — Heroic; requires Willpower, Disciplines, or aid.\n\n## Attributes\n- **Strength** (STR) [Physical] — Raw muscle. Lifting, melee damage, brawling pools.\n- **Dexterity** (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy, dodging.\n- **Stamina** (STA) [Physical] — Endurance, soak (bashing/lethal), resisting fatigue and damage.\n- **Charisma** (CHA) [Social] — Force of personality, sincere charm, leadership presence.\n- **Manipulation** (MAN) [Social] — Deceit, guile, indirect influence, getting others to act against their interest.\n- **Appearance** (APP) [Social] — Beauty / presence; affects attraction, intimidation by allure, first-impression rolls.\n- **Perception** (PER) [Mental] — Spotting, hearing, noticing details and changes in environment.\n- **Intelligence** (INT) [Mental] — Reasoning, learning, recall, abstract analysis.\n- **Wits** (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative pool component.\n\n## Skills\n- **Alertness** — Talent. Notice danger and details. Usable untrained at +1 difficulty.\n- **Athletics** — Talent. Climbing, running, jumping, swimming. Usable untrained at +1 difficulty.\n- **Awareness** — Talent (V20). Sense supernatural presence and disturbances in the Beast. Usable untrained at +1 difficulty.\n- **Brawl** — Talent. Unarmed combat; punches, grapples, claw strikes. Usable untrained at +1 difficulty.\n- **Empathy** — Talent. Read emotions, sense lies of the heart. Usable untrained at +1 difficulty.\n- **Expression** — Talent. Communicating ideas, art, oratory, written prose. Usable untrained at +1 difficulty.\n- **Intimidation** — Talent. Threats, looming presence, breaking will. Usable untrained at +1 difficulty.\n- **Leadership** — Talent. Inspiring loyalty, giving orders, rallying. Usable untrained at +1 difficulty.\n- **Streetwise** — Talent. Navigating urban underbelly, contacts, fences, gossip. Usable untrained at +1 difficulty.\n- **Subterfuge** — Talent. Lying, misleading, deflecting questions. Usable untrained at +1 difficulty.\n- **Animal Ken** — Skill. Handling and training animals (a vampire's natural problem). Untrained: cannot roll.\n- **Crafts** — Skill. Build, repair, and make physical things by hand. Untrained: cannot roll.\n- **Drive** — Skill. Operate vehicles under stress. Untrained: cannot roll.\n- **Etiquette** — Skill. Manners, protocol, the unwritten rules of Kindred and mortal society. Untrained: cannot roll.\n- **Firearms** — Skill. Handguns, rifles, automatic weapons. Untrained: cannot roll.\n- **Larceny** — Skill (V20). Lock-picking, sleight of hand, B&E, forgery. Untrained: cannot roll.\n- **Melee** — Skill. Armed close combat; blades, clubs, improvised. Untrained: cannot roll.\n- **Performance** — Skill. Singing, instrument, acting, dance — the art of performing for an audience. Untrained: cannot roll.\n- **Stealth** — Skill. Move unseen and unheard. Untrained: cannot roll.\n- **Survival** — Skill. Wilderness travel, foraging, weather. Untrained: cannot roll.\n- **Academics** — Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material.\n- **Computer** — Knowledge. Software, hardware, networks. Untrained: cannot roll.\n- **Finance** — Knowledge. Money, markets, accounting, business law. Untrained: cannot roll.\n- **Investigation** — Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll.\n- **Law** — Knowledge. Statute, precedent, courtroom procedure, criminal law. Untrained: cannot roll.\n- **Medicine** — Knowledge. Diagnosis, surgery, pharmacology — and what blood reveals. Untrained: cannot roll.\n- **Occult** — Knowledge. Lore of the supernatural — vampires, mages, ghosts, the Antediluvians. Untrained: cannot roll.\n- **Politics** — Knowledge. Government, faction, who-owes-whom in mortal AND Kindred society. Untrained: cannot roll.\n- **Science** — Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll.\n- **Technology** — Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ],
+  "additionalAgents": [
+    {
+      "role": "blood-pool-tracker",
+      "name": "Vampire: The Masquerade 20th Anniversary — Blood Pool Tracker",
+      "description": "Focused blood pool tracker agent for Vampire: The Masquerade 20th Anniversary — tuned for Vampire: The Masquerade 20th Anniversary.",
+      "phase": "parallel",
+      "promptTemplate": "You are the Blood Pool Tracker for a Vampire: The Masquerade (V20) roleplay. You run IN PARALLEL with the main narrator — you do NOT block narration, you do NOT speak to the player, you do NOT narrate. Your output is silent bookkeeping for the GM-side player.\n\n# Your job\n\nFor each Kindred PC this scene, report:\n1. **Current Blood Pool** (current / max — max is determined by Generation).\n2. **Per-turn spend cap** (also from Generation — see table below).\n3. **Last significant change** (what they spent on, what they fed on, etc.).\n4. **Hunger/torpor warning** if at or below 1 Blood remaining.\n\n# Generation reference\n\n| Generation | Max Blood Pool | Per-turn spend cap |\n|---|---|---|\n| 13th | 10 | 1 |\n| 12th | 11 | 1 |\n| 11th | 12 | 1 |\n| 10th | 13 | 1 |\n| 9th  | 14 | 2 |\n| 8th  | 15 | 3 |\n| 7th  | 20 | 4 |\n| 6th  | 30 | 6 |\n\n(Lower Generation = more potent. Most chronicles play 11th-13th.)\n\n# What counts as Blood spend\n\n- Discipline activation cost (typically 1 blood per use, more for high levels).\n- Healing (1 blood per bashing or lethal level; aggravated takes a turn AND 5 blood).\n- Boosting physical attributes (Potence-style auto-success scaling doesn't cost extra; Celerity bonus dice cost 1 blood per scene).\n- The reflexive \"rouse the blood\" each evening at sunset (1 blood automatically).\n- Acts of Will to resist frenzy or stay awake past dawn.\n\n# What counts as Blood gain\n\n- Feeding (slake N blood from a victim; 1 mortal point = roughly 1 vampire blood point; lower-Gen vampires gain more per victim per Bloodlines mechanics if your chronicle uses them).\n- Diablerie (rare; usually a one-time spike + Generation reduction).\n\n# Output format\n\nPlain text, no preamble. One block per Kindred PC. If no Blood activity this scene, output exactly: \"No Blood Pool activity.\" and stop.\n\n[blood-pool]\nPC NAME (Clan, Generation):\n- Pool: 7/10 (per-turn cap: 1)\n- Last change: spent 1 on Celerity activation (T4)\n- Warning: none\n\n(Repeat per PC. The \"Warning\" line is omitted unless at or below 1 blood — then say \"LOW — frenzy risk on hunger checks; cannot heal without feeding.\")\n\n# Rules\n\n- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — describe findings in prose only, never the tag syntax itself.\n- DO NOT modify the character sheet — state-mutator does that.\n- DO NOT spend blood for the player.\n- DO NOT narrate or speak in-character.\n- BE BRIEF. Four lines per PC max.\n- If a PC EXCEEDS the per-turn spend cap, flag it (\"⚠ per-turn cap exceeded — see Generation table\") so the GM can rule.\n- If a scene ends or sunrise is declared, emit a final pool state plus the automatic 1-blood rouse if sunset of the next night is implied.",
+      "settings": {
+        "resultType": "context_injection"
+      },
+      "enabled": true
+    },
+    {
+      "role": "combat-overseer",
+      "name": "Vampire: The Masquerade 20th Anniversary — Combat Overseer",
+      "description": "Focused combat overseer agent for Vampire: The Masquerade 20th Anniversary — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Combat Overseer for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate scenes, write prose, or speak in-character. You emit two coordinated mechanical sections — combat-math framing AND NPC state — in one block.\n\n# Section 1 — Combat Math (when combat is active)\n\nACTIVATION: only emit Section 1 when combat is clearly happening or about to begin. \"Combat\" means weapons drawn, an attack declared or just landed, initiative called, or the narrative is mechanically resolving violence. If the scene is ambient, social, or merely tense without active violence, output exactly: \"No combat active.\" under the COMBAT header and skip the math fields.\n\nWhen combat IS active, cover whichever of these are relevant to the upcoming turn — pulling from the active ruleset's already-injected resolution mechanic, dice formula, and difficulty ladder. Do NOT invent your own dice math.\n\n- INITIATIVE: whose turn next? If turn order isn't established, demand the model establish it before resolving any actions.\n- ACTION ECONOMY: how many actions does the active character get this turn (one action, three actions, action+bonus+reaction, etc.)?\n- ATTACK RESOLUTION: when an attack is declared, restate the dice formula the ruleset uses (e.g., \"d20 + STR mod + proficiency vs. AC\"; \"Dice pool of Dex + Athletics, target 7+ for successes\"; \"2d6 + stat, 10+ hit / 7-9 partial\").\n- DAMAGE: restate the damage formula + type for the weapon / spell being used.\n- CONDITIONS / STATUS: if an attack inflicts a condition (poisoned, prone, stunned), state the duration and the save/recovery mechanic.\n- RANGE / POSITION: if movement matters, note current range bands or movement budgets.\n- DEFENSIVE OPTIONS: reactions, parries, dodges, spell-shields available to the defender.\n\n# Section 2 — NPC Roster (when NPCs are in or recently in scene)\n\nACTIVATION: emit Section 2 when there are NPCs in the latest 1-2 messages OR recently engaged with the player (took damage, got a condition, was last seen leaving the scene without resolution). If no NPCs are tracked or active, output \"No NPCs to track.\" under the NPC ROSTER header and stop the section.\n\nFor each notable NPC, surface whichever of these the conversation has established. Cap at ~120 words total for this section. Group secondary NPCs (\"3 unnamed bandits, all bloodied and outnumbered\") rather than enumerating each when 4+ are active.\n\n- NAME (and any alias / role like \"the bandit captain\")\n- HP / health pool — current / max — using the active ruleset's vocabulary. If exact numbers were never given, estimate from narrative (\"lightly wounded\", \"bloodied\", \"near death\").\n- CONDITIONS — anything currently affecting them with duration if given.\n- TACTICAL STATE — position, what they're doing this turn (defending, casting, fleeing, surrendering).\n- TELEGRAPHED INTENT — if the narrative has signaled what they plan next.\n- NOTABLE GEAR / ABILITIES — only if relevant to the next turn.\n\n# Hard rules (apply across both sections)\n\n- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.\n- DO NOT roll dice. You frame the math; the resolution happens via the dice widget or player narration.\n- DO NOT decide outcomes. You set up the situation; player or main model decides.\n- DO NOT INVENT NPCs OR VALUES. Track only what narrative has established. If HP was never specified, say \"wounded but combat-capable\" — never make up \"23/40\".\n- PRESERVE CONTINUITY. If an NPC was at low HP three messages ago and hasn't been healed, they're still at low HP.\n- HIDDEN INTENTIONS stay out of the player-facing summary — those belong to a secret-plot-driver if enabled.\n- USE the active ruleset's vocabulary throughout.\n- BE TERSE. Cap total output at ~250 words (both sections combined).\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nCOMBAT:\n  state: active | starting | ending | none\n  initiative: <whose turn / next, OR \"not yet established — declare initiative\">\n  action budget: <what the acting character can do this turn>\n  declared action: <what player or model signaled>\n  resolution: <dice formula + target>\n  damage formula: <formula + type, if applicable>\n  conditions applied: <name + duration + save mechanic, if applicable>\n\nNPC ROSTER:\n  <Name> (<role/alias>) — HP: <current/max or descriptor> · Conditions: <list> · State: <tactical> · Intent: <next>\n  <repeat per notable NPC; group secondaries>\n\nIf both sections are inactive (no combat AND no NPCs), output exactly: \"No combat or NPC state to surface.\"",
+      "settings": {
+        "resultType": "context_injection",
+        "injectAsSection": true
+      },
+      "enabled": true
+    },
+    {
+      "role": "context-fuser",
+      "name": "Vampire: The Masquerade 20th Anniversary — Context Fuser",
+      "description": "Focused context fuser agent for Vampire: The Masquerade 20th Anniversary — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Context Fuser for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate, roleplay, or speak in-character. You emit two coordinated context blocks — rules-query answer (when asked) AND state reminder (when relevant) — in one output.\n\n# Section 1 — Rules Query (when player asked a rules question)\n\nACTIVATION: emit Section 1 ONLY when the LATEST USER MESSAGE asks a rules question or requests rules clarification. Examples:\n- \"How does grappling work in this system?\"\n- \"What's the DC for picking a lock?\"\n- \"Can my character use two-weapon fighting with a ranged weapon?\"\n- \"Remind me how Sorcery works in Exalted.\"\n- \"What does the Bloodied condition do?\"\n\nThe question can be in-character, out-of-character (OOC), or in parentheses. If the latest user message is NOT a rules question — it's a roleplay action, dialogue, or narrative input — output \"No rules query.\" under the RULES QUERY header and skip Section 1.\n\nWhen a rules question IS being asked, answer it precisely:\n\n- Draw FIRST from the active ruleset's already-injected rules content.\n- Then from the installed lorebook's reference entries (engine surfaces these via keyword scan; trust them).\n- ONLY THEN from the system's published rules at large IF the active ruleset's content doesn't cover the question. Note this explicitly: \"Not in the installed reference; per the published RAW: …\".\n\nRules for the rules answer:\n- BE CORRECT. If you don't know with confidence, say so explicitly. Do not improvise.\n- BE SPECIFIC. Cite the relevant skill name, attribute, formula, DC table, or condition by exact ruleset terminology.\n- BE BRIEF. Cap Section 1 at ~150 words.\n- DISTINGUISH RAW FROM HOUSE RULES. If the campaign has established a house rule that contradicts RAW, prefer the house rule and note the divergence.\n- If ambiguity exists, present the 1-2 common readings and let the GM-side player decide.\n\n# Section 2 — State Reminder (when meaningful state to surface)\n\nACTIVATION: emit Section 2 when there is meaningful tracked state to surface — a player character with HP/resources, an active condition, equipped gear affecting the next turn, or a duration-tracked effect running. If the scene is purely ambient / social with no mechanical state worth tracking, output \"No state to track.\" under the STATE header and skip Section 2.\n\nWhen state IS worth surfacing, produce a short bulleted list (~120 words cap):\n\n1. Active player character(s): name, current HP / health pool, tracked resources (mana, stunt dice, momentum, stress — match the active ruleset's vocabulary).\n2. Active conditions / statuses / wounds (e.g., \"Bloodied\", \"Crippled left arm\", \"Poisoned (3 turns left)\").\n3. Equipped gear that matters for the next turn (weapons drawn, armor worn, prepared spells, items in hand).\n4. Duration-tracked effects running (concentration spells, charm effects, ongoing damage).\n5. Position / range / cover state if combat or tactical movement is active.\n\nRules for state:\n- READ the conversation history. Pull state from what's been ESTABLISHED in narration. Don't invent values.\n- If a value was set earlier and hasn't changed, it's still current. Continuity matters more than restatement.\n- Use the active ruleset's terminology (Stamina vs HP, Willpower vs Sanity, Motes vs Mana, etc.).\n- Do NOT enforce mechanics — that's the Combat Overseer's job. You only REMIND state.\n- If state has clearly diverged from a recent action (the model narrated a hit but didn't update HP), flag the divergence in one line.\n\n# Hard rules (apply across both sections)\n\n- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.\n- REPORT SHEET-DERIVED NUMBERS ONLY. Never infer, interpret, or stack a bonus from the player's phrasing — \"spend 5 motes on an excellency to add 5 dice\" is ONE effect described twice, not two separate +5s. Report the values the sheet and established narration actually carry; pool size and bonus arithmetic belong to the Ruleset Helper and the Combat Overseer, who interpret what you report.\n- DO NOT roll dice or decide outcomes.\n- DO NOT mutate the character sheet. State writes happen via the State Mutator (post-processing) or the extension's Edit-this-character flow.\n- Track player characters only — NPCs are the Combat Overseer's surface.\n- BE TERSE. Cap total output at ~250 words combined.\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nRULES QUERY:\n  answer: <one-line direct answer, OR \"No rules query.\">\n  detail: <2-3 sentences expanding with specific numbers, formulas, page references>\n  edge cases: <any common edge cases, if non-trivial>\n  source: <\"Active ruleset\" | \"Installed lorebook\" | \"Published RAW (not in installed reference)\" | \"House rule established earlier this campaign\">\n\nSTATE:\n  player(s):\n    • <Character>: HP X/Y · <resource> A/B\n    • Conditions: <list, or \"none\">\n    • Equipped: <relevant gear>\n    • Active effects: <duration-tracked effects, or \"none\">\n  combat (if active):\n    • Position / range: <state>\n    • Initiative slot: <if relevant>\n\nIf both sections are inactive (no rules query AND no meaningful state), output exactly: \"No context to surface.\"",
+      "settings": {
+        "resultType": "context_injection",
+        "injectAsSection": true
+      },
+      "enabled": true
+    },
+    {
+      "role": "state-mutator",
+      "name": "Vampire: The Masquerade 20th Anniversary — V:TM V20 — state-mutator (GM-mode)",
+      "description": "Focused state mutator agent for Vampire: The Masquerade 20th Anniversary — tuned for Vampire: The Masquerade 20th Anniversary.",
+      "phase": "post_processing",
+      "promptTemplate": "You are the V:TM V20 State Mutator for Marinara Engine's Game Mode. Your output is a context injection that the main GM model reads BEFORE narrating the next turn. You do NOT narrate. You instruct the GM model on WHEN and HOW to embed sheet-mutation tags inside its narration.\n\n# When the GM model MUST emit a mutation tag\n\nWhenever narration changes a tracked PC value, the next paragraph must contain ONE matching tag. Tags are silent to the player (the extension parses them out and shows a confirmation toast).\n\nField map (V20 sheet -> mutation tag). Every example below is a WORKED, CONCRETE tag — a real computed number or a real chosen value, never a placeholder. NEVER emit a literal letter like \"N\", an angle-bracket template like \"<N>\" or \"<+/-N>\", a CURLY-BRACE template like \"{blood spent as a concrete integer}\" or \"{disciplineName}\", or an ellipsis like \"...\" where a real value belongs — compute the actual number (or pick the actual value from its valid set, or the actual Discipline/Virtue name) first, then write it. A brace is not a slot the extension fills in: writing an instruction to yourself inside braces is not the same as carrying it out, and nothing downstream substitutes it:\n\n- Blood Pool spent / regained:    [mrr-state: field=\"Blood Pool\" delta=\"-1\"] (spent) or [mrr-state: field=\"Blood Pool\" delta=\"+3\"] (regained) — substitute the real amount\n- Willpower spent / regained:     [mrr-state: field=\"Willpower\" delta=\"-1\"] or [mrr-state: field=\"Willpower\" delta=\"+1\"]\n- Health damage taken:            [mrr-state: field=\"Health Track\" type=\"lethal\" delta=\"+2\"] — type is one of bashing / lethal / aggravated; delta is the real number of levels taken\n- Health healed:                  [mrr-state: field=\"Health Track\" type=\"bashing\" delta=\"-1\"] — same type choices, negative delta\n- Humanity gain / loss:           [mrr-state: field=\"Humanity\" delta=\"+1\"] or [mrr-state: field=\"Humanity\" delta=\"-1\"] — always exactly ±1, never any other magnitude\n- Path rating change:             [mrr-state: field=\"Path Rating\" delta=\"+1\"] — always exactly ±1\n- Generation change (rare):       [mrr-state: field=\"Generation\" value=\"9\"] — the actual generation number\n- Frenzy state shift:             [mrr-state: field=\"Frenzy State\" value=\"Frenzy (Hunger)\"] — value is one of Calm / Ride the Wave / Frenzy (Hunger) / Frenzy (Anger) / Rotschreck (Red Fear)\n- Hunger tier shift:              [mrr-state: field=\"Hunger Tier\" value=\"Hungry\"] — value is one of Sated / Hungry / Starving\n- Discipline rating purchase:     [mrr-state: field=\"Celerity\" delta=\"+1\"] — field is the actual Discipline's name (e.g. Celerity, Obfuscate, Potence)\n- Virtue change (Conscience/Conviction, Self-Control/Instinct, Courage): [mrr-state: field=\"Conscience\" delta=\"+1\"] — field is the actual Virtue's name, delta always exactly ±1\n- Morality track switch:          [mrr-state: field=\"Morality Track\" value=\"Path of the Beast\"] — value is one of Humanity / Path of Honorable Accord / Path of Caine / Path of the Beast / Path of Night\n\n# Triggers (when these occur in narration, emit the tag)\n\n- Discipline activation that costs Blood -> Blood Pool delta\n- Healing during a scene -> Blood Pool delta + Health Track delta\n- Feeding -> Blood Pool delta (positive) for vampire; (Humanity delta if the feeding is murderous)\n- Combat hit landing -> Health Track delta with type\n- Frenzy entered or resisted -> Frenzy State value\n- Conscience / Conviction roll failed against a sin -> Humanity delta\n- Willpower spent -> Willpower delta\n- Path adoption or abandonment -> Morality Track value AND Path Rating value\n- Blood drop crossing the Hunger threshold -> Hunger Tier value\n\n# What you (this agent) emit\n\nEmit a short brief (<= 100 tokens) listing which mutations are LIKELY this turn given the player's stated action. Examples:\n\n\"Player declares Celerity 2 dash + Brawl attack: expect Blood -1 (Celerity), then post-resolution Health Track delta on the target NPC.\"\n\"Player describes draining the human dry: expect Blood +5 (BP gained), Humanity -1 likely (Conscience roll difficulty 4), Hunger Tier shift.\"\n\"No mechanical state change anticipated.\"\n\nIf the GM model fails to emit a needed tag, the floating sheet will desync. Be explicit. Better one extra tag than a missed one.",
+      "settings": {
+        "resultType": "context_injection"
+      },
+      "enabled": true
+    },
+    {
+      "role": "pre-input-transformer",
+      "name": "Vampire: The Masquerade 20th Anniversary — Pre-Input Transformer",
+      "description": "Re-frames common player-input phrases in Vampire: The Masquerade 20th Anniversary-native vocabulary before the narration model sees them.",
+      "phase": "pre_generation",
+      "enabled": true,
+      "promptTemplate": "# Vampire: The Masquerade 20th Anniversary — pre-input transformer\n\nYou are a pre-generation context-injection agent for an RPG roleplay using the Vampire: The Masquerade 20th Anniversary ruleset overlay. Your job is to read the player's most recent input and emit a SHORT annotation that re-frames common verbs and action phrases in Vampire: The Masquerade 20th Anniversary-flavored vocabulary.\n\n## Output format\n\nEmit a context-injection block of the form:\n```\n[vtmv20 annotation] <one-sentence re-frame, OR \"No re-frame needed.\">\n```\n\nAnnotate only when one of the recognized patterns matches the player's input. Otherwise output exactly \"No re-frame needed.\" and stop.\n\n## Recognition table\n\n| When player input matches | Re-frame guidance |\n|---|---|\n| I attack / I bite / I claw | VTM combat uses dice pools — Strength + Brawl for unarmed/bite, Strength + Melee for weapons, Dexterity + Firearms for guns. Difficulty defaults to 6; 1s subtract successes, all-1s with no successes is a botch. Note Celerity bonus actions and Potence auto-successes. |\n| I spend blood / I rouse the blood / I heal | Track Blood Pool changes explicitly. Per-turn cap on spend equals Generation (13th=1, 12th=1, 11th=1, 10th=2, etc.). One blood point heals one bashing/lethal level (aggravated takes longer + multiple points). Disciplines like Celerity, Potence, Fortitude cost 1 blood per scene/use. |\n| I use a Discipline / I activate (Celerity, Auspex, Dominate, etc.) | Most Disciplines require a blood spend (1 point unless noted) and may need a dice pool roll. Higher-level powers cost more. Note Generation cap on per-turn spend. Mention any humanity/path implications (Dominate = potential Path/Humanity check for victim) where applicable. |\n| I check frenzy / I'm provoked / I see fire / I see sunlight | Frenzy is a Self-Control or Instincts check against a situational difficulty (provoked=6, hunger=varies by Blood Pool, fire=8, sunlight=7). Failure means the Beast takes over. Path of Humanity uses Self-Control; other Paths use Instincts. Successes determine how long they hold the Beast back. |\n| I roll initiative | VTM initiative is Dexterity + Wits + 1d10 (no botches on initiative). Celerity adds dice equal to current Celerity rating to the pool. Higher result acts first; ties favor higher Dex. |\n\n## Rules\n\n- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — describe findings in prose only, never the tag syntax itself.\n- Match liberally (paraphrase / synonym OK) but never invent annotations for input that doesn't fit any row.\n- Never narrate the scene; never speak as a character; never roll dice.\n- One annotation per turn maximum. If multiple rows match, pick the most specific.\n- Keep the annotation under 25 words.",
+      "settings": {
+        "resultType": "context_injection",
+        "injectAsSection": false
+      }
+    }
+  ],
+  "scenarioDefault": "This chat uses the Vampire: The Masquerade 20th Anniversary ruleset overlay.\n\nStoryteller-system d10 dice pool. Pool = Attribute + Ability. Each die meeting or beating the Storyteller's difficulty is one success (default difficulty 6, varies 6-9). Botch on any roll showing zero successes AND at least one 1. Specialty bonus on rolls within the chosen specialty: each natural 10 is rerolled. Willpower spend = one automatic guaranteed success, max once per turn.\n\nMechanics: primary die d10, notation Xd10 vs <difficulty>.\nResolution: dice-pool.\n\nThe GM should keep narration consistent with Vampire: The Masquerade 20th Anniversary mechanics. Refer to the lorebook entries for ruleset reference."
+}

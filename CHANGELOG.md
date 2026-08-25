@@ -9,6 +9,66 @@ explicitly when they do).
 
 ## [Unreleased]
 
+## v1.2.0 (2026-08-25)
+
+- **Party writes — `target=` honored end to end.** A `[mrr-state:]` tag can now
+  name any roster member, and the write lands on **that** character's sheet:
+  Ginny's damage hits Ginny while Tester is active, through both transports, in
+  RP and game mode. The applier resolves targets against the chat's roster
+  (exact name or id after deterministic normalization — fuzzy matching is
+  banned by design), and an unresolvable or ambiguous target is **dropped with
+  a visible notice, never guessed onto the active sheet**. Swipe revert/redo
+  now operates per character across everyone a message touched, the mutation
+  journal carries character attribution, cross-transport claims are scoped per
+  (message, character) so one member's echo can no longer suppress another
+  member's genuine write, and the apply log reports a per-outcome tally.
+  `target="player"` and target-less tags keep their old meaning (the active
+  character), so existing rulesets work unchanged. Retires Round D's
+  "tags only move the active character" limitation and the double-spend
+  artifact it caused.
+
+- **Honest dice on tool-less connections.** Claude-subscription (SDK)
+  connections structurally cannot deliver the `roll_dice` tool — an engine
+  provider boundary now documented upstream in v2.4.4 ("text-only Agent SDK
+  isolation"). Every GM doctrine (all 16 rulesets — including eight that had
+  shipped with **no** dice doctrine at all) gains a no-tool fallback: **never
+  generate dice faces** — a written face is a fabrication, not a roll — name
+  the pool, hand the roll to the player's dice widget with the outcome ladder
+  precomputed, and apply the reported face exactly. The extension also detects
+  the narrator connection's provider at chat activation and shows a one-time
+  notice when that provider can never roll, so fabricated "lucky 9s" can't
+  masquerade as tool output again.
+
+- **Agent roster consolidation and build strictness.** exwod and w20 retire
+  their legacy four-agent generation (8 → 4 agents each; blocking model calls
+  per turn drop 8 → 3), and reinstall reconciliation prunes the retired
+  entries so the cut is real, not cosmetic. The agent build gains a per-ruleset
+  roster manifest (`agents.manifest.json`: suppress / phaseOverride), a missing
+  `**Phase:**` declaration is now a **build error** (two shipped agents had
+  silently defaulted into the blocking phase), and a report-only
+  reference-redundancy lint flags rules text living in more than one prompt —
+  the drift class that produced three contradictory anima tables. vtmv20's
+  state-mutator is corrected to `post_processing`.
+
+- **Consent-gated cleanup of stale preset marker sections.** The agent-manager
+  dialog can now list orphaned `agent_data` marker sections left behind by
+  retired or re-typed agents — showing exactly what would be deleted — and
+  removes them only on explicit confirmation, one batch, abort-on-first-failure.
+  Declining touches nothing; hand-made non-MRR sections are never listed; no
+  section-reorder call is ever made.
+
+- **Agents edited in the engine UI heal themselves.** The engine's agent
+  editor rebuilds settings from an allowlist, which silently stripped the
+  extension's management tags — disarming the sole-writer filter, cutting the
+  edited agents off from sheet syncs, and duplicating them on the next import.
+  Reconcile now re-adopts such rows by their prompt identity (read through any
+  injected sheet block), re-stamping the tags via a settings **merge** that
+  preserves everything foreign — output caps, connection choices, anything the
+  UI wrote. Import's delete-then-recreate path preserves outgoing settings the
+  same way, so reinstalls no longer reset a configured agent. (A row deleted
+  *by hand* before importing still comes back fresh — remembering per-role
+  settings across full deletions is queued.)
+
 - **Agent consolidation Stage 2 — the Exalted Essence Manager.**
   `rulesets/exalted3e/agents/anima-banner-monitor.md` and
   `charm-cooldown-tracker.md` are retired and replaced by a single
