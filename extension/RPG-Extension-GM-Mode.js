@@ -5347,6 +5347,152 @@ function mrrAddAgentSectionsToActivePreset(confirmFn, progressCb) {
   });
 }
 
+/* ═══ Stage 3 (2026-08-25): consent-gated stale-marker CLEANUP ═════════════
+   The other half of the F3 assist. The add leg mints marker sections; this
+   leg removes the ones that have gone dead, and it is deliberately built as
+   a sibling of the add leg — same consent shape, same never-automatic rule,
+   same error vocabulary — because Corey's ruling was explicit: *"Let's
+   consent gate the delete — adding to the preset is easy (if weird),
+   deleting isn't much harder but if the engine hallucinates what it's told
+   to do that way lies rebuilding a preset which is annoying."*
+
+   S1-E's reconciliation pass already FINDS stale markers and logs them
+   ("Delete them in Preset Editor if you want the preset tidy") but refuses
+   to issue the DELETE, because a standing background pass is the wrong place
+   to destroy sections in a preset the user owns. A dialog the user clicked,
+   showing the exact list, with one confirm for the batch, is the right one.
+
+   TWO GUARDS decide what is eligible, and both must hold:
+
+     1. OURS. The marker's agentType must start with MRR_AGENT_TYPE. This is
+        the same doctrine mrrRoleForOrphanType states at its first line —
+        "not our naming scheme -> not ours -> never touched". A user's own
+        hand-made agent_data marker is never listed, whatever state it is in;
+        cleaning up after the user's own agents is not this extension's job
+        and getting it wrong is precisely the preset-rebuild disaster the
+        consent gate exists to prevent.
+
+     2. DEAD. The type must match NO live agent row at all. §3b's wording is
+        "no live MANAGED row"; matching against EVERY live type (managed or
+        not, any ruleset) is strictly narrower — every section this skips
+        would also have been skipped by the looser test, and it removes the
+        multi-ruleset footgun where ruleset B's perfectly good markers look
+        unmanaged while ruleset A is the active one. A marker pointing at a
+        live agent is never stale, and is never listed.
+
+   KNOWN LIMIT, stated so nobody mistakes it for a bug: a marker for a
+   RETIRED role whose agent ROW is still installed is NOT listed here. S1-E
+   deliberately leaves retired rows alive (it only prunes activeAgentIds), so
+   the type is still live and guard 2 correctly protects it. S1-E can tell
+   the difference only because an install hands it `bundleRoles`; a dialog
+   click has no bundle in hand and must never infer one. Delete the retired
+   rows first (Manage MRR Agents, or Settings -> Agents) and their markers
+   become listable on the next run. */
+function mrrStaleAgentSectionsInPreset(sections, agents) {
+  var live = mrrLiveAgentTypes(agents);
+  var out = [];
+  var list = Array.isArray(sections) ? sections : [];
+  for (var i = 0; i < list.length; i++) {
+    var sec = list[i];
+    if (!sec || !sec.id) continue;
+    if (!sec.markerConfig) continue;
+    /* markerConfig arrives as a JSON STRING on read (prompts.storage.ts does
+       no deserialization) — parsed defensively, exactly as the engine's own
+       consumer does at generate.routes.ts:2465-2477. */
+    var mc = sec.markerConfig;
+    if (typeof mc === "string") mc = safeParse(mc);
+    if (!mc || typeof mc !== "object" || mc.type !== "agent_data") continue;
+    var t = mc.agentType;
+    if (typeof t !== "string" || !t) continue;
+    if (t.indexOf(MRR_AGENT_TYPE) !== 0) continue;   /* guard 1: not ours */
+    if (live[t]) continue;                           /* guard 2: still live */
+    out.push({ id: sec.id, name: sec.name || sec.id, type: t });
+  }
+  return out;
+}
+
+/* The offered action. Resolves to a human-readable summary; rejects with an
+   Error whose message is safe to show verbatim. */
+function mrrRemoveStaleAgentSectionsFromActivePreset(confirmFn, progressCb) {
+  function progress(m) { if (progressCb) progressCb(m); }
+  var chatId = state.chatId;
+  if (!chatId) return Promise.reject(new Error("No active chat — open a chat first."));
+  progress("Resolving the active preset...");
+  return apiFetch("/chats/" + encodeURIComponent(chatId)).then(function (chat) {
+    var presetId = chat && chat.promptPresetId;
+    /* No preset on the chat means no sections to clean. Unlike the add leg
+       this deliberately does NOT fall back to the default preset and bind it:
+       attaching a preset is a change to the chat, and nobody clicking
+       "clean up" is asking for one. Same doctrine as
+       mrrReconcilePresetMarkers' no-preset branch. */
+    if (!presetId) {
+      return "This chat has no prompt preset, so there are no agent marker sections to clean up.";
+    }
+    progress("Reading preset...");
+    return Promise.all([
+      apiFetch("/prompts/" + encodeURIComponent(presetId) + "/full"),
+      apiFetch("/agents")
+    ]).then(function (r) {
+      var full = r[0];
+      var sections = (full && Array.isArray(full.sections)) ? full.sections : [];
+      var presetName = (full && full.preset && full.preset.name) || presetId;
+      var stale = mrrStaleAgentSectionsInPreset(sections, r[1]);
+      if (!stale.length) {
+        return "Preset \"" + presetName + "\" has no stale MRR agent sections. Nothing to do.";
+      }
+      /* The dialog lists EXACTLY the deletion set — this array is both the
+         thing shown and the thing iterated, never recomputed in between. */
+      var names = stale.map(function (s) { return "  • " + s.name + "  (" + s.type + ")"; }).join("\n");
+      var prompt = "This will DELETE " + stale.length + " section(s) from preset \"" + presetName + "\".\n\n" +
+        "Deleting:\n" + names + "\n\n" +
+        "Each one is an MRR agent marker whose agent no longer exists, so it injects nothing. " +
+        "Deletion is permanent — there is no undo. Continue?";
+      var ok = confirmFn ? confirmFn(prompt) : window.confirm(prompt);
+      if (!ok) return "Cancelled — no changes made.";
+
+      var removed = 0;
+      /* One DELETE at a time, in list order. There is no bulk section delete,
+         and we deliberately never call PUT /sections/reorder — it rewrites
+         EVERY section's injectionOrder to i*100 and would silently reshuffle
+         a preset the user has hand-tuned. Removal alone leaves the surviving
+         sections' ordering exactly as the user left it.
+         apiDeleteRaw counts 204 (the engine's success status here), any 2xx,
+         and 404 as success — so a section already deleted in another tab is
+         not a spurious abort. */
+      return stale.reduce(function (c, s) {
+        return c.then(function () {
+          progress("Deleting " + s.name + "...");
+          return apiDeleteRaw("/prompts/" + encodeURIComponent(presetId) +
+                              "/sections/" + encodeURIComponent(s.id))
+            .then(function () { removed++; })
+            .catch(function (e) {
+              /* Abort on the FIRST failure, naming it. Continuing past an
+                 unexplained failure against a preset we are deleting from is
+                 how a half-cleaned preset becomes a rebuilt preset. */
+              warn("preset cleanup: DELETE failed on section \"" + s.name + "\" (" + s.type + ") — aborted after " +
+                   removed + " of " + stale.length + " removal(s); the remaining sections are untouched: " +
+                   (e && e.message ? e.message : e));
+              var err = new Error("Stopped after " + removed + " of " + stale.length +
+                " deletion(s): section \"" + s.name + "\" (" + s.type + ") could not be deleted (" +
+                (e && e.message ? e.message : e) +
+                "). The remaining sections were left untouched — fix the cause and run this again.");
+              if (e && typeof e.status === "number") err.status = e.status;
+              throw err;
+            });
+        });
+      }, Promise.resolve()).then(function () {
+        log("preset cleanup: removed " + removed + " stale agent marker section(s) from preset \"" + presetName + "\"");
+        return "Removed " + removed + " stale agent section(s) from preset \"" + presetName + "\".";
+      });
+    });
+  }).catch(function (e) {
+    if (e && e.status === 409) {
+      throw new Error("Preset is read-only. The stock \"Marinara Universal\" preset cannot be modified — open it in the Preset Editor and use \"Save as copy\" to create an editable preset, select that for this chat, then run this again.");
+    }
+    throw e;
+  });
+}
+
 function openAgentManagerDialog() {
   if (state.agentMgrDialogEl && state.agentMgrDialogEl.parentNode) {
     state.agentMgrDialogEl.parentNode.removeChild(state.agentMgrDialogEl);
@@ -5366,6 +5512,7 @@ function openAgentManagerDialog() {
   var list = marinara.addElement(dialog, "div", { "class": "mrr-dialog__lib" });
   var buttons = marinara.addElement(dialog, "div", { "class": "mrr-dialog__buttons" });
   var sectionsBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Add agent sections to active preset" });
+  var cleanupBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Remove stale agent sections" });
   var refreshBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Refresh" });
   var closeBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn", textContent: "Close" });
 
@@ -5389,6 +5536,23 @@ function openAgentManagerDialog() {
       .catch(function (e) {
         if (msg) { msg.textContent = (e && e.message) || String(e); msg.className = "mrr-msg mrr-msg--err"; }
         sectionsBtn.disabled = false;
+      });
+  });
+
+  /* Stage 3 — the cleanup leg. Same consent shape as the add leg above:
+     click-triggered only, one confirm listing exactly what will be deleted,
+     and nothing happens anywhere else in the extension's lifecycle. */
+  if (cleanupBtn) marinara.on(cleanupBtn, "click", function () {
+    cleanupBtn.disabled = true;
+    if (msg) { msg.textContent = "Working..."; msg.className = "mrr-msg mrr-msg--info"; }
+    mrrRemoveStaleAgentSectionsFromActivePreset(null, function (s) { if (msg) msg.textContent = s; })
+      .then(function (summary) {
+        if (msg) { msg.textContent = summary; msg.className = "mrr-msg mrr-msg--ok"; }
+        cleanupBtn.disabled = false;
+      })
+      .catch(function (e) {
+        if (msg) { msg.textContent = (e && e.message) || String(e); msg.className = "mrr-msg mrr-msg--err"; }
+        cleanupBtn.disabled = false;
       });
   });
 
@@ -17182,13 +17346,16 @@ function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progres
       var t = mc.agentType;
       if (typeof t !== "string" || !t) continue;
       if (retiredTypes[t]) {
-        /* Reported, deliberately NOT deleted. The section is inert the moment
-           the type leaves activeAgentIds — the agent stops running, so the
-           macro resolves to nothing. Removing it would mean issuing
-           DELETE /prompts/:presetId/sections/:sectionId, a call this
-           extension has never made, against a preset the USER owns and may
-           have hand-edited. Destructive and irreversible to buy the removal
-           of an empty section: not a trade to make without being asked. */
+        /* Reported, deliberately NOT deleted HERE. The section is inert the
+           moment the type leaves activeAgentIds — the agent stops running, so
+           the macro resolves to nothing. Deleting it would mean issuing
+           DELETE /prompts/:presetId/sections/:sectionId from a standing
+           background pass, against a preset the USER owns and may have
+           hand-edited. Destructive and irreversible to buy the removal of an
+           empty section: not a trade to make without being asked.
+           Stage 3 is where it gets asked — "Remove stale agent sections" in
+           Manage MRR Agents issues exactly that DELETE, but only from a
+           click, and only after showing the user the exact list. */
         staleMarkers.push({ type: t, role: retiredTypes[t], name: sec.name || sec.id });
         continue;
       }
@@ -17210,7 +17377,9 @@ function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progres
       log("reconcile: " + staleMarkers.length + " preset marker section(s) point at RETIRED role(s) (" +
           staleMarkers.map(function (s) { return s.role + " -> \"" + s.name + "\""; }).join(", ") +
           "). They are inert now that those agents no longer run, so they inject nothing — but they are " +
-          "still listed in the preset. Delete them in Preset Editor if you want the preset tidy.");
+          "still listed in the preset. To tidy them: delete the retired agent rows (Manage MRR Agents), then " +
+          "use \"Remove stale agent sections\" in the same dialog — it lists exactly what it will delete and " +
+          "asks before touching anything. Deleting them by hand in the Preset Editor works too.");
     }
 
     if (!work.length) return;
