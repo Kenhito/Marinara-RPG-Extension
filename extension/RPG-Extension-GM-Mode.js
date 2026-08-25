@@ -1451,6 +1451,157 @@ function pickDefaultConnection() {
   });
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   D-2 — THE PROVIDER-AWARE DICE-INTEGRITY GUARD (2026-08-25)
+
+   WHY THIS EXISTS. F#18, closed-confirmed the same day: a narrator running on
+   a claude-subscription connection FABRICATED dice faces and then rationalised
+   them in prose ("the suspicious 9s are the tell"). It was not a prompt
+   failure. The engine gates its whole tool loop on
+   `if (enableChatTools && provider.chatComplete)` (generate.routes.ts:6351),
+   and the subscription providers do not implement `chatComplete` at all — so
+   `roll_dice` is structurally undeliverable on those connections EVEN WHEN the
+   chat's Function Calling toggle is on and the tool is listed. The narrator was
+   told to call a tool that could never arrive, and filled the hole itself.
+
+   WHAT THIS DOES, AND ONLY THIS. Display + doctrine. One console line and one
+   dismissible panel notice, once per chat per session, telling the player that
+   the RNG is now their widget. It changes NO pipeline, rolls nothing, parses no
+   roll requests, and issues ZERO per-turn requests — the capability check rides
+   the activation/confirmation chokepoint (mrrConfirmChatRuleset) and is gated
+   per chat, so N turns cost one `/connections` read, not N. Fail-open by
+   construction: an unknown provider, an unreadable list, or an unresolvable
+   connection all stay SILENT. Nagging on the unknown is how a guard like this
+   gets muted, and a muted guard is worse than none.
+
+   ── ENGINE-VERSION COUPLING (see COUPLINGS.md; re-verify every release) ──
+   Source-verified against the local engine on 2026-08-25:
+     ~/Marinara-Engine/packages/server/src/services/llm/providers/
+       claude-subscription.provider.ts   — 0 refs to `chatComplete`
+       grok-subscription.provider.ts     — 0 refs to `chatComplete`
+     (anthropic / google / openai / openai-chatgpt / local-sidecar all DO
+      implement it, which is why the list is a denylist of two and not a
+      capability guess.)
+     ~/Marinara-Engine/packages/server/src/routes/generate.routes.ts:6351
+       — `if (enableChatTools && provider.chatComplete) {` — the gate itself.
+
+   ── THE UNDERSCORE TRAP (do not "fix" the constant to match) ──
+   The engine's wire value is UNDERSCORED: `apiProviderSchema` is
+   z.enum([... "claude_subscription", "grok_subscription" ...])
+   (packages/shared/src/schemas/connection.schema.ts:8-23). The HYPHENATED
+   spelling below is the provider FILE name, which is what the spec named the
+   constant after. A raw `indexOf(conn.provider)` against hyphens would match
+   nothing on any real connection row and this guard would be dead code that
+   looks alive — the exact failure mode of the old console-sniff State-Mutator
+   probe. mrrNormalizeProviderId folds `_` to `-` and lowercases on BOTH sides
+   so either spelling resolves. The constant keeps the spec's literal names. */
+var MRR_TOOLLESS_PROVIDERS = ["claude-subscription", "grok-subscription"];
+
+/* chatId -> the chat row's own `connectionId` (createChatSchema declares it —
+   chat.schema.ts:11-19). Harvested by mrrNoteChatRow from the chat row that
+   ALREADY arrives on every chat entry, exactly like the Round-B present set,
+   so resolving "which connection narrates this chat" costs nothing extra.
+   Deliberately NOT folded into mrrPresentSets: that entry's signature drives
+   binding re-resolution, and a connection change is not a party change. */
+var mrrChatConnectionIds = Object.create(null);
+
+/* Session-scoped one-shot ledger, chatId -> true. Set BEFORE the async hop, so
+   the route poller cannot start a second read while the first is in flight.
+   Deliberately NOT cleared by mrrResetRulesetLatch: "once per chat per session"
+   means returning to a chat you were already told about does not re-nag. */
+var mrrDiceToolCheckedChats = Object.create(null);
+
+function mrrNormalizeProviderId(p) {
+  return String(p == null ? "" : p).trim().toLowerCase().replace(/_/g, "-");
+}
+
+/* Unknown/blank -> false. Fail-open is the whole posture: we warn only about
+   providers we have READ the source of and know cannot carry a tool. */
+function mrrProviderIsToolless(p) {
+  var id = mrrNormalizeProviderId(p);
+  if (!id) return false;
+  return MRR_TOOLLESS_PROVIDERS.indexOf(id) !== -1;
+}
+
+/* Resolve the connection that NARRATES this chat: the chat's own selection if
+   it has one, else the engine's main default.
+
+   NOTE ON `isDefault` vs `defaultForAgents`. pickDefaultConnection (just above)
+   prefers `defaultForAgents` because it is choosing the connection our INSTALLED
+   AGENTS run on. This guard is about the narrator — the main generation — whose
+   default flag is `isDefault` (connection.schema.ts:59-63 declares both). Reusing
+   pickDefaultConnection's rule verbatim here would name the agents' connection in
+   a notice about the narrator's, i.e. it would confidently tell the player the
+   wrong thing. Same `/connections` read, narrator-correct selection rule; the
+   lone-connection fallback is preserved from pickDefaultConnection unchanged.
+   Returns {conn, source} or null. */
+function mrrPickNarratorConnection(list, chatConnectionId) {
+  if (!Array.isArray(list) || !list.length) return null;
+  function byId(id) {
+    if (!id) return null;
+    for (var i = 0; i < list.length; i++) if (list[i] && list[i].id === id) return list[i];
+    return null;
+  }
+  var chosen = byId(chatConnectionId);
+  if (chosen) return { conn: chosen, source: "chat" };
+  var dflt = list.find(function (c) {
+    return c && (c.isDefault === true || c.isDefault === "true");
+  });
+  if (dflt) return { conn: dflt, source: "default" };
+  if (list.length === 1 && list[0] && list[0].id) return { conn: list[0], source: "only" };
+  return null;
+}
+
+/* The main-generation failover row, if the user configured one
+   (`fallbackForMain`, connection.schema.ts:60). Used for ONE clarifying clause
+   in the notice — we deliberately do not model failover TIMING (we cannot know
+   which connection served any given turn), so the notice says "primary". */
+function mrrPickMainFallbackConnection(list) {
+  if (!Array.isArray(list)) return null;
+  return list.find(function (c) {
+    return c && (c.fallbackForMain === true || c.fallbackForMain === "true");
+  }) || null;
+}
+
+/* Pure message builder — returns the notice string, or null when nothing should
+   be said. Split out from the fetch so the probe suite can assert the wording
+   and the silence rules without a network stub. */
+function mrrDiceIntegrityNoticeText(picked, fallbackConn) {
+  if (!picked || !picked.conn) return null;                       /* unresolvable -> silent */
+  if (!mrrProviderIsToolless(picked.conn.provider)) return null;  /* capable or unknown -> silent */
+  var provider = mrrNormalizeProviderId(picked.conn.provider);
+  var msg = "Narrator dice tool unavailable on this connection (provider: " + provider + ")" +
+            " — player-widget rolls are the RNG source. The GM is instructed to delegate rolls to you.";
+  if (fallbackConn && !mrrProviderIsToolless(fallbackConn.provider)) {
+    msg += " This describes the PRIMARY connection; a failover connection is configured and is tool-capable," +
+           " but which one serves any given turn is the engine's call, not ours.";
+  }
+  return msg;
+}
+
+/* The activation-time check. One `/connections` read per chat per session,
+   fired from the confirmation chokepoint. Never throws outward: a failed read
+   is a silent non-event, not a warning about a warning. */
+function mrrCheckDiceToolCapability(chatId, why) {
+  if (!chatId) return Promise.resolve(null);
+  if (mrrDiceToolCheckedChats[chatId]) return Promise.resolve(null);
+  mrrDiceToolCheckedChats[chatId] = true;   /* set BEFORE the hop — no second read in flight */
+  return apiFetch("/connections", {}).then(function (list) {
+    var picked = mrrPickNarratorConnection(list, mrrChatConnectionIds[chatId]);
+    var msg = mrrDiceIntegrityNoticeText(picked, mrrPickMainFallbackConnection(list));
+    if (!msg) return null;
+    /* mrrPanelWarn is the file's existing warn-strip idiom: it emits the ONE
+       console line (via warn) and mounts the ONE dismissible panel notice. */
+    mrrPanelWarn(msg + " [" + (why || "chat ruleset confirmed") +
+                 "; connection resolved from: " + picked.source + "]");
+    return msg;
+  }).catch(function (e) {
+    log("dice-integrity guard: could not read /connections (" +
+        (e && e.message ? e.message : e) + ") — staying silent (fail-open)");
+    return null;
+  });
+}
+
 /* Compare two semver-shaped version strings. Returns -1 if a<b, 0 if =, 1 if a>b.
    Tolerates missing minor/patch by treating them as 0. */
 function cmpVersion(a, b) {
@@ -2428,6 +2579,17 @@ function mrrNoteChatRow(chatId, chat, source) {
   var hasCards = Array.isArray(chat.characterIds);
   var meta = mrrChatMeta(chat);
   var prev = mrrPresentSets[chatId] || null;
+  /* D-2 harvest: the chat's own narrator connection, off this same already-in-
+     flight row. Kept OUT of the present-set entry on purpose — that entry's
+     signature (mrrPresentSetSignature) drives binding re-resolution, and a
+     connection change is not a party change. Only overwrite when the response
+     actually mentioned the field: a partial row from a metadata PATCH must not
+     erase a connection we already learned (same discipline as the fields above). */
+  if (Object.prototype.hasOwnProperty.call(chat, "connectionId")) {
+    mrrChatConnectionIds[chatId] = (typeof chat.connectionId === "string" && chat.connectionId)
+      ? chat.connectionId
+      : null;
+  }
   var entry = {
     characterIds: hasCards ? chat.characterIds.filter(mrrIsCardId) : (prev ? prev.characterIds : []),
     gameGmCharacterId: mrrIsCardId(meta.gameGmCharacterId) ? meta.gameGmCharacterId
@@ -3600,6 +3762,17 @@ function mrrConfirmChatRuleset(chatId, why) {
      here or it would never appear on the render that matters. Cheap and
      idempotent: with no candidate it mounts nothing. */
   if (typeof mrrRenderContinueOffer === "function") mrrRenderContinueOffer();
+  /* D-2 — the dice-integrity guard, at the same chokepoint and for the same
+     reason as its four neighbours above: confirmation is the first instant the
+     chat is known to be bound, and its connection row has by now been harvested
+     by mrrNoteChatRow off the metadata read that got us here. Display-only, so
+     it sits LAST — nothing below it depends on the answer, and a slow or failed
+     `/connections` read must not delay the sheet, the agents, or the offer.
+     Gated per chat per session internally (mrrDiceToolCheckedChats), so this is
+     one read on entry and a property lookup on every call thereafter — zero
+     per-turn requests. `typeof`-guarded like its neighbours so the pre-D-2 probe
+     suites keep evaluating this function unchanged. */
+  if (typeof mrrCheckDiceToolCapability === "function") mrrCheckDiceToolCapability(chatId, "chat ruleset confirmed");
 }
 
 /* The latch must reset on EVERY chat change — called from watchRouteChanges
