@@ -18134,6 +18134,15 @@ function applyStateTagsWithDedup(tags, anchorId, journalKey, channel) {
         " — suppressing " + suppressed[scid].sigs.length + " mutation(s) from " + chan);
     mrrWarnCrossChannelMismatch(bucketKey, anchorId, suppressed[scid].claimedBy, chan, scid, suppressed[scid].sigs);
   }
+  /* PARTY WRITES §4.2 trap 1, second half. Bound applies painted nothing
+     (the latch), so if this pass ALSO moved the active character's sheet the
+     panel needs exactly one repaint of the restored active sheet.
+     Gated on `boundApplies` so a pass that never bound anything — every solo
+     session, and every party turn that only touched the active character —
+     takes the pre-party-writes path untouched: finalizeMutation already
+     rendered per mutation, and adding a repaint here would be a visible
+     behaviour change with nothing to fix. */
+  if (tally.boundApplies && tally.activeTouched) renderSheet();
   mrrLogOutcomeTally(bucketKey, chan, tally);
   return applied;
 }
@@ -18373,7 +18382,24 @@ function mrrJournalMutation(field, payload) {
      reconstruction. null here only if this entry somehow got created
      outside that call (shouldn't happen — see mrrCurrentApplySig's own
      comment); mrrClearDedupKeysForBucket treats null as nothing to clear. */
-  var entry = { field: field, kind: "set", prev: payload.prev, next: payload.next, sig: mrrCurrentApplySig || null };
+  /* ─── PARTY WRITES §3.3 — CHARACTER ATTRIBUTION + A VERSION STAMP ───────
+     charId is read off state.activeCharacterId AT ENTRY TIME, which under
+     §4.2's binding is automatically the TARGET — no plumbing, no second
+     source of truth. v:2 marks an entry that carries attribution.
+
+     HONEST NOTE ON LEGACY ENTRIES. An entry with no v/charId reverts exactly
+     as it does today: replayed onto whoever is active at revert time. That
+     IS a pre-existing latent bug — switch character between apply and swipe
+     and today's revert already writes the wrong sheet — and attribution
+     fixes it for every new entry. No migration and no guessing about old
+     ones: journal buckets only live as long as recent messages, so legacy
+     exposure decays to zero within a session. */
+  var entry = {
+    field: field, kind: "set", prev: payload.prev, next: payload.next,
+    sig: mrrCurrentApplySig || null,
+    charId: state.activeCharacterId || null,
+    v: 2
+  };
   bucket.entries.push(entry);
   mrrSaveMutationJournal();
 }
@@ -18504,43 +18530,177 @@ function mrrClearDedupKeysForBucket(anchor, bucket) {
    what it does and why the split is safe (saveSheet's own debounced
    3-surface autosync still fires exactly once). No-op if the bucket
    doesn't exist, has no entries, or is already reverted. */
+/* ─── PARTY WRITES §4.3 — PER-CHARACTER GROUPING ──────────────────────────
+   A swipe reverts the WHOLE message's consequences across every character it
+   touched (Corey ruling R3: a swiped-away narration un-happened for everyone
+   in it). Entries are grouped by entry.charId (missing -> active, §3.3);
+   ORDER WITHIN A GROUP IS PRESERVED EXACTLY, which is what keeps the strict
+   LIFO/FIFO replay semantics intact. Groups are independent because each
+   character's entries touch only that character's record — there is no
+   shared write surface below the applier.
+   The active group is emitted FIRST when present, so the common single-
+   character bucket takes a path shaped exactly like the pre-party-writes
+   one. */
+function mrrGroupBucketEntriesByCharacter(bucket) {
+  var activeId = state.activeCharacterId || null;
+  var byId = Object.create(null);
+  var order = [];
+  for (var i = 0; i < bucket.entries.length; i++) {
+    var entry = bucket.entries[i];
+    var cid = entry.charId || activeId;
+    var key = cid == null ? "null" : cid;
+    if (!byId[key]) {
+      byId[key] = { charId: cid, active: cid === activeId || cid == null, entries: [] };
+      order.push(byId[key]);
+    }
+    byId[key].entries.push(entry);
+  }
+  order.sort(function (a, b) { return (a.active === b.active) ? 0 : (a.active ? -1 : 1); });
+  return order;
+}
+
+/* ─── R6 — THE COMPARE-AND-SWAP PRECONDITION ──────────────────────────────
+   Reads the field's CURRENT value so a revert can check it still equals the
+   value this entry wrote. Covers every shape the journal stores: the typed-
+   damage track snapshot, the conditions snapshot, a label-valued state, a
+   resolved numeric field, and the dotted-path root stash — the same five
+   branches applyStateMutation journals from.
+   Returns { ok:false } for a shape it cannot read, which makes CAS FAIL
+   OPEN: an unreadable field reverts exactly as it does today. CAS is an
+   added guard, not a new gate, so it must never turn "cannot verify" into
+   "will not revert". */
+function mrrEntryCurrentValue(entry) {
+  var sheet = state.sheet;
+  if (!sheet) return { ok: false };
+  var f = entry.field;
+  if (typeof f === "string" && f.indexOf("__mrrTrack:") === 0) {
+    var trackName = f.slice("__mrrTrack:".length);
+    var cells = (sheet.trackCells && Array.isArray(sheet.trackCells[trackName])) ? sheet.trackCells[trackName] : null;
+    return cells ? { ok: true, value: cells } : { ok: false };
+  }
+  if (f === "__mrrConditions") {
+    return Array.isArray(sheet.conditions) ? { ok: true, value: sheet.conditions } : { ok: false };
+  }
+  var stateDef = resolveRulesetState(f);
+  if (stateDef) {
+    var have = sheet.states && typeof sheet.states === "object" &&
+               Object.prototype.hasOwnProperty.call(sheet.states, stateDef.name);
+    return { ok: true, value: have ? sheet.states[stateDef.name] : null };
+  }
+  var resolved = resolveSheetField(sheet, f);
+  if (resolved) {
+    var map = sheet[resolved.map];
+    return { ok: true, value: (typeof map[resolved.key] === "number") ? map[resolved.key] : 0 };
+  }
+  var parts = String(f).split(".").filter(function (p) { return p.length > 0; });
+  if (!parts.length) return { ok: false };
+  var node = sheet;
+  for (var p = 0; p < parts.length - 1; p++) {
+    if (!node[parts[p]] || typeof node[parts[p]] !== "object") return { ok: false };
+    node = node[parts[p]];
+  }
+  var leaf = parts[parts.length - 1];
+  return { ok: true, value: (typeof node[leaf] === "number") ? node[leaf] : 0 };
+}
+
+/* True when the field has moved since this entry wrote it — someone hand-
+   edited it, so inverting would silently clobber their edit. Ruling R6:
+   skip and warn instead. Strictly safer than the pre-party-writes
+   behaviour, and it matters more now: one swipe can touch N sheets, any of
+   which the player may have been editing. The B2-R "manual-edit skew"
+   known-limit becomes a warned skip rather than a silent overwrite. */
+function mrrRevertCasBlocked(entry, bucketKey) {
+  var cur = mrrEntryCurrentValue(entry);
+  if (!cur.ok) return false;                        /* unreadable shape — fail open, today's behaviour */
+  if (mrrDeepEqual(cur.value, entry.next)) return false;
+  warn("B2-R revert: field '" + entry.field + "' in bucket '" + bucketKey + "' has changed since this mutation wrote it " +
+       "(expected " + JSON.stringify(entry.next) + ", found " + JSON.stringify(cur.value) + ") — SKIPPED, not reverted. " +
+       "Something edited it after the fact (a hand edit, or another write), and inverting now would throw that away. " +
+       "The bucket stays un-reverted so a swipe-back cannot re-apply on top of it.");
+  return true;
+}
+
+/* One group's inverse replay, in REVERSE order. Returns true when every
+   entry in the group inverted. Runs with the caller's binding already in
+   effect for a non-active group. */
+function mrrRevertGroupEntries(entries, skipSigs, bucketKey) {
+  var allOk = true;
+  for (var i = entries.length - 1; i >= 0; i--) {
+    var entry = entries[i];
+    /* T2c (round 11): Corey's static-cost ruling — "essence spends...
+       are static between swipes... the mutator not firing off to
+       revert/redo that expenditure is a good thing." skipSigs is the
+       incoming (new-swipe) tag content-sig set, computed by the caller
+       via the SAME normalize+sig pipeline applyStateTagsWithDedup
+       uses. An entry whose sig is present there represents a mutation
+       the incoming swipe is about to re-assert identically — leave it
+       exactly as-is: not reverted (no inverse write attempted), dedup
+       key left intact by mrrClearDedupKeysForBucket below (so the
+       incoming duplicate is swallowed exactly as it was pre-B2-R),
+       still counted applied/journaled in this bucket. Recomputed fresh
+       every call (same pattern as revertFailed below), so an entry
+       skipped on one swipe-away can be genuinely reverted on a later
+       one if the incoming content no longer matches.
+       PARTY WRITES: the sig now embeds the canonical target charId, so
+       this static-cost scoping is per character for free. */
+    if (skipSigs && entry.sig != null && skipSigs[entry.sig]) {
+      entry.staticSkipped = true;
+      continue;
+    }
+    entry.staticSkipped = false;
+    /* R6 runs BEFORE the inverse write and AFTER the static-cost skip: a
+       statically-skipped entry was never going to be written at all. */
+    if (mrrRevertCasBlocked(entry, bucketKey)) {
+      entry.casSkipped = true;
+      allOk = false;
+      continue;
+    }
+    entry.casSkipped = false;
+    var ok = false;
+    try {
+      ok = applyStateMutation(mrrBuildReplayAttrs(entry, "inverse"));
+      if (!ok) warn("B2-R revert: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
+    } catch (e) {
+      warn("B2-R revert: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' threw on replay — skipped (" + (e && e.message ? e.message : e) + ")");
+    }
+    entry.revertFailed = !ok;
+    if (!ok) allOk = false;
+  }
+  return allOk;
+}
+
 function mrrRevertBucket(bucketKey, skipSigs) {
   var bucket = mrrMutationJournal.buckets[bucketKey];
   if (!bucket || !bucket.entries.length || bucket.reverted) return;
   var prevSuppressed = mrrJournalSuppressed; /* fix 5e — save/restore, match the bucket-key pattern, rather than blindly assuming false on entry/exit */
   mrrJournalSuppressed = true;
   var allOk = true;
+  var groups = mrrGroupBucketEntriesByCharacter(bucket);
   try {
-    for (var i = bucket.entries.length - 1; i >= 0; i--) {
-      var entry = bucket.entries[i];
-      /* T2c (round 11): Corey's static-cost ruling — "essence spends...
-         are static between swipes... the mutator not firing off to
-         revert/redo that expenditure is a good thing." skipSigs is the
-         incoming (new-swipe) tag content-sig set, computed by the caller
-         via the SAME normalize+sig pipeline applyStateTagsWithDedup
-         uses. An entry whose sig is present there represents a mutation
-         the incoming swipe is about to re-assert identically — leave it
-         exactly as-is: not reverted (no inverse write attempted), dedup
-         key left intact by mrrClearDedupKeysForBucket below (so the
-         incoming duplicate is swallowed exactly as it was pre-B2-R),
-         still counted applied/journaled in this bucket. Recomputed fresh
-         every call (same pattern as revertFailed below), so an entry
-         skipped on one swipe-away can be genuinely reverted on a later
-         one if the incoming content no longer matches. */
-      if (skipSigs && entry.sig != null && skipSigs[entry.sig]) {
-        entry.staticSkipped = true;
+    for (var g = 0; g < groups.length; g++) {
+      var grp = groups[g];
+      if (grp.active) {
+        if (!mrrRevertGroupEntries(grp.entries, skipSigs, bucketKey)) allOk = false;
         continue;
       }
-      entry.staticSkipped = false;
-      var ok = false;
-      try {
-        ok = applyStateMutation(mrrBuildReplayAttrs(entry, "inverse"));
-        if (!ok) warn("B2-R revert: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
-      } catch (e) {
-        warn("B2-R revert: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' threw on replay — skipped (" + (e && e.message ? e.message : e) + ")");
+      /* REVERT-TIME REVALIDATION (§4.3). The character may have been deleted
+         since the write landed. A revert must never resurrect them as a
+         ghost record, so the group is skipped and its entries are marked
+         revertFailed — which keeps bucket.reverted false and lets the
+         existing partial-revert conservatism do the rest. */
+      var targetSheet = mrrLoadSheetRecordFor(grp.charId);
+      if (!targetSheet) {
+        warn("B2-R revert: bucket '" + bucketKey + "' carries " + grp.entries.length + " entr(y/ies) for character " +
+             mrrCharacterLabel(grp.charId) + " (" + grp.charId + "), which no longer has a record for this system — " +
+             "the group is SKIPPED and no record is created. The bucket stays un-reverted.");
+        for (var d = 0; d < grp.entries.length; d++) grp.entries[d].revertFailed = true;
+        allOk = false;
+        continue;
       }
-      entry.revertFailed = !ok;
-      if (!ok) allOk = false;
+      /* Bound, synchronous, and saved inside the binding — saveSheet keys
+         off state.activeCharacterId at call time, so this is the whole of
+         the persistence routing. */
+      if (!mrrReplayBoundGroup(targetSheet, grp, "inverse", skipSigs, bucketKey)) allOk = false;
     }
   } finally {
     mrrJournalSuppressed = prevSuppressed;
@@ -18563,7 +18723,7 @@ function mrrRevertBucket(bucketKey, skipSigs) {
        the bucket pre-revert would hit the sole-writer gate and apply
        NOTHING, silently. Deleted first so a throw out of
        mrrClearDedupKeysForBucket can't strand the claim. */
-    delete mrrBucketChannelClaims[bucketKey];
+    mrrReleaseBucketClaims(bucketKey);
     mrrClearDedupKeysForBucket(mrrAnchorFromBucketKey(bucketKey), bucket);
   } catch (e) {
     warn("B2-R revert: mrrClearDedupKeysForBucket threw for bucket '" + bucketKey + "' — dedup keys may not be cleared, incoming identical-content swipes may still be blocked (" + (e && e.message ? e.message : e) + ")");
@@ -18593,28 +18753,65 @@ function mrrRevertBucket(bucketKey, skipSigs) {
    reverted:false. A no-op if the bucket doesn't exist or isn't
    currently reverted. saveSheet/renderSheet batched once (fix 5d), same
    pattern as mrrRevertBucket. */
+/* One group's FORWARD replay, in original order. No CAS: R6 governs the
+   inverse write only, and a bucket only reaches here when every entry
+   inverted cleanly, so `next` is being restored onto a sheet this code just
+   put back to `prev`. */
+function mrrReapplyGroupEntries(entries, bucketKey) {
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    /* T2c (round 11): a staticSkipped entry was never reverted (its
+       sig matched the swipe that caused this bucket to be marked
+       reverted:true) — it's still live on the sheet under its
+       original dedup key, so forward-replaying it here would double-
+       apply. Same exclusion pattern as revertFailed, reused rather
+       than a parallel gate. casSkipped joins them for the same reason:
+       an entry R6 declined to invert is still sitting at `next`. */
+    if (entry.revertFailed || entry.staticSkipped || entry.casSkipped) continue; /* fix 1d / T2c / R6 — excluded from reapply */
+    try {
+      if (!applyStateMutation(mrrBuildReplayAttrs(entry, "forward"))) {
+        warn("B2-R swipe-back: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
+      }
+    } catch (e) {
+      warn("B2-R swipe-back: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' threw on replay — skipped (" + (e && e.message ? e.message : e) + ")");
+    }
+  }
+  return true;
+}
+
+/* Replay ONE non-active group inside a binding, then persist that record
+   from inside the same binding. Shared by revert and reapply so the binding,
+   the save and the direction dispatch live in exactly one place. */
+function mrrReplayBoundGroup(targetSheet, grp, direction, skipSigs, bucketKey) {
+  return mrrWithSheetBoundApply(targetSheet, grp.charId, function () {
+    var ok = (direction === "inverse")
+      ? mrrRevertGroupEntries(grp.entries, skipSigs, bucketKey)
+      : mrrReapplyGroupEntries(grp.entries, bucketKey);
+    saveSheet(state.chatId, state.sheet);
+    return ok;
+  });
+}
+
 function mrrReapplyBucket(bucketKey) {
   var bucket = mrrMutationJournal.buckets[bucketKey];
   if (!bucket || !bucket.entries.length || !bucket.reverted) return;
   var prevSuppressed = mrrJournalSuppressed; /* fix 5e */
   mrrJournalSuppressed = true;
+  var groups = mrrGroupBucketEntriesByCharacter(bucket);
   try {
-    for (var i = 0; i < bucket.entries.length; i++) {
-      var entry = bucket.entries[i];
-      /* T2c (round 11): a staticSkipped entry was never reverted (its
-         sig matched the swipe that caused this bucket to be marked
-         reverted:true) — it's still live on the sheet under its
-         original dedup key, so forward-replaying it here would double-
-         apply. Same exclusion pattern as revertFailed, reused rather
-         than a parallel gate. */
-      if (entry.revertFailed || entry.staticSkipped) continue; /* fix 1d / T2c — excluded from reapply */
-      try {
-        if (!applyStateMutation(mrrBuildReplayAttrs(entry, "forward"))) {
-          warn("B2-R swipe-back: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' was rejected on replay — skipped");
-        }
-      } catch (e) {
-        warn("B2-R swipe-back: entry for field '" + entry.field + "' in bucket '" + bucketKey + "' threw on replay — skipped (" + (e && e.message ? e.message : e) + ")");
+    for (var g = 0; g < groups.length; g++) {
+      var grp = groups[g];
+      if (grp.active) { mrrReapplyGroupEntries(grp.entries, bucketKey); continue; }
+      /* Same revalidation as revert: a character deleted since the revert
+         is not resurrected by a swipe-back either. */
+      var targetSheet = mrrLoadSheetRecordFor(grp.charId);
+      if (!targetSheet) {
+        warn("B2-R swipe-back: bucket '" + bucketKey + "' carries " + grp.entries.length + " entr(y/ies) for character " +
+             mrrCharacterLabel(grp.charId) + " (" + grp.charId + "), which no longer has a record for this system — " +
+             "the group is SKIPPED and no record is created.");
+        continue;
       }
+      mrrReplayBoundGroup(targetSheet, grp, "forward", null, bucketKey);
     }
   } finally {
     mrrJournalSuppressed = prevSuppressed;
@@ -19406,6 +19603,12 @@ function finalizeMutation(attrs) {
        tag pass, and only when the active character was actually touched. */
     if (!mrrRenderSuppressed) renderSheet();
     if (!Array.isArray(state.mutationLog)) state.mutationLog = [];
+    /* PARTY WRITES §4.2 trap 2. A party write has to be VISIBLY a party
+       write — "Ginny: BASHING +3", not an unattributed toast the player
+       reads as their own character taking damage. mrrBoundApplyCharId is
+       null on the active path, so solo toast text is byte-identical to
+       every build before this one. charId on the log entry is unconditional
+       (spec §3.3's sibling): the entry now says whose sheet moved. */
     state.mutationLog.push({
       timestamp: Date.now(),
       field: attrs.field,
@@ -19413,10 +19616,11 @@ function finalizeMutation(attrs) {
       add: attrs.add,
       remove: attrs.remove,
       qty: attrs.qty,
-      reason: attrs.reason
+      reason: attrs.reason,
+      charId: state.activeCharacterId || null
     });
     if (state.mutationLog.length > 20) state.mutationLog.shift();
-    showMutationToast(attrs);
+    showMutationToast(attrs, mrrBoundApplyCharId ? mrrCharacterLabel(mrrBoundApplyCharId) : null);
   }
   return true;
 }
