@@ -21,7 +21,7 @@ The extension and schema live one level up at `extension/RPG-Extension-GM-Mode.{
 1. **Does my system fit one of the nine existing resolution modes?**
    - d20 + modifier vs DC → `single-roll`
    - dice pool counted against a target → `dice-pool`
-   - 1d100 under skill → `d100-percentile`
+   - 1d100 under skill → `d100-percentile` (roll-high percentile too — set `direction: "high"` and, if the system explodes, add `openEnded`; see [`AUTHORING-PHASE-6.md`](AUTHORING-PHASE-6.md) §1)
    - 2d6 + stat with outcome bands → `2d6-stat`
    - 4dF + skill on a verbal ladder → `fate-ladder`
    - dice total under a target (GURPS, CoC 7e, Pendragon) → `roll-under`

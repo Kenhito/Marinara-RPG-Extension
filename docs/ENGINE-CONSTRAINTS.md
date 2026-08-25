@@ -24,7 +24,7 @@ The extension's floating dice widget supports nine resolution modes:
 
 - **single-roll** (d20 + modifier vs DC) — D&D, Pathfinder.
 - **dice-pool** (Xd10 vs target, with doubles and botch detection) — Exalted, Storyteller.
-- **d100-percentile** (1d100 under skill) — Call of Cthulhu.
+- **d100-percentile** (1d100 under skill; or `direction: "high"` for roll + bonus vs a target, with an optional `openEnded` exploding/imploding chain and `unusualFaces` `um=` flagging) — Call of Cthulhu, Rolemaster.
 - **2d6-stat with bands** (2d6+stat, 6-/7-9/10+ outcome bands) — PbtA.
 - **fate-ladder** (4dF + skill vs ladder target, with Tie / Success / Success-with-style outcomes) — Fate Core, Fate Accelerated, Fate-of-Cthulhu.
 - **roll-under** (3d6 or 1d100 ≤ target; optional crit / fumble) — GURPS, CoC 7e, Pendragon.

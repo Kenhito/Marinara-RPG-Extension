@@ -166,10 +166,33 @@ The slot dropdown / target dropdown in the item form pulls from the active rules
 }
 ```
 
-#### `d100-percentile` — used by Call of Cthulhu, BRP-derived
+#### `d100-percentile` — used by Call of Cthulhu, BRP-derived (roll-under); Rolemaster / RMSS-family (roll-high)
 ```
 { "mode": "d100-percentile", "skillFormula": "Roll 1d100 under skill_value" }
 ```
+
+`skillFormula` is the only required sub-field. Three optional fields extend the branch to roll-high, open-ended percentile systems:
+
+```
+{
+  "mode": "d100-percentile",
+  "skillFormula": "Roll d100 + bonus vs the maneuver table",
+  "direction": "high",                                              // "under" (default) or "high"
+  "bonusFormula": "skill bonus (ranks + stat bonus + item bonus)",   // descriptive only — NOT parsed
+  "openEnded": {
+    "high": { "threshold": 96, "cascadeCap": 0 },                    // >= threshold re-rolls and ADDS; cap 0 = uncapped
+    "low":  { "threshold": 5, "subtract": true, "continueOn": "high", "cascadeCap": 0 },
+    "unusualFaces": [66, 100]                                        // optional; no default
+  }
+}
+```
+
+- **`direction`** (`"under"` | `"high"`, default `"under"`) — comparison direction. `"under"` is the back-compatible default: success when the roll is at or under the target. `"high"` means success when roll + bonus meets or beats the target, and the widget reports a **total** rather than a pass/fail against a percentile cap.
+- **`bonusFormula`** — plain-language description of what the player adds to a `"high"` roll. **Descriptive only — the widget takes the bonus as a numeric input; it does not parse this string.**
+- **`openEnded`** — open-ended (exploding, and optionally imploding) d100. **Absent = feature off.** `high.threshold` (default 96, inclusive of 100) is the face at or above which the roll re-rolls and ADDS. `low.threshold` (default 5) is the face at or below which the low chain triggers, `low.subtract` (default `true`) decides whether that chain subtracts from the first roll, and `low.continueOn` (default `"high"`) says which follow-up faces extend it — RMSS is asymmetric, so its low chain continues while each new roll is at or **above** `openEnded.high.threshold`, not while it is low; `"low"` exists for systems that mirror the high rule. Each chain takes its own `cascadeCap` (max chained re-rolls, default `0` = uncapped).
+- **`openEnded.unusualFaces`** — optional array of UNMODIFIED-first-roll face values that flag an `um=<face>` tag on the roll (RMSS: `[66, 100]`, its unusual-event / unusual-success table rows). **No default: absent or empty means the roller never emits `um=`.** The widget only ever **surfaces** the flag — it never picks a table row and never suppresses the roll. **The narrator decides what an UM means.**
+
+Full shape, worked example, and the round-9 history behind `unusualFaces` are in **[`docs/AUTHORING-PHASE-6.md`](docs/AUTHORING-PHASE-6.md)** §1.
 
 #### `2d6-stat` — used by PbtA (Apocalypse, Dungeon, Monster of the Week)
 ```

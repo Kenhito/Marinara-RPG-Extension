@@ -73,7 +73,15 @@ Then produce **one** valid `bundle.json` for `<<YOUR SYSTEM>>` that:
   resolution mode that fits the system (d20 systems use `single-roll`; World
   of Darkness / Shadowrun use `dice-pool`; Call of Cthulhu / BRP use
   `d100-percentile`; PbtA games use `2d6-stat`; Fate-family uses
-  `fate-ladder`).
+  `fate-ladder`). `d100-percentile` covers roll-HIGH percentile too
+  (Rolemaster / RMSS-family): set `direction: "high"`, describe what the
+  player adds in `bonusFormula` (descriptive only — the widget takes the
+  bonus as a numeric input and does not parse the string), and add the
+  optional `openEnded` block for exploding / imploding open-ended d100 —
+  including `unusualFaces`, which flags `um=<face>` on the tag for
+  unmodified first rolls and nothing more (the narrator decides what an UM
+  means; the widget never picks a table row and never suppresses the roll).
+  Field-by-field shape in `docs/AUTHORING-PHASE-6.md` §1.
 - Has a `gmAgent` with a thorough `promptTemplate` (at least 800 words). The
   prompt must teach the LLM how to enforce the system's mechanics, what dice
   to call for, how to set difficulties, and what NOT to do. Mirror the
