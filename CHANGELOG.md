@@ -9,6 +9,63 @@ explicitly when they do).
 
 ## [Unreleased]
 
+- **Agent consolidation Stage 2 — the Exalted Essence Manager.**
+  `rulesets/exalted3e/agents/anima-banner-monitor.md` and
+  `charm-cooldown-tracker.md` are retired and replaced by a single
+  `essence-manager.md` (`parallel`, `context_injection`). The two read the same
+  event stream — Charm activations and the motes they cost — from opposite ends,
+  so an Exalted table paid two model calls per turn to answer one question. The
+  merged agent emits one block per character carrying the union of both payloads:
+  once-per-scene Charms used, Simple lock state, the scene's Personal/Peripheral
+  mote totals, and the current anima banner level. The exalted3e roster drops
+  6 → 5 agents; its parallel set is now exactly `{essence-manager}`.
+
+- **The canonical anima model now lives in exactly one place.** The anima rule
+  had drifted into three mutually contradictory statements (the GM agent, the
+  shipped monitor's cumulative table, and the lorebook), and the three disagreed
+  on both the model and the thresholds. The corrected model — sourced from the
+  Ex3 core book — now lives once, in the lorebook entry `ex3-rules-anima`, which
+  is a constant entry and therefore always in context. `gm-agent.md`, the Essence
+  Manager and the state-mutator all QUERY it and restate nothing. The
+  reference-redundancy lint is the acceptance check: the two anima findings it
+  flagged against exalted3e are gone, and exalted3e's total finding count drops
+  32 → 28.
+
+  The model itself is EVENT-STEPPED, not cumulative: +1 anima level per full five
+  Peripheral motes spent **in a single instant** (ten motes in one action is +2
+  levels; two separate five-mote actions are +1 each). Under five Peripheral in
+  an instant does nothing, and Personal motes never agitate the anima. Decay runs
+  on NARRATIVE time rather than resetting at scene end — Bonfire/Iconic to
+  Burning in fifteen minutes, Burning to Glowing in another fifteen, Glowing to
+  Dim in roughly a further half hour. A scene change that narrates little elapsed
+  time now correctly keeps the banner lit; a narrated hour clears it from
+  anywhere.
+
+- **Anima vocabulary corrected, with a stored-sheet migration.** The shipped
+  ladder used "Suppressed" as level 0 with "Dim" as level 1, but RAW's invisible
+  default IS Dim, and the top of the ladder was split across "Bonfire" and
+  "Iconic" where RAW has one level. The canonical ladder is now
+  `Dim → Glowing → Burning → Bonfire/Iconic`, and `Dim` is the default a blank
+  sheet seeds.
+
+  Sheets saved under the old spellings are migrated at load. Sheet schema version
+  bumps 2 → 3, and the new step maps `Suppressed → Dim`, `Bonfire → Bonfire/Iconic`
+  and `Iconic → Bonfire/Iconic`; `Dim`, `Glowing` and `Burning` are unchanged and
+  never reach the alias table at all. **Mapping is by meaning, not by ladder
+  position** — a character stored at "Glowing" stays Glowing, because shifting it
+  up a rung would silently hand them a stealth penalty and a visibility state they
+  never earned. The alias table is scoped by ruleset AND state name, which is
+  load-bearing rather than merely tidy: exalted3e's conditions vocabulary contains
+  its own unrelated "Suppressed" (the anti-Essence effect), and a flat old→new map
+  would have corrupted it. An unknown label passes through untouched. The migration
+  steps are now individually version-gated so a schema bump can never re-run an
+  older step against stale data.
+
+  Anima writes are pinned to labels — `[mrr-state: field="Anima Banner"
+  value="Glowing"]` — never numerics and never `delta=`. The mutator's write path
+  shares the alias table, so a tag naming an old label from a stale preset or from
+  the model's own memory still lands instead of being rejected.
+
 - **B19 — cross-game character continuity.** Activating a character now
   stamps a per-ruleset "last played" pointer (synced across your browsers).
   Opening a chat that's bound to that ruleset but has no character yet shows

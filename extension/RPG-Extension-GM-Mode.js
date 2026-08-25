@@ -3154,10 +3154,79 @@ function mrrRenderBindingField(parent) {
    parsed) — the migrated value then flows through the normal per-field
    merge like any other field, and the very next saveSheet call persists
    the migrated shape (with the stamp) so it's never touched again. */
-var MRR_SHEET_SCHEMA_VERSION = 2;
+var MRR_SHEET_SCHEMA_VERSION = 3;
+
+/* ─── State-label aliases (schema v3) ──────────────────────────────────────
+   A ruleset can RENAME a declared state label. When it does, every sheet
+   already saved under the old spelling carries a label the ruleset no longer
+   declares — mergeSheet copies it forward verbatim (the states whitelist is
+   keyed on the state NAME, not its value), the states <select> finds no
+   matching option, and the sole-writer mutator path rejects any write that
+   names it. The value is not lost, it is stranded.
+
+   The table below is the rename record: rulesetId -> stateName -> { oldLabel
+   (lowercased) : newLabel }. It is deliberately scoped THREE deep. A flat
+   old->new map would be a live hazard here: exalted3e's CONDITIONS vocabulary
+   independently contains a condition literally named "Suppressed" (the
+   anti-Essence effect), which must NOT be rewritten by the Anima Banner's
+   rename. Scoping by ruleset AND state name makes that collision structurally
+   impossible rather than merely avoided.
+
+   2026-08-25 (Stage 2, CR-2) — exalted3e Anima Banner. The shipped ladder
+   used "Suppressed" as level 0 with "Dim" as level 1, but RAW's invisible
+   default IS Dim; and the top of the ladder was split across "Bonfire" and
+   "Iconic" where RAW has one level. The canonical ladder is now
+   Dim -> Glowing -> Burning -> Bonfire/Iconic. Only three labels actually
+   changed spelling; Dim, Glowing and Burning are unchanged and are therefore
+   deliberately ABSENT from the table — they still match a declared label and
+   never reach the alias lookup. Mapping is by MEANING (the Peripheral spend
+   the stored label represented), never by ladder position: a sheet stored at
+   "Glowing" stays Glowing. Shifting it up a rung would silently hand the
+   character a stealth penalty and a visibility state they never earned. */
+var MRR_STATE_LABEL_ALIASES = {
+  "exalted3e": {
+    "Anima Banner": {
+      "suppressed": "Dim",            /* old level 0, "unlit" — RAW's invisible default is Dim */
+      "bonfire": "Bonfire/Iconic",    /* old top two collapse into RAW's single top level */
+      "iconic": "Bonfire/Iconic"
+    }
+  }
+};
+
+/* Resolve a stored/emitted label for one state to the spelling the ruleset
+   currently declares. Order is deliberate and is the whole safety argument:
+   a label that STILL MATCHES a declared label wins outright and is never
+   aliased, so a rename can never reach through and rewrite a label that is
+   still live. Only an unmatched label consults the alias table, and an
+   unmatched label with no alias is returned UNCHANGED — an unknown value is
+   somebody's data, and this function's job is renames, not validation.
+   Returns null only for a null/blank input. */
+function mrrResolveStateLabel(rulesetId, stateDef, rawLabel) {
+  if (rawLabel == null) return null;
+  var raw = String(rawLabel).trim();
+  if (!raw) return null;
+  var declared = (stateDef && Array.isArray(stateDef.values)) ? stateDef.values : [];
+  var norm = raw.toLowerCase();
+  for (var i = 0; i < declared.length; i++) {
+    var lbl = declared[i] && declared[i].label;
+    if (typeof lbl === "string" && lbl.trim().toLowerCase() === norm) return lbl;
+  }
+  var byRuleset = rulesetId ? MRR_STATE_LABEL_ALIASES[rulesetId] : null;
+  var byState = (byRuleset && stateDef && typeof stateDef.name === "string")
+    ? byRuleset[stateDef.name] : null;
+  if (byState && Object.prototype.hasOwnProperty.call(byState, norm)) return byState[norm];
+  return raw;
+}
 
 function mrrMigrateSheet(parsed, ruleset) {
   if (!parsed || typeof parsed !== "object" || !ruleset) return parsed;
+  /* Per-step version gates. The stamp is bumped whenever ANY step is added,
+     so a sheet already at v2 must not have v1's cross-bucket copies re-run
+     against stale attributes/resources data just because v3 exists — that is
+     exactly the re-clobber the version-gate comment below warns about. Each
+     step declares the stamp it was introduced at and runs only for a sheet
+     older than that. */
+  var stamp = (typeof parsed._schemaVersion === "number") ? parsed._schemaVersion : 0;
 
   /* M1 (git-proven, a1c21ef, dnd5e): Level moved attributes[] ->
      derivedStats[]. A pre-move sheet still carries sheet.attributes.Level
@@ -3170,6 +3239,7 @@ function mrrMigrateSheet(parsed, ruleset) {
      derived.Level already on the sheet (a real value written under the
      current schema — e.g. by a prior run of this same migration, or by
      actual play — must never be clobbered by a stale attributes.Level). */
+  if (stamp < 2) {
   var hasLevelAttr = Array.isArray(ruleset.attributes) && ruleset.attributes.some(function (a) { return a && a.name === "Level"; });
   var levelDerivedDef = (Array.isArray(ruleset.derivedStats) ? ruleset.derivedStats : []).filter(function (d) { return d && d.name === "Level"; })[0];
   if (!hasLevelAttr && levelDerivedDef &&
@@ -3204,6 +3274,34 @@ function mrrMigrateSheet(parsed, ruleset) {
       if (!derivedHasIt) {
         if (!parsed.derived || typeof parsed.derived !== "object") parsed.derived = {};
         parsed.derived[r.stateName] = stored.current;
+      }
+    });
+  }
+  } /* end stamp < 2 */
+
+  /* M3 (schema v3, 2026-08-25): state-label RENAMES. Written generically —
+     it walks whatever states the CURRENT ruleset declares and consults
+     MRR_STATE_LABEL_ALIASES, so any ruleset that renames a label in future
+     is covered by adding a table row, not by adding code here. Exalted's
+     anima ladder is simply the first caller.
+
+     Runs against the raw parsed sheet BEFORE mergeSheet, so the rewritten
+     label flows through the normal per-field merge like any other value and
+     the next saveSheet persists it. A stored label that still matches a
+     declared label is left exactly as it is; one that matches nothing and
+     has no alias is left alone too (see mrrResolveStateLabel). */
+  if (stamp < 3 && Array.isArray(ruleset.states) &&
+      parsed.states && typeof parsed.states === "object") {
+    var rulesetIdForAlias = (typeof ruleset.id === "string") ? ruleset.id : null;
+    ruleset.states.forEach(function (st) {
+      if (!st || typeof st.name !== "string") return;
+      if (!Object.prototype.hasOwnProperty.call(parsed.states, st.name)) return;
+      var stored = parsed.states[st.name];
+      if (typeof stored !== "string" || !stored.trim()) return;
+      var resolved = mrrResolveStateLabel(rulesetIdForAlias, st, stored);
+      if (resolved != null && resolved !== stored) {
+        log("sheet migration v3: state \"" + st.name + "\" label \"" + stored + "\" -> \"" + resolved + "\"");
+        parsed.states[st.name] = resolved;
       }
     });
   }
@@ -20380,6 +20478,25 @@ function applyStateMutation(attrs) {
     var nsv = String(rawStateVal).trim().toLowerCase();
     for (var sl = 0; sl < stateLabels.length; sl++) {
       if (String(stateLabels[sl]).trim().toLowerCase() === nsv) { canonicalLabel = stateLabels[sl]; break; }
+    }
+    /* Renamed-label tolerance (schema v3). The stored sheets get rewritten at
+       load, but a tag can still name an old label from somewhere the migration
+       cannot reach — a stale preset marker section, a lorebook the user has
+       not re-imported, or simply the model's own memory of the old ladder.
+       Route it through the SAME alias table the migration uses and accept it
+       if it resolves to a currently-declared label. Anything else still falls
+       through to the warn below, so this widens what lands without widening
+       what passes validation. */
+    if (canonicalLabel == null) {
+      var aliased = mrrResolveStateLabel(
+        (state.ruleset && typeof state.ruleset.id === "string") ? state.ruleset.id : null,
+        stateDef, rawStateVal);
+      if (aliased != null) {
+        var na = String(aliased).trim().toLowerCase();
+        for (var sa = 0; sa < stateLabels.length; sa++) {
+          if (String(stateLabels[sa]).trim().toLowerCase() === na) { canonicalLabel = stateLabels[sa]; break; }
+        }
+      }
     }
     if (canonicalLabel == null) {
       warn("state-mutator: state '" + stateDef.name + "' has no label matching '" + rawStateVal + "' — valid: " + stateLabels.join(", "));
