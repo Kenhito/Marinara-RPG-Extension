@@ -2118,6 +2118,40 @@ var mrrStampHeldChatId = null;          /* chat deliberately held (unavailable r
 var mrrStampWarnedChatId = null;
 var mrrStampFetchWarnedChatId = null;
 
+/* ═══ ROUND 33 — THE VIRGIN CHAT ═══════════════════════════════════════════
+   COREY'S RULING (2026-08-24): a chat that carries no ruleset stamp AND
+   from which no stamp can be derived has never been claimed by anybody.
+   Entering it is not a decision about it. It stays UNBOUND until the user
+   deliberately activates a ruleset for it.
+
+   THE BEHAVIOUR THIS REPLACES (live trace char_carryover2107.log): entering
+   a stampless chat while exalted3e happened to be the globally-active
+   ruleset confirmed it with "nothing to disagree with", replayed the
+   deferred bootstrap save, and the reconcile fired by that confirm then
+   ADDED seven exalted3e overlay agents and STAMPED the chat. The user never
+   chose Exalted for that chat; ambient global state did.
+
+   `mrrChatUnboundVirginId` is the id of the chat positively determined to be
+   virgin — the metadata read SUCCEEDED, there was no stamp, and
+   mrrDeriveAndRestampChat found nothing to derive from. It is deliberately
+   NOT the same thing as "unconfirmed": an unconfirmed chat is one whose
+   answer has not arrived yet (transient, resolves on the next tick), a
+   virgin chat is one whose answer arrived and was "nothing" (stable, and
+   resolves only when the user picks). Three consumers need that distinction:
+
+     - mrrCheckChatRulesetStamp's own top guard, so the 1.5s retry tick does
+       not re-GET the chat forever (same discipline as mrrStampHeldChatId).
+     - mrrSheetWriteBlockReason, which reports code "unbound" rather than
+       "latch" so the message is true and the message-defer path can tell a
+       sub-second window from a standing state.
+     - reconcileActiveAgents, which must never claim a chat we KNOW is
+       virgin, whoever calls it.
+
+   Cleared by mrrConfirmChatRuleset (the binding moment) and by
+   mrrResetRulesetLatch (every chat change), exactly like mrrStampHeldChatId.
+   ═══════════════════════════════════════════════════════════════════════ */
+var mrrChatUnboundVirginId = null;
+
 /* Part 3 — per-character cross-ruleset hold. characterId -> the ruleset id
    the STORED record was saved under. Set by loadSheet when it refuses to
    merge; cleared by loadSheet on the next successful (matching) load. */
@@ -2132,6 +2166,20 @@ var mrrSheetHoldWarned = Object.create(null);
    processor. See those call sites for what each does about it. */
 function mrrSheetWriteBlockReason() {
   if (state.chatId && mrrRulesetConfirmedChatId !== state.chatId) {
+    /* Round 33: the virgin chat is a DIFFERENT refusal from the in-flight
+       one. Same effect (nothing is written), different truth and different
+       lifetime — "the check has not come back" clears itself in under a
+       second; "this chat is bound to nothing" clears only when the user
+       picks a ruleset for it. Callers that back off on a timer need to be
+       able to tell those apart; see the message-defer path in
+       watchChatMessages. */
+    if (mrrChatUnboundVirginId === state.chatId) {
+      return {
+        code: "unbound",
+        msg: "chat " + state.chatId + " carries no ruleset stamp and none could be derived — it belongs to no ruleset, so nothing is written to it. " +
+             "Activate a ruleset for this chat (Ruleset > Library) to bind it; edits made in the meantime are held in memory and replayed at that moment"
+      };
+    }
     return {
       code: "latch",
       msg: "chat " + state.chatId + " has not confirmed its ruleset yet (the chat-metadata check is in flight or failed) — refusing to write until it does"
@@ -2159,6 +2207,11 @@ function mrrConfirmChatRuleset(chatId, why) {
   if (mrrRulesetConfirmedChatId === chatId) return;
   mrrRulesetConfirmedChatId = chatId;
   mrrStampHeldChatId = null;
+  /* Round 33: confirmation IS the binding moment, so a chat that was virgin
+     stops being virgin here — and this must land BEFORE the
+     reconcileActiveAgents call at the bottom of this function, whose own
+     round-33 gate reads exactly this variable. Ordering is load-bearing. */
+  mrrChatUnboundVirginId = null;
   mrrLatchWarnedReason = null;
   mrrClearAutoswitchGuard();
   log("ruleset latch: chat " + chatId + " confirmed for ruleset " +
@@ -2216,6 +2269,10 @@ function mrrResetRulesetLatch() {
   mrrStampHeldChatId = null;
   mrrStampWarnedChatId = null;
   mrrStampFetchWarnedChatId = null;
+  /* Round 33: the virgin verdict is per-chat and must not follow the user
+     into the next chat — the incoming chat gets its own metadata read and
+     its own answer. */
+  mrrChatUnboundVirginId = null;
   /* Round 28: both per-chat one-shots reset with the latch — the new chat
      gets its own derivation attempt and its own preset-watch baseline. */
   mrrStampDeriveTriedChatId = null;
@@ -2460,7 +2517,17 @@ function saveSheet(chatId, sheet) {
      goes through a full reload anyway. */
   var writeBlock = mrrSheetWriteBlockReason();
   if (writeBlock) {
-    if (writeBlock.code === "latch") mrrDeferredSaveWanted = true;
+    /* Round 33: "unbound" defers exactly like "latch", and for the SAME
+       reason one indirection further out. This is the answer to "where does
+       a user edit made in a virgin chat go?": it stays in state.sheet, the
+       replay flag stays armed, and the moment the user binds the chat
+       (mrrConfirmChatRuleset) the deferred write is replayed under the
+       ruleset they actually chose. Nothing is persisted under a ruleset the
+       user did not pick for this chat, and nothing is silently discarded
+       while the chat is still open. Leaving the chat unbound drops it, which
+       is correct — there is no ruleset to file it under, and inventing one
+       is the exact guess round 24 exists to abolish. */
+    if (writeBlock.code === "latch" || writeBlock.code === "unbound") mrrDeferredSaveWanted = true;
     var warnKey = (state.chatId || "-") + "|" + (state.activeCharacterId || "-") + "|" + writeBlock.code;
     if (mrrLatchWarnedReason !== warnKey) {
       mrrLatchWarnedReason = warnKey;
@@ -13389,6 +13456,41 @@ function renderLibrarySection(dialog, msg) {
     var label = entry.name + " v" + entry.version + (id === activeId ? " (active)" : "");
     marinara.addElement(row, "span", { "class": "mrr-dialog__lib-name", textContent: label });
 
+    /* ─── Round 33 — the binding affordance for a virgin chat ─────────────
+       Corey's ruling leaves a stampless chat unbound until the user
+       deliberately activates a ruleset for it. Every existing deliberate
+       path activates a DIFFERENT ruleset and reloads (Switch, paste, bundle
+       install), and Switch is rendered only for rows that are not already
+       active — so the single most common case, "brand-new chat, the ruleset
+       I want is already the active one", had no button at all: nothing to
+       click, and therefore no way to bind. That is not a ruling the user
+       can obey.
+
+       So the ACTIVE row grows a bind button, and only while the currently
+       open chat is positively known to be virgin (mrrChatUnboundVirginId).
+       On a bound chat, or before the metadata read has answered, no button
+       is rendered and this section looks exactly as it did.
+
+       No reload: the ruleset is already active and loaded, so the binding
+       is just the confirmation the entry path declined to make.
+       mrrConfirmChatRuleset is the whole mechanism — it clears the virgin
+       verdict, opens the latch, replays whatever the user typed while
+       unbound, and fires reconcileActiveAgents(true), which adds the
+       ruleset's overlay agent types and writes the stamp through its
+       ordinary `!stamp` forward path and teaches B19 via mrrNoteChatStamp.
+       Identical to what a deliberate switch produces, minus the page
+       reload it does not need. */
+    if (id === activeId && state.chatId && mrrChatUnboundVirginId === state.chatId) {
+      var btnBind = marinara.addElement(row, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Use in this chat" });
+      if (btnBind) marinara.on(btnBind, "click", function () {
+        var boundChatId = state.chatId;
+        if (!boundChatId || mrrChatUnboundVirginId !== boundChatId) { setMsg(msg, "This chat is already bound to a ruleset.", "info"); return; }
+        mrrConfirmChatRuleset(boundChatId, "user bound this unbound chat to " + activeId + " from the Library");
+        setMsg(msg, "This chat is now using " + entry.name + ".", "ok");
+        btnBind.disabled = true;
+      });
+    }
+
     if (id !== activeId) {
       var btnSwitch = marinara.addElement(row, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Switch" });
       if (btnSwitch) marinara.on(btnSwitch, "click", function () {
@@ -14422,11 +14524,39 @@ function applyScenarioDefaultToCurrentChat(scenarioDefault, progressCb) {
    Pre-existing row ids left behind in a chat's list by earlier versions are
    harmless (they match no `cfg.type`) and are deliberately NOT purged — see
    the migration note at the union site below. */
+/* ─── Round-33 gate (Corey's ruling 2026-08-24) ──────────────────────────
+   A chat POSITIVELY KNOWN to be virgin — no stamp on it, nothing derivable
+   from its own agents — is claimed by nobody, and this function is the thing
+   that used to claim it: its forward path both ADDS the active ruleset's
+   overlay agent types to the chat and, on `!stamp`, writes the stamp
+   (char_carryover2107.log: "added 7 agent id(s), stamped ruleset exalted3e"
+   three lines after a confirm the user never asked for).
+
+   The primary gate is upstream — mrrCheckChatRulesetStamp no longer confirms
+   a virgin chat, and this function only ever runs off a confirm — so in the
+   shipped flow reconcile is not even called for a virgin chat. This second
+   gate exists because the claim is IRREVERSIBLE from the user's side (agent
+   ids and a stamp, written to the server) and because reconcile has a second
+   caller today (mrrWatchAppliedChatPreset) and may grow more: whoever calls
+   it, a chat we know is unbound is not ours to bind. Keyed on the same
+   variable the confirm clears, so the binding moment un-gates it in the
+   right order without any second notion of "virgin".
+
+   NOT a substitute for the upstream gate and not a general "unconfirmed"
+   test: `mrrChatUnboundVirginId` is only ever set after a SUCCESSFUL
+   metadata read that found nothing. A chat whose read is still in flight,
+   or failed, is not virgin — it is unknown — and reconcile's own behaviour
+   there is unchanged. */
 function reconcileActiveAgents(rebind) {
   if (!state.chatId) return;
   if (!state.ruleset) return;
   var chatId = state.chatId;
   var rulesetId = state.ruleset.id;
+  if (mrrChatUnboundVirginId === chatId) {
+    log("reconcileActiveAgents: chat " + chatId + " is unbound (no stamp, nothing derivable) — NOT claiming it for " +
+        rulesetId + "; a ruleset must be deliberately activated for this chat first (Corey ruling 2026-08-24)");
+    return;
+  }
 
   Promise.all([
     apiFetch("/chats/" + chatId),
@@ -14985,6 +15115,10 @@ function mrrCheckChatRulesetStamp(chatId) {
   if (!state.ruleset || !state.ruleset.id) return;      /* extension dormant (no ruleset configured); nothing to compare */
   if (mrrRulesetConfirmedChatId === chatId) return;     /* already settled */
   if (mrrStampHeldChatId === chatId) return;            /* deliberately held — do NOT re-fetch every 1.5s forever */
+  /* Round 33: a virgin verdict is SETTLED, not pending. Same fetch-storm
+     discipline as the held guard above — the answer will not change until
+     the user binds the chat, and the binding paths clear this themselves. */
+  if (mrrChatUnboundVirginId === chatId) return;
   if (mrrStampCheckInFlightChatId === chatId) return;   /* one in flight is enough */
 
   var activeId = state.ruleset.id;
@@ -15046,7 +15180,62 @@ function mrrCheckChatRulesetStamp(chatId) {
          it is the writer, it is where the knowledge is born, and its other
          caller was missing this line entirely. Nothing to do here now. */
       if (derived) { decide(derived); return; }
-      mrrConfirmChatRuleset(chatId, "chat carries no ruleset stamp (nothing to disagree with)");
+
+      /* ══ ROUND 33 — THE VIRGIN CHAT (Corey's ruling, 2026-08-24) ═════════
+         No stamp on the chat, and nothing to derive one from. THIS USED TO
+         CONFIRM: "chat carries no ruleset stamp (nothing to disagree with)"
+         — which opened the save latch, replayed the deferred bootstrap save,
+         and fired the reconcile that added the active ruleset's seven
+         overlay agents and stamped the chat (char_carryover2107.log). The
+         premise was that silence is consent. It is not: entering a chat is
+         not a decision about it, and "whatever ruleset happens to be active
+         right now" is ambient global state, not a choice the user made for
+         THIS chat.
+
+         Note what does NOT change here. The derive path above still binds a
+         chat that has managed agents on it — agents present means somebody
+         DID claim it, and re-deriving that claim is round 28's F4 recovery,
+         not a guess. What changes is only the case where there is genuinely
+         nothing: no stamp, no agents, no basis. That chat stays unbound.
+
+         THE LATCH STAYS SHUT (option ii of the round-33 spec, deliberately
+         chosen over "confirm locally but suppress the stamp"): saveSheet
+         writes `sheet._rulesetId = state.ruleset.id` on every save, so a
+         confirm-for-local-purposes would persist a character record stamped
+         for a ruleset the user never picked for this chat — which is the
+         cross-ruleset bleed round 24 exists to prevent, just moved from the
+         chat's metadata into localStorage, where round 24's own Part-3 hold
+         would later refuse to touch it. Suppressing that stamp instead would
+         mint unjudgeable records, which round 24 explicitly refused to do.
+         So: nothing is written at all, saveSheet's refusal arms the deferred
+         replay, and the user's edits land the instant they bind the chat.
+
+         THE ONE EXCEPTION — a deliberate activation that landed on a virgin
+         chat. Every user-driven ruleset activation (Library Switch, paste,
+         bundle install) marks LS_SWITCH_INTENT and reloads. decide()'s
+         mismatch branch consumes that marker for a chat that HAS a stamp;
+         a virgin chat never reaches decide(), so the marker has to be
+         consumed here too or a deliberate activation performed while sitting
+         in a brand-new chat would be silently ignored. Consuming it here is
+         what makes activation THE binding moment for a previously-virgin
+         chat: confirm -> reconcile(true) -> agents added + stamp written
+         (reconcile's `!stamp` forward path, unchanged) -> mrrNoteChatStamp
+         teaches B19. Same one-shot marker, same TTL, same semantics as the
+         mismatch branch — no second notion of "deliberate" is invented. */
+      if (mrrConsumeDeliberateSwitchIntent(activeId)) {
+        log("auto-switch: chat " + chatId + " carries no ruleset stamp, but the user just deliberately activated " +
+            activeId + " — honoring the deliberate activation and binding the chat to it");
+        mrrConfirmChatRuleset(chatId, "deliberate activation of " + activeId + " in a previously-unbound chat");
+        return;
+      }
+
+      /* Set BEFORE the log: this variable is also the re-entry guard at the
+         top of this function, so writing it first is what makes the line
+         below fire exactly once per chat entry rather than once per
+         route-poll tick. */
+      mrrChatUnboundVirginId = chatId;
+      log("virgin chat " + chatId + ": no ruleset stamp and nothing to derive — staying unbound until a ruleset is " +
+          "deliberately activated (Corey ruling 2026-08-24). No stamp written, no agents added, sheet writes held.");
     });
     return;
   }).catch(function (e) {
@@ -18494,6 +18683,9 @@ function watchChatMessages() {
      same order as MRR_AUTOSWITCH_GUARD_TTL_MS. */
   var mrrMsgDeferCounts = Object.create(null);
   var MRR_MSG_DEFER_MAX_TRIES = 20;
+  /* Round 33: warn-once-per-chat for the standing "unbound" refusal — see
+     the branch that reads it in schedule()'s timer body. */
+  var mrrMsgUnboundWarnedChatId = null;
   function findParentMessage(el) {
     /* Round-14 Task A: a characterData mutation record's `target` is the
        TEXT NODE itself (nodeType 3), not an element — the original
@@ -18542,6 +18734,22 @@ function watchChatMessages() {
          marking it applied when it wasn't is not. */
       var msgBlock = mrrSheetWriteBlockReason();
       if (msgBlock) {
+        /* Round 33: an UNBOUND chat is not a window that closes — re-arming
+           the 1500ms debounce 20 times and then warning would repeat, per
+           message, for as long as the user talks in an unbound chat. The
+           outcome is identical either way (the observation is dropped
+           UNPROCESSED and left unmarked, so a later reload re-processes it
+           cleanly once the chat is bound), so take it immediately and say so
+           once per chat instead of once per message. */
+        if (msgBlock.code === "unbound") {
+          if (mrrMsgUnboundWarnedChatId !== state.chatId) {
+            mrrMsgUnboundWarnedChatId = state.chatId;
+            warn("chat " + state.chatId + " is not bound to any ruleset — narrator state tags are being observed but NOT applied " +
+                 "(each observation is dropped unprocessed and stays unmarked, so it re-processes once the chat is bound). " + msgBlock.msg);
+          }
+          delete mrrMsgDeferCounts[msgId];
+          return;
+        }
         var tries = (mrrMsgDeferCounts[msgId] || 0) + 1;
         mrrMsgDeferCounts[msgId] = tries;
         if (tries <= MRR_MSG_DEFER_MAX_TRIES) { schedule(msgEl); return; }

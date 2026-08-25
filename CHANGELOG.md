@@ -38,7 +38,17 @@ explicitly when they do).
   "untouched roster" is now an explicit bootstrap flag cleared only by
   deliberate use (sheet edits, rename, bundle apply, state mutations,
   adopt) instead of a byte-compare that per-ruleset normalizers defeated.
-  All stamp declines log their reason. (33 probes.)
+  All stamp declines log their reason. (33 probes.) Round 33 (Corey
+  ruling): **virgin chats stay unbound** — entering a chat with no ruleset
+  stamp and nothing to derive no longer claims it for the ambient active
+  ruleset: no stamp write, no agent auto-add, sheet saves held (edits made
+  while unbound replay under the ruleset you then pick; leaving without
+  binding drops them — there is no system to file them under). Deliberate
+  activation is the binding moment, and the Library's active-ruleset row
+  gains a "Use in this chat" button so a virgin chat can bind to the
+  already-active system without a fake switch. Chats with managed agents
+  still derive their binding; stamped chats are byte-identical to before
+  (probed by two-fragment comparison). (8 new probes + 33 regression.)
 - **Dead-plumbing tombstones trimmed** (−657 B source): the round-26/27
   `isChildListOrigin` removal narration is gone; the load-bearing lesson
   survives as a forward invariant — never rewrite a message element's
