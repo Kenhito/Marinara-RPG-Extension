@@ -59,6 +59,19 @@ explicitly when they do).
   original untouched. Bundles with '@' in character ids are now rejected
   (reserved separator). (20 new probes incl. a negative control that
   reproduces the old freeze; 48 regression probes across 3 suites.)
+- **Sheet ↔ card/persona binding (Round B).** Bind a character sheet to an
+  engine character card or your persona from a new "Bound to" dropdown on
+  the sheet's identity row. Bound sheets AUTO-RESTORE into any chat where
+  that card or persona is present — new chats, conversation branches, game
+  session rotations — reconstituting a whole party with zero clicks (an
+  untouched placeholder is replaced by a lone restored character
+  automatically). Works in both RP and game mode. Unbound characters keep
+  the explicit "Continue as" offer. A deleted card never deletes your
+  sheet; if a same-named card appears, a one-line prompt offers re-binding
+  (never automatic). The extension never writes to engine cards or
+  personas — bindings are local to your server by design. (37 new probes
+  incl. a whole-flow proof that the only non-GET engine request is one
+  read-only name lookup; 68 regression probes across 4 suites.)
 - **Dead-plumbing tombstones trimmed** (−657 B source): the round-26/27
   `isChildListOrigin` removal narration is gone; the load-bearing lesson
   survives as a forward invariant — never rewrite a message element's

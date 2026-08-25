@@ -506,11 +506,21 @@ var MRR_ACTIVE_CHAR_PFX = "mrr-active-char-";
    with its siblings so the classifier and any future migration scan share
    one spelling. */
 var MRR_LAST_CHAR_PFX = "mrr-last-char-";
+/* ROUND B — the card/persona binding registry (spec §2.2). ONE key, not a
+   prefix family: the whole registry is a single small document (~150 bytes
+   per binding, and the 1MB merged cap is dominated by sheets), so it is
+   cheaper to read and write as a unit than to spread across per-binding
+   keys that the adapter would have to patch individually. SYNCED for the
+   same reason the roster is: a binding made in one browser is meaningless
+   if the other browser cannot see it. Declared here with its siblings so
+   the classifier and the registry helpers share one spelling. */
+var MRR_BINDINGS_KEY = "mrr-card-bindings";
 
 function mrrIsSyncedKey(key) {
   if (typeof key !== "string") return false;
   if (key.indexOf(LS_CHARACTER_PFX) === 0) return true;
   if (key === LS_RULESET) return true;
+  if (key === MRR_BINDINGS_KEY) return true;
   if (key.indexOf(LS_SPELLBOOK_LB_PFX) === 0) return true;
   if (key.indexOf(MRR_CHARS_PFX) === 0) return true;
   if (key.indexOf(MRR_ACTIVE_CHAR_PFX) === 0) return true;
@@ -2196,6 +2206,741 @@ function mrrMigrateRecordsForChat(activeRulesetId, why) {
   return moved.length;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   ROUND B — CARD / PERSONA BINDING: registry, resolution, bind UI
+   SPEC: Plans/2026-08-25_records-and-card-binding-spec.md §2.2, §2.3, §3,
+   §4, §6 R-2. Round A gave one identity per (character, system); Round B
+   answers the other half of §1 — WHICH engine card or persona in a chat
+   that identity belongs to, so entering a chat reconstitutes the party.
+
+   THE ONE INVARIANT THAT SHAPES EVERYTHING (spec §2.3, Corey ruling
+   2026-08-25): WE NEVER WRITE TO AN ENGINE CARD OR PERSONA. Not a stamp,
+   not a sentinel, not an `extensions` passthrough. Exports exist to hand a
+   character to someone else's server, where our binding key is noise, so
+   the binding lives entirely on OUR side — one synced storage key. The
+   consequence is that a binding is server-local and a re-import dangles
+   it; the recovery is the §3.6 confirm-click prompt and the bind dropdown,
+   never an automatic guess.
+
+   WHY THE PRESENT SET IS HARVESTED RATHER THAN POLLED. The chat row that
+   names a chat's cards already arrives on calls this file makes anyway —
+   mrrCheckChatRulesetStamp's metadata read, reconcileActiveAgents' GET,
+   mrrReconcileAgentBindings' GET, the preset watcher's GET. Every one of
+   them routes its answer through mrrNoteChatRow, so the present set costs
+   ZERO new requests in the steady state. The single explicit GET below is
+   the fallback for the one case that has no harvest to ride on (a confirm
+   that happened before any row landed), and it is capped at one per chat
+   entry.
+
+   WHY gamePartyCharacterIds IS NEVER CONSULTED. Game mode mirrors the
+   party into metadata.gamePartyCharacterIds, and that mirror can hold
+   synthetic `npc:*` recruits which are NOT character cards — binding to
+   one would be binding to nothing. The authoritative present set is the
+   chat row's own `characterIds` (a real array off normalizeChatForResponse)
+   plus `metadata.gameGmCharacterId` for game mode, and `personaId`
+   separately (scalar — a chat carries exactly one persona).
+
+   GAME MODE (Corey ruling R-2). Nothing here is gated on chat mode: the
+   present set already unions gameGmCharacterId, so the wiring is identical
+   for both modes and ships for both. Game-mode LIVE certification (are
+   multiple sheets still readable post-2.4.0?) rides the B7/B8 tripwire and
+   is not something this file can assert.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── B-1: the registry ───────────────────────────────────────────────────
+   Shape (spec §2.2):
+     { bindings: [ { key, kind: "character"|"persona", engineId, charId,
+                     nameHint } ] }
+   TWO UNIQUENESS RULES, and they are different in kind:
+     - one binding per charId — a sheet answers to ONE card. Re-binding
+       REPLACES, because that is exactly Corey's "new Ginny card, same
+       character" case.
+     - one binding per engineId — a card carries ONE sheet. Two sheets
+       claiming one card would make Tier-1 restore ambiguous, so the latest
+       claim wins and the displaced one is LOGGED rather than silently
+       dropped (a binding disappearing without a trace is unexplainable
+       later; a log line is the difference between a bug and a mystery).
+   `nameHint` is for the §3.6 re-bind prompt ONLY. It is never a key and
+   never a matcher — §4 bans name-keyed resolution outright. */
+function mrrNewBindingKey() {
+  try {
+    if (typeof crypto !== "undefined" && crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  } catch (e) { /* some hosts throw on crypto access in insecure contexts */ }
+  /* Same shape as newCharacterId()'s fallback reasoning: time-ordered plus
+     entropy. Uniqueness only has to hold within one user's registry. */
+  return "bind-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+}
+
+function mrrIsBindingKind(kind) { return kind === "character" || kind === "persona"; }
+
+/* Read + normalize. A malformed or partially-written registry answers as
+   EMPTY rather than throwing: a broken bindings document must degrade to
+   "nothing is bound" (the pre-Round-B world, which works), never to a
+   dead panel. Rows missing a required field are dropped individually. */
+function mrrLoadBindings() {
+  var raw = lsGet(MRR_BINDINGS_KEY);
+  if (!raw) return [];
+  var parsed = safeParse(raw);
+  var list = (parsed && Array.isArray(parsed.bindings)) ? parsed.bindings : null;
+  if (!list) return [];
+  var out = [];
+  list.forEach(function (b) {
+    if (!b || typeof b !== "object") return;
+    if (typeof b.engineId !== "string" || !b.engineId) return;
+    if (typeof b.charId !== "string" || !b.charId) return;
+    if (!mrrIsBindingKind(b.kind)) return;
+    out.push({
+      key: (typeof b.key === "string" && b.key) ? b.key : mrrNewBindingKey(),
+      kind: b.kind,
+      engineId: b.engineId,
+      charId: b.charId,
+      nameHint: (typeof b.nameHint === "string") ? b.nameHint : ""
+    });
+  });
+  return out;
+}
+
+function mrrSaveBindings(list) {
+  return lsSet(MRR_BINDINGS_KEY, JSON.stringify({ bindings: Array.isArray(list) ? list : [] }));
+}
+
+function mrrBindingForCharId(charId) {
+  if (!charId) return null;
+  var list = mrrLoadBindings();
+  for (var i = 0; i < list.length; i++) if (list[i].charId === charId) return list[i];
+  return null;
+}
+
+function mrrBindingForEngineId(engineId) {
+  if (!engineId) return null;
+  var list = mrrLoadBindings();
+  for (var i = 0; i < list.length; i++) if (list[i].engineId === engineId) return list[i];
+  return null;
+}
+
+/* THE ONE WRITER. Both uniqueness rules are enforced here so no caller can
+   half-apply them. Returns the stored binding, or null if the write failed
+   (quota / private mode) — callers surface that rather than pretending. */
+function mrrSetBinding(charId, kind, engineId, nameHint) {
+  if (!charId || !engineId || !mrrIsBindingKind(kind)) return null;
+  var list = mrrLoadBindings();
+  var existingKey = null;
+  var displaced = [];
+  var kept = [];
+  list.forEach(function (b) {
+    if (b.charId === charId) { existingKey = b.key; if (b.engineId !== engineId) displaced.push(b); return; }
+    if (b.engineId === engineId) { displaced.push(b); return; }
+    kept.push(b);
+  });
+  var rec = {
+    key: existingKey || mrrNewBindingKey(),
+    kind: kind,
+    engineId: engineId,
+    charId: charId,
+    nameHint: (typeof nameHint === "string" && nameHint) ? nameHint : mrrCharacterLabel(charId)
+  };
+  kept.push(rec);
+  if (!mrrSaveBindings(kept)) {
+    warn("binding: could not persist the binding registry (quota or private mode?) — " + mrrCharacterLabel(charId) +
+         " is NOT bound; nothing else was changed");
+    return null;
+  }
+  /* Log the RESOLVED name, not mrrCharacterLabel(charId): the character being
+     bound is very often not in THIS chat's roster (that is the whole point of
+     binding), so the label would fall back to a raw id and the trace would be
+     unreadable exactly when it matters. rec.nameHint already carries the
+     caller's name, with the roster label as its own fallback. */
+  displaced.forEach(function (b) {
+    if (b.charId === charId) {
+      log("binding: re-bound " + rec.nameHint + " (" + charId + ") from " + b.kind + " " + b.engineId +
+          " to " + kind + " " + engineId);
+    } else {
+      log("binding: " + kind + " " + engineId + " was already bound to " + (b.nameHint || b.charId) + " (" + b.charId +
+          ") — one card carries one sheet, so the newest claim (" + rec.nameHint + ") wins and the older binding is dropped");
+    }
+  });
+  if (!displaced.length) {
+    log("binding: bound " + rec.nameHint + " (" + charId + ") to " + kind + " " + engineId);
+  }
+  return rec;
+}
+
+function mrrUnbindCharacter(charId) {
+  if (!charId) return false;
+  var list = mrrLoadBindings();
+  var kept = list.filter(function (b) { return b.charId !== charId; });
+  if (kept.length === list.length) return false;
+  if (!mrrSaveBindings(kept)) {
+    warn("binding: could not persist the binding registry while unbinding " + mrrCharacterLabel(charId) +
+         " — the binding is still in place");
+    return false;
+  }
+  log("binding: unbound " + mrrCharacterLabel(charId) + " (" + charId + ")");
+  return true;
+}
+
+/* ─── B-2: the present-set reader ─────────────────────────────────────────
+   Fed by mrrNoteChatRow from responses ALREADY IN FLIGHT. Cached per chat
+   id and bounded, because a long session visits many chats and this cache
+   is pure convenience — evicting the oldest entry costs one harvest. */
+var MRR_PRESENT_CACHE_MAX = 8;
+var mrrPresentSets = Object.create(null);   /* chatId -> {characterIds, gameGmCharacterId, personaId, complete} */
+var mrrPresentSetOrder = [];                /* insertion order, for the bounded eviction above */
+
+/* `npc:` ids are synthetic game recruits, not cards (spec §4). They should
+   never reach us — we read `characterIds`, not the game party mirror — but
+   the filter is stated once, here, so a future harvest site that samples a
+   different field cannot introduce one silently. */
+function mrrIsCardId(id) {
+  return typeof id === "string" && !!id && id.indexOf("npc:") !== 0;
+}
+
+function mrrNoteChatRow(chatId, chat, source) {
+  if (!chatId || !chat || typeof chat !== "object") return null;
+  /* A metadata PATCH answers with a partial row on some routes. Harvest
+     what IS there and record completeness rather than caching a hole as if
+     it were an empty party — "the chat has no cards" and "this response
+     did not mention cards" are different facts. */
+  var hasCards = Array.isArray(chat.characterIds);
+  var meta = mrrChatMeta(chat);
+  var prev = mrrPresentSets[chatId] || null;
+  var entry = {
+    characterIds: hasCards ? chat.characterIds.filter(mrrIsCardId) : (prev ? prev.characterIds : []),
+    gameGmCharacterId: mrrIsCardId(meta.gameGmCharacterId) ? meta.gameGmCharacterId
+      : (Object.prototype.hasOwnProperty.call(meta, "gameGmCharacterId") ? null : (prev ? prev.gameGmCharacterId : null)),
+    personaId: (typeof chat.personaId === "string" && chat.personaId) ? chat.personaId
+      : (Object.prototype.hasOwnProperty.call(chat, "personaId") ? null : (prev ? prev.personaId : null)),
+    complete: hasCards || !!(prev && prev.complete)
+  };
+  if (!prev) {
+    mrrPresentSetOrder.push(chatId);
+    while (mrrPresentSetOrder.length > MRR_PRESENT_CACHE_MAX) {
+      var evict = mrrPresentSetOrder.shift();
+      if (evict !== chatId) delete mrrPresentSets[evict];
+    }
+  }
+  mrrPresentSets[chatId] = entry;
+  log("binding: present set for chat " + chatId + " — " + entry.characterIds.length + " card(s)" +
+      (entry.gameGmCharacterId ? " + GM card " + entry.gameGmCharacterId : "") +
+      (entry.personaId ? " + persona " + entry.personaId : "") + " (" + (source || "harvest") + ")");
+  /* Harvesting is also a resolution trigger: on a chat whose confirm landed
+     before any row did, THIS is the moment the flow becomes possible. */
+  mrrResolveBindings(chatId, "chat row harvested (" + (source || "unspecified") + ")");
+  return entry;
+}
+
+function mrrPresentSetFor(chatId) {
+  var e = chatId ? mrrPresentSets[chatId] : null;
+  return (e && e.complete) ? e : null;
+}
+
+/* Present CARD set = characterIds ∪ gameGmCharacterId, deduped. The persona
+   is deliberately NOT folded in: it is a different engine object with its
+   own route and its own liveness check. */
+function mrrPresentCardIds(chatId) {
+  var e = mrrPresentSetFor(chatId);
+  if (!e) return [];
+  var out = [], seen = Object.create(null);
+  e.characterIds.forEach(function (id) { if (mrrIsCardId(id) && !seen[id]) { seen[id] = true; out.push(id); } });
+  if (mrrIsCardId(e.gameGmCharacterId) && !seen[e.gameGmCharacterId]) out.push(e.gameGmCharacterId);
+  return out;
+}
+
+/* ─── B-3: the resolution flow ────────────────────────────────────────────
+   Per-chat-entry bookkeeping. All of it resets on chat change (through
+   mrrResetBindingResolution, called from mrrResetRulesetLatch) except the
+   liveness ledger, which is per-SESSION: a deleted card does not come back,
+   and re-asking would be the fetch storm the round-24/33 guards exist to
+   prevent. */
+var mrrBindingResolveDoneChatId = null;      /* resolution completed for this chat entry */
+var mrrBindingResolveInFlightChatId = null;  /* a restore decision is pending — the B19 offer waits */
+var mrrBindingPresentFetchedChatId = null;   /* the ONE explicit GET /chats/:id, per chat entry */
+var mrrBindingLivenessDone = Object.create(null); /* chatId -> true, per session */
+var mrrBindingLivenessWarned = false;
+var mrrCardNames = Object.create(null);      /* engineId -> display name, for the dropdown + logs */
+var mrrCardDangling = Object.create(null);   /* engineId -> true; a card the engine no longer has */
+
+function mrrResetBindingResolution() {
+  mrrBindingResolveDoneChatId = null;
+  mrrBindingResolveInFlightChatId = null;
+  mrrBindingPresentFetchedChatId = null;
+  mrrBindPrompt = null;
+  mrrBindPromptDismissed = false;
+}
+
+/* THE B19 GATE (probe: Tier-1-vs-B19 non-interference). While a restore
+   decision is pending we do not yet know whether this chat's BOUND party is
+   about to land in the roster, and "Continue as <someone else>" over that
+   window would race it — the user could adopt a third character into a chat
+   that was one fetch away from restoring the right one. Inert whenever the
+   registry has nothing to say about this chat, which is every chat for a
+   user who has never bound anything. */
+function mrrBindingRestorePending(chatId) {
+  return !!chatId && mrrBindingResolveInFlightChatId === chatId;
+}
+
+/* Candidates = present engine ids that (a) have a registry binding, (b)
+   whose character has a record for the ACTIVE ruleset (Round A's resolver
+   answers that — a character whose only sheet is in another system is not
+   restorable here, by construction), and (c) are not already in the roster. */
+function mrrBindingRestoreCandidates(chatId) {
+  var out = [];
+  var e = mrrPresentSetFor(chatId);
+  if (!e) return out;
+  var roster = Array.isArray(state.characters) ? state.characters : [];
+  function inRoster(id) { return roster.some(function (c) { return c && c.id === id; }); }
+  function consider(engineId, kind) {
+    if (!engineId) return;
+    var b = mrrBindingForEngineId(engineId);
+    if (!b || b.kind !== kind) return;
+    if (inRoster(b.charId)) return;
+    if (!mrrRecordExists(b.charId)) return;
+    out.push({ engineId: engineId, kind: kind, charId: b.charId, nameHint: b.nameHint });
+  }
+  mrrPresentCardIds(chatId).forEach(function (id) { consider(id, "character"); });
+  consider(e.personaId, "persona");
+  return out;
+}
+
+/* THE ENTRY POINT. Idempotent, cheap, and safe to call from every trigger:
+   the confirm chokepoint, every present-set harvest, and any registry write.
+   Fires ONLY in a chat that is bound and confirmed — round 33's ruling is
+   as binding here as it is for the record migration, and for the same
+   reason: restoring a party is a claim about a chat, and entering a chat is
+   not a decision about it. */
+function mrrResolveBindings(chatId, why) {
+  if (!chatId) return;
+  if (state.chatId !== chatId) return;
+  if (!state.ruleset || !state.ruleset.id) return;
+  if (mrrRulesetConfirmedChatId !== chatId) return;   /* not bound+confirmed — dormant (r33) */
+  if (mrrChatUnboundVirginId === chatId) return;      /* belt: a virgin chat is never ours to populate */
+  if (mrrBindingResolveDoneChatId === chatId) return;
+  if (mrrBindingResolveInFlightChatId === chatId) return;
+
+  var present = mrrPresentSetFor(chatId);
+  if (!present) {
+    /* No harvest has landed for this chat. ONE explicit GET, per chat entry
+       — never a poll, and never a retry loop: a failure leaves the flow
+       dormant for this entry, which is the pre-Round-B behaviour. */
+    if (mrrBindingPresentFetchedChatId === chatId) return;
+    mrrBindingPresentFetchedChatId = chatId;
+    apiFetch("/chats/" + encodeURIComponent(chatId)).then(function (chat) {
+      if (state.chatId !== chatId) return;
+      mrrNoteChatRow(chatId, chat, "explicit read for binding resolution");
+    }).catch(function (e) {
+      warn("binding: could not read chat " + chatId + " to learn which cards are present (" +
+           (e && e.message ? e.message : e) + ") — bound sheets are not restored for this visit");
+    });
+    return;
+  }
+
+  var cands = mrrBindingRestoreCandidates(chatId);
+  var cardIds = mrrPresentCardIds(chatId);
+  /* WHY THE NAME PASS RUNS EVEN WITH AN EMPTY REGISTRY. The obvious economy
+     — "no bindings, no work, no request" — was written first and was wrong:
+     the bind field cannot label a single option without the cards' names, so
+     a user who has never bound anything would be offered a dropdown of raw
+     nanoids, i.e. the one screen that exists to CREATE bindings is unusable
+     until bindings exist. The cost is the same single summaries POST §3.4
+     already mandates, once per chat entry, never on a tick — so the pass runs
+     whenever this chat has anything present at all, and only the genuinely
+     empty chat short-circuits. */
+  var needIdentity = !mrrBindingLivenessDone[chatId] && !!(cardIds.length || present.personaId);
+  if (!cands.length && !needIdentity) {
+    mrrBindingResolveDoneChatId = chatId;
+    mrrRenderBindPrompt();
+    return;
+  }
+
+  /* LIVENESS + NAMES in one call. The batch summaries POST is required by
+     §3.4 for the bound ids; sending EVERY present card id in the same
+     request is a strict superset at identical cost and is what makes the
+     bind dropdown able to say "Ginny (card)" instead of a raw nanoid. Once
+     per chat, per session. POST needs x-marinara-csrf — the compat shim
+     adds it to every non-GET. */
+  mrrBindingResolveInFlightChatId = chatId;
+  var jobs = [];
+  if (cardIds.length && !mrrBindingLivenessDone[chatId]) {
+    jobs.push(apiFetch("/characters/summaries", {
+      method: "POST",
+      body: JSON.stringify({ ids: cardIds })
+    }).then(function (rows) {
+      if (!Array.isArray(rows)) {
+        /* Inconclusive, not dead. FAIL OPEN and say so: withholding a party
+           because one request came back oddly would break the feature every
+           time the server hiccups, while restoring a sheet whose card is
+           gone costs a roster row the user can remove. */
+        if (!mrrBindingLivenessWarned) {
+          mrrBindingLivenessWarned = true;
+          warn("binding: the card-liveness check answered with something that is not a list — treating every present card " +
+               "as live for this chat (a deleted card would show up as a sheet whose card is missing, which is recoverable)");
+        }
+        return;
+      }
+      var seen = Object.create(null);
+      rows.forEach(function (r) {
+        if (!r || typeof r.id !== "string") return;
+        seen[r.id] = true;
+        if (typeof r.name === "string" && r.name) mrrCardNames[r.id] = r.name;
+      });
+      cardIds.forEach(function (id) { if (!seen[id]) mrrCardDangling[id] = true; });
+    }).catch(function (e) {
+      if (!mrrBindingLivenessWarned) {
+        mrrBindingLivenessWarned = true;
+        warn("binding: the card-liveness check failed (" + (e && e.message ? e.message : e) +
+             ") — treating every present card as live for this chat");
+      }
+    }));
+  }
+  if (present.personaId && !mrrBindingLivenessDone[chatId]) {
+    jobs.push(apiFetch("/characters/personas/" + encodeURIComponent(present.personaId)).then(function (p) {
+      /* The engine answers a missing persona with 404 + {error}, and the
+         compat shim's apiFetch does NOT status-check — it just parses the
+         body. So "is this persona alive" is a SHAPE question, not a
+         rejection question, and asking it the other way would read every
+         404 as a live persona named undefined. */
+      if (p && typeof p.id === "string") {
+        if (typeof p.name === "string" && p.name) mrrCardNames[p.id] = p.name;
+      } else {
+        mrrCardDangling[present.personaId] = true;
+      }
+    }).catch(function () {
+      /* A transport failure is inconclusive; same fail-open rule as above. */
+    }));
+  }
+
+  Promise.all(jobs).then(function () {
+    mrrBindingResolveInFlightChatId = null;
+    mrrBindingLivenessDone[chatId] = true;
+    if (state.chatId !== chatId) return;
+    mrrBindingResolveDoneChatId = chatId;
+    mrrApplyBindingRestores(chatId, cands, why, needIdentity);
+  }).catch(function (e) {
+    mrrBindingResolveInFlightChatId = null;
+    mrrBindingResolveDoneChatId = chatId;
+    warn("binding: resolution failed for chat " + chatId + " (" + (e && e.message ? e.message : e) + ")");
+    if (typeof mrrRenderContinueOffer === "function") mrrRenderContinueOffer();
+  });
+}
+
+/* TIER 1 — the restore itself. Dangling bindings are filtered here rather
+   than at candidate time so the log can say WHY a bound character did not
+   come back, and so the §3.6 re-bind prompt has the dangling binding in
+   hand to offer against. */
+function mrrApplyBindingRestores(chatId, cands, why, relabel) {
+  var live = [], dangling = [];
+  cands.forEach(function (c) { (mrrCardDangling[c.engineId] ? dangling : live).push(c); });
+
+  dangling.forEach(function (c) {
+    log("binding: NOT restoring " + (c.nameHint || c.charId) + " (" + c.charId + ") — the " + c.kind + " " + c.engineId +
+        " it is bound to no longer exists on this server. The binding and the sheet are both KEPT; re-bind from the " +
+        "sheet's \"Bound to\" field, or accept the prompt if a replacement card is already in this chat.");
+  });
+  mrrArmRebindPrompt(chatId, dangling);
+
+  if (!live.length) {
+    if (typeof mrrRenderContinueOffer === "function") mrrRenderContinueOffer();
+    mrrRenderBindPrompt();
+    /* Nothing came back, but the identity pass may have learned the names the
+       bind field renders its options from — the panel was built before they
+       landed, so it is rebuilt once to pick them up. */
+    if (relabel && state.mountEl && typeof renderSheet === "function") renderSheet();
+    return;
+  }
+
+  /* THE PLACEHOLDER RULE. mrrRosterIsEmpty is B19's own predicate for "this
+     chat's roster is still the untouched bootstrap placeholder" (round-32's
+     `_bootstrap` flag, arm 1). When it holds, activating the restored
+     character must REPLACE that placeholder rather than sit beside it —
+     which is exactly what mrrAdoptLastCharacter already does, including the
+     pristine-record deletion and the flushSave ordering it had to get right.
+     So it is CALLED, not re-implemented: one adopt code path, two callers.
+     With several restores the FIRST one takes the slot (leaving "Player"
+     active beside a restored party is the orphan the adopt path exists to
+     remove) and the rest are appended without touching the active pointer. */
+  var placeholder = (typeof mrrRosterIsEmpty === "function") && mrrRosterIsEmpty();
+  var adopted = null;
+  if (placeholder) {
+    adopted = live[0];
+    log("binding: restored " + (adopted.nameHint || adopted.charId) + " (" + adopted.charId + ") via " +
+        adopted.kind + " " + adopted.engineId + " — activating it in place of this chat's untouched placeholder");
+    mrrAdoptLastCharacter({ id: adopted.charId, name: mrrBindingDisplayName(adopted) });
+  }
+  var appended = 0;
+  if (!Array.isArray(state.characters)) state.characters = [];
+  live.forEach(function (c) {
+    if (adopted && c === adopted) return;
+    if (state.characters.some(function (x) { return x && x.id === c.charId; })) return;
+    state.characters.push({ id: c.charId, name: mrrBindingDisplayName(c) });
+    appended++;
+    log("binding: restored " + (c.nameHint || c.charId) + " (" + c.charId + ") via " + c.kind + " " + c.engineId);
+  });
+  if (appended) saveCharacters();
+
+  log("binding: resolution for chat " + chatId + " restored " + live.length + " character(s), skipped " +
+      dangling.length + " dangling (" + (why || "unspecified") + ")");
+
+  /* The roster changed under B19's feet: re-evaluate the offer (its
+     mrrRosterIsEmpty gate now answers "not empty", so a chat that restored
+     someone shows no Continue-as row) and rebuild the panel so the sheet,
+     the character select and the bind field all describe the new roster. */
+  if (typeof mrrRenderContinueOffer === "function") mrrRenderContinueOffer();
+  if (!adopted && (appended || relabel) && typeof renderSheet === "function") renderSheet();
+  mrrRenderBindPrompt();
+}
+
+/* Best display name for a restored character: the roster/library label if
+   this browser knows one, the binding's nameHint otherwise (it is a hint,
+   not a key — using it as a LABEL is exactly what it is for). */
+function mrrBindingDisplayName(c) {
+  var label = mrrCharacterLabel(c.charId);
+  if (label && label !== c.charId) return label;
+  return c.nameHint || mrrCardNames[c.engineId] || c.charId;
+}
+
+/* ─── §3.6 re-bind prompt + the adopt-time bind offer ─────────────────────
+   ONE prompt surface, two triggers, and NEITHER is automatic (spec §3.6:
+   "confirm-click prompt, never automatic"; §4: "No automatic re-bind after
+   re-import — always a confirm").
+
+     (a) RE-BIND: a binding's card is gone AND a card with the same nameHint
+         is present and unbound. Name similarity is allowed to raise the
+         QUESTION; it is never allowed to answer it.
+     (b) ADOPT: B19's Continue-as offer just adopted an unbound character
+         into a chat with exactly one unbound candidate.
+
+   ON (b), AND WHY IT IS A PROMPT RATHER THAN AN AUTO-BIND. The build note
+   asked for "auto-bind the adopted character to the card the offer's record
+   came from, ONLY if that engineId is present and unbound". B19's pointer
+   record is `{id, name}` — it carries no engineId and cannot: a pointer is
+   stamped for a character that, in the case that matters, has no binding at
+   all. So there is no card the record "came from", and the only way to pick
+   one automatically is to guess — either by name (§4 bans it outright) or by
+   "there is only one, so it must be that one", which silently writes a
+   durable wrong binding that then auto-restores the wrong sheet into every
+   chat that card appears in. This file's whole doctrine (rounds 24, 32, 33)
+   is that a judgement that cannot be made is not made. So the adopt raises
+   the same one-line prompt with the candidate already chosen: one extra
+   click, zero guesses, and the user sees the card they are binding to. */
+var mrrBindPrompt = null;          /* {mode, charId, charName, engineId, kind, engineName, chatId} */
+var mrrBindPromptEl = null;
+var mrrBindPromptDismissed = false;
+
+function mrrUnboundPresentCandidates(chatId) {
+  var e = mrrPresentSetFor(chatId);
+  if (!e) return [];
+  var out = [];
+  mrrPresentCardIds(chatId).forEach(function (id) {
+    if (mrrCardDangling[id]) return;
+    if (mrrBindingForEngineId(id)) return;
+    out.push({ engineId: id, kind: "character" });
+  });
+  if (e.personaId && !mrrCardDangling[e.personaId] && !mrrBindingForEngineId(e.personaId)) {
+    out.push({ engineId: e.personaId, kind: "persona" });
+  }
+  return out;
+}
+
+function mrrArmRebindPrompt(chatId, dangling) {
+  if (mrrBindPrompt || !dangling || !dangling.length) return;
+  var candidates = mrrUnboundPresentCandidates(chatId);
+  if (!candidates.length) return;
+  for (var i = 0; i < dangling.length; i++) {
+    var d = dangling[i];
+    if (!d.nameHint) continue;
+    for (var j = 0; j < candidates.length; j++) {
+      var name = mrrCardNames[candidates[j].engineId];
+      if (!name || name !== d.nameHint) continue;
+      mrrBindPrompt = {
+        mode: "rebind", chatId: chatId,
+        charId: d.charId, charName: d.nameHint,
+        engineId: candidates[j].engineId, kind: candidates[j].kind, engineName: name
+      };
+      return;
+    }
+  }
+}
+
+function mrrArmAdoptBindPrompt(charId, charName) {
+  if (!state.chatId || !charId) return;
+  if (mrrBindingForCharId(charId)) return;              /* already bound — nothing to offer */
+  var candidates = mrrUnboundPresentCandidates(state.chatId);
+  if (candidates.length !== 1) return;                  /* 0 or ambiguous — the dropdown is the path */
+  var c = candidates[0];
+  mrrBindPrompt = {
+    mode: "adopt", chatId: state.chatId,
+    charId: charId, charName: charName || mrrCharacterLabel(charId),
+    engineId: c.engineId, kind: c.kind, engineName: mrrCardNames[c.engineId] || c.engineId
+  };
+  mrrBindPromptDismissed = false;
+  mrrRenderBindPrompt();
+}
+
+/* Same mount/unmount idiom as mrrRenderWarnStrip and mrrRenderContinueOffer:
+   idempotent, orphan-aware, tears down with mountEl, sits below the warn
+   strip (a degradation warning outranks an optional convenience). */
+function mrrRenderBindPrompt() {
+  if (mrrBindPromptEl && !mrrBindPromptEl.isConnected) mrrBindPromptEl = null;
+
+  var p = mrrBindPrompt;
+  var show = !!p && !mrrBindPromptDismissed && p.chatId === state.chatId;
+  if (!show) {
+    if (mrrBindPromptEl && mrrBindPromptEl.parentNode) mrrBindPromptEl.parentNode.removeChild(mrrBindPromptEl);
+    mrrBindPromptEl = null;
+    return;
+  }
+  if (!state.mountEl) return;
+  if (mrrBindPromptEl && mrrBindPromptEl.parentNode) {
+    if (mrrBindPromptEl.getAttribute("data-mrr-bind-engine-id") === p.engineId &&
+        mrrBindPromptEl.getAttribute("data-mrr-bind-char-id") === p.charId) return;
+    mrrBindPromptEl.parentNode.removeChild(mrrBindPromptEl);
+    mrrBindPromptEl = null;
+  }
+
+  var before = (mrrWarnStripEl && mrrWarnStripEl.parentNode === state.mountEl)
+    ? mrrWarnStripEl.nextSibling
+    : state.mountEl.firstChild;
+  mrrBindPromptEl = marinara.addElement(state.mountEl, "div", {
+    "class": "mrr-bind-prompt",
+    "data-mrr-bind-engine-id": p.engineId,
+    "data-mrr-bind-char-id": p.charId
+  });
+  if (!mrrBindPromptEl) return;
+  if (before) state.mountEl.insertBefore(mrrBindPromptEl, before);
+  mrrBindPromptEl.style.display = "flex";
+  mrrBindPromptEl.style.alignItems = "center";
+  mrrBindPromptEl.style.gap = "8px";
+  mrrBindPromptEl.style.width = "100%";
+  mrrBindPromptEl.style.boxSizing = "border-box";
+  mrrBindPromptEl.style.padding = "6px 10px";
+  mrrBindPromptEl.style.marginBottom = "6px";
+  mrrBindPromptEl.style.fontSize = "12px";
+  mrrBindPromptEl.style.lineHeight = "1.3";
+  mrrBindPromptEl.style.background = "var(--mrr-accent-soft)";
+  mrrBindPromptEl.style.border = "1px solid var(--mrr-accent)";
+  mrrBindPromptEl.style.borderRadius = "6px";
+
+  var cardLabel = p.engineName || p.engineId;
+  var text = (p.mode === "rebind")
+    ? ("Re-bind " + p.charName + "'s sheet to the " + cardLabel + " " + p.kind + " in this chat?")
+    : ("Bind " + p.charName + "'s sheet to the " + cardLabel + " " + p.kind + " in this chat?");
+  var textEl = marinara.addElement(mrrBindPromptEl, "span", { "class": "mrr-bind-prompt__text", textContent: text });
+  if (textEl) {
+    textEl.style.flex = "1 1 auto";
+    textEl.style.minWidth = "0";
+    textEl.style.overflowWrap = "break-word";
+  }
+
+  var yes = marinara.addElement(mrrBindPromptEl, "button", {
+    "class": "mrr-char-btn mrr-bind-prompt__yes",
+    type: "button",
+    textContent: "Bind",
+    title: "Bind this sheet to " + cardLabel + " so it follows that " + p.kind + " into every chat"
+  });
+  if (yes) marinara.on(yes, "click", function () {
+    mrrSetBinding(p.charId, p.kind, p.engineId, p.charName);
+    mrrBindPrompt = null;
+    mrrRenderBindPrompt();
+    mrrBindingResolveDoneChatId = null;   /* a new binding may make another restore possible */
+    mrrResolveBindings(state.chatId, "binding confirmed from the re-bind prompt");
+    if (typeof renderSheet === "function") renderSheet();
+  });
+
+  var no = marinara.addElement(mrrBindPromptEl, "button", {
+    "class": "mrr-char-btn mrr-bind-prompt__no",
+    type: "button",
+    textContent: "Not now",
+    title: "Dismiss for this session — nothing is saved"
+  });
+  if (no) marinara.on(no, "click", function () {
+    mrrBindPromptDismissed = true;   /* in-memory only, same as the B19 decline */
+    mrrRenderBindPrompt();
+  });
+
+  log("binding: " + p.mode + " prompt shown for " + p.charName + " -> " + p.kind + " " + p.engineId + " on chat " + state.chatId);
+}
+
+/* ─── B-4: the "Bound to" field ───────────────────────────────────────────
+   A sub-item of the identity card's sub-row, mirroring the ONE existing
+   panel select of that shape — mrrRenderIdentitySubField's classOptions
+   branch — down to the class names (.mrr-identity__sub-item /
+   __sub-label / __sub-input), so it inherits the panel's type scale and
+   borderless styling with no new CSS.
+
+   Options: "(unbound)", every present CHARACTER card as "<name> (card)",
+   and the chat's persona as "<name> (persona)". Values are "<kind>:<engineId>"
+   so a card and a persona can never collide on a bare id. A card whose name
+   never arrived renders with its raw id rather than disappearing — an
+   unlabelled option the user can still pick beats a missing one.
+
+   onChange IS the confirm (Corey direction): picking a different card is
+   the "new Ginny card, same character" re-bind, and no second dialog is
+   raised for it. */
+function mrrRenderBindingField(parent) {
+  if (!parent || !state.activeCharacterId) return null;
+  var chatId = state.chatId;
+  var present = mrrPresentSetFor(chatId);
+  var current = mrrBindingForCharId(state.activeCharacterId);
+  /* Nothing present to bind TO and nothing bound already: the field would be
+     a dropdown with one dead option. Hidden rather than shown empty. */
+  if (!present && !current) return null;
+
+  var item = marinara.addElement(parent, "div", { "class": "mrr-identity__sub-item mrr-bind-field" });
+  if (!item) return null;
+  marinara.addElement(item, "span", { "class": "mrr-identity__sub-label", textContent: "Bound to" });
+
+  var select = marinara.addElement(item, "select", { "class": "mrr-identity__sub-input mrr-bind-select" });
+  if (!select) return null;
+
+  var options = [{ value: "", label: "(unbound)" }];
+  var seen = Object.create(null);
+  function addOpt(engineId, kind) {
+    if (!engineId || seen[kind + ":" + engineId]) return;
+    seen[kind + ":" + engineId] = true;
+    var name = mrrCardNames[engineId] || engineId;
+    options.push({
+      value: kind + ":" + engineId,
+      label: name + (kind === "persona" ? " (persona)" : " (card)") + (mrrCardDangling[engineId] ? " — missing" : "")
+    });
+  }
+  mrrPresentCardIds(chatId).forEach(function (id) { addOpt(id, "character"); });
+  if (present && present.personaId) addOpt(present.personaId, "persona");
+  /* A binding whose card is NOT in this chat still has to be selectable —
+     otherwise opening the sheet somewhere else would silently preselect
+     "(unbound)" and one stray change event would destroy the binding. */
+  if (current) addOpt(current.engineId, current.kind);
+
+  var currentValue = current ? (current.kind + ":" + current.engineId) : "";
+  options.forEach(function (o) {
+    var el = marinara.addElement(select, "option", { value: o.value, textContent: o.label });
+    if (el && o.value === currentValue) el.selected = true;
+  });
+
+  marinara.on(select, "change", function () {
+    var v = String(select.value || "");
+    if (v === currentValue) return;
+    if (!v) {
+      mrrUnbindCharacter(state.activeCharacterId);
+    } else {
+      var sep = v.indexOf(":");
+      var kind = v.slice(0, sep);
+      var engineId = v.slice(sep + 1);
+      var label = mrrCardNames[engineId] || mrrCharacterLabel(state.activeCharacterId);
+      mrrSetBinding(state.activeCharacterId, kind, engineId, label);
+    }
+    /* A registry change can make a restore newly possible (or moot), so the
+       per-entry gate is reopened and the flow re-run. Liveness is NOT
+       re-fetched — that ledger is per session by design. */
+    mrrBindingResolveDoneChatId = null;
+    mrrResolveBindings(state.chatId, "binding changed from the sheet's Bound-to field");
+    if (typeof renderSheet === "function") renderSheet();
+  });
+  marinara.on(select, "click", function (e) {
+    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+  });
+  return select;
+}
+
 /* ─── Round-13 T5-b: version-stamped sheet migration ───────────────────────
    mergeSheet's per-field whitelist can only copy a value within the SAME
    top-level bucket, matched by name (`if (name in base[k])`). It has no
@@ -2545,6 +3290,18 @@ function mrrConfirmChatRuleset(chatId, why) {
      is a string compare, not a fetch. No stamp re-derivation from here: the
      stamp check has already done it on this chat's way in. */
   if (typeof mrrReconcileAgentBindings === "function") mrrReconcileAgentBindings({ reason: "chat ruleset confirmed" });
+  /* ROUND B — the binding resolution (spec §3), at the same chokepoint and
+     for the same reason as everything else here: this is the first instant
+     the chat is known to be bound and confirmed, and a virgin chat must
+     stay dormant (r33). It sits AHEAD of the continue-offer render below
+     because a restore changes the roster the offer gates on, and because a
+     pending restore parks that offer (mrrBindingRestorePending) rather than
+     racing it. Cheap: with an empty registry it is one storage read.
+     `typeof`-guarded like its three neighbours above — the same forward
+     -reference idiom this function already uses for reconcileActiveAgents
+     and mrrReconcileAgentBindings, which is also what lets the pre-Round-B
+     probe suites keep evaluating this function unchanged. */
+  if (typeof mrrResolveBindings === "function") mrrResolveBindings(chatId, "chat ruleset confirmed");
   /* B19: the confirmation chokepoint is also the first moment the chat's
      bound ruleset is knowable, and it lands AFTER init()/watchRouteChanges
      already rendered the sheet — so the offer has to be (re)evaluated from
@@ -2572,6 +3329,13 @@ function mrrResetRulesetLatch() {
      gets its own derivation attempt and its own preset-watch baseline. */
   mrrStampDeriveTriedChatId = null;
   mrrPresetWatchTs = 0;
+  /* Round B: the per-chat-entry half of the binding flow (the done gate, the
+     one explicit GET, the pending-restore flag and any armed prompt) resets
+     with the latch — the incoming chat gets its own present set and its own
+     resolution. The LIVENESS ledger deliberately does not: a card that no
+     longer exists does not come back, and re-asking on every chat entry is
+     the fetch storm the guards above exist to prevent. */
+  if (typeof mrrResetBindingResolution === "function") mrrResetBindingResolution();
 }
 
 /* ─── reload-loop sentinel ───
@@ -3124,6 +3888,15 @@ function mrrIsSheetUseTarget(node) {
   if (!node.closest(MRR_SHEET_USE_ROOT_SELECTOR)) return false;
   if (mrrContinueOfferEl && typeof mrrContinueOfferEl.contains === "function" && mrrContinueOfferEl.contains(node)) return false;
   if (mrrWarnStripEl && typeof mrrWarnStripEl.contains === "function" && mrrWarnStripEl.contains(node)) return false;
+  /* ROUND B: the bind prompt is excluded for exactly the reason the continue
+     offer is. This listener runs in the CAPTURE phase, so accepting the
+     prompt would clear `_bootstrap` before the binding resolution it kicks
+     off could ask mrrRosterIsEmpty() — the placeholder would then read as
+     touched, the restore would append beside it, and the chat would keep the
+     orphan "Player" the adopt path exists to remove. Answering a prompt
+     about a character is not playing that character. */
+  if (typeof mrrBindPromptEl !== "undefined" && mrrBindPromptEl &&
+      typeof mrrBindPromptEl.contains === "function" && mrrBindPromptEl.contains(node)) return false;
   return true;
 }
 
@@ -3467,6 +4240,18 @@ function mrrContinueOfferCandidate() {
      so there is no basis for claiming it for the active ruleset's last
      character (same reasoning as mrrCheckChatRulesetStamp's F4 branch). */
   if (mrrChatStampSeen[state.chatId] !== state.ruleset.id) return null;
+  /* ROUND B — TIER 1 OUTRANKS TIER 2 (spec §3.3 vs §3.5). While a binding
+     restore is pending for this chat we do not yet know whether the BOUND
+     party is about to land in this roster, and offering "Continue as
+     <somebody else>" over that window would race it: the user could adopt a
+     third character into a chat that was one fetch away from restoring the
+     right one. The flag clears when the restore decision is made, and the
+     resolution flow re-renders this offer either way — so the outcome is
+     never a suppressed offer, only a deferred one. Inert for any chat with
+     no bindings to consider, which is every chat until the bind field is
+     used. `typeof`-guarded so the pre-Round-B suites evaluate this function
+     unchanged, matching the idiom used throughout this file. */
+  if (typeof mrrBindingRestorePending === "function" && mrrBindingRestorePending(state.chatId)) return null;
   if (!mrrRosterIsEmpty()) return null;
   var rec = mrrReadLastCharacter(state.ruleset.id);
   if (!rec) return null;
@@ -3664,6 +4449,16 @@ function mrrAdoptLastCharacter(rec) {
   switchCharacter(rec.id);
   log("B19 continuity: adopted '" + rec.name + "' (" + rec.id + ") into chat " + state.chatId +
       " for ruleset " + (state.ruleset && state.ruleset.id ? state.ruleset.id : "(none)"));
+  /* ROUND B — "one confirm, two effects" (spec §3, Bind-UI paragraph). The
+     adopted character usually has no binding, and this chat usually holds
+     exactly the card they should be bound to; raising the offer HERE is what
+     makes the next chat that card appears in restore them with zero clicks.
+     It raises a one-line prompt rather than binding silently — see the
+     mrrArmAdoptBindPrompt header for why an automatic choice is not
+     available to us. No-op when the character is already bound (which is
+     the case when the binding resolution itself called this function to
+     replace a bootstrap placeholder) or when the candidate is ambiguous. */
+  if (typeof mrrArmAdoptBindPrompt === "function") mrrArmAdoptBindPrompt(rec.id, rec.name);
 }
 
 function migrateLegacySheet(chatId) {
@@ -9538,7 +10333,19 @@ function renderSheetHeader(parent) {
       if (!f || !f.key) return;
       mrrRenderIdentitySubField(idSub, f.label || f.key, f.key, f.placeholder);
     });
+    /* ROUND B — the "Bound to" field (spec §3 Bind-UI paragraph). LAST in the
+       sub-row on purpose: the ruleset's own identity fields describe the
+       character, this one describes which engine card that character answers
+       to, so it reads as the row's footnote rather than competing with race
+       and class. Renders nothing when this chat has no cards and the
+       character has no binding. */
+    mrrRenderBindingField(idSub);
   }
+
+  /* The §3.6 prompt mounts at the TOP of the panel, not in this header, so it
+     has to be re-asserted after every full re-render (which orphans it). This
+     is the one function every full render passes through. */
+  if (typeof mrrRenderBindPrompt === "function") mrrRenderBindPrompt();
 }
 
 /* One label+input sub-item for the identity card's sub-row. Mirrors
@@ -14975,6 +15782,12 @@ function reconcileActiveAgents(rebind) {
       : ((chat && chat.metadata) || {});
     var existing = Array.isArray(meta.activeAgentIds) ? meta.activeAgentIds : [];
 
+    /* ROUND B harvest site #2 — reconcile's own GET /chats/:id. Zero new
+       requests; this one covers the case where the chat was confirmed
+       before the stamp check's row landed (a deliberate activation, a
+       re-derived stamp), and it refreshes the set after a rebind. */
+    if (typeof mrrNoteChatRow === "function") mrrNoteChatRow(chatId, chat, "reconcileActiveAgents chat read");
+
     /* Chat-scoped ruleset stamp prevents cross-ruleset pollution: if the chat is bound to a different ruleset, skip with a warning instead of mixing agents from multiple rulesets into one chat's active list. Stamp round-trips via the engine's pass-through metadata merge (chats.routes.ts:1090). */
     var stamp = meta.mrrChatRulesetId;
     if (stamp && stamp !== rulesetId) {
@@ -15011,7 +15824,12 @@ function reconcileActiveAgents(rebind) {
       return apiFetch("/chats/" + chatId + "/metadata", {
         method: "PATCH",
         body: JSON.stringify({ activeAgentIds: rebindSet, mrrChatRulesetId: rulesetId, enableAgents: true })
-      }).then(function () {
+      }).then(function (patched) {
+        /* ROUND B harvest site #5: PATCH /chats/:id/metadata answers with the
+           full post-write row (normalizeChatForResponse), so the present set
+           is refreshed from the write's own answer rather than from a
+           pre-write snapshot. Free — the response is already parsed. */
+        if (typeof mrrNoteChatRow === "function") mrrNoteChatRow(chatId, patched, "metadata PATCH response (rebind)");
         log("reconcileActiveAgents: rebound chat " + chatId + " from " + stamp + " to " + rulesetId + " (−" + removedCount + " old agents, +" + addedCount + " new)");
         /* Round 31: this PATCH just moved the chat's binding from `stamp` to
            `rulesetId`. Inside the .then, so a rejected PATCH (the outer
@@ -15050,7 +15868,9 @@ function reconcileActiveAgents(rebind) {
     return apiFetch("/chats/" + chatId + "/metadata", {
       method: "PATCH",
       body: JSON.stringify(patchBody)
-    }).then(function () {
+    }).then(function (patched) {
+      /* ROUND B harvest site #6 — same free post-write row as #5. */
+      if (typeof mrrNoteChatRow === "function") mrrNoteChatRow(chatId, patched, "metadata PATCH response");
       var parts = [];
       if (added > 0) parts.push("added " + added + " agent id(s)");
       if (!stamp) parts.push("stamped ruleset " + rulesetId);
@@ -15397,6 +16217,8 @@ function mrrReconcileAgentBindings(opts) {
     if (state.chatId !== chatId && !opts.force) return out;
     var meta = mrrChatMeta(chat);
     mrrAppliedChatPresetSeen[chatId] = (typeof meta.appliedChatPresetId === "string") ? meta.appliedChatPresetId : null;
+    /* ROUND B harvest site #3 — the standing reconciliation's chat read. */
+    if (typeof mrrNoteChatRow === "function") mrrNoteChatRow(chatId, chat, "binding reconciliation chat read");
 
     var sig = mrrManagedAgentSignatureFor(agents, rulesetId);
     var prevSig = mrrManagedAgentSig[rulesetId];
@@ -15449,6 +16271,10 @@ function mrrWatchAppliedChatPreset(chatId) {
     if (state.chatId !== chatId) return;
     var meta = mrrChatMeta(chat);
     var applied = (typeof meta.appliedChatPresetId === "string") ? meta.appliedChatPresetId : null;
+    /* ROUND B harvest site #4 — the preset watcher's once-a-minute row. It is
+       the only harvest that fires on a SETTLED chat, so it is how the present
+       set notices a card added to the chat mid-session. */
+    if (typeof mrrNoteChatRow === "function") mrrNoteChatRow(chatId, chat, "applied-chat-preset watch");
     var had = Object.prototype.hasOwnProperty.call(mrrAppliedChatPresetSeen, chatId);
     var prev = had ? mrrAppliedChatPresetSeen[chatId] : undefined;
     mrrAppliedChatPresetSeen[chatId] = applied;
@@ -15544,6 +16370,14 @@ function mrrCheckChatRulesetStamp(chatId) {
     /* Round 28 F4: baseline for the applied-chat-preset watcher, taken on the
        one metadata read this chat already performs. */
     mrrAppliedChatPresetSeen[chatId] = (typeof meta.appliedChatPresetId === "string") ? meta.appliedChatPresetId : null;
+
+    /* ROUND B harvest site #1 — and the important one: this response is the
+       chat row that ALREADY arrives on every chat entry, so the present set
+       (characterIds, gameGmCharacterId, personaId) is learned here at zero
+       additional cost and is cached BEFORE decide() can confirm the chat.
+       That ordering is what lets the resolution flow run synchronously off
+       the confirm instead of needing a fetch of its own. */
+    if (typeof mrrNoteChatRow === "function") mrrNoteChatRow(chatId, chat, "chat metadata read");
 
     /* B19: record what the chat's metadata actually said, on this same one
        read — the continuity offer needs "is this chat BOUND, and to what"
