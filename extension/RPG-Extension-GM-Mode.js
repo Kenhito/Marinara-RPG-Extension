@@ -18064,6 +18064,19 @@ function applyStateTagsWithDedup(tags, anchorId, journalKey, channel) {
   var sheetCache = Object.create(null);     /* charId -> hydrated sheet; ONE load per target per pass (§4.2) */
   var prevJournalBucketKey = mrrCurrentJournalBucketKey;
   mrrCurrentJournalBucketKey = journalKey || anchorId;
+  /* PARTY WRITES §4.2 trap 1 — THE RENDER LATCH, loop-wide in party mode.
+     The spec's contract is "one renderSheet() of the (restored) active sheet
+     IF the active character was among the touched targets; otherwise no
+     repaint needed" — ONE repaint for the whole pass, which is only true if
+     the active character's own applies are latched too. Otherwise a mixed
+     pass paints once per active mutation PLUS the trailing repaint.
+     PARTY MODE ONLY, and that scoping is the solo anti-criterion: with a
+     one-character roster nothing binds, the latch never arms, and
+     finalizeMutation's per-mutation repaint happens exactly as it did in
+     every build before this one. */
+  var partyMode = mrrPartyRosterOrder().length > 1;
+  var prevRenderSuppressed = mrrRenderSuppressed;
+  if (partyMode) mrrRenderSuppressed = true;
   try {
     for (var i = 0; i < tags.length; i++) {
       var rawAttrs = tags[i] && tags[i].attrs;
@@ -18142,6 +18155,7 @@ function applyStateTagsWithDedup(tags, anchorId, journalKey, channel) {
     }
   } finally {
     mrrCurrentJournalBucketKey = prevJournalBucketKey;
+    mrrRenderSuppressed = prevRenderSuppressed;
     /* Round-23: claim the bucket for this channel, now once per (bucket,
        TARGET) touched. In the finally on purpose — a mutation that THREW
        still applied whatever came before it, so the bucket is this
@@ -18164,15 +18178,13 @@ function applyStateTagsWithDedup(tags, anchorId, journalKey, channel) {
         " — suppressing " + suppressed[scid].sigs.length + " mutation(s) from " + chan);
     mrrWarnCrossChannelMismatch(bucketKey, anchorId, suppressed[scid].claimedBy, chan, scid, suppressed[scid].sigs);
   }
-  /* PARTY WRITES §4.2 trap 1, second half. Bound applies painted nothing
-     (the latch), so if this pass ALSO moved the active character's sheet the
-     panel needs exactly one repaint of the restored active sheet.
-     Gated on `boundApplies` so a pass that never bound anything — every solo
-     session, and every party turn that only touched the active character —
-     takes the pre-party-writes path untouched: finalizeMutation already
-     rendered per mutation, and adding a repaint here would be a visible
-     behaviour change with nothing to fix. */
-  if (tally.boundApplies && tally.activeTouched) renderSheet();
+  /* §4.2 trap 1, second half: THE one repaint. Nothing painted during the
+     loop in party mode, so the panel is redrawn here — once — and only when
+     this pass actually moved the character the panel is showing. A pass that
+     only touched party members changes nothing on screen, so it repaints
+     nothing. In solo mode the latch never armed and finalizeMutation already
+     rendered, so `partyMode` gates this too. */
+  if (partyMode && tally.activeTouched) renderSheet();
   mrrLogOutcomeTally(bucketKey, chan, tally);
   return applied;
 }
