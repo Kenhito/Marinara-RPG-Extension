@@ -2639,6 +2639,43 @@ var mrrContinueOfferEl = null;         /* the currently-mounted offer node, if a
    genuinely settled. */
 var mrrChatStampSeen = Object.create(null);
 
+/* ═══ ROUND 31 — the stamp-knowledge hole ═══════════════════════════════
+   mrrChatStampSeen used to be written at exactly TWO places, both inside
+   mrrCheckChatRulesetStamp: the metadata read and the F4 re-derivation.
+   But the stamp itself is WRITTEN at three places, and the other two live
+   in reconcileActiveAgents — which runs AFTER the confirm, from inside
+   mrrConfirmChatRuleset. Live trace char_carryover2049.log:
+
+     :204  ruleset latch: chat leFZhS8… confirmed — chat carries NO stamp
+           -> mrrChatStampSeen[chat] = null, offer correctly withheld
+     :207  reconcileActiveAgents: added 7 agent id(s), STAMPED ruleset
+           exalted3e — chat leFZhS8…
+
+   Three lines later the chat IS bound to exalted3e on the server, and
+   nothing told B19. The cache stayed `null` and mrrContinueOfferCandidate
+   kept answering "not bound" for the rest of the session, so the offer
+   could not appear until the user left the chat and came back (which
+   re-runs the metadata read). That re-entry requirement is the bug.
+
+   Fix: ONE choke point for "we now know this chat is bound to X". It
+   updates the cache and re-evaluates the offer — mrrRenderContinueOffer is
+   idempotent and cheap (its candidate check bails on the first failing gate
+   and reads no storage until the last two), so calling it from a stamp
+   writer costs nothing when the other gates don't hold. Every site that
+   LEARNS a chat's binding routes through here; the only thing that does not
+   is the read path's `null` answer, which is not a binding at all.
+
+   `source` is for the log only: with three distinct writers plus the read,
+   "which one told us" is the first question any future trace asks. */
+function mrrNoteChatStamp(chatId, rulesetId, source) {
+  if (!chatId) return;
+  if (typeof rulesetId !== "string" || !rulesetId) return;
+  var changed = mrrChatStampSeen[chatId] !== rulesetId;
+  mrrChatStampSeen[chatId] = rulesetId;
+  if (changed) log("B19: chat " + chatId + " now known bound to " + rulesetId + " (" + (source || "unspecified") + ")");
+  mrrRenderContinueOffer();
+}
+
 function mrrLastCharKey(rulesetId) { return MRR_LAST_CHAR_PFX + rulesetId; }
 
 /* Stores id + name. The name is denormalized ON PURPOSE: rendering
@@ -2670,6 +2707,11 @@ function mrrStampLastCharacter() {
   var entry = state.characters.find(function (c) { return c && c.id === activeId; });
   var name = (entry && entry.name) ? entry.name : activeId;
   lsSet(mrrLastCharKey(state.ruleset.id), JSON.stringify({ id: activeId, name: name }));
+  /* Round 31 — observability. This function has five early returns, four of
+     them silent, and round 30's defect was precisely "it returns early every
+     time in a normal session". A line on the SUCCESS edge is what makes a
+     trace answer "did the pointer ever get written?" without a rebuild. */
+  log("B19: last-character pointer stamped -> " + name + " (" + activeId + ") for ruleset " + state.ruleset.id);
 }
 
 function mrrReadLastCharacter(rulesetId) {
@@ -2827,6 +2869,13 @@ function mrrRenderContinueOffer() {
       mrrRenderContinueOffer();
     });
   }
+
+  /* Round 31 — observability, on the MOUNT edge only. This function is
+     called on every render and from three async paths, so logging on entry
+     would bury the trace; the two early returns above (candidate unchanged /
+     nothing to mount into) are exactly the no-ops that must stay silent.
+     Reaching here means a NEW offer row is in the DOM. */
+  log("B19: continue-as offer shown for " + rec.name + " (" + rec.id + ") on chat " + state.chatId);
 }
 
 /* Adopt = roster + pointer, and nothing else. The pointer half deliberately
@@ -14130,6 +14179,10 @@ function reconcileActiveAgents(rebind) {
         body: JSON.stringify({ activeAgentIds: rebindSet, mrrChatRulesetId: rulesetId, enableAgents: true })
       }).then(function () {
         log("reconcileActiveAgents: rebound chat " + chatId + " from " + stamp + " to " + rulesetId + " (−" + removedCount + " old agents, +" + addedCount + " new)");
+        /* Round 31: this PATCH just moved the chat's binding from `stamp` to
+           `rulesetId`. Inside the .then, so a rejected PATCH (the outer
+           .catch warns) never caches a binding the server refused. */
+        mrrNoteChatStamp(chatId, rulesetId, "reconcileActiveAgents rebind");
       });
     }
 
@@ -14168,6 +14221,15 @@ function reconcileActiveAgents(rebind) {
       if (added > 0) parts.push("added " + added + " agent id(s)");
       if (!stamp) parts.push("stamped ruleset " + rulesetId);
       log("reconcileActiveAgents: " + parts.join(", ") + " — chat " + chatId);
+      /* Round 31 — THE round-31 defect (char_carryover2049.log :204 -> :207).
+         After this PATCH the chat is bound to `rulesetId` either way: we
+         either just wrote the stamp (`!stamp`) or the stamp was already
+         `rulesetId` (a disagreeing stamp cannot reach here — the branch above
+         returns or rebinds). B19 cached "no stamp" three lines earlier during
+         the confirm and would otherwise keep answering "unbound" until the
+         user left the chat and came back. Inside the .then so a rejected
+         PATCH never caches a binding the server refused. */
+      mrrNoteChatStamp(chatId, rulesetId, "reconcileActiveAgents stamp");
     });
   }).catch(function (e) {
     warn("reconcileActiveAgents failed: " + (e && e.message ? e.message : e));
@@ -14365,6 +14427,13 @@ function mrrDeriveAndRestampChat(chatId, meta, opts) {
       body: JSON.stringify({ mrrChatRulesetId: derived })
     }).then(function () {
       log("re-derived chat ruleset stamp '" + derived + "' from managed agents (preset apply likely wiped it) — chat " + chatId);
+      /* Round 31: absorbed from mrrCheckChatRulesetStamp's own `if (derived)
+         mrrChatStampSeen[chatId] = derived;`. It belongs HERE, at the write,
+         for the same reason the reconcile writers now carry it: this function
+         has a second caller (the round-28 standing reconciliation, force:true)
+         whose success used to teach B19 nothing at all. Inside the .then, so
+         a rejected PATCH falls through to the .catch and caches nothing. */
+      mrrNoteChatStamp(chatId, derived, "stamp re-derivation");
       return derived;
     });
   }).catch(function (e) {
@@ -14644,7 +14713,16 @@ function mrrCheckChatRulesetStamp(chatId) {
        own. `null` here is a real answer ("read it; there is no stamp"),
        distinct from an absent entry ("not read yet"). Set BEFORE decide(),
        which can confirm the chat and render. */
-    mrrChatStampSeen[chatId] = (typeof stamp === "string" && stamp) ? stamp : null;
+    /* Round 31: the real-stamp half routes through mrrNoteChatStamp so all
+       four stamp-knowledge sites share one choke point (and one log line).
+       The `null` half stays INLINE and must: "read it, there is no stamp" is
+       not a binding, and the helper deliberately cannot express it. The extra
+       mrrRenderContinueOffer the helper performs here is a no-op or a
+       correction — on a matching stamp decide() renders anyway a tick later,
+       and on a disagreeing stamp the candidate gate fails and any stale offer
+       row is taken down, which is the right answer either way. */
+    if (typeof stamp === "string" && stamp) mrrNoteChatStamp(chatId, stamp, "chat metadata read");
+    else mrrChatStampSeen[chatId] = null;
 
     if (stamp) { mrrStampCheckInFlightChatId = null; decide(stamp); return; }
 
@@ -14664,8 +14742,10 @@ function mrrCheckChatRulesetStamp(chatId) {
       mrrStampCheckInFlightChatId = null;
       if (state.chatId !== chatId) return;
       /* B19: a successful re-derivation WROTE the stamp back to the chat's
-         metadata, so the chat is now genuinely bound — track that too. */
-      if (derived) mrrChatStampSeen[chatId] = derived;
+         metadata, so the chat is now genuinely bound. Round 31 moved that
+         bookkeeping INTO mrrDeriveAndRestampChat's own PATCH continuation —
+         it is the writer, it is where the knowledge is born, and its other
+         caller was missing this line entirely. Nothing to do here now. */
       if (derived) { decide(derived); return; }
       mrrConfirmChatRuleset(chatId, "chat carries no ruleset stamp (nothing to disagree with)");
     });

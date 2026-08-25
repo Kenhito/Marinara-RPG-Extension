@@ -25,7 +25,13 @@ explicitly when they do).
   never clobbers the pointer with the untouched placeholder, and adopting
   retracts the placeholder's blank record (adapter tombstone) instead of
   orphaning it. (20-probe eval-extracted harness, 4 negative controls, incl.
-  a lifecycle probe replaying the live log's exact event order.)
+  a lifecycle probe replaying the live log's exact event order.) Round 31
+  (second live repro): a chat that becomes bound AFTER first entry — the
+  normal create-chat-then-assign-agents flow — now notifies B19 the moment
+  any stamp writer succeeds (one choke-point helper on all three writers,
+  cached only on PATCH success), so the offer appears in the same session
+  with no chat re-entry; plus three B19 console lines (pointer stamped /
+  chat bound / offer shown) so the chain is traceable. (23 probes.)
 - **Dead-plumbing tombstones trimmed** (−657 B source): the round-26/27
   `isChildListOrigin` removal narration is gone; the load-bearing lesson
   survives as a forward invariant — never rewrite a message element's
