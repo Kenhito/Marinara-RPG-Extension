@@ -124,7 +124,10 @@ Choose the type from the SOURCE the narration described. Take the COUNT of level
 
 - "initiative"  — Combat-only. Withering damage transfers Initiative to the attacker; Decisive attacks cash it in and reset the attacker to base 3. Emit the shift the narration states, in the direction it states.
 - "limit"       — Limit accumulation. At 10, Limit Break triggers. Reduced by narrated Intimacy-fulfilling actions.
-- "animaBanner" — Anima banner level (Dim → Glowing → Burning → Bonfire → Iconic). This is a STATE field, not numeric — use the conditions vocabulary if the narration names a banner level, or skip if the prose just describes a visual flare.
+- "Anima Banner" — the Exalt's anima banner. This is a LABEL-valued STATE field, never numeric. Write it with value=, never delta=, and never a number or a mote count:
+  `[mrr-state: target="player" field="Anima Banner" value="Glowing" reason="ignited on a 7-mote Peripheral Charm"]`
+  The four labels are the only accepted values, spelled exactly: `Dim`, `Glowing`, `Burning`, `Bonfire/Iconic`. A tag carrying a level number, a mote total, or any other word is rejected at parse time and the sheet is left unchanged.
+  WHICH of the four to write is not decided here — look it up in the lorebook's "Rule: Anima banner". If the prose only describes a flare and that entry resolves no level from it, emit nothing for this field.
 
 # Sorcery casting workflow — DIFFERENT FROM CHARMS
 

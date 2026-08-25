@@ -512,28 +512,21 @@
       "name": "Anima Banner",
       "values": [
         {
-          "label": "Suppressed",
-          "description": "Anima banner is suppressed or unlit. No outward flare; caste mark dormant. Use when the Exalt has spent no Peripheral motes this action, is intentionally damping the banner (Charm or stunt), or is a non-Exalt who simply has no anima."
-        },
-        {
           "label": "Dim",
-          "trigger": "0-4 Peripheral motes spent in one action; only the caste mark glints when motes are spent."
+          "description": "The default. The anima is invisible to all senses and masks the Exalt's nature. Also where a muted, damped or extinguished banner sits, and where a non-Exalt with no anima stays.",
+          "trigger": "Fewer than 5 Peripheral motes spent in an instant; no ignition."
         },
         {
           "label": "Glowing",
-          "trigger": "5-10 Peripheral motes spent in one action; faint nimbus, caste mark steady."
+          "trigger": "One ignition step. Visible glow; the Caste mark shines through anything covering it. -3 to stealth and disguise."
         },
         {
           "label": "Burning",
-          "trigger": "11-15 Peripheral motes spent in one action; bright glow, surrounding flicker."
+          "trigger": "Two ignition steps. The anima blazes, the Caste mark is subsumed in it, wisps of power rise off the Exalt. Stealth is impossible."
         },
         {
-          "label": "Bonfire",
-          "trigger": "16+ Peripheral motes spent in one action; massive radiance, illuminates the scene."
-        },
-        {
-          "label": "Iconic",
-          "trigger": "Sustained Bonfire or specific Charm triggers; full totemic spirit-shape."
+          "label": "Bonfire/Iconic",
+          "trigger": "Three or more ignition steps. Full iconic display, iconography chosen by the player. Impossible to conceal."
         }
       ]
     },

@@ -58,7 +58,7 @@ Stunts (the GM grades the player's description, not the player):
 Combat / out-of-combat economy:
 - Mote regeneration in combat: 5 motes per round, automatically.
 - Willpower: max 10. Spend 1 WP for +1 automatic success OR +1 to a static value (Resolve / Guile / Defense), once per roll, declared before the roll. Regain +1 WP per full night's sleep, +1 WP per scene when upholding a Major/Defining Intimacy through significant hardship.
-- Anima banner intensifies +1 level for every 5 PERIPHERAL motes spent in a single action. Personal motes do NOT flare the anima.
+- Anima: look it up. The lorebook's "Rule: Anima banner" holds the whole model and is always in context; quote its level, not a remembered one.
 - Solar Personal mote pool = Essence x 3 + 10. Solar Peripheral mote pool = Essence x 7 + 26.
 
 Health track: -0 / -1 / -1 / -2 / -2 / -4 / Incapacitated. The penalty in effect equals the HIGHEST filled box and applies to dice pools and most static values.
