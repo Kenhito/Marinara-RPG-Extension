@@ -94,6 +94,15 @@ explicitly when they do).
   an unchanged card list no longer spam the console. (91 new probes; the
   negative control reproduces the one-sheet-only state your narrator
   diagnosed.)
+- **Game-mode traffic diet (Round E).** Game mode's block-wise output was
+  re-running the save/sync pipeline per block: byte-identical sheet saves
+  now skip entirely (deferred saves under the ruleset latch still defer
+  and replay exactly as before), the agent-prompt sync gained a content
+  gate and a re-fire-once dirty latch on the existing debounce, and two
+  leftover per-render debug lines are gone. Honest correction: redundant
+  agent PATCHes were already suppressed per-agent — the waste was the
+  GET round-trips, now gated too. (110 new probes; 321 total across 7
+  suites.)
 - **Dead-plumbing tombstones trimmed** (−657 B source): the round-26/27
   `isChildListOrigin` removal narration is gone; the load-bearing lesson
   survives as a forward invariant — never rewrite a message element's

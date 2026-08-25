@@ -3872,9 +3872,56 @@ function saveSheet(chatId, sheet) {
      see its body). Read back by loadSheet's mrrSheetRulesetHoldCheck. */
   if (state.ruleset && state.ruleset.id) sheet._rulesetId = state.ruleset.id;
   var payload = JSON.stringify(sheet);
-  var ok = lsSet(key, payload);
-  if (!ok) { warn("saveSheet: lsSet failed for " + key + " (quota or private mode?)"); return; }
-  log("saved key=" + key + " bytes=" + payload.length);
+  /* ═══ ROUND E-1 — the byte-identical write skip ══════════════════════════
+     LIVE FINDING (ex3game0610, the first GAME-mode session log). Game mode
+     emits one turn as MANY separate messages — a block per dialog beat and
+     per narration piece — where RP mode emits one blob. Our per-message
+     pipeline amplified accordingly: this character's record was written 92
+     times in one session, BYTE FOR BYTE IDENTICAL every time. Nothing was
+     corrupted; it was pure waste, and each redundant write also stamped the
+     ts-map, marked the key dirty and queued a server PATCH — which is what
+     puts a session near the engine's >60 req/min extension-traffic meter.
+
+     PLACEMENT — why HERE, and why nowhere earlier. This is the single point
+     at which a write would ACTUALLY hit the store, and it sits AFTER every
+     gate that decides whether a write is permitted at all:
+
+       (1) The round-24 latch/hold and the round-33 "unbound" deferral have
+           already returned, far above. A DEFERRED save is NOT a skipped
+           save — it still arms mrrDeferredSaveWanted and still replays on
+           mrrConfirmChatRuleset, exactly as before, because control never
+           reaches this line in that case. Putting the identity check any
+           earlier would have conflated the two.
+       (2) The T5-d blank-over-good guard has already run, so its
+           mrrIsPristineBlankSheet comparison still sees the sheet's true
+           content, unperturbed.
+       (3) Both bookkeeping stamps (_schemaVersion, _rulesetId) are already
+           on `sheet`, so `payload` IS the exact byte string lsSet would
+           write. Comparing any earlier serialization would be comparing the
+           wrong bytes and could skip a write that would have differed.
+
+     lsGet(key) is the same read lsSet would overwrite — cache-first for a
+     synced key, raw localStorage otherwise. It is a synchronous cache hit,
+     no I/O. Identical bytes mean lsSet would be a no-op with side effects,
+     so the whole write is skipped: no ts-map stamp, no dirty mark, no
+     server push, no "saved key=" line.
+
+     DELIBERATELY NOT SKIPPED — updateSavedIndicator() and scheduleAutoSync()
+     below still run on the skip path. The indicator keeps its exact existing
+     behaviour, and the sync must still be OFFERED because a save can be
+     byte-identical while the agents' prompt block is stale: switchCharacter()
+     flushes the outgoing character's (unchanged) sheet before it moves
+     state.activeCharacterId, and that pointer is what decides who the agents
+     see as the ACTIVE PLAYER CHARACTER. Round E-2's content gate is what
+     decides whether that offered sync costs a single request.
+
+     UNTOUCHED — mrrMigrateOneRecord's writer and the adopt/delete paths.
+     None of them route through saveSheet, and none of them gained a check. */
+  if (lsGet(key) !== payload) {
+    var ok = lsSet(key, payload);
+    if (!ok) { warn("saveSheet: lsSet failed for " + key + " (quota or private mode?)"); return; }
+    log("saved key=" + key + " bytes=" + payload.length);
+  }
   updateSavedIndicator();
   /* Push fresh sheet state to the overlay agents' promptTemplates (and the
      field-reference lorebook entry) so they see what the player sees on the
@@ -4005,7 +4052,19 @@ function loadCharacters(chatId) {
 
 function saveCharacters() {
   if (!state.chatId) return;
-  lsSet("mrr-chars-" + state.chatId, JSON.stringify(state.characters));
+  /* ROUND E-1, same skip as saveSheet's and for the same live reason — the
+     roster is re-persisted from several of the same per-message paths that
+     re-persisted the sheet, and an unchanged roster is by far the common
+     case (a roster only changes on add/rename/remove/restore). The check is
+     against the SAME serialization the write would produce, and skipping
+     costs nothing downstream: this function has no log line, no indicator
+     and no sync of its own. A genuinely changed roster still writes exactly
+     as before — including round C's "ONE write for the whole batch restore",
+     where the appended members make the bytes differ by construction. */
+  var key = "mrr-chars-" + state.chatId;
+  var payload = JSON.stringify(state.characters);
+  if (lsGet(key) === payload) return;
+  lsSet(key, payload);
 }
 
 /* ═══ Round-32 FIX D — clearing the `_bootstrap` lifecycle flag ═══════════
@@ -4910,7 +4969,13 @@ function deleteManagedAgents(ids, progressCb) {
   progress("Deleting " + ids.length + " agent(s)...");
   return ids.reduce(function (chain, id) {
     return chain.then(function () { return apiDeleteRaw("/agents/" + id); });
-  }, Promise.resolve()).then(function () { return ids.length; });
+  }, Promise.resolve()).then(function () {
+    /* ROUND E-2: the managed-agent set just changed without a page reload,
+       so the sheet-for-prompt content memo can no longer stand in for "the
+       agents already carry this block". */
+    if (typeof mrrInvalidateSheetSyncMemo === "function") mrrInvalidateSheetSyncMemo("managed agents deleted");
+    return ids.length;
+  });
 }
 
 /* ═══ Round-20 F3: preset agent-section assist ══════════════════════════
@@ -5315,6 +5380,10 @@ function importAgents(payload, progressCb) {
             return apiPostRaw("/agents", body).then(function () { created++; });
           });
         }, Promise.resolve()).then(function () {
+          /* ROUND E-2: freshly-created agents carry no injected sheet block,
+             and this path does NOT reload the page (installBundle does).
+             Clear the content memo so the next sync PATCHes them. */
+          if (typeof mrrInvalidateSheetSyncMemo === "function") mrrInvalidateSheetSyncMemo("managed agents re-imported");
           return { deleted: existingIds.length, created: created, rulesetId: rulesetId };
         });
       });
@@ -10266,12 +10335,12 @@ function mrrP3RenderMeritsFlawsSection(parent) {
    the existing classic flyout panel (renderIntimaciesPanelContents et
    al.). Full flyout migration deferred to Phase 3.6+. */
 function mrrP3RenderIntimaciesSection(parent) {
-  /* Phase 4 — diagnostic logging to surface why the section may not be
-     rendering for the user. */
-  log("mrrP3RenderIntimaciesSection ENTRY: parent=" + (!!parent) +
-      " ruleset=" + (!!state.ruleset) +
-      " totalIntimacyCount=" + (typeof totalIntimacyCount) +
-      " showIntimacies=" + (typeof showIntimacies));
+  /* ROUND E-3: the Phase-4 ENTRY/BODY diagnostic log lines are gone. They
+     were added to find out why this section was not rendering; that question
+     was answered, and in game mode they printed 152 times in a single
+     session (two lines per render) and drowned the console. The two warn()
+     guards below STAY — those fire only on an actual early return and are
+     the real diagnostic. Git history preserves the removed lines. */
   if (!parent || !state.ruleset) {
     warn("mrrP3RenderIntimaciesSection: early-return on parent/ruleset guard");
     return;
@@ -10285,7 +10354,6 @@ function mrrP3RenderIntimaciesSection(parent) {
     title: "INTIMACIES",
     defaultOpen: true
   }, function (body) {
-    log("mrrP3RenderIntimaciesSection BODY: rendering button, count=" + totalIntimacyCount());
     var btn = marinara.addElement(body, "button", {
       type: "button",
       "class": "mrr-char-btn mrr-char-btn--dashed",
@@ -15975,6 +16043,24 @@ function injectSheetIntoPromptTemplate(promptTemplate, sheetBlock) {
    panel; without the stock `custom-tracker` agent enabled, that data
    never reaches generation context. We bypass that whole path and put
    the sheet directly in the agents' system prompts. */
+/* ═══ ROUND E-2 — clearing the sheet-for-prompt content memo ════════════════
+   The memo below makes syncSheetToAgents skip a PATCH fan-out whose CONTENT
+   the managed agents already carry. That inference is only sound while the
+   managed-agent SET is the one we last PATCHed. Two paths change that set
+   without a page reload — the agent-manager's per-ruleset delete and the
+   agent-import apply (delete-then-recreate) — so both call this. Everything
+   else that creates agents (installBundle) reloads the page immediately,
+   which resets the memo for free.
+
+   `mrrSyncGen` is bumped as well as the map being replaced: a sync already
+   IN FLIGHT when the agent set changes must not stamp its (now stale)
+   signature into the fresh memo when it lands. See the settle handler. */
+function mrrInvalidateSheetSyncMemo(why) {
+  state.mrrSyncLastBlock = Object.create(null);
+  state.mrrSyncGen = (state.mrrSyncGen || 0) + 1;
+  log("sheet-sync content memo cleared (" + why + ") — the next sync re-PATCHes every managed agent");
+}
+
 function syncSheetToAgents() {
   if (!state.ruleset) return;
   /* ROUND D: the block is now the WHOLE party (active + every roster member
@@ -15989,9 +16075,67 @@ function syncSheetToAgents() {
      below. No other role's prompt changes, and no ruleset's hand-written
      agent file is edited to carry it. */
   var mutatorClause = mrrMutatorPartyLimitsClause(party);
+  var rulesetId = state.ruleset.id;
+
+  /* ═══ ROUND E-2 (a) — THE CONTENT GATE ════════════════════════════════════
+     LIVE FINDING (ex3game0610). Game mode emits a turn as many separate
+     messages; each one reached this pipeline, and one session ran 57 full
+     sheet-for-prompt sync passes — roughly 400 agent requests — for content
+     that never changed. RP mode, one blob per turn, shows a handful.
+
+     The memo is keyed by rulesetId because the agents PATCHed are exactly
+     the ones whose settings.mrrRulesetId matches, and it holds the assembled
+     CONTENT, not a save counter or a timestamp: what the agents carry in
+     their promptTemplates is a pure function of (party block + mutator
+     clause), so identical content provably means identical PATCH bodies.
+     The signature joins the two halves on NUL, a byte neither the block nor
+     the clause can contain, so no concatenation can alias.
+
+     Identical => return here: no GET /agents, no PATCH fan-out, and no log
+     line. The party-aware log line below now fires ONLY on an actual fan-out,
+     which is what makes the console an honest record of what was sent.
+
+     WHY THIS IS SAFE AGAINST A STALE MEMO:
+       - the memo is per page load (it lives on `state`), so the first sync
+         after activation always fires — the FIRST sync after a real change
+         can never be lost;
+       - it is stamped only AFTER a fan-out actually completed (see settle),
+         so a failed or agent-less pass retries next time;
+       - an active-character switch, a roster change, a stat change and a
+         ruleset switch all change the block's bytes, so all of them defeat
+         the gate by construction rather than by a hand-maintained list;
+       - the only thing that can change PATCH bodies WITHOUT changing this
+         content is the managed-agent set itself, and both no-reload paths
+         that do that call mrrInvalidateSheetSyncMemo (above).
+
+     WHERE THE MEMO LIVES. On `state`, beside state.installing and the dialog
+     handles — session-scoped bookkeeping that is not sheet data. */
+  if (!state.mrrSyncLastBlock) state.mrrSyncLastBlock = Object.create(null);
+  var signature = sheetBlock + "\u0000" + (mutatorClause || "");
+  if (state.mrrSyncLastBlock[rulesetId] === signature) return;
+
+  /* ═══ ROUND E-2 (c) — THE IN-FLIGHT DIRTY LATCH ═══════════════════════════
+     Round 31/C precedent, mrrBindingResolveRerunIfDirty: a change that lands
+     WHILE the round-trip is in flight would otherwise either be swallowed
+     (the flight that completes a moment later stamps a signature computed
+     before the change) or double the fan-out (two overlapping rounds of
+     PATCHes against the same agents). One deferred re-run closes both. The
+     flag is cleared before the re-run, so a further change during the re-run
+     schedules exactly one more: still one fan-out per content change, never
+     one per call.
+
+     The (b) half of E-2 — the trailing debounce that collapses a burst of
+     block-messages into a single pass — is scheduleAutoSync's 1500ms timer,
+     the file's existing idiom and this function's only caller; see its own
+     header. A second timer here would merely double sheet-to-prompt latency. */
+  if (state.mrrSyncInFlight) { state.mrrSyncDirty = true; return; }
+  state.mrrSyncInFlight = true;
+  state.mrrSyncDirty = false;
+  var syncGen = (state.mrrSyncGen || 0);
+  var fannedOut = false;
+
   apiFetch("/agents").then(function (agents) {
     if (!Array.isArray(agents)) return;
-    var rulesetId = state.ruleset.id;
     var managed = agents.filter(function (a) {
       var s = parseAgentSettings(a);
       return s && s.mrrManaged === true && s.mrrRulesetId === rulesetId;
@@ -16000,6 +16144,11 @@ function syncSheetToAgents() {
       log("syncSheetToAgents: no managed agents for ruleset " + rulesetId);
       return;
     }
+    /* Stamp-worthiness is decided HERE, not in the settle handler: only a
+       pass that actually reached a managed agent set may claim the agents
+       carry this content. A missing/!Array response and an empty managed
+       set both leave the memo unstamped so the next pass retries. */
+    fannedOut = true;
     var mutatorCount = 0;
     return Promise.all(managed.map(function (a) {
       var s = parseAgentSettings(a);
@@ -16024,7 +16173,28 @@ function syncSheetToAgents() {
           (party.missing.length ? " (no sheet for this system: " + party.missing.join(", ") + ")" : "") +
           (mutatorCount ? " (state-tag limits clause -> " + mutatorCount + " mutator prompt)" : ""));
     });
-  }).catch(function (e) {
+  }).then(function () {
+    /* ROUND E-2 — settle. Two-argument .then rather than .then().catch() so
+       the failure arm covers exactly what the old .catch covered (a rejected
+       GET, and anything thrown inside the handler above) without also
+       swallowing an error raised by this bookkeeping itself. */
+    state.mrrSyncInFlight = false;
+    /* Stamp only if a fan-out really happened AND the agent set has not been
+       invalidated underneath us mid-flight (mrrInvalidateSheetSyncMemo bumps
+       the generation). A stale stamp would suppress the very re-sync the
+       invalidation exists to force. */
+    if (fannedOut && (state.mrrSyncGen || 0) === syncGen) state.mrrSyncLastBlock[rulesetId] = signature;
+    if (state.mrrSyncDirty || (state.mrrSyncGen || 0) !== syncGen) {
+      state.mrrSyncDirty = false;
+      syncSheetToAgents();   /* exactly one deferred re-run; the content gate decides whether it costs anything */
+    }
+  }, function (e) {
+    state.mrrSyncInFlight = false;
+    /* No re-fire on failure, deliberately: the memo was NOT stamped, so the
+       next scheduleAutoSync pass (one fires on every save) retries with the
+       current content. Re-firing here would retry a failing endpoint at
+       whatever rate the failures arrive. */
+    state.mrrSyncDirty = false;
     warn("syncSheetToAgents failed: " + (e && e.message ? e.message : e));
   });
 }
@@ -17088,7 +17258,21 @@ function mrrCheckChatRulesetStamp(chatId) {
    The third leg — a customTrackerFields PATCH to the chat via
    syncSheetToChat — is gone. The server had been Zod-stripping that key
    since 2.0.9, so it burned a GET + a PATCH per save and stored nothing.
-   See the REMOVED tombstone where syncSheetToChat used to live. */
+   See the REMOVED tombstone where syncSheetToChat used to live.
+
+   ═══ ROUND E-2 (b) — THIS IS THE TRAILING DEBOUNCE ════════════════════════
+   Named explicitly because round E went looking for one. Every observation
+   that could change the sheet routes through here, and the timer below is
+   the file's trailing-debounce idiom: cancel the pending timer, arm a new
+   one, so a BURST of N observations inside the window costs exactly ONE
+   sync pass. Game mode's many-block turn output is precisely such a burst.
+
+   No second debounce was added inside syncSheetToAgents. This is its only
+   caller, a nested timer would merely double sheet-to-prompt latency to 3s,
+   and the case a debounce cannot catch — observations spaced FURTHER apart
+   than the window, which is what produced 57 sync passes in ex3game0610 —
+   is answered by the content gate and the in-flight dirty latch in
+   syncSheetToAgents, not by a longer timer. */
 var autoSyncTimer = null;
 function scheduleAutoSync() {
   if (autoSyncTimer) clearTimeout(autoSyncTimer);
