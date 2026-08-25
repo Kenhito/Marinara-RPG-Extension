@@ -7,6 +7,25 @@ Version numbers follow [Semantic Versioning](https://semver.org/) once a 1.0
 release is cut; pre-1.0 minor bumps may include breaking changes (called out
 explicitly when they do).
 
+## [Unreleased]
+
+- **GM dice doctrine completed for the last four rulesets** (fate-core,
+  blades-in-the-dark, genesys, lasers-and-feelings): tool-first `roll_dice`
+  rolls, never-invent, player rolls stay authoritative, fresh rolls on every
+  regenerate — adapted honestly to each system's dice (fate rolls `4d3-8`
+  with the fudge mapping stated aloud; genesys maps symbol dice to numeric
+  faces with the printed distributions quoted, or labels estimates plainly;
+  blades and L&F read per-die results, never sums).
+- **Authoring docs completed for the roll-high open-ended d100 fields**
+  (`direction`, `bonusFormula`, `openEnded`, `unusualFaces`) across
+  AGENTS.md, AUTHORING-PROMPT.md, README, and the docs/ authoring set —
+  the fields shipped with Rolemaster in v1.1.0; the docs now match the schema.
+- **Rolemaster**: GM agent gained the Resistance-Roll target-number shape
+  guidance, user-lorebook precedence (your table rows beat its estimates,
+  your house rules beat its bundled rules, and it names which it applied),
+  and the guide now warns about the engine's 100-entry-per-lorebook default
+  cap and token-budget sizing for very large lorebooks.
+
 ## v1.1.0 (2026-08-24)
 
 Everything below is written for people who play with this thing. The
