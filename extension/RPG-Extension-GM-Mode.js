@@ -16726,21 +16726,40 @@ function mrrMutatorPartyRoutingClause(info) {
 var SHEET_INJECT_BEGIN = "<!-- MRR_SHEET_BEGIN -->";
 var SHEET_INJECT_END   = "<!-- MRR_SHEET_END -->";
 
+/* THE one definition of "what an injected sheet block looks like". Removes
+   every well-formed BEGIN..END pair from a promptTemplate and returns the
+   original (pre-injection) body.
+
+   Shared on purpose, by two callers that MUST agree:
+     · injectSheetIntoPromptTemplate — the WRITER, which strips the prior
+       block before prepending a fresh one.
+     · mrrParseManagedPromptPrefix — the READER, which has to see past the
+       block to find the identity prefix underneath it.
+   ex31554 is exactly what happens when only one of them knows the grammar
+   (see the block above mrrParseManagedPromptPrefix). Keeping the markers,
+   the escaping and the trailing-newline rule in a single function is what
+   makes drift between writer and reader impossible rather than merely
+   unlikely.
+
+   D7: the `g` flag, so a template that somehow accumulated more than one
+   injected block gets ALL of them stripped, not just the first. The trailing
+   `\n*` consumes the blank line the writer emits after END, which is what
+   leaves the prefix at position 0 of the result. */
+function mrrStripInjectedSheetBlock(promptTemplate) {
+  var template = String(promptTemplate || "");
+  var beginEsc = SHEET_INJECT_BEGIN.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  var endEsc   = SHEET_INJECT_END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  var stripRe  = new RegExp(beginEsc + "[\\s\\S]*?" + endEsc + "\\n*", "g");
+  return template.replace(stripRe, "");
+}
+
 /* Strip any prior sheet block from a promptTemplate and prepend a fresh
    one. Marker-based so multiple updates over the lifetime of an installed
    agent never accumulate stale sheets — each PATCH replaces the previous
    block in place. The original (pre-injection) template body is preserved
    intact below the END marker. */
 function injectSheetIntoPromptTemplate(promptTemplate, sheetBlock) {
-  var template = String(promptTemplate || "");
-  /* Strip any existing block. RegExp escaping kept inline so we don't
-     introduce a new helper for one call site. */
-  var beginEsc = SHEET_INJECT_BEGIN.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  var endEsc   = SHEET_INJECT_END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  /* D7: `g` flag so a template that somehow accumulated more than one
-     injected block gets ALL of them stripped, not just the first. */
-  var stripRe  = new RegExp(beginEsc + "[\\s\\S]*?" + endEsc + "\\n*", "g");
-  var stripped = template.replace(stripRe, "");
+  var stripped = mrrStripInjectedSheetBlock(promptTemplate);
   if (!sheetBlock) return stripped.trim();
   return SHEET_INJECT_BEGIN + "\n" + sheetBlock + "\n" + SHEET_INJECT_END + "\n\n" + stripped.trim();
 }
@@ -17481,13 +17500,31 @@ function mrrRoleForOrphanType(orphanType, roleTypes) {
      [mrr-v1:<authorId>/<rulesetId>]            -> role "main"
      [mrr-v1:<authorId>/<rulesetId>:<role>]     -> that role
    authorId and rulesetId may not contain "/", ":" or "]"; role may not
-   contain ":" or "]". Anything else parses to null. */
+   contain ":" or "]". Anything else parses to null.
+
+   ex31554 — WHY THE STRIP COMES FIRST. This function used to require the
+   prefix at position 0 of the raw promptTemplate. That is true only of a row
+   which has never been synced. syncSheetToAgents PREPENDS the party sheet
+   (SHEET_INJECT_BEGIN .. END + a blank line) to every managed agent and
+   PATCHes it back, so in any real install the marker leads and the prefix
+   sits below it. The healer was therefore blind to EVERY row that had ever
+   received a sheet — live, Corey's roster degraded to 2 managed rows and not
+   one "re-adopted" line was logged, against a green probe suite whose
+   fixtures all carried bare prefixes.
+
+   So: remove the injected block through THE SAME helper the writer uses
+   (they cannot drift), then apply the position-0 rule to what is left. The
+   requirement is not relaxed — it is merely applied to the right string. A
+   prefix loose in the middle of a body, or under a marker that never closes,
+   still parses to null, which is the anti-spoof property this gate exists
+   for. */
 function mrrParseManagedPromptPrefix(promptTemplate) {
   if (typeof promptTemplate !== "string" || !promptTemplate) return null;
-  if (promptTemplate.indexOf(MRR_PROMPT_PFX) !== 0) return null;
-  var close = promptTemplate.indexOf("]");
+  var body = mrrStripInjectedSheetBlock(promptTemplate);
+  if (body.indexOf(MRR_PROMPT_PFX) !== 0) return null;
+  var close = body.indexOf("]");
   if (close === -1) return null;
-  var inner = promptTemplate.slice(MRR_PROMPT_PFX.length, close);
+  var inner = body.slice(MRR_PROMPT_PFX.length, close);
   var slash = inner.indexOf("/");
   if (slash <= 0) return null;
   var authorId = inner.slice(0, slash);
