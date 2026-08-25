@@ -2163,6 +2163,22 @@ function mrrConfirmChatRuleset(chatId, why) {
   mrrClearAutoswitchGuard();
   log("ruleset latch: chat " + chatId + " confirmed for ruleset " +
       (state.ruleset && state.ruleset.id ? state.ruleset.id : "(none)") + " — " + why);
+  /* B19 round-30 FIX 1 — THE STAMP ORDERING HOLE.
+     mrrStampLastCharacter used to fire ONLY from saveActiveCharacterId, and
+     saveActiveCharacterId fires during init()/watchRouteChanges — i.e. BEFORE
+     this async metadata check confirms the chat. Its (correct, load-bearing)
+     unconfirmed early-return therefore won every single time, and nothing
+     ever retried afterwards: in a plain open-a-chat-and-play session the
+     continuity pointer was never written at all. Live trace
+     char_carryover2030.log lines 174-175 show the exact order — "activated
+     ruleset exalted3e ... as char-1787621123755-..." (the activation, hence
+     the stamp attempt) lands one line BEFORE "ruleset latch: ... confirmed".
+     Confirmation is the first moment the stamp's own guard can pass, so the
+     retry belongs here, at the same chokepoint that already re-evaluates the
+     offer below. Idempotent (one lsSet of a two-field record), and it must
+     stay AHEAD of mrrRenderContinueOffer so the offer evaluated at the bottom
+     of this function reads a pointer that is already current. */
+  mrrStampLastCharacter();
   if (mrrDeferredSaveWanted) {
     mrrDeferredSaveWanted = false;
     log("ruleset latch: replaying the save that was deferred while chat " + chatId + " was unconfirmed");
@@ -2636,6 +2652,20 @@ function mrrStampLastCharacter() {
      ruleset is the same cross-ruleset bleed the save latch exists to
      prevent — just one indirection further out. */
   if (state.chatId && mrrRulesetConfirmedChatId !== state.chatId) return;
+  /* Round-30 companion guard to FIX 1, and the reason FIX 1 is safe to make
+     unconditional at the confirm chokepoint. On a BRAND-NEW chat the active
+     character at confirm time is loadCharacters' untouched bootstrap
+     placeholder ("Player"), which is precisely the thing the offer exists to
+     replace. Stamping it would overwrite the pointer to the character the
+     user actually played and then suppress the offer on its own (the
+     candidate would be in this chat's roster), i.e. FIX 1 would have
+     destroyed the feature it exists to enable. The pointer means "the last
+     character you actually played in this ruleset", so an untouched
+     bootstrap roster — the SAME predicate the offer gates on, deliberately
+     reused rather than re-derived — is not a stamp-worthy activation. Any
+     real activation (switchCharacter, addCharacter, applyBundle, adopt)
+     leaves a roster this returns false for, so those still stamp. */
+  if (mrrRosterIsEmpty()) return;
   var activeId = state.activeCharacterId;
   var entry = state.characters.find(function (c) { return c && c.id === activeId; });
   var name = (entry && entry.name) ? entry.name : activeId;
@@ -2661,11 +2691,38 @@ function mrrReadLastCharacter(rulesetId) {
    its own in the character library. The moment the user touches that
    sheet, saveSheet writes the library record and the offer stops
    qualifying — which is correct, there is now something to lose. */
+/* Round-30 FIX 2 — "no library record" was too strict, because on every
+   fresh chat there IS one by the time anything renders. Live trace
+   char_carryover2030.log: line 84 a pre-confirm saveSheet is refused by the
+   round-24 latch ("saveSheet deferred (latch)"), line 176 mrrConfirmChatRuleset
+   REPLAYS it ("replaying the save that was deferred"). That replay writes the
+   untouched bootstrap sheet under the placeholder's characterKey, so the
+   original `!lsGet(...)` test went false milliseconds before the offer was
+   ever evaluated and the offer could not render in a normal session.
+   New definition: one roster entry AND (no record OR the record is a sheet
+   with no player-authored substance at all). "No substance" is
+   mrrIsPristineBlankSheet — the SAME predicate saveSheet's T5-d
+   blank-over-good guard uses, so there is exactly one definition of
+   "pristine" in the file. It compares STRUCTURALLY (mrrDeepEqual) against a
+   freshly-built blankSheet() for the CURRENT ruleset and strips the two
+   bookkeeping stamps saveSheet adds, which is what makes it immune to JSON
+   key-order differences between a stored record and a fresh build — a
+   string comparison here would be wrong for exactly the reason mrrDeepEqual's
+   own header documents. The instant the user edits one field the record
+   stops being deep-equal and the offer stops qualifying, which is the
+   property the original test was reaching for. */
 function mrrRosterIsEmpty() {
   var list = state.characters;
   if (!Array.isArray(list) || !list.length) return true;
   if (list.length !== 1 || !list[0] || !list[0].id) return false;
-  return !lsGet(characterKey(list[0].id));
+  var raw = lsGet(characterKey(list[0].id));
+  if (!raw) return true;
+  /* A materialized record with no ruleset to judge it against is opaque —
+     treat it as substance (the conservative answer: no offer, no delete). */
+  if (!state.ruleset) return false;
+  var parsed = safeParse(raw);
+  if (!parsed) return false;
+  return mrrIsPristineBlankSheet(parsed, state.ruleset);
 }
 
 /* Returns the record to offer, or null. Every condition is a hard gate;
@@ -2790,7 +2847,35 @@ function mrrAdoptLastCharacter(rec) {
        record). Replacing it rather than appending is what keeps the chat
        clean — an orphan "Player" beside the adopted character is exactly
        the clutter this feature exists to remove. */
-    state.characters = mrrRosterIsEmpty() ? [] : state.characters;
+    if (mrrRosterIsEmpty()) {
+      /* Round-30 FIX 3 — consequence of FIX 2. The placeholder we are about
+         to drop from the roster may now OWN a library record (the replayed
+         deferred save materialized it — see mrrRosterIsEmpty's header), and
+         dropping the roster entry alone would strand a blank "Player" sheet
+         in the character library forever: the exact clutter this feature
+         exists to remove, just moved one level down. Deleting is safe and
+         correct here BY CONSTRUCTION — mrrRosterIsEmpty just certified the
+         record is byte-for-byte a fresh blankSheet(), so there is no user
+         data in it. Routed through lsDel, the storage adapter's delete path,
+         which is what makes this correct for a SYNCED key: characterKey()
+         values match mrrIsSyncedKey (LS_CHARACTER_PFX), and lsDel both
+         removes the local mirror AND writes the timestamped {t, v:null}
+         tombstone into the server cache + marks it dirty, so the record is
+         actually retracted on the server instead of being resurrected by the
+         next hydrate merge. Same call, same reasoning, as removeCharacter's
+         own lsDel(characterKey(...)). The LEGACY chat-scoped sheetKey home
+         is deliberately NOT touched: a fresh bootstrap placeholder cannot
+         have one, and blind-deleting it would risk real pre-v0.4.1 data
+         that this pristine check never inspected. */
+      state.characters.forEach(function (c) {
+        if (!c || !c.id) return;
+        if (!lsGet(characterKey(c.id))) return;
+        lsDel(characterKey(c.id));
+        log("B19 continuity: deleted the pristine bootstrap sheet record for placeholder " + c.id +
+            " (tombstoned through the storage adapter) — adopting must not leave an orphan in the library");
+      });
+      state.characters = [];
+    }
     state.characters.push({ id: rec.id, name: rec.name });
   }
   saveCharacters();

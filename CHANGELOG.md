@@ -16,8 +16,16 @@ explicitly when they do).
   chat (replacing the untouched bootstrap placeholder), "Not now" saves
   nothing and never nags past the session. Never auto-adopts. Stamping is
   gated on the round-24 ruleset-confirmation latch so the pointer can't be
-  filed under the wrong system. (10-probe eval-extracted harness, incl. a
-  negative control.)
+  filed under the wrong system. Round 30 (live-repro'd on the smoke test):
+  the pointer now stamps at the confirmation chokepoint (activation always
+  preceded confirmation, so it never stamped in a normal session), the
+  empty-roster check tolerates the pristine bootstrap record the round-24
+  deferred-save replay materializes (structural compare against a fresh
+  blank sheet — one edited field withdraws the offer), a confirm-time stamp
+  never clobbers the pointer with the untouched placeholder, and adopting
+  retracts the placeholder's blank record (adapter tombstone) instead of
+  orphaning it. (20-probe eval-extracted harness, 4 negative controls, incl.
+  a lifecycle probe replaying the live log's exact event order.)
 - **Dead-plumbing tombstones trimmed** (−657 B source): the round-26/27
   `isChildListOrigin` removal narration is gone; the load-bearing lesson
   survives as a forward invariant — never rewrite a message element's
