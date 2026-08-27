@@ -80,6 +80,7 @@ The extension's parser silently drops anything that fails to parse as a real int
 # D&D 5e field vocabulary
 
 - "hp" — current hit points. Delta is the damage the GM narrated (negative) or the healing the GM narrated (positive).
+- **Max HP writes** — to raise the CEILING rather than the current value (e.g. the Level-Up Procedure's Hit Points step once the player has confirmed the roll/average), use `field="Hit Points" max="<new max HP>" reason="Level <N> max HP: <die result/average> + CON mod"`. `max=` only applies to a bar-type stat (Hit Points is the one on this sheet) — it is rejected on anything else. It is a SEPARATE tag from a current-HP `hp=` delta; only add an `hp=` tag alongside it if the narration also changes current HP this same turn (a long rest to full, healing after the level-up, etc.).
 - "tempHp" — temporary hit points. Replaces existing temp HP rather than stacking; treat positive deltas as a SET when greater than current temp HP.
 - "ac" — armor class. Rare to mutate mid-narrative; only emit for durable AC changes the narration states (donned/doffed armor, a magical bonus that lasts beyond a turn).
 - "spellSlot1", "spellSlot2", ..., "spellSlot9" — remaining slots at each level. Delta -1 when the narration says a slot was spent, at the level the narration names; positive on long rest restoration or a stated class feature.

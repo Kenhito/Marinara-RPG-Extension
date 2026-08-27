@@ -7882,6 +7882,44 @@ function diceFooter(parent, rollLabel, rollFn) {
        accumulator — no thresholds, no level math.
    Skipped silently when ruleset.resolution.mode is anything else
    (Fate Core uses Fate Points, not XP). */
+/* F#2 (xp-leveling P1 Stage-5 live fix, 2026-08-27): dual level-store
+   sync. sheet.xp.level (the XP card's level input; the mutator's xp
+   branch absolute level= write) and sheet.derived.Level (a ruleset-
+   declared "Level" derivedStat, edited via the generic Derived Pools
+   stepper — dnd5e declares one, ruleset.json:390) are two independent
+   stores for the SAME number. Resource max formulas read
+   sheet.xp.level via mrrResourceContext (:9721+); derived-stat
+   formulas read sheet.derived.Level via statContext's ctx (:6895).
+   Before this fix, editing one store left the other stale — same class
+   of bug as the T5-c HP dual-store fix (commit 9ec1596), different
+   pair of stores.
+   sheet.xp.level is the master: this helper always sets it, and
+   additionally mirrors to sheet.derived.Level ONLY when the active
+   ruleset declares a derivedStat literally named "Level" (exact-name
+   gate — a ruleset with no such derivedStat is untouched, e.g.
+   exalted3e never gets a sheet.derived.Level key). Call from every
+   level-WRITE site: the card's level input, the mutator's absolute
+   level= write, AND the reverse direction (the generic Derived Pools
+   stepper editing a stat literally named "Level" also calls this, so
+   both directions funnel through one sync point). */
+function mrrSyncLevelStores(newLevel) {
+  if (!state.sheet || typeof newLevel !== "number" || isNaN(newLevel)) return;
+  if (!state.sheet.xp || typeof state.sheet.xp !== "object") {
+    state.sheet.xp = { current: 0, level: 1, next: 0, total: 0 };
+  }
+  state.sheet.xp.level = newLevel;
+  var hasLevelDerived = false;
+  if (state.ruleset && Array.isArray(state.ruleset.derivedStats)) {
+    for (var i = 0; i < state.ruleset.derivedStats.length; i++) {
+      var d = state.ruleset.derivedStats[i];
+      if (d && d.name === "Level") { hasLevelDerived = true; break; }
+    }
+  }
+  if (hasLevelDerived) {
+    if (!state.sheet.derived || typeof state.sheet.derived !== "object") state.sheet.derived = {};
+    state.sheet.derived.Level = newLevel;
+  }
+}
 function renderXpCard(parent) {
   if (!state.sheet || !state.ruleset) return;
   if (!state.sheet.xp || typeof state.sheet.xp !== "object") {
@@ -7895,6 +7933,43 @@ function renderXpCard(parent) {
   if (typeof state.sheet.xp.level   !== "number") state.sheet.xp.level   = 1;
   if (typeof state.sheet.xp.next    !== "number") state.sheet.xp.next    = 0;
   if (typeof state.sheet.xp.total   !== "number") state.sheet.xp.total   = 0;
+
+  /* F#2 heal: one-time dual-store mismatch heal for sheets that drifted
+     before mrrSyncLevelStores existed (e.g. the card set xp.level while
+     a pre-fix Derived Pools edit left derived.Level stale, or vice
+     versa). Only runs when the ruleset declares a "Level" derivedStat
+     (same exact-name gate as mrrSyncLevelStores); a ruleset without one
+     is untouched. Whichever store is non-default wins; sheet.xp.level
+     (the master) wins the tie when BOTH are non-default. */
+  if (state.ruleset && Array.isArray(state.ruleset.derivedStats)) {
+    var levelDerivedDef = null;
+    for (var ldi = 0; ldi < state.ruleset.derivedStats.length; ldi++) {
+      var ldCand = state.ruleset.derivedStats[ldi];
+      if (ldCand && ldCand.name === "Level") { levelDerivedDef = ldCand; break; }
+    }
+    if (levelDerivedDef) {
+      var xpLevelVal = state.sheet.xp.level;
+      var derivedLevelVal = (state.sheet.derived && typeof state.sheet.derived === "object")
+        ? state.sheet.derived.Level : undefined;
+      if (typeof derivedLevelVal === "number" && xpLevelVal !== derivedLevelVal) {
+        var derivedDefault = (typeof levelDerivedDef["default"] === "number") ? levelDerivedDef["default"] : 1;
+        var xpNonDefault = xpLevelVal !== 1;
+        var derivedNonDefault = derivedLevelVal !== derivedDefault;
+        var healedLevel;
+        if (xpNonDefault) {
+          healedLevel = xpLevelVal; /* master wins outright, or the tie-break when both non-default */
+        } else if (derivedNonDefault) {
+          healedLevel = derivedLevelVal;
+        } else {
+          healedLevel = xpLevelVal;
+        }
+        state.sheet.xp.level = healedLevel;
+        if (!state.sheet.derived || typeof state.sheet.derived !== "object") state.sheet.derived = {};
+        state.sheet.derived.Level = healedLevel;
+        log("mrrSyncLevelStores heal: xp.level=" + xpLevelVal + " vs derived.Level=" + derivedLevelVal + " mismatch — healed to " + healedLevel);
+      }
+    }
+  }
 
   var resMode = state.ruleset.resolution && state.ruleset.resolution.mode;
   if (resMode !== "single-roll" && resMode !== "dice-pool") return;
@@ -8001,7 +8076,7 @@ function renderXpCard(parent) {
        editing. saveSheet uses the existing debounce. */
     if (lvlInput) marinara.on(lvlInput, "input", function () {
       var n = parseInt(lvlInput.value, 10);
-      state.sheet.xp.level = (!isNaN(n) && n >= 1) ? n : 1;
+      mrrSyncLevelStores((!isNaN(n) && n >= 1) ? n : 1); /* F#2: keeps derived.Level mirrored */
       saveSheet(state.chatId, state.sheet);
       if (nextDisplay) nextDisplay.textContent = String(getNextXp());
       if (barFill) barFill.style.width = computeBarPct() + "%";
@@ -10051,8 +10126,19 @@ function mrrP3RenderDerivedPoolCard(parent, d) {
         return (typeof d.default === "number") ? d.default : 0;
       },
       function (n) {
-        if (!state.sheet.derived) state.sheet.derived = {};
-        state.sheet.derived[d.name] = n;
+        /* F#2 reverse sync: a derived stat literally named "Level"
+           (name-gated, exact match) mirrors back to sheet.xp.level —
+           mrrSyncLevelStores already sets state.sheet.derived.Level
+           itself when it finds a "Level" derivedStat, which this call
+           always does since d.name === "Level" only reaches here when
+           the ruleset declares one. Any other manual-stepper derived
+           stat keeps the plain write. */
+        if (d.name === "Level") {
+          mrrSyncLevelStores(n);
+        } else {
+          if (!state.sheet.derived) state.sheet.derived = {};
+          state.sheet.derived[d.name] = n;
+        }
         saveSheet(state.chatId, state.sheet);
         refreshAllBars();
         /* When a derived value backs a resource formula (e.g. V20 Blood
@@ -16116,15 +16202,29 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
       }
       var b = equippedBonuses(n);
       var bonus = (b && typeof b.value === "number") ? b.value : 0;
+      /* F#3 (xp-leveling P1 Stage-5 live fix, 2026-08-27): bar-type
+         derived stats (D&D Hit Points, etc.) previously serialized as
+         a bare number with no ceiling — the narrator had no way to SEE
+         max HP, so it could not reason about a max= write or a
+         level-up's new max. Append the same "cur / max" shape the
+         Resources snapshot block below already uses, sourced from
+         mrrP3ComputeBarMax (:10166+) — the exact resolver the sheet
+         UI's own bar render uses — so the agent sees what the player
+         sees. Only bar-type derived stats get the suffix; value-type
+         derived stats (Armor Class, Speed, etc.) are untouched. */
+      var barMaxForSnap = (d.renderAs === "bar" && typeof mrrP3ComputeBarMax === "function")
+        ? mrrP3ComputeBarMax(d) : null;
       if (bonus !== 0) {
         var total = base + bonus;
         var sign = bonus > 0 ? "+" : "";
         var contribs = (b.contributors && b.contributors.length)
           ? " [" + b.contributors.map(function (c) { return c.name + " " + (c.value > 0 ? "+" : "") + c.value; }).join(", ") + "]"
           : "";
-        lines.push("- " + n + ": " + total + " (base " + base + " " + sign + bonus + " from equipment" + contribs + ")");
+        var barSuffix = (barMaxForSnap != null) ? (" / " + barMaxForSnap) : "";
+        lines.push("- " + n + ": " + total + barSuffix + " (base " + base + " " + sign + bonus + " from equipment" + contribs + ")");
       } else {
-        lines.push("- " + n + ": " + base);
+        var barSuffix2 = (barMaxForSnap != null) ? (" / " + barMaxForSnap) : "";
+        lines.push("- " + n + ": " + base + barSuffix2);
       }
     });
     lines.push("");
@@ -20973,7 +21073,15 @@ function applyStateMutation(attrs) {
         }
         pending[key] = n;
       }
-      Object.keys(pending).forEach(function (k) { sheet.xp[k] = pending[k]; });
+      Object.keys(pending).forEach(function (k) {
+        /* F#2: route the level write through mrrSyncLevelStores so a
+           level-up's absolute level= also mirrors sheet.derived.Level
+           when the ruleset declares one — runs AFTER validation above,
+           so a rejected half-update never reaches here. Every other
+           key keeps the plain write. */
+        if (k === "level") { mrrSyncLevelStores(pending[k]); return; }
+        sheet.xp[k] = pending[k];
+      });
       return finalizeMutation(attrs);
     }
     warn("state-mutator xp: must provide delta=N or absolute current/level/next/total");
@@ -21318,6 +21426,75 @@ function applyStateMutation(attrs) {
     }
     sheet.conditions = condRestore.snapshot.slice();
     return finalizeMutation(attrs);
+  }
+
+  /* F#3 (xp-leveling P1 Stage-5 live fix, 2026-08-27): max-HP write.
+     Before this fix there was NO write path for a bar-type derived
+     stat's ceiling at all (rg "attrs.max" across the file was zero
+     hits) — the narrator could move current HP but never raise max HP
+     on level-up. Placed ahead of the hasDelta/hasAbsolute guard below
+     for the same reason as the two sentinel blocks above: a max=-only
+     tag carries neither delta nor current/value/set, so it must be
+     handled before that guard would otherwise drop it as empty.
+     Resolved through the SAME resolveSheetField alias/dotted-path
+     resolution the generic numeric branch uses further down (so
+     `field="hp"` and `field="Hit Points"` both resolve to the same
+     canonical derivedStats entry) — restricted to derived-map hits
+     whose ruleset def declares renderAs "bar"; anything else (a value-
+     type derived stat, an attribute, a skill, an unresolved field) is
+     rejected outright rather than silently dropped or reinterpreted.
+     Design choice on combining max= with a current-value write in the
+     SAME tag (delta=/current=/value=/set=): process max FIRST here,
+     then — only for a field that resolved to a valid bar — FALL
+     THROUGH to let the existing current-value logic below run too, so
+     one finalizeMutation call covers both writes as a single save/
+     toast. Chose fall-through over rejecting the combo because a
+     level-up narration naturally reads as one beat ("max HP is now
+     132, you're topped up to full") and the existing branch structure
+     already supports "compute a value now, let a later return call
+     finalizeMutation" (see the typed-damage branch below). An invalid
+     max= (non-bar field, non-positive integer) rejects the WHOLE tag,
+     matching every other upfront-validation branch in this function
+     (xp absolute, typed-damage, etc.) rather than silently proceeding
+     with just the current-value half. */
+  if (attrs.max != null) {
+    var maxResolved = resolveSheetField(sheet, field);
+    var maxBarDef = null;
+    if (maxResolved && maxResolved.map === "derived" && state.ruleset && Array.isArray(state.ruleset.derivedStats)) {
+      for (var mbi = 0; mbi < state.ruleset.derivedStats.length; mbi++) {
+        var mbd = state.ruleset.derivedStats[mbi];
+        if (mbd && mbd.name === maxResolved.key && mbd.renderAs === "bar") { maxBarDef = mbd; break; }
+      }
+    }
+    if (!maxBarDef) {
+      warn("state-mutator: max= is only valid on a bar-type derived stat — '" + field + "' is not one — dropped");
+      return false;
+    }
+    var newMax = parseInt(attrs.max, 10);
+    if (isNaN(newMax) || newMax <= 0) {
+      warn("state-mutator: max '" + attrs.max + "' for field '" + field + "' is not a positive integer — dropped");
+      return false;
+    }
+    /* Clamp policy: mirrors the sheet UI's own max-edit path exactly.
+       mrrP3RenderBar's max input (:8635+) calls opts.onMax(n) with the
+       raw parsed number; mrrP3RenderDerivedBar's onMax (:10127+) writes
+       state.sheet.derivedMax[d.name] = v and does NOT touch current.
+       The panel does not clamp current down when max drops below it,
+       so this write path does not either — verified by reading that
+       handler before writing this block, not assumed. */
+    if (!sheet.derivedMax) sheet.derivedMax = {};
+    var prevMax = (typeof sheet.derivedMax[maxResolved.key] === "number") ? sheet.derivedMax[maxResolved.key] : null;
+    sheet.derivedMax[maxResolved.key] = newMax;
+    /* Normal scalar journal entry — B2-R's no-journal carve-out (ruling
+       1) applies ONLY to the xp branch, not to this write. */
+    mrrJournalMutation("__mrrDerivedMax:" + maxResolved.key, { prev: prevMax, next: newMax });
+    if (attrs.delta == null && attrs.current == null && attrs.value == null && attrs.set == null) {
+      return finalizeMutation(attrs);
+    }
+    /* Combo case: max= plus a current-value write in the same tag —
+       fall through to the existing hasDelta/hasAbsolute logic below,
+       which will resolve `field` again (cheap, same function) and
+       apply + journal + finalize the current-value half normally. */
   }
 
   var hasDelta = (attrs.delta != null);

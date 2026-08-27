@@ -5371,6 +5371,33 @@ function diceFooter(parent, rollLabel, rollFn) {
   if (btnSend) marinara.on(btnSend, "click", sendLastRoll);
 }
 
+function mrrSyncLevelStores(newLevel) {
+  if (!state.sheet || typeof newLevel !== "number" || isNaN(newLevel)) return;
+  if (!state.sheet.xp || typeof state.sheet.xp !== "object") {
+    state.sheet.xp = {
+      current: 0,
+      level: 1,
+      next: 0,
+      total: 0
+    };
+  }
+  state.sheet.xp.level = newLevel;
+  var hasLevelDerived = false;
+  if (state.ruleset && Array.isArray(state.ruleset.derivedStats)) {
+    for (var i = 0; i < state.ruleset.derivedStats.length; i++) {
+      var d = state.ruleset.derivedStats[i];
+      if (d && d.name === "Level") {
+        hasLevelDerived = true;
+        break;
+      }
+    }
+  }
+  if (hasLevelDerived) {
+    if (!state.sheet.derived || typeof state.sheet.derived !== "object") state.sheet.derived = {};
+    state.sheet.derived.Level = newLevel;
+  }
+}
+
 function renderXpCard(parent) {
   if (!state.sheet || !state.ruleset) return;
   if (!state.sheet.xp || typeof state.sheet.xp !== "object") {
@@ -5385,6 +5412,37 @@ function renderXpCard(parent) {
   if (typeof state.sheet.xp.level !== "number") state.sheet.xp.level = 1;
   if (typeof state.sheet.xp.next !== "number") state.sheet.xp.next = 0;
   if (typeof state.sheet.xp.total !== "number") state.sheet.xp.total = 0;
+  if (state.ruleset && Array.isArray(state.ruleset.derivedStats)) {
+    var levelDerivedDef = null;
+    for (var ldi = 0; ldi < state.ruleset.derivedStats.length; ldi++) {
+      var ldCand = state.ruleset.derivedStats[ldi];
+      if (ldCand && ldCand.name === "Level") {
+        levelDerivedDef = ldCand;
+        break;
+      }
+    }
+    if (levelDerivedDef) {
+      var xpLevelVal = state.sheet.xp.level;
+      var derivedLevelVal = state.sheet.derived && typeof state.sheet.derived === "object" ? state.sheet.derived.Level : undefined;
+      if (typeof derivedLevelVal === "number" && xpLevelVal !== derivedLevelVal) {
+        var derivedDefault = typeof levelDerivedDef["default"] === "number" ? levelDerivedDef["default"] : 1;
+        var xpNonDefault = xpLevelVal !== 1;
+        var derivedNonDefault = derivedLevelVal !== derivedDefault;
+        var healedLevel;
+        if (xpNonDefault) {
+          healedLevel = xpLevelVal;
+        } else if (derivedNonDefault) {
+          healedLevel = derivedLevelVal;
+        } else {
+          healedLevel = xpLevelVal;
+        }
+        state.sheet.xp.level = healedLevel;
+        if (!state.sheet.derived || typeof state.sheet.derived !== "object") state.sheet.derived = {};
+        state.sheet.derived.Level = healedLevel;
+        log("mrrSyncLevelStores heal: xp.level=" + xpLevelVal + " vs derived.Level=" + derivedLevelVal + " mismatch — healed to " + healedLevel);
+      }
+    }
+  }
   var resMode = state.ruleset.resolution && state.ruleset.resolution.mode;
   if (resMode !== "single-roll" && resMode !== "dice-pool") return;
   var card = marinara.addElement(parent, "div", {
@@ -5498,7 +5556,7 @@ function renderXpCard(parent) {
     refreshLevelupBadge();
     if (lvlInput) marinara.on(lvlInput, "input", function() {
       var n = parseInt(lvlInput.value, 10);
-      state.sheet.xp.level = !isNaN(n) && n >= 1 ? n : 1;
+      mrrSyncLevelStores(!isNaN(n) && n >= 1 ? n : 1);
       saveSheet(state.chatId, state.sheet);
       if (nextDisplay) nextDisplay.textContent = String(getNextXp());
       if (barFill) barFill.style.width = computeBarPct() + "%";
@@ -7294,8 +7352,12 @@ function mrrP3RenderDerivedPoolCard(parent, d) {
       if (stored != null && stored !== "") return stored;
       return typeof d.default === "number" ? d.default : 0;
     }, function(n) {
-      if (!state.sheet.derived) state.sheet.derived = {};
-      state.sheet.derived[d.name] = n;
+      if (d.name === "Level") {
+        mrrSyncLevelStores(n);
+      } else {
+        if (!state.sheet.derived) state.sheet.derived = {};
+        state.sheet.derived[d.name] = n;
+      }
       saveSheet(state.chatId, state.sheet);
       refreshAllBars();
       renderSheet();
@@ -12775,15 +12837,18 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
       }
       var b = equippedBonuses(n);
       var bonus = b && typeof b.value === "number" ? b.value : 0;
+      var barMaxForSnap = d.renderAs === "bar" && typeof mrrP3ComputeBarMax === "function" ? mrrP3ComputeBarMax(d) : null;
       if (bonus !== 0) {
         var total = base + bonus;
         var sign = bonus > 0 ? "+" : "";
         var contribs = b.contributors && b.contributors.length ? " [" + b.contributors.map(function(c) {
           return c.name + " " + (c.value > 0 ? "+" : "") + c.value;
         }).join(", ") + "]" : "";
-        lines.push("- " + n + ": " + total + " (base " + base + " " + sign + bonus + " from equipment" + contribs + ")");
+        var barSuffix = barMaxForSnap != null ? " / " + barMaxForSnap : "";
+        lines.push("- " + n + ": " + total + barSuffix + " (base " + base + " " + sign + bonus + " from equipment" + contribs + ")");
       } else {
-        lines.push("- " + n + ": " + base);
+        var barSuffix2 = barMaxForSnap != null ? " / " + barMaxForSnap : "";
+        lines.push("- " + n + ": " + base + barSuffix2);
       }
     });
     lines.push("");
@@ -15730,6 +15795,10 @@ function applyStateMutation(attrs) {
         pending[key] = n;
       }
       Object.keys(pending).forEach(function(k) {
+        if (k === "level") {
+          mrrSyncLevelStores(pending[k]);
+          return;
+        }
         sheet.xp[k] = pending[k];
       });
       return finalizeMutation(attrs);
@@ -15984,6 +16053,38 @@ function applyStateMutation(attrs) {
     }
     sheet.conditions = condRestore.snapshot.slice();
     return finalizeMutation(attrs);
+  }
+  if (attrs.max != null) {
+    var maxResolved = resolveSheetField(sheet, field);
+    var maxBarDef = null;
+    if (maxResolved && maxResolved.map === "derived" && state.ruleset && Array.isArray(state.ruleset.derivedStats)) {
+      for (var mbi = 0; mbi < state.ruleset.derivedStats.length; mbi++) {
+        var mbd = state.ruleset.derivedStats[mbi];
+        if (mbd && mbd.name === maxResolved.key && mbd.renderAs === "bar") {
+          maxBarDef = mbd;
+          break;
+        }
+      }
+    }
+    if (!maxBarDef) {
+      warn("state-mutator: max= is only valid on a bar-type derived stat — '" + field + "' is not one — dropped");
+      return false;
+    }
+    var newMax = parseInt(attrs.max, 10);
+    if (isNaN(newMax) || newMax <= 0) {
+      warn("state-mutator: max '" + attrs.max + "' for field '" + field + "' is not a positive integer — dropped");
+      return false;
+    }
+    if (!sheet.derivedMax) sheet.derivedMax = {};
+    var prevMax = typeof sheet.derivedMax[maxResolved.key] === "number" ? sheet.derivedMax[maxResolved.key] : null;
+    sheet.derivedMax[maxResolved.key] = newMax;
+    mrrJournalMutation("__mrrDerivedMax:" + maxResolved.key, {
+      prev: prevMax,
+      next: newMax
+    });
+    if (attrs.delta == null && attrs.current == null && attrs.value == null && attrs.set == null) {
+      return finalizeMutation(attrs);
+    }
   }
   var hasDelta = attrs.delta != null;
   var hasAbsolute = attrs.current != null || attrs.value != null || attrs.set != null;
