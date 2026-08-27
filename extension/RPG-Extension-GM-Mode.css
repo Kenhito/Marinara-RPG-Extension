@@ -1708,6 +1708,26 @@
   color: var(--mrr-on-accent);
 }
 
+/* S2 (xp-leveling P1, 2026-08-27): threshold badge. Card border picks
+   up --mrr-success when a level is ready; the chip is a small pill
+   near the bar. Purely visual — toggled by refreshLevelupBadge() in
+   renderXpCard, no auto-increment. */
+.mrr-xp-card--levelup {
+  border-color: var(--mrr-success);
+}
+
+.mrr-xp-card__levelup-chip {
+  align-self: flex-start;
+  background: var(--mrr-success);
+  color: var(--mrr-on-accent);
+  border-radius: var(--mrr-radius-sm);
+  padding: 2px 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
 /* ═══════════════════════════════════════════════════════════════
  * Phase 3.1 — row-primitive CSS (mrr-p3-* namespace)
  * ═══════════════════════════════════════════════════════════════

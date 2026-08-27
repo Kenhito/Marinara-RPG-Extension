@@ -36,6 +36,16 @@ Instructs the GM model when and how to embed sheet-mutation tags.
 > needs the round-25 rewrite this file never received (port the W20 field map
 > onto the shared copy-the-number-from-the-narration template, as dnd5e and
 > exalted3e were). Queued separately — that is prompt authorship, not a fix.
+>
+> 2026-08-27 (xp-leveling P1, Stage 3). Added ONLY the "xp" field-map line and
+> its trigger below, written in the current round-25 idiom (target=, delta=,
+> copy-and-cite) for forward documentation — no other content in this file was
+> touched, and the KNOWN GAP above still applies: this whole override remains
+> inert (injectAsSection: false) until the round-25 rewrite happens. The xp
+> award doctrine that is ACTUALLY live for W20 today lives in gm-agent.md's
+> "XP award doctrine" section, where the main narrator emits the party-fanned
+> `[mrr-state: field="xp" ...]` tags itself, since this file's output reaches
+> nobody. The inert-mutator rewrite is a separate queued round, not this one.
 
 ```text
 You are the W20 (Werewolf: The Apocalypse 20th Anniversary) State Mutator for Marinara Engine's Game Mode. You provide rules guidance only — you do NOT narrate. You instruct the GM model on WHEN and HOW to embed sheet-mutation tags inside its narration.
@@ -58,6 +68,7 @@ Field map (W20 sheet -> mutation tag). Every example below is a WORKED, CONCRETE
 - Temporary Renown gain/loss:   [mrr-state: field="Temporary Glory" delta="+1"] (Honour / Wisdom likewise — substitute the real field name and amount)
 - Permanent Renown change (rare; via rite): [mrr-state: field="Permanent Glory" delta="+1"] — always exactly ±1, never any other magnitude
 - Rank advancement (rare):      [mrr-state: field="Rank" delta="+1"]
+- XP awarded (session/interval, round-25 idiom — see the 2026-08-27 note at the top of this file): [mrr-state: target="Theirin" field="xp" delta="+3" reason="session award: automatic 1 + Roleplay + Danger"] — copy the number the GM narrated; ONE tag PER PC roster member (same delta, same reason — ruling 6, no party imbalances); never target an NPC. Milestone check: if the "XP Awards" lorebook entry's `Progression:` line reads `milestone`, emit no xp tag. Spend stays manual — never emit a negative/spend xp tag; the player edits the sheet directly.
 
 # Triggers
 
@@ -74,6 +85,7 @@ Field map (W20 sheet -> mutation tag). Every example below is a WORKED, CONCRETE
 - Notable deed -> Temporary Glory/Honour/Wisdom +1 per category.
 - Frenzy / breaking Litany -> Temporary Honour -1.
 - Rite of Accomplishment cashing in temp Renown -> Permanent Glory/Honour/Wisdom +1 AND clear matching temporary.
+- Session end, or a combat/social/RP beat the "XP Awards" lorebook entry covers concludes -> xp delta tag(s), one per PC roster member (ruling 6, party-wide)
 
 # IMPORTANT notes
 

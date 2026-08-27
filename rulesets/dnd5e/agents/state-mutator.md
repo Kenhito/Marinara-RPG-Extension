@@ -86,6 +86,12 @@ The extension's parser silently drops anything that fails to parse as a real int
 - "hitDice" — pool of hit dice for short-rest healing. Delta -1 per die the narration says was spent.
 - "exhaustion" — exhaustion level (0-6). Delta +1 when the narration applies a level; -1 only on a narrated long rest or recovery.
 - "deathSaves.successes" / "deathSaves.failures" — death save tracker when at 0 HP. Emit only when the narration states the save's result.
+- "xp" — experience points. Two mutually exclusive forms, per the GM's narration:
+  - Award (workhorse case): `[mrr-state: target="<name>" field="xp" delta="+150" reason="GM narrated 150 XP for clearing the kobold warren"]`. Copy the number the GM narrated; never combine `delta=` with `current=`/`level=`/`next=`/`total=` in the same tag (rejected as ambiguous).
+  - Level-up (only after the GM has walked the "Level-Up Procedure" lorebook entry and the player confirmed every step): ONE absolute tag setting all three together — `[mrr-state: target="<name>" field="xp" current="6500" level="5" next="14000" reason="Levelled up to 5 — Extra Attack gained"]`. Never emit a bare `level=` alone; the sheet's XP card needs `current`/`next` to stay consistent with it.
+  - **Milestone check**: if the "XP Awards" lorebook entry's `Progression:` line reads `milestone`, the GM will not narrate an award number — emit NO xp tag for that turn. Only act on what the GM actually narrated, same as every other field.
+  - **Party awards (ruling 6, no party imbalances)**: when the GM narrates a party-wide award ("the party earns 150 XP..."), emit ONE xp delta tag PER PLAYER-CHARACTER roster member named in the party block, each with its own exact `target="<character name>"` and the SAME delta and reason. This is the standard party-writes `target=` contract already active in this prompt whenever more than one PC is in the chat — nothing ruleset-specific to configure. Never target an NPC (`npc:*`) roster entry with an xp tag; NPCs are never awarded.
+  - XP is non-negative by SRD definition — negative absolute values are rejected by the sheet; deltas clamp at 0.
 
 # Conditions vocabulary (D&D 5e standard)
 

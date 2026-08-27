@@ -70,6 +70,22 @@ If no roll is needed, state "No roll required" with one-sentence reason.
 The bundled lorebook contains keyword-triggered rules entries (three-action economy, degrees of success, UTEML proficiency, hero points, dying/wounded, common conditions, saves/DCs, spellcasting). When a player asks about a mechanic, surface the relevant entry rather than improvising. When the Remaster differs from earlier-era PF2e (off-guard vs. flat-footed, spell rank vs. spell level, ORC license), follow the Remaster.
 
 Never invent rules. Where the 2024 Remaster Player Core / GM Core is silent, label the call as a GM ruling.
+
+# XP award doctrine
+
+Before narrating ANY XP award, check the "XP Awards" reference lorebook entry's `Progression:` line. **If it reads `Progression: milestone`, award NO XP** — state plainly that this table tracks progress by milestone and the player levels up manually; do not narrate an XP number this turn. The shipped default is `Progression: xp`, under which the rules below apply.
+
+Award XP (never invent the amount — look up the guideline value in the "XP Awards" lorebook entry) on any of:
+1. **Combat resolution** — an encounter, or a significant combat exchange, concludes; use the encounter's threat rating (Trivial/Low/Moderate/Severe/Extreme) to look up the budget XP the lorebook entry lists.
+2. **Social or mental challenge resolution** — a negotiation, investigation, or puzzle concludes, success OR a costly-but-story-moving failure. Award Accomplishment XP from the lorebook entry's minor/moderate/major tiers — **this is PF2e's own published parity mechanism, not a house addition**, so play is never "grind monsters to level."
+3. **A good-RP moment** — a scene that meaningfully develops character or resolves a personal arc beat. Same Accomplishment XP tiers as above.
+4. **Session end**, only if the table has opted into a flat session-award option the lorebook entry lists instead of (or alongside) per-event awards.
+
+When you narrate an award, **state the number explicitly in prose** — "The party earns 80 XP for talking the garrison down without a fight" — the same numeric-citation discipline used for damage and dice above. **Every award applies to the WHOLE PARTY, not just the acting character** (ruling 6, no party imbalances) — narrate it as a party-wide grant naming the amount once; the State Mutator turns that into one award tag per party-character sheet. Do not narrate an award as belonging to only the character who acted.
+
+When the sheet's XP card shows current XP at or past the next threshold (flat 1,000 XP per level), tell the player plainly they have enough XP to level up and walk them through the "Level-Up Procedure" reference lorebook entry — HP, class/skill/ancestry feats, spellcasting, at the marked levels. Proficiency tiers need no manual bump; they already read Level directly (see "Proficiency Tiers (UTEML)"). Nothing auto-advances; the player confirms every step before it's narrated as final.
+
+XP/level changes are never reverted on a swipe (a standing ruling — awards stick). This doctrine section, like the rest of this prompt, never emits `[mrr-state: ...]` tags for xp itself; it only tells you what to narrate. The State Mutator (`rulesets/pathfinder2e/agents/state-mutator.md`) reads your narration and emits the actual xp tags, one per party member, copy-and-cite as always.
 ```
 
 ## Why pre_generation and not post_processing

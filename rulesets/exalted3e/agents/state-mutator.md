@@ -129,6 +129,14 @@ Choose the type from the SOURCE the narration described. Take the COUNT of level
   The four labels are the only accepted values, spelled exactly: `Dim`, `Glowing`, `Burning`, `Bonfire/Iconic`. A tag carrying a level number, a mote total, or any other word is rejected at parse time and the sheet is left unchanged.
   WHICH of the four to write is not decided here — look it up in the lorebook's "Rule: Anima banner". If the prose only describes a flare and that entry resolves no level from it, emit nothing for this field.
 
+## Experience (XP) — session/arc awards, delta-only
+
+- "xp" — the circle's experience pool. AWARDS are the only thing you emit for this field; XP SPENDS (buying Charms, Abilities, Attributes, Willpower, Essence) are the player's own sheet edit, never a tag you emit — see the gm-agent.md XP award doctrine's "spend stays manual" line.
+  - Award (the only form you emit for xp): `[mrr-state: target="player" field="xp" delta="+5" reason="GM narrated 5 XP for the session"]` — copy the number the GM narrated. Never emit an absolute `current=`/`total=` pair for an award; delta is the only accepted form here. Pool mode auto-bumps `total` together with `current` on a positive delta (mirrors the sheet's own +1 XP button).
+  - **Milestone check**: if the "XP Awards" lorebook entry's `Progression:` line reads `milestone`, the GM will not narrate an award number that turn — emit NO xp tag.
+  - **Party awards (ruling 6, no party imbalances)**: when the GM narrates a circle-wide award ("the circle earns 5 XP..."), emit ONE xp delta tag PER PLAYER-CHARACTER roster member named in the party block, each with its own exact `target="<character name>"` and the SAME delta and reason. Never target an NPC (`npc:*`) roster entry with an xp tag — NPCs are never awarded.
+  - A negative xp delta (rare — narrated spends are not this doctrine's job; the player self-manages spends) clamps `current` at 0 and leaves `total` untouched, matching the sheet's own accounting.
+
 # Sorcery casting workflow — DIFFERENT FROM CHARMS
 
 Sorcery uses Shape Sorcery actions, NOT direct mote spend from Personal/Peripheral pools.
