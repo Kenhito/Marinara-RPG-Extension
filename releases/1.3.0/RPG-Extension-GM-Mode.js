@@ -12874,11 +12874,21 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
     if (resModePrompt === "single-roll") {
       var lvlP = state.sheet.xp.level || 1;
       var curP = state.sheet.xp.current || 0;
-      var nxtP = state.sheet.xp.next || 0;
+      var nxtP = 0;
+      var xpTblP = state.ruleset && state.ruleset.xpTable;
+      if (Array.isArray(xpTblP)) {
+        for (var xtI = 0; xtI < xpTblP.length; xtI++) {
+          if (xpTblP[xtI] && xpTblP[xtI].level === lvlP + 1 && typeof xpTblP[xtI].xp === "number") {
+            nxtP = xpTblP[xtI].xp;
+            break;
+          }
+        }
+      }
+      if (nxtP <= 0) nxtP = state.sheet.xp.next || 0;
       lines.push("Experience:");
       lines.push("- Level: " + lvlP);
       if (nxtP > 0) {
-        lines.push("- XP: " + curP + " / " + nxtP);
+        lines.push("- XP: " + curP + " / " + nxtP + " (Level " + (lvlP + 1) + " threshold)");
       } else {
         lines.push("- XP: " + curP);
       }

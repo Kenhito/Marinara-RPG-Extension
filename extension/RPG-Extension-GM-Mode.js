@@ -16239,11 +16239,28 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
     if (resModePrompt === "single-roll") {
       var lvlP = state.sheet.xp.level   || 1;
       var curP = state.sheet.xp.current || 0;
-      var nxtP = state.sheet.xp.next    || 0;
+      /* Stage-5 finding (2026-08-27, "Tester Testerson"): the stored xp.next
+         is the editable HOMEBREW fallback and never auto-updates from the
+         table, so a sheet that leveled past it serializes a stale threshold
+         into every agent's context (Combat Overseer read a stale 64000 as
+         the Level-11 trigger). The prompt must derive next from the ruleset
+         xpTable exactly like the card UI does; stored next only fills in
+         when the table has no row for the following level. */
+      var nxtP = 0;
+      var xpTblP = state.ruleset && state.ruleset.xpTable;
+      if (Array.isArray(xpTblP)) {
+        for (var xtI = 0; xtI < xpTblP.length; xtI++) {
+          if (xpTblP[xtI] && xpTblP[xtI].level === lvlP + 1 && typeof xpTblP[xtI].xp === "number") {
+            nxtP = xpTblP[xtI].xp;
+            break;
+          }
+        }
+      }
+      if (nxtP <= 0) nxtP = state.sheet.xp.next || 0;
       lines.push("Experience:");
       lines.push("- Level: " + lvlP);
       if (nxtP > 0) {
-        lines.push("- XP: " + curP + " / " + nxtP);
+        lines.push("- XP: " + curP + " / " + nxtP + " (Level " + (lvlP + 1) + " threshold)");
       } else {
         lines.push("- XP: " + curP);
       }
