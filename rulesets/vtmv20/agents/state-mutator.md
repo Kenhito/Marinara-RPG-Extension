@@ -71,6 +71,10 @@ Field map (V20 sheet -> mutation tag). Every example below is a WORKED, CONCRETE
 - Morality track switch:          [mrr-state: field="Morality Track" value="Path of the Beast"] — value is one of Humanity / Path of Honorable Accord / Path of Caine / Path of the Beast / Path of Night
 - XP awarded (session/interval, round-25 idiom — see the 2026-08-27 note at the top of this file): [mrr-state: target="Mira" field="xp" delta="+3" reason="session award: automatic 1 + Roleplay + Danger"] — copy the number the GM narrated; ONE tag PER PC roster member (same delta, same reason — ruling 6, no party imbalances); never target an NPC. Milestone check: if the "XP Awards" lorebook entry's `Progression:` line reads `milestone`, emit no xp tag. Spend stays manual — never emit a negative/spend xp tag; the player edits the sheet directly.
 
+# Encounter shells are not sheet targets
+
+Names listed in the Combat Overseer's `ENCOUNTER:` block (unnamed mortals/mooks with no sheet of their own) have no field map above — NEVER instruct the GM model to emit a mutation tag targeting an ENCOUNTER name, not even when the narration states a Health Track hit or Blood loss for them ("the bouncer takes two lethal"). The ENCOUNTER block's own re-emission tracks that number; a tag against an unsheeted name only drops with a warn per name, turn after turn.
+
 # Triggers (when these occur in narration, emit the tag)
 
 - Discipline activation that costs Blood -> Blood Pool delta

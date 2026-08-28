@@ -137,7 +137,7 @@
         "major intimacy",
         "defining intimacy"
       ],
-      "content": "Intimacies. Emotional/ideological commitments shaping the character's choices and resistance. Two kinds: Ties (toward a person/place/group) and Principles (abstract beliefs). Three intensities: Minor, Major, Defining. They affect Resolve in social influence: a Tie/Principle that supports the influence makes acceptance easier; one that opposes it makes it harder (or impossible without overcoming the Intimacy first). Major/Defining Intimacies are the source of regained Willpower under hardship.",
+      "content": "Intimacies are an Exalt's emotional and ideological anchors. Two kinds: TIES (a strong feeling toward an external subject — person, place, organization, idea) and PRINCIPLES (an internal credo or belief). Three intensity degrees: MINOR (a soft preference that bends in play), MAJOR (a real commitment that shapes behavior), DEFINING (an identity-level conviction). In social influence, a Tie/Principle that supports what's being asked makes acceptance easier; one that opposes it makes it harder, or impossible without first overcoming the Intimacy — a Defining Intimacy grants outright immunity to Decision-Influence social attacks that contradict it, while a Major Intimacy can resist the same attack at a higher Willpower cost. Story actions that align with a Major or Defining Intimacy regain Willpower under hardship; betraying a Defining Intimacy can trigger Limit gain or breakdown for the Solar Exalted. Intimacies evolve through play, and certain Charms can shift their degree or replace them outright.",
       "selective": false,
       "constant": false,
       "position": 0
@@ -376,20 +376,6 @@
         "Overwhelming"
       ],
       "content": "Overwhelming is the minimum levels of damage a weapon or attack always inflicts, even when soak or Hardness would otherwise reduce it lower. Default Overwhelming for unarmed and light weapons is 1; medium weapons 2; heavy weapons 3; many artifact weapons 4-5. When you compute final damage: roll soak versus damage as normal, but the result can never drop below the attacker's Overwhelming. When Hardness blocks (raw damage < Hardness), the floor that lands is exactly Overwhelming. Charms and artifact qualities can raise an attack's Overwhelming value.",
-      "selective": false,
-      "constant": false,
-      "position": 0
-    },
-    {
-      "name": "Rule: Intimacies (Ties and Principles)",
-      "keys": [
-        "intimacy",
-        "intimacies",
-        "tie",
-        "principle",
-        "defining intimacy"
-      ],
-      "content": "Intimacies are an Exalt's emotional and ideological anchors. Two kinds: TIES (a strong feeling toward an external subject — person, place, organization, idea) and PRINCIPLES (an internal credo or belief). Three intensity degrees: MINOR (a soft preference), MAJOR (a real commitment that shapes behavior), DEFINING (an identity-level conviction). Defining Intimacies provide outright immunity to Decision-Influence social attacks that contradict them; Major Intimacies can be invoked to resist such attacks at higher Willpower cost; Minor Intimacies bend in play. Story actions that align with an Intimacy regain Willpower; betraying a Defining Intimacy can trigger Limit gain or breakdown for the Solar Exalted. Intimacies evolve through play and certain Charms can shift their degree or replace them.",
       "selective": false,
       "constant": false,
       "position": 0
