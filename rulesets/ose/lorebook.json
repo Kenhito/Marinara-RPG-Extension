@@ -3,13 +3,33 @@
   "description": "Keyword-triggered reference for Old School Essentials (B/X-tradition): core resolution, the ascending-AC house convention, off-widget subsystems, saving throws, classes, conditions, and exploration procedures. Mechanics paraphrased; no verbatim text from any published book.",
   "category": "world",
   "scanDepth": 4,
-  "tokenBudget": 1500,
+  "tokenBudget": 4096,
   "recursiveScanning": false,
   "entries": [
     {
+      "name": "XP Progression Mode",
+      "keys": [
+        "xp",
+        "progression",
+        "milestone",
+        "level"
+      ],
+      "constant": true,
+      "selective": false,
+      "position": 0,
+      "content": "Progression: xp — XP awards are ACTIVE; award per the XP Awards entry's guidelines. To use milestone leveling instead, change this line to 'Progression: milestone' — then award NO XP; the player triggers level-ups manually."
+    },
+    {
       "id": "ose-rules-resolution",
       "name": "Rule: Dice Resolution (Attacks & Saves)",
-      "keys": ["attack roll", "to hit", "roll to hit", "saving throw", "save vs", "roll a save"],
+      "keys": [
+        "attack roll",
+        "to hit",
+        "roll to hit",
+        "saving throw",
+        "save vs",
+        "roll a save"
+      ],
       "content": "Attacks and saving throws are a single d20 roll compared to a target number. Attack: 1d20 + Attack Bonus + ability modifier (STR melee / DEX missile) vs. the target's Armor Class; meet or beat it to hit. Saving throw: 1d20 + 0 (no ability modifier) vs. the save category's number on the sheet; meet or beat it to succeed. Natural 20 and natural 1 are not universally critical/fumble in the base B/X tradition — treat them as GM-narrative flavor unless your table has adopted a house crit rule.",
       "selective": false,
       "constant": true,
@@ -18,7 +38,12 @@
     {
       "id": "ose-rules-ascending-ac",
       "name": "Ascending AC — a house convention",
-      "keys": ["ascending ac", "armor class", "thac0", "descending ac"],
+      "keys": [
+        "ascending ac",
+        "armor class",
+        "thac0",
+        "descending ac"
+      ],
       "content": "The original B/X convention is DESCENDING Armor Class with THAC0 (lower AC = better; you cross-reference THAC0 minus target AC on an attack matrix). This bundle instead uses ASCENDING AC (10 unarmored, higher = better, roll 1d20 + Attack Bonus + mod vs. AC, meet-or-beat to hit) because Marinara's single-roll dice widget only supports 'roll high, compare to a target' math — it cannot render a THAC0 lookup table or count down from a base AC. If you convert a published B/X monster or NPC stat block that lists descending AC (e.g., 'AC 4'), convert with Ascending AC = 19 - Descending AC before entering it on a sheet or NPC block.",
       "selective": false,
       "constant": true,
@@ -27,7 +52,16 @@
     {
       "id": "ose-rules-off-widget",
       "name": "Dice Mechanic Routing (Thief Skills & d6-in-X)",
-      "keys": ["thief skill", "open doors", "listen check", "hear noise", "surprise roll", "d6-in-x", "percentile roll", "mechanic selector"],
+      "keys": [
+        "thief skill",
+        "open doors",
+        "listen check",
+        "hear noise",
+        "surprise roll",
+        "d6-in-x",
+        "percentile roll",
+        "mechanic selector"
+      ],
       "content": "This bundle's dice widget has a mechanic selector (B18) alongside the primary d20 (attacks, saves, most ability checks): Thief Skills (Open Locks, Find/Remove Traps, Pick Pockets, Move Silently, Hide in Shadows, Climb Sheer Surfaces — Thief class only) roll under mode=thief-skills — d100 roll-under, success on a result AT OR UNDER the skill's sheet value. Open Doors, Listen (Hear Noise), and Surprise roll under mode=door-checks — 1d6 roll-under, success on a result AT OR UNDER the stat's X-in-6 value. Do not adjudicate these by hand: clicking the skill/stat's roll button on the sheet auto-selects the right mechanic and the widget rolls it, reporting a self-describing tag like [dice: mode=thief-skills ...] or [dice: mode=door-checks ...] — read the tag for pass/fail exactly like any other roll instead of asking the player to roll narratively.",
       "selective": false,
       "constant": true,
@@ -36,7 +70,13 @@
     {
       "id": "ose-rules-ability-modifiers",
       "name": "Rule: Ability Modifiers (step table)",
-      "keys": ["ability modifier", "attribute modifier", "stat bonus", "strength bonus", "dexterity bonus"],
+      "keys": [
+        "ability modifier",
+        "attribute modifier",
+        "stat bonus",
+        "strength bonus",
+        "dexterity bonus"
+      ],
       "content": "Ability modifiers follow a non-linear step table, not (score-10)/2: 3 = -3, 4-5 = -2, 6-8 = -1, 9-12 = +0, 13-15 = +1, 16-17 = +2, 18 = +3. This table is NOT auto-computed on the sheet (the framework's formula fields only support arithmetic, not stepped lookups) — read the modifier off this table by hand and enter it as a flat value wherever needed (melee/missile attack, damage, AC from DEX, HP from CON, etc.).",
       "selective": false,
       "constant": false,
@@ -45,7 +85,15 @@
     {
       "id": "ose-rules-saves",
       "name": "Rule: The Five Saving Throw Categories",
-      "keys": ["death ray", "poison save", "magic wands", "paralysis save", "petrify", "dragon breath", "spell save"],
+      "keys": [
+        "death ray",
+        "poison save",
+        "magic wands",
+        "paralysis save",
+        "petrify",
+        "dragon breath",
+        "spell save"
+      ],
       "content": "Five save categories, each a flat class-and-level number with no ability modifier: Death Ray or Poison (also covers direct death effects); Magic Wands (also covers most wand/rod/staff effects and polymorph); Paralysis or Petrify (also covers turn-to-stone and hold effects); Dragon Breath (also covers other big area effects); Spells (the catch-all for anything not covered above, including most spell effects not covered by a more specific category). Roll the category the effect most resembles when more than one could apply — GM's call, favor the player.",
       "selective": false,
       "constant": false,
@@ -54,7 +102,13 @@
     {
       "id": "ose-rules-hp-lethality",
       "name": "Rule: Hit Points, Death, and Low-Level Lethality",
-      "keys": ["hit points", "hp loss", "0 hp", "character death", "dying"],
+      "keys": [
+        "hit points",
+        "hp loss",
+        "0 hp",
+        "character death",
+        "dying"
+      ],
       "content": "Hit Points come from class Hit Dice rolled at each level (Fighter/Dwarf d8, Cleric/Thief/Halfling/Elf d6, Magic-User d4), plus a CON modifier per die (minimum 1 HP per die rolled). A 1st-level character has exactly ONE Hit Die — often single digits of HP — and a single solid hit can kill outright. By default, 0 HP means dead; there is no death-save buffer unless the table has explicitly adopted a death's-door house variant. This lethality is a deliberate tone choice of the system, not a bug: caution, retreat, and clever tactics matter more than raw combat stats, especially below level 3-4.",
       "selective": false,
       "constant": false,
@@ -63,7 +117,13 @@
     {
       "id": "ose-rules-xp",
       "name": "Rule: Experience & Class-Specific XP Tables",
-      "keys": ["experience points", "xp table", "level up", "leveling up", "gain a level"],
+      "keys": [
+        "experience points",
+        "xp table",
+        "level up",
+        "leveling up",
+        "gain a level"
+      ],
       "content": "Unlike D&D 5e's single universal XP table, every class in this system has its OWN XP-to-level progression — a Fighter and a Magic-User need different totals to reach 2nd level. Fighter progression shown; consult your class table. This sheet's XP bar is wired to the Fighter's progression as a default reference ladder only; if the active character is a different class, treat the bar's denominator as approximate and consult that class's own table (or ask the GM) for the real threshold. Award XP primarily for treasure recovered (the classic B/X convention: 1 XP per 1 gold piece value of treasure brought back to safety) plus a smaller monster-defeated bonus.",
       "selective": false,
       "constant": false,
@@ -72,8 +132,19 @@
     {
       "id": "ose-xp-awards",
       "name": "XP Awards",
-      "keys": ["xp", "experience", "experience points", "award xp", "xp award", "leveling", "levelling", "progression", "prime requisite", "treasure"],
-      "content": "Progression: xp\n\nOld School Essentials (B/X-tradition) experience awards. Set the line above to \"Progression: milestone\" to disable all GM-driven XP awards below — the party then levels up manually, at the table's discretion, whenever the story calls for it.\n\nPER-CLASS PROGRESSION — unlike D&D 5e's single universal table, every class needs a DIFFERENT total to reach each level. This sheet's XP bar is wired to the Fighter's progression only (see the \"Rule: Experience & Class-Specific XP Tables\" reference entry); the tables below are the other classes' thresholds, classic B/X-tradition numbers — edit this entry directly if your table's specific printing differs:\n\nFighter (sheet default): 0 / 2,000 / 4,000 / 8,000 / 16,000 / 32,000 / 64,000 / 120,000 / 240,000 / 360,000 / 480,000 / 600,000 / 720,000 / 840,000 (levels 1-14; +240,000 XP per level beyond 14)\nCleric: 0 / 1,500 / 3,000 / 6,000 / 12,000 / 25,000 / 50,000 / 100,000 / 200,000 / 300,000 / 400,000 / 500,000 / 600,000 / 700,000 (+200,000/level beyond 14)\nMagic-User: 0 / 2,500 / 5,000 / 10,000 / 20,000 / 40,000 / 80,000 / 150,000 / 300,000 / 450,000 / 600,000 / 750,000 / 900,000 / 1,050,000 (+150,000/level beyond 14)\nThief: 0 / 1,200 / 2,400 / 4,800 / 9,600 / 20,000 / 40,000 / 80,000 / 160,000 / 280,000 / 400,000 / 520,000 / 640,000 / 760,000 (+120,000/level beyond 14)\nDwarf (caps around 12th level): 0 / 2,200 / 4,400 / 8,800 / 17,000 / 35,000 / 70,000 / 140,000 / 270,000 / 400,000 / 530,000 / 660,000\nElf (caps around 10th level): 0 / 4,000 / 8,000 / 16,000 / 32,000 / 64,000 / 120,000 / 250,000 / 400,000 / 600,000\nHalfling (caps around 8th level): 0 / 2,000 / 4,000 / 8,000 / 16,000 / 32,000 / 64,000 / 120,000\n\nPRIME-REQUISITE XP MODIFIER — each class has one or two \"prime requisite\" ability scores (Fighter: STR; Cleric: WIS; Magic-User: INT; Thief: DEX; demi-humans per their class). A prime requisite of 13-15 grants +5% to ALL XP that character earns; 16-18 grants +10%; 6-8 is a -10% penalty; 9-12 has no modifier. This is a PER-CHARACTER, sheet-side calculation the PLAYER applies to their own share — it is informational here, not something the GM narrator computes or the State Mutator fans out differently per character (see the party-award clause below; ruling 6 requires the same base tag for everyone).\n\nTREASURE AS XP (the primary engine, already noted in the Rules entry): 1 XP per 1 gold-piece value of treasure the party actually recovers and brings back to safety. This is usually the bulk of a party's XP total, not a side bonus — a rich haul can outweigh the fight that guarded it.\n\nSOCIAL / MENTAL / RP PARITY — award equivalents so play is never \"loot the dungeon, roleplay is free\" (Corey's ruling 3, adapted to this system's treasure-centric economy):\n- Minor social/mental win (a clever bypass of a hazard, a minor NPC won over, a clue found through deduction): 50-200 XP, GM's call scaled to session pace.\n- Moderate social/mental win (a negotiation concludes, a puzzle solved without combat, a faction's trust earned): 200-800 XP.\n- Major social/mental win (a faction turned, a defining RP scene resolves a personal arc beat, a threat neutralized entirely without a fight): 800-2,000 XP.\nA costly or partial failure that still moves the story forward earns the LOW end of the matching band — failure is not automatically zero XP if it was consequential and well-played.\n\nPARTY AWARDS — ruling 6, no party imbalances: every combat/treasure/social/RP award above applies to the WHOLE PARTY at the SAME base amount per member — the GM narrates one total, and the State Mutator emits one award tag per PC roster member carrying that same base delta (NPCs never awarded). A character's individual prime-requisite modifier, if the player wants it applied, is a manual sheet edit the player makes on top of the mutator's base award — never something the GM narrator or the State Mutator computes per character, which would break the uniform-tag guarantee ruling 6 requires.\n\nManual override always available: the player's XP/level sheet fields and the \"+1 XP\" button remain player-editable regardless of GM awards.",
+      "keys": [
+        "xp",
+        "experience",
+        "experience points",
+        "award xp",
+        "xp award",
+        "leveling",
+        "levelling",
+        "progression",
+        "prime requisite",
+        "treasure"
+      ],
+      "content": "(Progression mode lives in the always-on \"XP Progression Mode\" entry)\n\nOld School Essentials (B/X-tradition) experience awards. Set the line above to \"Progression: milestone\" to disable all GM-driven XP awards below — the party then levels up manually, at the table's discretion, whenever the story calls for it.\n\nPER-CLASS PROGRESSION — unlike D&D 5e's single universal table, every class needs a DIFFERENT total to reach each level. This sheet's XP bar is wired to the Fighter's progression only (see the \"Rule: Experience & Class-Specific XP Tables\" reference entry); the tables below are the other classes' thresholds, classic B/X-tradition numbers — edit this entry directly if your table's specific printing differs:\n\nFighter (sheet default): 0 / 2,000 / 4,000 / 8,000 / 16,000 / 32,000 / 64,000 / 120,000 / 240,000 / 360,000 / 480,000 / 600,000 / 720,000 / 840,000 (levels 1-14; +240,000 XP per level beyond 14)\nCleric: 0 / 1,500 / 3,000 / 6,000 / 12,000 / 25,000 / 50,000 / 100,000 / 200,000 / 300,000 / 400,000 / 500,000 / 600,000 / 700,000 (+200,000/level beyond 14)\nMagic-User: 0 / 2,500 / 5,000 / 10,000 / 20,000 / 40,000 / 80,000 / 150,000 / 300,000 / 450,000 / 600,000 / 750,000 / 900,000 / 1,050,000 (+150,000/level beyond 14)\nThief: 0 / 1,200 / 2,400 / 4,800 / 9,600 / 20,000 / 40,000 / 80,000 / 160,000 / 280,000 / 400,000 / 520,000 / 640,000 / 760,000 (+120,000/level beyond 14)\nDwarf (caps around 12th level): 0 / 2,200 / 4,400 / 8,800 / 17,000 / 35,000 / 70,000 / 140,000 / 270,000 / 400,000 / 530,000 / 660,000\nElf (caps around 10th level): 0 / 4,000 / 8,000 / 16,000 / 32,000 / 64,000 / 120,000 / 250,000 / 400,000 / 600,000\nHalfling (caps around 8th level): 0 / 2,000 / 4,000 / 8,000 / 16,000 / 32,000 / 64,000 / 120,000\n\nPRIME-REQUISITE XP MODIFIER — each class has one or two \"prime requisite\" ability scores (Fighter: STR; Cleric: WIS; Magic-User: INT; Thief: DEX; demi-humans per their class). A prime requisite of 13-15 grants +5% to ALL XP that character earns; 16-18 grants +10%; 6-8 is a -10% penalty; 9-12 has no modifier. This is a PER-CHARACTER, sheet-side calculation the PLAYER applies to their own share — it is informational here, not something the GM narrator computes or the State Mutator fans out differently per character (see the party-award clause below; ruling 6 requires the same base tag for everyone).\n\nTREASURE AS XP (the primary engine, already noted in the Rules entry): 1 XP per 1 gold-piece value of treasure the party actually recovers and brings back to safety. This is usually the bulk of a party's XP total, not a side bonus — a rich haul can outweigh the fight that guarded it.\n\nSOCIAL / MENTAL / RP PARITY — award equivalents so play is never \"loot the dungeon, roleplay is free\" (Corey's ruling 3, adapted to this system's treasure-centric economy):\n- Minor social/mental win (a clever bypass of a hazard, a minor NPC won over, a clue found through deduction): 50-200 XP, GM's call scaled to session pace.\n- Moderate social/mental win (a negotiation concludes, a puzzle solved without combat, a faction's trust earned): 200-800 XP.\n- Major social/mental win (a faction turned, a defining RP scene resolves a personal arc beat, a threat neutralized entirely without a fight): 800-2,000 XP.\nA costly or partial failure that still moves the story forward earns the LOW end of the matching band — failure is not automatically zero XP if it was consequential and well-played.\n\nPARTY AWARDS — ruling 6, no party imbalances: every combat/treasure/social/RP award above applies to the WHOLE PARTY at the SAME base amount per member — the GM narrates one total, and the State Mutator emits one award tag per PC roster member carrying that same base delta (NPCs never awarded). A character's individual prime-requisite modifier, if the player wants it applied, is a manual sheet edit the player makes on top of the mutator's base award — never something the GM narrator or the State Mutator computes per character, which would break the uniform-tag guarantee ruling 6 requires.\n\nManual override always available: the player's XP/level sheet fields and the \"+1 XP\" button remain player-editable regardless of GM awards.",
       "selective": false,
       "constant": false,
       "position": 0
@@ -81,7 +152,15 @@
     {
       "id": "ose-level-up-procedure",
       "name": "Level-Up Procedure",
-      "keys": ["level up", "level-up", "leveling up", "levelling up", "gain a level", "new level", "name level"],
+      "keys": [
+        "level up",
+        "level-up",
+        "leveling up",
+        "levelling up",
+        "gain a level",
+        "new level",
+        "name level"
+      ],
       "content": "Old School Essentials (B/X-tradition) level-up procedure. Walk the player through these steps, in order, once XP crosses the threshold on their sheet's XP card (per-class progression — see the \"XP Awards\" reference lorebook entry for the current class's table):\n\n1. **Hit Dice roll**: roll the class Hit Die fresh for the new level (Fighter/Dwarf d8, Cleric/Thief/Halfling/Elf d6, Magic-User d4 — see \"Rule: Hit Points, Death, and Low-Level Lethality\") and add the Constitution modifier (minimum 1 HP gained even on a bad roll). Add the result to max HP.\n2. **Saving Throws**: update all five save categories (Death Ray or Poison, Magic Wands, Paralysis or Petrify, Dragon Breath, Spells) from the class's save-progression table for the new level. Saves in this system IMPROVE by getting LOWER — the sheet number is a target you must meet or beat, so a lower number is easier. Consult the class's save table; it is a level lookup, not a formula.\n3. **Attack Bonus**: update the Attack Bonus field from the class's attack-progression table. Fighters gain +1 nearly every level (the fastest curve in the system); Cleric and Thief improve roughly every 2-3 levels; Magic-User roughly every 3-5 levels — consult the class's specific table for the exact new value.\n4. **Class Features**: Clerics gain access to a new spell level at specific levels and may gain more spells memorized per day; Magic-Users learn new spell levels and add spells to their spellbook (subject to what they can find, research, or buy); Thieves' percentile Thief Skills all improve by a fixed amount per level; Fighters gain no new abilities beyond the raw combat numbers above (some tables allow multiple attacks vs. low-HD foes at higher level, GM's option).\n5. **Name level**: reaching your class's \"name level\" (a class-specific milestone, typically somewhere in the 8th-12th level range) grants a class title (Lord/Lady, Patriarch/Matriarch, Wizard, Master Thief, etc.) and the option to attract henchmen/hirelings and build a stronghold, at the GM's discretion for the campaign. Not automated — raise it with the player as a story beat, not a sheet field.\n\nOnce every applicable step above is confirmed with the player, the State Mutator emits ONE absolute tag: [mrr-state: field=\"xp\" current=\"<total>\" level=\"<new level>\" next=\"<next threshold>\" reason=\"Levelled up to <N> — <one-line summary of what changed>\"]. HP/save/Attack Bonus changes ride their own normal state-mutator fields alongside it (\"Hit Points\", the five save field names, \"Attack Bonus\"), each citing what the player confirmed.",
       "selective": false,
       "constant": false,
@@ -90,7 +169,12 @@
     {
       "id": "ose-rules-encumbrance",
       "name": "Rule: Encumbrance",
-      "keys": ["encumbrance", "carrying capacity", "overloaded", "how much can i carry"],
+      "keys": [
+        "encumbrance",
+        "carrying capacity",
+        "overloaded",
+        "how much can i carry"
+      ],
       "content": "Gear weight is tracked in coin-weight or a simplified slot count depending on table preference; heavier loads reduce movement rate and can impose combat penalties. As a simple default: unencumbered characters move at full exploration speed; a character carrying a lot of gear, treasure, or wearing heavy armor moves slower and may be unable to run. Track this loosely unless the table wants the detailed coin-weight system — the important thing is that hauling out a hoard of treasure has a real cost.",
       "selective": false,
       "constant": false,
@@ -99,7 +183,14 @@
     {
       "id": "ose-rules-light-exploration",
       "name": "Rule: Light Sources & the Exploration Turn",
-      "keys": ["torch", "lantern", "light radius", "exploration turn", "ten minute turn", "darkness"],
+      "keys": [
+        "torch",
+        "lantern",
+        "light radius",
+        "exploration turn",
+        "ten minute turn",
+        "darkness"
+      ],
       "content": "Dungeon time outside combat is tracked in Turns (roughly 10 minutes each). A torch burns for about 6 Turns (roughly an hour); a lantern needs oil and burns longer. Running out of light in the dark is a genuine threat, not flavor text — most non-elf, non-dwarf humans and demi-humans cannot see in the dark at all. Track and narrate light-source consumption; warn the player a Turn or two before a torch gutters out so the choice to relight is theirs, not a surprise punishment.",
       "selective": false,
       "constant": false,
@@ -108,7 +199,12 @@
     {
       "id": "ose-rules-morale",
       "name": "Rule: Morale (NPCs & Monsters)",
-      "keys": ["morale check", "monsters flee", "npc flees", "morale score"],
+      "keys": [
+        "morale check",
+        "monsters flee",
+        "npc flees",
+        "morale score"
+      ],
       "content": "NPCs, monsters, and hired retainers have a Morale score (2-12 range) checked on 2d6 when things go badly for them — heavy losses, their leader falling, or an obviously lost fight. Roll equal to or under Morale to hold; roll over to break and flee or surrender. This is a GM-side tool for pacing combat, not something players roll for their own characters.",
       "selective": false,
       "constant": false,
@@ -117,7 +213,10 @@
     {
       "id": "ose-class-fighter",
       "name": "Class: Fighter",
-      "keys": ["fighter", "fighters"],
+      "keys": [
+        "fighter",
+        "fighters"
+      ],
       "content": "Fighter. Hit Die d8. Best Attack Bonus progression in the game (+1 nearly every level), widest weapon and armor access, no spells, no special class abilities beyond raw combat competence and (at higher tables' option) multiple attacks against low-HD foes.",
       "selective": false,
       "constant": false,
@@ -126,7 +225,11 @@
     {
       "id": "ose-class-cleric",
       "name": "Class: Cleric",
-      "keys": ["cleric", "clerics", "turn undead"],
+      "keys": [
+        "cleric",
+        "clerics",
+        "turn undead"
+      ],
       "content": "Cleric. Hit Die d6. Turns undead (2d6 roll vs. a turning table keyed to undead HD; success drives lesser undead off, and at high cleric level can destroy weak undead outright). Gains spells starting at 2nd level, chosen freely each day from the full cleric list (no spellbook). Typically restricted to blunt weapons by table convention.",
       "selective": false,
       "constant": false,
@@ -135,7 +238,12 @@
     {
       "id": "ose-class-magic-user",
       "name": "Class: Magic-User",
-      "keys": ["magic-user", "magic user", "wizard", "spellbook"],
+      "keys": [
+        "magic-user",
+        "magic user",
+        "wizard",
+        "spellbook"
+      ],
       "content": "Magic-User. Hit Die d4 — the fragile spellcaster. Casts from 1st level, but must memorize spells each day from a personal spellbook (each memorized spell is used once and gone until re-studied). Cannot wear armor without disrupting spellcasting. Weakest melee combatant, best raw magical potential at high level.",
       "selective": false,
       "constant": false,
@@ -144,7 +252,12 @@
     {
       "id": "ose-class-thief",
       "name": "Class: Thief",
-      "keys": ["thief", "thieves", "backstab", "rogue"],
+      "keys": [
+        "thief",
+        "thieves",
+        "backstab",
+        "rogue"
+      ],
       "content": "Thief. Hit Die d4. The only class with the six percentile Thief Skills (Open Locks, Find/Remove Traps, Pick Pockets, Move Silently, Hide in Shadows, Climb Sheer Surfaces). Backstab: attacking a surprised or unaware target from behind deals double (or greater, at higher level) damage and typically an easier attack roll. Light armor only, to keep Thief Skills usable.",
       "selective": false,
       "constant": false,
@@ -153,7 +266,10 @@
     {
       "id": "ose-race-dwarf",
       "name": "Race-as-Class: Dwarf",
-      "keys": ["dwarf", "dwarves"],
+      "keys": [
+        "dwarf",
+        "dwarves"
+      ],
       "content": "Dwarf (race-as-class). Hit Die d8, fights like a capable Fighter. Infravision (sees in the dark within a limited range, no color). Bonus to detect unusual stonework, sliding walls, sloping passages, and new construction. Good save bonuses vs. magical effects by table convention.",
       "selective": false,
       "constant": false,
@@ -162,7 +278,10 @@
     {
       "id": "ose-race-elf",
       "name": "Race-as-Class: Elf",
-      "keys": ["elf", "elves"],
+      "keys": [
+        "elf",
+        "elves"
+      ],
       "content": "Elf (race-as-class). Hit Die d6. Fights AND casts Magic-User spells on the same character (slower spell progression than a dedicated Magic-User in exchange). Infravision. Immune to ghoul paralysis. Surprised only 1-in-6 instead of the usual 2-in-6. Can detect secret doors more often than other classes just by passing near them.",
       "selective": false,
       "constant": false,
@@ -171,7 +290,11 @@
     {
       "id": "ose-race-halfling",
       "name": "Race-as-Class: Halfling",
-      "keys": ["halfling", "halflings", "hobbit"],
+      "keys": [
+        "halfling",
+        "halflings",
+        "hobbit"
+      ],
       "content": "Halfling (race-as-class). Hit Die d6. AC bonus and missile-weapon attack bonus from small size and natural stealth. Surprised only 1-in-6. Good saves vs. many effects by table convention. Cannot use large weapons two-handed. Not the tanking class, but hard to pin down and hard to hit.",
       "selective": false,
       "constant": false,
@@ -180,7 +303,11 @@
     {
       "id": "ose-condition-held",
       "name": "Condition: Held (Paralyzed)",
-      "keys": ["held", "paralyzed", "paralysis"],
+      "keys": [
+        "held",
+        "paralyzed",
+        "paralysis"
+      ],
       "content": "Held: cannot move, act, or speak until the effect ends. A held target is helpless — attacks against it typically hit automatically, and some monsters or effects gain extra damage or an automatic kill against a helpless target (GM ruling, confirm against the specific monster's ability).",
       "selective": false,
       "constant": false,
@@ -189,7 +316,11 @@
     {
       "id": "ose-condition-poisoned",
       "name": "Condition: Poisoned",
-      "keys": ["poisoned", "poison damage", "venom"],
+      "keys": [
+        "poisoned",
+        "poison damage",
+        "venom"
+      ],
       "content": "Poisoned: effect depends entirely on the poison source. Most commonly, an immediate saving throw vs. Death Ray or Poison is called for; failure means death or whatever specific effect the source describes (there is no generic 'poison damage per round' baked into the system — check the source).",
       "selective": false,
       "constant": false,
@@ -198,7 +329,13 @@
     {
       "id": "ose-bestiary-hd-shorthand",
       "name": "Bestiary: Hit Dice as Threat Shorthand",
-      "keys": ["monster hit dice", "how tough is this monster", "mook", "low hd", "high hd"],
+      "keys": [
+        "monster hit dice",
+        "how tough is this monster",
+        "mook",
+        "low hd",
+        "high hd"
+      ],
       "content": "Monster Hit Dice (HD) are the fast read on threat level: a 1 HD creature is roughly as durable as a 1st-level fighter and dies to a couple of hits; anything 4+ HD is a serious threat to a low-level party and should be narrated with real menace and caution cues before the party commits to a fight. Attack Bonus and saving throws for monsters generally scale with HD, not character level — a high-HD monster hits more often and saves better even with no character levels at all.",
       "selective": false,
       "constant": false,
@@ -207,7 +344,21 @@
     {
       "name": "Sub-Agents — what they do and how to enable them",
       "content": "Besides the main Ruleset Helper, the bundle installs a small consolidated pool of sub-agents. IMPORTANT: installing the bundle does NOT activate them — like all custom agents on Marinara 2.4.3+, they must be ENABLED FOR EACH GAME at load time, after the game launches (Marinara -> Settings -> Agents, or the game's agent selection). The ruleset's lorebook must ALSO be attached to the game (during game setup or after launch) — without it the agents have no ruleset rules to follow and will not work correctly.\n\nThe pool: combat-overseer (one pre-generation agent covering combat-math framing AND NPC/monster roster tracking). context-fuser (one pre-generation agent covering rules-question answers AND current player-state reminders, including Off-Widget subsystem values like Thief Skills and Open Doors). state-mutator (the ONLY agent that changes the character sheet — it emits hidden [mrr-state: ...] tags the extension applies; covers HP, spells memorized, conditions, inventory, and level/XP).\n\nThis bundle ships with NO per-system agent overrides — Old School Essentials has a clean single-counter HP model and simple resource counters, so the shared system-agnostic baselines for all three roles apply unmodified. Each enabled agent costs one extra model call per turn; enable only what your table needs. Enable state-mutator if you want narration to drive the sheet automatically; with it off, sheet changes are manual.",
-      "keys": ["sub-agent", "sub agent", "sub-agents", "agents", "state-mutator", "state mutator", "combat-overseer", "combat overseer", "context-fuser", "context fuser", "enable agent", "disable agent", "agent toggle"],
+      "keys": [
+        "sub-agent",
+        "sub agent",
+        "sub-agents",
+        "agents",
+        "state-mutator",
+        "state mutator",
+        "combat-overseer",
+        "combat overseer",
+        "context-fuser",
+        "context fuser",
+        "enable agent",
+        "disable agent",
+        "agent toggle"
+      ],
       "position": 1,
       "tokenBudget": 2000
     }

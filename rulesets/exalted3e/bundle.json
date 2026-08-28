@@ -992,9 +992,22 @@
     "description": "Keyword-triggered reference for Exalted 3rd Edition (2016 Onyx Path core) mechanics: anima, motes, stunts, willpower, sample Solar charms. Original mechanics references; charm names belong to Onyx Path Publishing.",
     "category": "world",
     "scanDepth": 4,
-    "tokenBudget": 1800,
+    "tokenBudget": 4096,
     "recursiveScanning": false,
     "entries": [
+      {
+        "name": "XP Progression Mode",
+        "keys": [
+          "xp",
+          "progression",
+          "milestone",
+          "level"
+        ],
+        "constant": true,
+        "selective": false,
+        "position": 0,
+        "content": "Progression: xp — XP awards are ACTIVE; award per the XP Awards entry's guidelines. To use milestone leveling instead, change this line to 'Progression: milestone' — then award NO XP; the player triggers level-ups manually."
+      },
       {
         "name": "Rule: Dice-pool resolution",
         "keys": [
@@ -2257,7 +2270,7 @@
           "story bonus",
           "progression"
         ],
-        "content": "Progression: xp\n\nExalted 3e experience AWARDS (this entry is award guidance only — see \"Rule: Experience point costs\" for what XP buys). Set the line above to \"Progression: milestone\" to disable all Storyteller-driven XP awards below — the circle then advances manually, at the table's discretion, whenever the story calls for it.\n\nSESSION AWARD (Exalted-idiom base): 4-5 XP per player per session as the baseline, scaling up to 8 for a session with dramatic stunts, hard-won victories, and standout play — this is the same 4-8 range the \"Rule: Experience point costs\" entry already cites; this entry is what decides where in that range a given session lands.\n\nARC / STORY BONUS: when a story arc concludes — a major antagonist is resolved, a Great Curse subplot pays off, a season of play wraps — award a one-time bonus of 10-15 XP on top of that session's normal award, split evenly to every PC regardless of who delivered the killing blow.\n\nRP / SOCIAL / MENTAL PARITY — award equivalents so play is never \"grind mooks to raise Essence\" (Corey's ruling 3):\n- Stunt-quality color counts toward the session total above — a 2-die or 3-die stunt (per \"Rule: Stunts\") is exactly the kind of standout play that pushes a session from the 4-5 baseline toward 8, whether the stunt was combat, social, or purely descriptive.\n- A social/mental resolution (Persuade, Instill, Bargain, an Investigation payoff, a Lore challenge) or a defining-Intimacy RP beat earns the SAME weight as a combat resolution when deciding the session's award — never \"combat only, RP is free.\"\n- A costly or partial failure that still moved the story forward earns full weight toward the award if it was consequential and well-played.\n\nPARTY AWARDS — ruling 6, no party imbalances: every session/arc award above applies to the WHOLE CIRCLE, not just the most active player. See this ruleset's gm-agent.md XP award doctrine and agents/state-mutator.md for the party target= emission — one award tag per PC roster member, same amount, NPCs never awarded.\n\nSpend stays manual — the player edits the sheet to spend XP; do not adjudicate spends. Charm, Ability, Attribute, Willpower, and Essence purchases follow the \"Rule: Experience point costs\" entry's cost table; this entry covers awards only.\n\nManual override always available: the player's XP sheet fields and the \"+1 XP\" button remain player-editable regardless of Storyteller awards.",
+        "content": "(Progression mode lives in the always-on \"XP Progression Mode\" entry)\n\nExalted 3e experience AWARDS (this entry is award guidance only — see \"Rule: Experience point costs\" for what XP buys). Set the line above to \"Progression: milestone\" to disable all Storyteller-driven XP awards below — the circle then advances manually, at the table's discretion, whenever the story calls for it.\n\nSESSION AWARD (Exalted-idiom base): 4-5 XP per player per session as the baseline, scaling up to 8 for a session with dramatic stunts, hard-won victories, and standout play — this is the same 4-8 range the \"Rule: Experience point costs\" entry already cites; this entry is what decides where in that range a given session lands.\n\nARC / STORY BONUS: when a story arc concludes — a major antagonist is resolved, a Great Curse subplot pays off, a season of play wraps — award a one-time bonus of 10-15 XP on top of that session's normal award, split evenly to every PC regardless of who delivered the killing blow.\n\nRP / SOCIAL / MENTAL PARITY — award equivalents so play is never \"grind mooks to raise Essence\" (Corey's ruling 3):\n- Stunt-quality color counts toward the session total above — a 2-die or 3-die stunt (per \"Rule: Stunts\") is exactly the kind of standout play that pushes a session from the 4-5 baseline toward 8, whether the stunt was combat, social, or purely descriptive.\n- A social/mental resolution (Persuade, Instill, Bargain, an Investigation payoff, a Lore challenge) or a defining-Intimacy RP beat earns the SAME weight as a combat resolution when deciding the session's award — never \"combat only, RP is free.\"\n- A costly or partial failure that still moved the story forward earns full weight toward the award if it was consequential and well-played.\n\nPARTY AWARDS — ruling 6, no party imbalances: every session/arc award above applies to the WHOLE CIRCLE, not just the most active player. See this ruleset's gm-agent.md XP award doctrine and agents/state-mutator.md for the party target= emission — one award tag per PC roster member, same amount, NPCs never awarded.\n\nSpend stays manual — the player edits the sheet to spend XP; do not adjudicate spends. Charm, Ability, Attribute, Willpower, and Essence purchases follow the \"Rule: Experience point costs\" entry's cost table; this entry covers awards only.\n\nManual override always available: the player's XP sheet fields and the \"+1 XP\" button remain player-editable regardless of Storyteller awards.",
         "selective": false,
         "constant": false,
         "position": 0
