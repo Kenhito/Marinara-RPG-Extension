@@ -9900,6 +9900,10 @@ function mrrP3RenderResourcesSection(parent) {
       mrrRenderResourcePlaceholder(card, resource, "(type=" + resource.type + ")");
     }
   });
+
+  /* One-click rests (2026-08-28 round): rendered only when this ruleset
+     declares rests[] — seed R12, absence is the supported steady state. */
+  mrrRenderRestButtons(cluster);
 }
 
 /* Phase 3 Attributes section — uses mrrP3RenderSection +
@@ -15401,6 +15405,542 @@ function showDice(open) {
   }
 }
 
+/* ─────  House Rules + one-click rests (2026-08-28 rest-houserules round)  ─────
+   Spec: the 2026-08-28 rest-buttons seed (wiki) + Plans/2026-08-28_rest-houserules-build-plan.md.
+   Invariants this block enforces:
+   - The House Rules lorebook entry is the SOLE store of lever values; the
+     dialog section below is a view over the parsed entry. No mirrored
+     extension setting exists anywhere.
+   - The model has NO write path to the entry (sole-writer by capability):
+     only this loader creates or patches it, and a patch rewrites ONLY the
+     LEVERS region between the sentinels — the user's table notes are
+     preserved byte-for-byte, and unparseable/newer-version entries are
+     refused, never overwritten.
+   - Fail-closed system scoping: the entry's mandatory `system=` stamp must
+     equal the active ruleset id exactly (no fuzzy/prefix matching). Absent,
+     mismatched, unparseable, and API-error states each resolve distinctly;
+     every one of them falls back to the ruleset's declared RAW defaults —
+     except an API error during a rest, which HARD-STOPS the rest instead
+     of silently applying a default the user may have overridden.
+   - The dedicated book carries NEITHER `mrr-managed` NOR `mrr:<id>` tags,
+     so the bundle installer's wipe-and-replace can never delete house
+     rules on a re-install (plan A11/Δ2).
+   - One batched saveSheet per rest; restore is "up to", never "set to" —
+     a current value legitimately above max is never reduced. */
+
+var MRR_HR_HEADER_RE = /^MRR-HOUSERULES v(\d+) system=([a-z0-9-]+)\s*$/;
+var MRR_HR_HEADER_VERSION = 1;
+var MRR_HR_LEVERS_BEGIN = "--- LEVERS (machine-read - mechanical) ---";
+var MRR_HR_LEVERS_END = "--- END LEVERS - table notes below change narration, never numbers ---";
+var MRR_TAG_HR_PFX = "mrr-houserules:";
+var MRR_HR_ENTRY_NAME = "House Rules (extension-managed levers)";
+
+function mrrHrParseEntry(content) {
+  if (typeof content !== "string" || !content) return { ok: false, error: "missing-header" };
+  var lines = content.split(/\r?\n/);
+  var headerIdx = -1, m = null;
+  for (var i = 0; i < lines.length; i++) {
+    var hm = MRR_HR_HEADER_RE.exec(lines[i].trim());
+    if (hm) { headerIdx = i; m = hm; break; }
+  }
+  if (!m) return { ok: false, error: "missing-header" };
+  var version = parseInt(m[1], 10);
+  var system = m[2];
+  if (version !== MRR_HR_HEADER_VERSION) return { ok: false, error: "bad-version", version: version, system: system };
+  var begin = -1, end = -1;
+  for (var j = headerIdx + 1; j < lines.length; j++) {
+    if (lines[j].trim() === MRR_HR_LEVERS_BEGIN) { begin = j; break; }
+  }
+  if (begin < 0) return { ok: false, error: "no-levers-region", system: system, version: version };
+  for (var k = begin + 1; k < lines.length; k++) {
+    if (lines[k].trim() === MRR_HR_LEVERS_END) { end = k; break; }
+  }
+  if (end < 0) return { ok: false, error: "no-levers-region", system: system, version: version };
+  var levers = {};
+  for (var n = begin + 1; n < end; n++) {
+    var ln = lines[n].trim();
+    if (!ln) continue;
+    var lm = /^([A-Za-z][A-Za-z0-9]*)\s*:\s*(\S+)\s*$/.exec(ln);
+    if (!lm) return { ok: false, error: "bad-lever-line", system: system, version: version, line: ln };
+    levers[lm[1]] = lm[2];
+  }
+  return { ok: true, version: version, system: system, levers: levers, headerIdx: headerIdx, beginIdx: begin, endIdx: end, lines: lines };
+}
+
+function mrrHrDeclaredLevers(ruleset) {
+  var out = {};
+  if (!ruleset || !Array.isArray(ruleset.rests)) return out;
+  ruleset.rests.forEach(function (rest) {
+    if (!rest || !Array.isArray(rest.restore)) return;
+    rest.restore.forEach(function (r) {
+      if (r && r.lever && typeof r.lever.name === "string" && r.lever.values &&
+          typeof r.lever["default"] === "string") {
+        out[r.lever.name] = r.lever;
+      }
+    });
+  });
+  return out;
+}
+
+function mrrHrResolveLevers(ruleset, parse) {
+  /* Effective lever values: the entry's value when it names a declared
+     member of the lever's value set, the ruleset's RAW default otherwise.
+     An unknown value in the entry silently degrading to a DIFFERENT
+     non-default would be a crossed wire — unknown always means default. */
+  var declared = mrrHrDeclaredLevers(ruleset);
+  var out = {};
+  Object.keys(declared).forEach(function (name) {
+    var decl = declared[name];
+    var val = decl["default"];
+    var from = "default";
+    if (parse && parse.ok && parse.levers && typeof parse.levers[name] === "string" &&
+        Object.prototype.hasOwnProperty.call(decl.values, parse.levers[name])) {
+      val = parse.levers[name];
+      from = "entry";
+    }
+    out[name] = { value: val, from: from, decl: decl };
+  });
+  return out;
+}
+
+function mrrHrFindBook(rulesetId) {
+  return apiFetch("/lorebooks").then(function (books) {
+    if (!Array.isArray(books)) return null;
+    for (var i = 0; i < books.length; i++) {
+      var b = books[i];
+      if (b && Array.isArray(b.tags) && b.tags.indexOf(MRR_TAG_HR_PFX + rulesetId) !== -1) return b;
+    }
+    return null;
+  });
+}
+
+function mrrHrFindEntry(bookId) {
+  /* Match on the magic HEADER, not the entry name — names get renamed and
+     ids regenerate on import; the header is the identity (seed H2). */
+  return apiFetch("/lorebooks/" + bookId + "/entries").then(function (entries) {
+    if (!Array.isArray(entries)) return null;
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      if (e && typeof e.content === "string" && /(^|\n)\s*MRR-HOUSERULES /.test(e.content)) return e;
+    }
+    return null;
+  });
+}
+
+function mrrHrCaptureSnapshot(ruleset) {
+  /* Captured ONCE per rest click, before the pipeline runs (seed H8) —
+     the pipeline takes this snapshot as a parameter and never reads the
+     entry again mid-apply. */
+  var rulesetId = ruleset && ruleset.id;
+  var declared = ruleset ? mrrHrDeclaredLevers(ruleset) : {};
+  var defaults = mrrHrResolveLevers(ruleset, null);
+  if (!rulesetId || !Object.keys(declared).length) {
+    return Promise.resolve({ entryState: "no-levers", levers: defaults, book: null, entryName: null });
+  }
+  return mrrHrFindBook(rulesetId).then(function (book) {
+    if (!book) return { entryState: "absent", levers: defaults, book: null, entryName: null };
+    return mrrHrFindEntry(book.id).then(function (entry) {
+      if (!entry) return { entryState: "absent", levers: defaults, book: book.name || book.id, entryName: null };
+      var parse = mrrHrParseEntry(entry.content);
+      if (!parse.ok) {
+        return { entryState: "unparseable", parseError: parse.error, levers: defaults, book: book.name || book.id, entryName: entry.name };
+      }
+      if (parse.system !== rulesetId) {
+        return { entryState: "mismatch", entrySystem: parse.system, levers: defaults, book: book.name || book.id, entryName: entry.name };
+      }
+      return { entryState: "ok", levers: mrrHrResolveLevers(ruleset, parse), book: book.name || book.id, entryName: entry.name || MRR_HR_ENTRY_NAME };
+    });
+  })["catch"](function (err) {
+    return { entryState: "api-error", error: String((err && err.message) || err), levers: defaults, book: null, entryName: null };
+  });
+}
+
+function mrrHrLeverLines(ruleset, valueMap) {
+  var declared = mrrHrDeclaredLevers(ruleset);
+  return Object.keys(declared).map(function (name) {
+    var v = (valueMap && typeof valueMap[name] === "string" &&
+             Object.prototype.hasOwnProperty.call(declared[name].values, valueMap[name]))
+      ? valueMap[name] : declared[name]["default"];
+    return name + ": " + v;
+  });
+}
+
+function mrrHrBuildEntryContent(ruleset, valueMap) {
+  /* First line is the fixed self-ID (seed H18 prompt-side backstop): if a
+     misattached entry ever leaks into another system's prompt, the
+     disclaimer leads. */
+  var sysName = (ruleset && ruleset.name) || (ruleset && ruleset.id) || "this system";
+  return [
+    "House Rules for " + sysName + " - apply only when running " + sysName + ".",
+    "MRR-HOUSERULES v" + MRR_HR_HEADER_VERSION + " system=" + ruleset.id,
+    MRR_HR_LEVERS_BEGIN
+  ].concat(mrrHrLeverLines(ruleset, valueMap)).concat([
+    MRR_HR_LEVERS_END,
+    "TABLE NOTES (GM-read - narrative only; notes here change narration, never numbers):",
+    ""
+  ]).join("\n");
+}
+
+function mrrHrPatchLevers(book, entry, ruleset, valueMap) {
+  var parse = mrrHrParseEntry(entry.content);
+  if (!parse.ok) {
+    var e = new Error(parse.error === "bad-version"
+      ? "House Rules entry uses a newer format (v" + parse.version + ") - not touching it"
+      : "House Rules entry is unparseable (" + parse.error + ") - fix or delete it in the lorebook editor first");
+    e.mrrHrRefusal = true;
+    throw e;
+  }
+  if (parse.system !== ruleset.id) {
+    var e2 = new Error("House Rules entry is stamped for '" + parse.system + "', not '" + ruleset.id + "' - not touching it");
+    e2.mrrHrRefusal = true;
+    throw e2;
+  }
+  var lines = parse.lines.slice(0, parse.beginIdx + 1)
+    .concat(mrrHrLeverLines(ruleset, valueMap))
+    .concat(parse.lines.slice(parse.endIdx));
+  var body = {
+    name: entry.name || MRR_HR_ENTRY_NAME,
+    content: lines.join("\n"),
+    position: (typeof entry.position === "number") ? entry.position : 0,
+    constant: true,
+    selective: false,
+    keys: Array.isArray(entry.keys) ? entry.keys : []
+  };
+  return apiFetch("/lorebooks/" + book.id + "/entries/" + entry.id, { method: "PATCH", body: JSON.stringify(body) })
+    .then(function () { return { patched: true, book: book }; });
+}
+
+function mrrHrEnsureBookAndEntry(ruleset, valueMap) {
+  var rulesetId = ruleset.id;
+  return mrrHrFindBook(rulesetId).then(function (book) {
+    if (book) return book;
+    var body = {
+      name: "MRR House Rules - " + ((ruleset && ruleset.name) || rulesetId),
+      description: "House-rule levers + table notes for " + rulesetId + ", managed by the Marinara RPG extension. Attach this lorebook to every game of this system that uses your house rules.",
+      tags: [MRR_TAG_HR_PFX + rulesetId]
+    };
+    return apiFetch("/lorebooks", { method: "POST", body: JSON.stringify(body) });
+  }).then(function (book) {
+    if (!book || !book.id) throw new Error("house-rules lorebook create failed");
+    return mrrHrFindEntry(book.id).then(function (entry) { return { book: book, entry: entry }; });
+  }).then(function (res) {
+    if (res.entry) return mrrHrPatchLevers(res.book, res.entry, ruleset, valueMap);
+    var entryBody = {
+      name: MRR_HR_ENTRY_NAME,
+      content: mrrHrBuildEntryContent(ruleset, valueMap),
+      position: 0,
+      constant: true,
+      selective: false,
+      keys: []
+    };
+    return apiFetch("/lorebooks/" + res.book.id + "/entries", { method: "POST", body: JSON.stringify(entryBody) })
+      .then(function () { return { created: true, book: res.book }; });
+  });
+}
+
+/* ── rest engine ── */
+
+function mrrRestMergedRestores(ruleset, rest) {
+  /* Seed R5 superset rule: a long rest also applies every short-tier
+     rest's restores; where both declare the same resource, the clicked
+     rest's own rule wins (dormant until a system declares short rests). */
+  var map = {};
+  if (rest.tier === "long" && Array.isArray(ruleset.rests)) {
+    ruleset.rests.forEach(function (r) {
+      if (r && r !== rest && r.tier === "short" && Array.isArray(r.restore)) {
+        r.restore.forEach(function (item) { if (item && item.resource) map[item.resource] = item; });
+      }
+    });
+  }
+  (rest.restore || []).forEach(function (item) { if (item && item.resource) map[item.resource] = item; });
+  return map;
+}
+
+function mrrRestGrantFor(amount, max, current) {
+  /* Returns the number of points to ADD (restore-up-to semantics), or
+     null for an unknown amount name — the caller treats null as a hard
+     error, never a silent skip (schema + seed A2 fail-closed rule). */
+  if (amount === "all") return (current > max) ? 0 : Math.max(0, max - current);
+  if (amount === "half-down-min-1") {
+    if (current > max) return 0;
+    var grant = Math.max(1, Math.floor(max / 2));
+    return Math.min(grant, Math.max(0, max - current));
+  }
+  if (typeof amount === "number" && isFinite(amount) && amount >= 0) {
+    if (current > max) return 0;
+    return Math.min(Math.floor(amount), Math.max(0, max - current));
+  }
+  return null;
+}
+
+function mrrComputeRestChanges(ruleset, rest, leverValues) {
+  /* Read-only pass: computes the full changeset + receipt lines against
+     the live sheet. Ordering note (seed R4): the current data model has
+     no expirable effects that alter maxima, so maxima are resolved here,
+     before the reset column is applied — logically phases 1-2 collapse.
+     If max-altering effects ever land, recompute between the two. */
+  var out = { ok: true, resets: [], restores: [], lines: [] };
+  var ctx = mrrResourceContext();
+  var byId = {};
+  (ruleset.resources || []).forEach(function (r) { if (r && r.id) byId[r.id] = r; });
+
+  (rest.reset || []).forEach(function (rs) {
+    if (!rs || !Array.isArray(rs.derivedKeys)) return;
+    var hit = false;
+    rs.derivedKeys.forEach(function (k) {
+      var d = state.sheet && state.sheet.derived;
+      if (d && Object.prototype.hasOwnProperty.call(d, k) && d[k] !== rs.value) {
+        out.resets.push({ key: k, value: rs.value, before: d[k] });
+        hit = true;
+      }
+    });
+    out.lines.push((rs.label || rs.derivedKeys[0]) + (hit ? " reset" : " - not present"));
+  });
+
+  var merged = mrrRestMergedRestores(ruleset, rest);
+  Object.keys(merged).forEach(function (resId) {
+    if (!out.ok) return;
+    var item = merged[resId];
+    var resource = byId[resId];
+    if (!resource) { out.lines.push(resId + " - not declared in resources[] (skipped)"); return; }
+    var amount = item.amount;
+    if (item.lever && item.lever.name && leverValues && leverValues[item.lever.name] &&
+        Object.prototype.hasOwnProperty.call(item.lever.values, leverValues[item.lever.name].value)) {
+      amount = item.lever.values[leverValues[item.lever.name].value];
+    }
+    var max = mrrResolveResourceMax(resource, ctx);
+    var current = mrrGetResourceCurrent(resource, ctx);
+    var grant = mrrRestGrantFor(amount, max, current);
+    if (grant === null) { out.ok = false; out.error = "unknown restore amount '" + String(amount) + "' for " + resId; return; }
+    if (current > max) { out.lines.push((resource.label || resId) + " " + current + " (above max - untouched)"); return; }
+    if (grant <= 0) { out.lines.push((resource.label || resId) + " " + current + "/" + max + " (already full)"); return; }
+    out.restores.push({ resource: resource, next: current + grant });
+    out.lines.push((resource.label || resId) + " " + current + " -> " + (current + grant) +
+      (amount === "half-down-min-1" ? " (half - RAW)" : ""));
+  });
+  return out;
+}
+
+function mrrApplyRestChanges(changes) {
+  /* Seed R1: mutate a CLONE, commit, then exactly ONE saveSheet and one
+     render — never a per-resource write loop. A thrown error anywhere
+     before the commit leaves state.sheet untouched (R9 rollback). */
+  var clone = JSON.parse(JSON.stringify(state.sheet));
+  changes.resets.forEach(function (rs) {
+    if (!clone.derived || typeof clone.derived !== "object") clone.derived = {};
+    clone.derived[rs.key] = rs.value;
+  });
+  changes.restores.forEach(function (r) {
+    var resource = r.resource;
+    if (typeof resource.stateName === "string" && resource.stateName) {
+      if (!clone.derived || typeof clone.derived !== "object") clone.derived = {};
+      clone.derived[resource.stateName] = r.next;
+    } else {
+      if (!clone.resources || typeof clone.resources !== "object") clone.resources = {};
+      if (!clone.resources[resource.id] || typeof clone.resources[resource.id] !== "object") {
+        clone.resources[resource.id] = {};
+      }
+      clone.resources[resource.id].current = r.next;
+    }
+  });
+  state.sheet = clone;
+  saveSheet(state.chatId, state.sheet);
+  renderSheet();
+}
+
+function mrrHrReceiptLine(ruleset, snap) {
+  /* Seed Δ4 + H4: the receipt always names the effective lever values,
+     their source, and the entry's state — absence is a visible state,
+     never silence. */
+  var declared = Object.keys(mrrHrDeclaredLevers(ruleset));
+  if (!declared.length) return "";
+  var parts = declared.map(function (name) {
+    var lv = snap.levers[name];
+    return name + "=" + lv.value + (lv.from === "entry" ? "" : " (RAW default)");
+  });
+  var src;
+  if (snap.entryState === "ok") src = "House Rules: " + snap.book;
+  else if (snap.entryState === "absent") src = "no House Rules entry for " + ruleset.id + " - RAW";
+  else if (snap.entryState === "unparseable") src = "House Rules entry unparseable (" + snap.parseError + ") - RAW; check the entry";
+  else if (snap.entryState === "mismatch") src = "House Rules entry is for '" + snap.entrySystem + "' - ignored, RAW";
+  else src = "RAW";
+  return parts.join(", ") + " | " + src;
+}
+
+function mrrRestToast(prefix, change, reason) {
+  showMutationToast({ __mrrToastLabel: { prefix: prefix, change: change, reason: reason || "" } });
+}
+
+var mrrRestInFlight = false;
+
+function mrrExecuteRest(rest) {
+  if (mrrRestInFlight) return; /* R6 double-fire guard: one click, one apply */
+  if (!state.sheet || !state.ruleset) return;
+  var block = mrrSheetWriteBlockReason();
+  if (block) { mrrRestToast("REST BLOCKED", rest.label, "sheet not writable right now (" + block + ")"); return; }
+  if (!state.activeCharacterId) { mrrRestToast("REST BLOCKED", rest.label, "no active character"); return; }
+  if (mrrIsPristineBlankSheet(state.sheet, state.ruleset)) {
+    /* R9: never rest a sheet that hasn't loaded — the blank would persist */
+    mrrRestToast("REST BLOCKED", rest.label, "sheet not loaded yet");
+    return;
+  }
+  if (runsPollInFlight) {
+    /* R7, nearest available signal: the loader has no true generation
+       latch (engine-side, in-memory), so the poller's in-flight cycle is
+       the deterministic gate we have. A narration still streaming can
+       land post-rest deltas; the dedup journal + sheet-beats-model
+       reconciliation bound the damage and the receipt makes it visible. */
+    mrrRestToast("REST BLOCKED", rest.label, "sheet update in progress - try again in a moment");
+    return;
+  }
+  mrrRestInFlight = true;
+  var ruleset = state.ruleset;
+  mrrHrCaptureSnapshot(ruleset).then(function (snap) {
+    if (snap.entryState === "api-error") {
+      /* H7: hard stop — silently applying RAW when the user may have
+         configured a house rule is the crossed wire this feature exists
+         to prevent. */
+      mrrRestToast("REST STOPPED", rest.label, "couldn't read House Rules (" + snap.error + ") - nothing applied");
+      return;
+    }
+    var changes = mrrComputeRestChanges(ruleset, rest, snap.levers);
+    if (!changes.ok) { mrrRestToast("REST STOPPED", rest.label, changes.error + " - nothing applied"); return; }
+    mrrApplyRestChanges(changes);
+    var hrLine = mrrHrReceiptLine(ruleset, snap);
+    var summary = changes.lines.filter(Boolean);
+    mrrRestToast(rest.label.toUpperCase(),
+      summary.slice(0, 4).join(", ") + (summary.length > 4 ? ", +" + (summary.length - 4) + " more (console)" : ""),
+      hrLine);
+    log("rest applied: " + rest.id, { changes: summary, houseRules: hrLine, entryState: snap.entryState, book: snap.book });
+  })["catch"](function (err) {
+    mrrRestToast("REST STOPPED", rest.label, String((err && err.message) || err));
+  }).then(function () { mrrRestInFlight = false; });
+}
+
+function mrrRenderRestButtons(parent) {
+  /* Seed R12: rendered ONLY when the active ruleset declares rests[] —
+     a system with nothing to rest shows no button, by design (docs state
+     this so hidden != bug). */
+  var rests = state.ruleset && state.ruleset.rests;
+  if (!Array.isArray(rests) || !rests.length) return;
+  var row = marinara.addElement(parent, "div", { "class": "mrr-resource__quick mrr-rest-row" });
+  if (!row) return;
+  rests.forEach(function (rest) {
+    if (!rest || typeof rest.label !== "string" || !Array.isArray(rest.restore)) return;
+    var btn = marinara.addElement(row, "button", {
+      type: "button",
+      "class": "mrr-resource__quick-btn",
+      textContent: rest.label
+    });
+    if (btn) marinara.on(btn, "click", function () { mrrExecuteRest(rest); });
+  });
+}
+
+function renderHouseRulesSection(dialog, msg) {
+  var ruleset = state.ruleset;
+  var declared = ruleset ? mrrHrDeclaredLevers(ruleset) : {};
+  var names = Object.keys(declared);
+  if (!names.length) return; /* no levers declared by this system — no section */
+  marinara.addElement(dialog, "h3", { "class": "mrr-dialog__lib-title", textContent: "House Rules" });
+  marinara.addElement(dialog, "p", {
+    textContent: "Levers are engine-enforced numbers, stored in this system's 'MRR House Rules' lorebook (the extension is the only writer; table notes in that entry are narrative-only and never change a number)."
+  });
+  var box = marinara.addElement(dialog, "div", { "class": "mrr-dialog__lib" });
+  var hrMsg = marinara.addElement(dialog, "div", { "class": "mrr-msg mrr-msg--info mrr-msg--hidden" });
+  var selects = {};
+  names.forEach(function (name) {
+    var decl = declared[name];
+    var row = marinara.addElement(box, "div", { "class": "mrr-dialog__lib-row" });
+    marinara.addElement(row, "span", { textContent: (decl.label || name) + ": " });
+    var sel = marinara.addElement(row, "select", {});
+    Object.keys(decl.values).forEach(function (vk) {
+      marinara.addElement(sel, "option", {
+        value: vk,
+        textContent: vk + (vk === decl["default"] ? " (RAW)" : "")
+      });
+    });
+    if (sel) { sel.value = decl["default"]; sel.disabled = true; selects[name] = sel; }
+    if (decl.doc) marinara.addElement(row, "span", { textContent: " " + decl.doc });
+  });
+  var btnRow = marinara.addElement(dialog, "div", { "class": "mrr-dialog__buttons" });
+  var applyBtn = marinara.addElement(btnRow, "button", { type: "button", textContent: "Save house rules" });
+  var resetBtn = marinara.addElement(btnRow, "button", { type: "button", textContent: "Reset to RAW (keeps entry)" });
+  if (applyBtn) applyBtn.disabled = true;
+  if (resetBtn) resetBtn.disabled = true;
+  var lastSnap = null;
+
+  mrrHrCaptureSnapshot(ruleset).then(function (snap) {
+    lastSnap = snap;
+    if (snap.entryState === "api-error") {
+      setMsg(hrMsg, "House Rules unavailable: " + snap.error, "err");
+      return;
+    }
+    if (snap.entryState === "unparseable") {
+      /* H14: refuse to write over a bad entry — surface, don't clobber */
+      setMsg(hrMsg, "Your House Rules entry can't be parsed (" + snap.parseError + "). Fix or delete it in the lorebook editor; the extension will not overwrite your notes.", "err");
+      return;
+    }
+    if (snap.entryState === "mismatch") {
+      setMsg(hrMsg, "The entry in your House Rules book is stamped for '" + snap.entrySystem + "' - not editable while running " + ruleset.id + ".", "err");
+      return;
+    }
+    names.forEach(function (name) {
+      if (selects[name]) { selects[name].value = snap.levers[name].value; selects[name].disabled = false; }
+    });
+    if (applyBtn) applyBtn.disabled = false;
+    if (resetBtn) resetBtn.disabled = false;
+    if (snap.entryState === "absent") {
+      setMsg(hrMsg, "All RAW. Changing a lever creates the 'MRR House Rules' lorebook for this system - attach it to your game so the GM can see your rules.", "info");
+    } else {
+      setMsg(hrMsg, "Loaded from " + snap.book + ". Reminder: that book must be attached to your game for the GM to see it.", "info");
+    }
+  });
+
+  function currentMap() {
+    var map = {};
+    names.forEach(function (n) { if (selects[n]) map[n] = selects[n].value; });
+    return map;
+  }
+  function allDefaults(map) {
+    return names.every(function (n) { return map[n] === declared[n]["default"]; });
+  }
+  function write(map, label) {
+    if (applyBtn) applyBtn.disabled = true;
+    if (resetBtn) resetBtn.disabled = true;
+    mrrHrEnsureBookAndEntry(ruleset, map).then(function (res) {
+      lastSnap = null; /* stale after a write */
+      setMsg(hrMsg, label + (res.created
+        ? " Created 'MRR House Rules - " + (ruleset.name || ruleset.id) + "' - attach it to your game(s) so the GM sees your rules."
+        : ""), "ok");
+      if (applyBtn) applyBtn.disabled = false;
+      if (resetBtn) resetBtn.disabled = false;
+    })["catch"](function (err) {
+      setMsg(hrMsg, String((err && err.message) || err), "err");
+      if (applyBtn) applyBtn.disabled = false;
+      if (resetBtn) resetBtn.disabled = false;
+    });
+  }
+  if (applyBtn) marinara.on(applyBtn, "click", function () {
+    var map = currentMap();
+    if (lastSnap && lastSnap.entryState === "absent" && allDefaults(map)) {
+      /* H6 lazy synthesis: no entry is created for an all-RAW table */
+      setMsg(hrMsg, "Everything is RAW - nothing to save. The entry is created when a lever departs from default.", "info");
+      return;
+    }
+    write(map, "House rules saved.");
+  });
+  if (resetBtn) marinara.on(resetBtn, "click", function () {
+    names.forEach(function (n) { if (selects[n]) selects[n].value = declared[n]["default"]; });
+    if (lastSnap && lastSnap.entryState === "absent") {
+      setMsg(hrMsg, "Already RAW - no entry exists.", "info");
+      return;
+    }
+    /* Q6c: rewrites the LEVERS region to defaults and KEEPS the entry —
+       deleting it would destroy the user's table notes. */
+    write(currentMap(), "Reset to RAW (entry and table notes kept).");
+  });
+}
+
 /* ─────  ruleset switcher dialog + header gear  ───── */
 
 /* Resolve the visible app-shell header so we can append our own buttons
@@ -15646,6 +16186,8 @@ function openDialog() {
       marinara.setTimeout(function () { window.location.reload(); }, RELOAD_DELAY_MS);
     });
   }
+
+  renderHouseRulesSection(dialog, msg);
 
   renderLibrarySection(dialog, msg);
 
