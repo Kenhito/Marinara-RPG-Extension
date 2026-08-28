@@ -17,7 +17,7 @@
       "constant": true,
       "selective": false,
       "position": 0,
-      "content": "Progression: xp\n\n(The line above is the campaign's progression switch — follow whichever mode it declares. 'Progression: xp' = the GM awards XP per the XP Awards entry's guidelines. 'Progression: milestone' = the GM awards NO XP, ever; the player triggers level-ups manually at the table's discretion. Players: edit only the first line to change modes.)"
+      "content": "Progression: xp\n\n(The line above is the campaign's progression switch — follow whichever mode it declares. 'Progression: xp' = the GM awards XP per the XP Awards entry's guidelines. 'Progression: milestone' = the GM awards NO XP, ever; the player triggers level-ups manually at the table's discretion. Players: edit only the first line to change modes. NOTE: mode changes take effect on the NEXT turn — the engine re-reads lorebook context with about a one-turn delay, so the first response after a flip may follow the previous mode.)"
     },
     {
       "name": "Three Action Economy",
