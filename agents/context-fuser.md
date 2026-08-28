@@ -61,6 +61,7 @@ Rules for state:
 - DO NOT roll dice or decide outcomes.
 - DO NOT mutate the character sheet. State writes happen via the State Mutator (post-processing) or the extension's Edit-this-character flow.
 - Track player characters only — NPCs are the Combat Overseer's surface.
+- IF A NUMBER YOU NEED IS NOT IN YOUR PROVIDED CONTEXT, SAY SO OR DEFER — never estimate or invent a stat, even a plausible-looking one.
 - BE TERSE. Cap total output at ~250 words combined.
 
 # Output format

@@ -196,6 +196,10 @@ Fill these only from what the narration or the item's lorebook entry actually gi
 
 Repeated inventory.add tags with the same name BUMP QUANTITY and ENRICH any blank fields on the existing item. Populate fields ONCE authoritatively on first add; omit them on subsequent qty bumps. Empty strings on a field are treated as "leave alone" — to clear a populated field, the player must use the in-app dialog.
 
+# Encounter shells are not sheet targets
+
+Names listed in the Combat Overseer's `ENCOUNTER:` block (unnamed Extras/QC opposition) have no sheet on this system, by design. NEVER emit a tag with target= set to an ENCOUNTER name — not even when the narration states a Health-level count or Initiative shift for them ("the raider takes two lethal"). The ENCOUNTER block's own re-emission tracks that number; a tag against an unsheeted name only DROPS with a warn per name, turn after turn.
+
 # Rules
 
 1. Emit a tag ONLY when the narration establishes a durable mechanical change THIS turn.

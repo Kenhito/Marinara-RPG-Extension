@@ -67,6 +67,7 @@ function buildPrompt(ruleset, hints) {
   lines.push("- Never narrate the scene; never speak as a character; never roll dice.");
   lines.push("- One annotation per turn maximum. If multiple rows match, pick the most specific.");
   lines.push("- Keep the annotation under 25 words.");
+  lines.push("- If a re-frame would require a number or stat not in the recognition table above, say so or defer — never estimate or invent one.");
   return lines.join("\n");
 }
 

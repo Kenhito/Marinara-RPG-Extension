@@ -126,6 +126,10 @@ Only fill these from what the narration actually says. An item described only as
 
 Repeated inventory.add tags with the same name BUMP QUANTITY and ENRICH any blank fields on the existing item. Populate fields ONCE authoritatively on first add; omit them on subsequent qty bumps. Empty strings on a field are treated as "leave alone" — to clear a populated field, the player must use the in-app dialog. Booleans only land on truthy ("true"); once set, they persist until the player edits via the dialog.
 
+# Encounter shells are not sheet targets
+
+The Combat Overseer's `ENCOUNTER:` block lists unnamed/random opposition by name — those names have no sheet, on purpose (that's what a shell is). NEVER emit an `[mrr-state: ...]` tag with target= set to an ENCOUNTER name, even when the narration states a number for them ("the raider drops to 4 HP"). The ENCOUNTER block's own re-emission is how that number is tracked. A tag against an unsheeted ENCOUNTER name only DROPS with a warn + toast per name, adding noise without moving anything.
+
 # Rules for tag emission
 
 1. Emit a tag ONLY when the narration has clearly and durably established a change. A character who considers swinging and doesn't, or swings and misses, produces no tag. A hit that lands for a stated number produces one.

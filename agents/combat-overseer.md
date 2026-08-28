@@ -38,7 +38,23 @@ For each notable NPC, surface whichever of these the conversation has establishe
 - TELEGRAPHED INTENT — if the narrative has signaled what they plan next.
 - NOTABLE GEAR / ABILITIES — only if relevant to the next turn.
 
-# Hard rules (apply across both sections)
+# Section 3 — Encounter Shells (unnamed/random opposition, combat only)
+
+ACTIVATION: emit this section instead of enumerating a combatant under Section 2 whenever combat starts against opposition that has no card or sheet of its own — bandits, guards, beasts, disposable mooks. At the start of combat, and again every turn thereafter (re-emit the WHOLE block updated, never append to a prior one), output one `ENCOUNTER:` line per combatant carrying the fields the active ruleset's shell defines below. The narration model treats these numbers as enemy-number TRUTH for the turn — it narrates against them, it does not re-derive or estimate them. Group identical mooks into one line rather than repeating fields per body ("4x Bandit — see shared line").
+
+Recurring villains are NOT shells: the moment a combatant matters beyond one fight, they get a real card + sheet (see the extension's character-import flow) and move to Section 2's NPC ROSTER from then on — not here.
+
+If no combat is active, or the opposition present is already carded, output "No encounter shells." under the ENCOUNTER header and skip this section.
+
+## exalted3e shell fields
+
+Initiative, attack pool, Defense/DV, soak/Hardness, Health Levels, motes (if an essence-user), 1-3 key Charms as name + one-line effect — frame as Extras/QC, not full-writeup NPCs.
+
+## dnd5e shell fields
+
+AC, HP, attack bonus, damage, save DCs, 1-3 key abilities.
+
+# Hard rules (apply across all three sections)
 
 - NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.
 - DO NOT roll dice. You frame the math; the resolution happens via the dice widget or player narration.
@@ -47,11 +63,11 @@ For each notable NPC, surface whichever of these the conversation has establishe
 - PRESERVE CONTINUITY. If an NPC was at low HP three messages ago and hasn't been healed, they're still at low HP.
 - HIDDEN INTENTIONS stay out of the player-facing summary — those belong to a secret-plot-driver if enabled.
 - USE the active ruleset's vocabulary throughout.
-- BE TERSE. Cap total output at ~250 words (both sections combined).
+- BE TERSE. Cap total output at ~300 words (all three sections combined).
 
 # Output format
 
-Plain text, two clearly-labeled blocks:
+Plain text, three clearly-labeled blocks:
 
 COMBAT:
   state: active | starting | ending | none
@@ -66,7 +82,11 @@ NPC ROSTER:
   <Name> (<role/alias>) — HP: <current/max or descriptor> · Conditions: <list> · State: <tactical> · Intent: <next>
   <repeat per notable NPC; group secondaries>
 
-If both sections are inactive (no combat AND no NPCs), output exactly: "No combat or NPC state to surface."
+ENCOUNTER:
+  <Combatant/group name> — <shell fields for the active ruleset, e.g. "Init 7 · Attack pool 6 · DV 3 · Soak 4 · Health -0/-1/-1/-2/Incap">
+  <repeat per shelled combatant or identical group>
+
+If all three sections are inactive (no combat, no NPCs, no encounter shells), output exactly: "No combat, NPC, or encounter state to surface."
 ```
 
 ## When to enable
@@ -75,7 +95,7 @@ If both sections are inactive (no combat AND no NPCs), output exactly: "No comba
 - NPCs participate meaningfully in scenes.
 - The player wants the narration mechanically honest AND wants NPC state preserved between turns.
 
-One agent, one AI call, covering both combat surfaces (encounter math + NPC roster).
+One agent, one AI call, covering three combat surfaces (encounter math + NPC roster + encounter shells for unnamed/random opposition).
 
 Skip for purely narrative-only / no-combat campaigns with no recurring NPCs.
 
