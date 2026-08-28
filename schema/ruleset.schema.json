@@ -1077,6 +1077,104 @@
         }
       }
     },
+    "rests": {
+      "type": "array",
+      "description": "Declarative one-click rest actions (2026-08-28 rest-buttons spec). Optional: systems that declare no rests render no rest button — that is the supported steady state, not an error. Each rest applies ALL of its declared effects as one batched sheet write: reset column first, then restores, then clamp, then a single save. Unknown amount names are a validation error by construction (closed enum) — never a silent skip.",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "restore"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Stable identifier for this rest action (e.g. 'long-rest')."
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Button label (e.g. 'Long Rest')."
+          },
+          "tier": {
+            "enum": ["long", "short"],
+            "description": "Rest tier. A 'long' rest also applies every 'short'-tier rest's restores (superset rule); where both declare the same resource, the long rest's own rule wins."
+          },
+          "restore": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Resources this rest refills. Amounts are declared, never assumed: 'all' = restore up to max (a current value legitimately above max is NEVER reduced), 'half-down-min-1' = regain up to floor(max/2), minimum 1 (5e RAW hit dice), integer N = regain up to N.",
+            "items": {
+              "type": "object",
+              "required": ["resource", "amount"],
+              "additionalProperties": false,
+              "properties": {
+                "resource": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "id of a resource declared in this ruleset's resources[] array."
+                },
+                "amount": {
+                  "anyOf": [
+                    { "enum": ["all", "half-down-min-1"] },
+                    { "type": "integer", "minimum": 0 }
+                  ]
+                },
+                "lever": {
+                  "type": "object",
+                  "required": ["name", "values", "default"],
+                  "additionalProperties": false,
+                  "description": "Optional House Rules lever controlling this restore's amount. The lever surfaces in the extension's House Rules dialog section and is stored in the per-system House Rules lorebook entry ('MRR-HOUSERULES v1', LEVERS region). The declared 'default' is the RAW behavior; the entry is only created when a user departs from it.",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9]*$",
+                      "description": "Lever name as it appears on the entry's lever line (e.g. 'HitDiceRefresh')."
+                    },
+                    "label": { "type": "string", "description": "Human label for the dialog." },
+                    "doc": { "type": "string", "description": "One-line explanation of the values, shown in the dialog." },
+                    "values": {
+                      "type": "object",
+                      "minProperties": 2,
+                      "additionalProperties": {
+                        "anyOf": [
+                          { "enum": ["all", "half-down-min-1"] },
+                          { "type": "integer", "minimum": 0 }
+                        ]
+                      },
+                      "description": "Map of lever value name -> restore amount."
+                    },
+                    "default": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Key of `values` that is the RAW default. An absent, mismatched, or unparseable House Rules entry always resolves to this."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "reset": {
+            "type": "array",
+            "description": "Non-resource sheet state this rest clears (temp HP, death saves). Keys are matched against sheet.derived; entries whose keys are absent are skipped and receipted as 'not present' — a rest never creates state that narration/model did not.",
+            "items": {
+              "type": "object",
+              "required": ["derivedKeys", "value"],
+              "additionalProperties": false,
+              "properties": {
+                "derivedKeys": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": { "type": "string", "minLength": 1 },
+                  "description": "Alias list — every present key among these is set to `value`."
+                },
+                "value": { "type": ["integer", "string"] },
+                "label": { "type": "string", "description": "Receipt label for this reset (e.g. 'Temp HP')." }
+              }
+            }
+          }
+        }
+      }
+    },
     "morality": {
       "type": "object",
       "additionalProperties": false,

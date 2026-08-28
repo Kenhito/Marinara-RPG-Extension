@@ -543,6 +543,65 @@
         ]
       }
     ],
+    "rests": [
+      {
+        "id": "long-rest",
+        "label": "Long Rest",
+        "tier": "long",
+        "restore": [
+          {
+            "resource": "hit-points",
+            "amount": "all"
+          },
+          {
+            "resource": "hit-dice",
+            "amount": "half-down-min-1",
+            "lever": {
+              "name": "HitDiceRefresh",
+              "label": "Hit Dice on Long Rest",
+              "doc": "RAW (half): regain hit dice up to half your maximum, round down, minimum 1. House rule (full): regain all hit dice.",
+              "values": {
+                "half": "half-down-min-1",
+                "full": "all"
+              },
+              "default": "half"
+            }
+          },
+          {
+            "resource": "spell-slots-1",
+            "amount": "all"
+          },
+          {
+            "resource": "spell-slots-2",
+            "amount": "all"
+          },
+          {
+            "resource": "spell-slots-3",
+            "amount": "all"
+          }
+        ],
+        "reset": [
+          {
+            "derivedKeys": [
+              "Temp HP",
+              "Temporary Hit Points",
+              "Temporary HP"
+            ],
+            "value": 0,
+            "label": "Temp HP"
+          },
+          {
+            "derivedKeys": [
+              "Death Saves",
+              "Death Save Successes",
+              "Death Save Failures"
+            ],
+            "value": 0,
+            "label": "Death saves"
+          }
+        ]
+      }
+    ],
     "lorebookKeys": [
       "spell",
       "class",
