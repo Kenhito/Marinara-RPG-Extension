@@ -15016,7 +15016,14 @@ function rollDicePool() {
   if (botch)   bits.push("BOTCH");
   var suffix = bits.length ? ", " + bits.join(", ") : "";
 
-  var text = "[dice: " + totalDice + "d10 vs " + target + " -> " + successes + " success" + (successes === 1 ? "" : "es") + suffix + "]" +
+  /* FACES IN THE TAG (Corey 2026-08-28, live-testing ask): face-dependent
+     Charms (reroll 1s/2s, bonus/double on 8s/9s) need the evidence, not just
+     the interpretation. Highest-first for readability; same self-describing-
+     tag philosophy as B18 and the stance-modal dice=[...] emit. The roll_dice
+     tool path gets the same via doctrine (its result already carries rolls[]). */
+  var facesList = faces.slice().sort(function (a, b) { return b - a; }).join(",");
+
+  var text = "[dice: " + totalDice + "d10 vs " + target + " -> " + successes + " success" + (successes === 1 ? "" : "es") + suffix + ", faces: " + facesList + "]" +
              " (diff " + diff + ", " + (pass ? "pass" : "fail") + ")";
 
   var resultClass = botch ? "botch" : (pass ? "success" : "fail");

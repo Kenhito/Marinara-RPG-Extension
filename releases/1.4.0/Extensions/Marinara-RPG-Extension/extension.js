@@ -11871,7 +11871,10 @@ function rollDicePool() {
   if (doubled) bits.push(doubled + " ten" + (doubled > 1 ? "s" : "") + " doubled");
   if (botch) bits.push("BOTCH");
   var suffix = bits.length ? ", " + bits.join(", ") : "";
-  var text = "[dice: " + totalDice + "d10 vs " + target + " -> " + successes + " success" + (successes === 1 ? "" : "es") + suffix + "]" + " (diff " + diff + ", " + (pass ? "pass" : "fail") + ")";
+  var facesList = faces.slice().sort(function(a, b) {
+    return b - a;
+  }).join(",");
+  var text = "[dice: " + totalDice + "d10 vs " + target + " -> " + successes + " success" + (successes === 1 ? "" : "es") + suffix + ", faces: " + facesList + "]" + " (diff " + diff + ", " + (pass ? "pass" : "fail") + ")";
   var resultClass = botch ? "botch" : pass ? "success" : "fail";
   finalizeRoll(text, resultClass, faces.map(function(f) {
     var cls = "mrr-dice__face";

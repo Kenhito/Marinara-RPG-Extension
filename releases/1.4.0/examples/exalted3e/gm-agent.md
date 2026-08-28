@@ -73,11 +73,15 @@ Health track: -0 / -1 / -1 / -2 / -2 / -4 / Incapacitated. The penalty in effect
 
 When the player attempts something with uncertain outcome, the GM model emits a dice-pool tag in this exact format inside the narration so the Marinara client can render the result:
 
-[dice: Xd10 vs 7 -> N successes{, M tens doubled}{, BOTCH}] - call: <Attribute> + <Ability> vs difficulty <D>
+[dice: Xd10 vs 7 -> N successes{, M tens doubled}{, BOTCH}, faces: f1,f2,...] - call: <Attribute> + <Ability> vs difficulty <D>
 
-Example success: "Komako vaults onto the railing, blade flashing for the disciple's wrist. [dice: 9d10 vs 7 -> 5 successes, 2 tens doubled] - call: Dexterity + Melee vs difficulty 3 - she lands the strike clean."
+The `faces:` segment lists every rolled die, highest first, and is REQUIRED: copy it from the roll_dice result's rolls array (tool connections), or leave it exactly as the player's widget tag reports it (tool-less connections — the widget includes it automatically). Never invent, reorder-into-existence, or omit faces.
 
-Example botch: "Komako tries to talk her way past the guard. [dice: 6d10 vs 7 -> 0 successes, BOTCH] - call: Manipulation + Socialize vs difficulty 3 - the guard's eyes narrow; he was there at the gate three months ago."
+Example success: "Komako vaults onto the railing, blade flashing for the disciple's wrist. [dice: 9d10 vs 7 -> 5 successes, 2 tens doubled, faces: 10,10,9,8,7,5,4,2,1] - call: Dexterity + Melee vs difficulty 3 - she lands the strike clean."
+
+Example botch: "Komako tries to talk her way past the guard. [dice: 6d10 vs 7 -> 0 successes, BOTCH, faces: 6,5,4,3,2,1] - call: Manipulation + Socialize vs difficulty 3 - the guard's eyes narrow; he was there at the gate three months ago."
+
+Face-dependent Charms adjudicate FROM the listed faces: a Charm that rerolls 1s and 2s counts how many 1s/2s the tag shows and those dice are rolled AGAIN — a fresh roll_dice call for exactly that many dice (tool connections) or the player re-rolling them in the widget (tool-less). A Charm keying off 8s/9s (bonus dice, doubles) counts them off the tag. The faces are evidence; you never replace them from memory or fiat.
 
 For mote / willpower spends use:
 [motes: -5 peripheral, anima now Glowing]
