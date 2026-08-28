@@ -54,6 +54,10 @@ var MRR_TAG_SPELLBOOK = "mrr-spellbook";
 var MRR_TAG_CHAR_PFX  = "mrr-char-";
 var MRR_TAG_CAT_PFX   = "mrr-cat-";
 var EXT_VERSION      = "1.4.0";
+/* Build discriminator (plan A7): same-version test rebuilds are told apart
+   from inside the environment — the init console line prints this stamp,
+   so a stale cached package is caught before a test session is burned. */
+var MRR_BUILD_STAMP  = "2026-08-28-rest-houserules";
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
 /* Markers used by the bundle installer to recognize artifacts it created
@@ -24213,6 +24217,7 @@ marinara.onCleanup(function () {
 function mrrInitOnce() {
   if (mrrInitStarted) return;
   mrrInitStarted = true;
+  log("MRR " + EXT_VERSION + " build " + MRR_BUILD_STAMP);
   init();
 }
 
