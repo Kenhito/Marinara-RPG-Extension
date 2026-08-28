@@ -249,6 +249,26 @@ The actual level-up is always something you walk through and confirm step by ste
 
 In systems that track a running experience pool instead of discrete levels (Exalted and the Storyteller family, for example), the Game Master awards XP into that pool exactly as above, but spending it — buying up a trait, raising an ability — stays entirely your own sheet edit. The Game Master narrates and awards; it does not adjudicate how you spend what you've earned.
 
+## One-click rests
+
+For systems that declare rests — **currently D&D 5e only**; other systems show no rest button, and that's expected, not a bug — a **Long Rest** button sits at the bottom of the Resources area. One click applies everything the rest touches together, as a single sheet write: HP back to max, hit dice regained (rules-as-written: up to half your maximum, round down, minimum one), all spell slot tiers refilled, temp HP and death saves cleared when your sheet is carrying them. No more clicking each widget's own button and hoping you got them all — the whole point is that nothing gets missed and nothing gets half-applied.
+
+Every rest produces a **receipt** — a toast naming each change, plus a fuller line in the browser console. The receipt also names the hit-dice rule that was actually used and where it came from ("half — RAW", or your house rule and which lorebook it was read from). **The receipt is the authority.** If you expected something to move and the receipt doesn't name it, that's your tell — an empty spell-slot counter that was never configured, say, shows up as "0/0 (already full)" instead of silently doing nothing. A pool sitting *above* its maximum (a buff, a temporary grant) is never reduced by a rest.
+
+The button refuses politely rather than guessing: mid-update, before your sheet has loaded, or when it can't read your house rules, you get a "REST BLOCKED" or "REST STOPPED" toast naming the reason and nothing is applied. A refusal is always safe to retry after the stated cause clears.
+
+Short rests are not in this release — spending hit dice is an interactive choice (how many, roll them), so it stays in the dice-widget flow for now.
+
+## House rules
+
+House rules live in a dedicated lorebook per system — created for you as **"MRR House Rules — D&D 5e"** (and so on) the first time you change a setting away from rules-as-written. Open the **Ruleset dialog → House Rules** to see the levers your system declares; for D&D 5e that's **Hit Dice on Long Rest** (RAW half, or house-ruled full). Nothing is created while everything is RAW — no entry, no book, no clutter.
+
+**The one distinction that matters: levers are enforced, table notes are not.** The entry the extension manages has two parts. Lines in its LEVERS section are **machine-read** — the extension applies them mechanically, and the rest receipt shows the value in effect. Everything below the sentinel line is **TABLE NOTES**: free prose the Game Master honors in narration ("crits are extra dramatic at this table") but which **never changes a number**. If you write "long rests restore everything" in the notes while the lever says half, the lever wins and the narration is expected to say so. When you want a mechanical house rule that has no lever yet, that's a feature request — the notes can carry it narratively in the meantime, but don't expect the math to move.
+
+Three ways to engage it: flip a lever in the **Ruleset dialog** (the extension creates and edits the entry — it is the *only* writer; the AI cannot create or edit house rules through any prompt); *ask the GM in chat* ("we're implementing some house rules") and it will point you to the dialog or the notes, whichever fits; or hand-author the entry yourself in the lorebook editor following the exact grammar in [`AUTHORING.md`](AUTHORING.md) — the extension adopts a well-formed hand-made entry as its own.
+
+Two things to know about scope. First, **attach the house-rules book to your game** — the extension applies levers either way, but the Game Master only *sees* your house rules if the book is attached, and the dialog reminds you after creating it. Second, house rules are **strictly per-system**: the entry is stamped for its system, and both the extension and the GM ignore an entry stamped for anything else. Your Pathfinder table's rules can never bleed into your D&D game — mixing mechanics across systems is exactly the kind of subtle corruption this design refuses to allow. **Reset to RAW** in the dialog sets the levers back to defaults and *keeps* the entry, so your table notes survive.
+
 ## When something looks wrong
 
 Come back to the three-artifact model from [Install](#install-the-three-artifact-model): **the zip is code, the bundle plus its agents are the rules the AI actually follows, and the GM card (if you're using one) is the narrator's constitution.** Nearly every "this is acting weird" report traces back to one of those three being out of date while the others updated around it.

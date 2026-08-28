@@ -102,6 +102,52 @@ Map of label -> `{ threshold, description? }`. For `single-roll` this is the DC;
 
 `sheetSections` is an ordered array of section keys. Recognized values: `attributes`, `skills`, `derived`, `states`, `inventory`, `charms`, `notes`. Sections you don't list won't render. Sections the extension doesn't yet implement (`inventory`, `charms`, `notes`) silently no-op for now — extending the extension to render them is straightforward (~30 lines per section).
 
+### Step 3a — rests & house-rule levers (systems with recovery mechanics)
+
+Declaring `rests[]` is opt-in: a system with no meaningful "rest" verb (or one where refills are rate-based or fiction-gated — sanity, blood pools, mote respiration) should simply omit it, and no rest button renders. Do **not** shoehorn a Long Rest into a system whose recovery isn't a one-click event.
+
+```json
+"rests": [
+  {
+    "id": "long-rest",
+    "label": "Long Rest",
+    "tier": "long",
+    "restore": [
+      { "resource": "hit-points", "amount": "all" },
+      { "resource": "hit-dice", "amount": "half-down-min-1",
+        "lever": {
+          "name": "HitDiceRefresh",
+          "label": "Hit Dice on Long Rest",
+          "doc": "RAW (half): regain hit dice up to half your maximum, round down, minimum 1. House rule (full): regain all hit dice.",
+          "values": { "half": "half-down-min-1", "full": "all" },
+          "default": "half"
+        } }
+    ],
+    "reset": [
+      { "derivedKeys": ["Temp HP", "Temporary Hit Points"], "value": 0, "label": "Temp HP" }
+    ]
+  }
+]
+```
+
+Rules that keep this safe: `amount` is a **closed enum** (`all`, `half-down-min-1`, or a non-negative integer) — an unknown name is a validation error, never a silent skip. `restore` is "up to", never "set to": a current value above max is never reduced. `reset` keys match against `sheet.derived` with if-present semantics — a rest never *creates* state the narration didn't. A `long`-tier rest also applies every `short`-tier rest's restores (the superset rule — this is how warlock-style short-rest slots come back on a long rest); on a shared resource the clicked rest's own rule wins. **Every consumable resource in your system should be claimed by exactly one recovery rule or deliberately left unclaimed with a comment** — an unclaimed consumable silently never recharges.
+
+Declaring a `lever` makes it appear in the extension's Ruleset dialog under House Rules. `default` names the RAW behavior; the entry that stores departures is created lazily, per system, and follows this **normative v1 grammar** (hand-authored entries matching it are adopted as-is):
+
+```
+House Rules for <System Name> - apply only when running <System Name>.
+MRR-HOUSERULES v1 system=<ruleset-id>
+--- LEVERS (machine-read - mechanical) ---
+HitDiceRefresh: full
+--- END LEVERS - table notes below change narration, never numbers ---
+TABLE NOTES (GM-read - narrative only; notes here change narration, never numbers):
+<free prose>
+```
+
+Grammar rules, all fail-closed: the `MRR-HOUSERULES v1 system=<id>` header line is mandatory and matched exactly — `<id>` is the lowercase `[a-z0-9-]` ruleset id, never fuzzy- or prefix-matched, one system per entry (want a rule in two systems? duplicate the entry). Lever lines are `Name: value`, one per line, between the two sentinel lines verbatim; anything outside the sentinels is never parsed as config. An absent entry, an unknown lever value, a mismatched system stamp, or an unparseable entry all resolve to the declared `default` — and readers ignore unknown lever *names* (forward compatibility). Because the header carries the id, **ruleset ids must be unique across bundles you ship together**; a fork that reuses an id will read the original's house rules as its own.
+
+Also append the House Rules doctrine section to your `gm-agent.md` (copy it from any shipped system, swapping the id) so your GM knows the enforcement boundary and the signpost behavior.
+
 ## Step 4 — validate
 
 ```bash
