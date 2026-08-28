@@ -11,7 +11,10 @@ explicitly when they do).
 
 ### Added
 
-### Fixed
+- **Per-role sheet-block injection tiers** — managed agents no longer all receive the full party sheet block: state-mutator, main (Ruleset Helper) and combat-overseer keep full numbers; context-fuser gets labeled per-member summary lines; essence-manager gets pool/bar lines only; pre-input-transformer gets none. Unknown/unmapped roles keep the full block (no silent downgrades). EX3 3-member-party measured effect: block-copy tokens −47.6%, total stored-prompt −32.6% (dnd5e −37.7%/−24.1%). Same inject markers for all tiers — heal/strip grammar unchanged.
+- **ENCOUNTER shells (pilots: exalted3e, dnd5e)** — combat-overseer doctrine for consistent unnamed-opposition stats: a re-emitted `ENCOUNTER:` statline table (per-system field lists; Extras/QC framing for Exalted, small stat block for 5e), narrator addenda to honor shell numbers, and mutator addenda so ENCOUNTER names are never sheet-write targets (no drop-warn noise). Recurring villains use the existing card+sheet path. Remaining systems follow in a shells-completion pass.
+- **Fabrication fences** — context-fuser and pre-input-transformer are now explicitly instructed to defer rather than estimate any number absent from their context.
+- **Explicit per-role `settings.contextSources`** — every managed agent now carries an explicit context-source declaration at parity with the engine's custom-agent default (chatHistory-only), protecting against engine-default drift; the pre-input-transformer additionally caps history at `contextSize: 4`. Heal cycles preserve user-tuned `contextSources`/`contextSize` byte-for-byte instead of re-stamping.
 
 ## v1.3.0 (2026-08-27)
 

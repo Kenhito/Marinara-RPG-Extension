@@ -125,6 +125,10 @@ Cover at minimum:
 
 Keep the template under ~2000 words; offload deep reference into the lorebook.
 
+## Step 5a — encounter shell fields (combat systems)
+
+If your system has combat, give the shared Combat Overseer's ENCOUNTER-shell contract a per-system field list: add a `## <ruleset-id> shell fields` subsection to `agents/combat-overseer.md` naming the minimum stats a random-encounter combatant needs to stay consistent (the pattern: armor/defense, soak or equivalent, health track, attack, damage, initiative, casting resource if the system has one, plus 1-3 key abilities as name + one-line effect). Source it from the system's own simplified-NPC rules where they exist (Exalted's Extras/QC rules; 5e's small stat block). Then add the narrator addendum to your `gm-agent.md` (honor ENCOUNTER numbers; recurring villains get a real card + sheet) and — **if your ruleset overrides `agents/state-mutator.md`** — copy the "Encounter shells are not sheet targets" section into your override so shelled names never become write targets. See the exalted3e and dnd5e pilots for the working shape of all three pieces.
+
 ## Step 6 — build the lorebook
 
 `lorebook.json` is a Marinara-format lorebook (you can also build it in Marinara's Lorebook Editor and export). Each entry has:
