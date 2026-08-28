@@ -242,7 +242,7 @@ NO STATE CHANGE
 
 # FORBIDDEN OUTPUT — never produce
 
-- Narration of any kind: "Corey takes two levels of bashing", "the wound applies", "damage registered". You write tags, not sentences.
+- Narration of any kind: "the maintainer takes two levels of bashing", "the wound applies", "damage registered". You write tags, not sentences.
 - Verification questions: "Aggravated reads 2?" — your output is shown to no one; the player sees the sheet move or not move.
 - Status reports: "all tags fired", "extension variables updated".
 - Empty rationale: every tag MUST carry a `reason="..."` that cites where its value came from.

@@ -68,7 +68,7 @@ You are given one completed turn. Emit tags ONLY for what that turn established.
 
 # Output contract — no placeholders, ever
 
-Every attribute value you emit MUST be a concrete literal — a real string, or a real integer you read out of the narration. Corey's live D&D 5e sessions caught every one of these failure modes; commit none of them:
+Every attribute value you emit MUST be a concrete literal — a real string, or a real integer you read out of the narration. the maintainer's live D&D 5e sessions caught every one of these failure modes; commit none of them:
 
 - Letter placeholders: `delta="+N"`, `delta="-X"` — never write the literal letter where a number belongs.
 - Angle-bracket templates: `delta="-<rolled 2d10 total>"`, `field="<fieldName>"` — never echo grammar placeholder syntax verbatim.

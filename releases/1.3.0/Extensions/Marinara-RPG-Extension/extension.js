@@ -38,7 +38,7 @@ var MRR_TAG_CHAR_PFX = "mrr-char-";
 
 var MRR_TAG_CAT_PFX = "mrr-cat-";
 
-var EXT_VERSION = "1.1.0";
+var EXT_VERSION = "1.3.0";
 
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
@@ -13550,7 +13550,7 @@ function reconcileActiveAgents(rebind) {
   var chatId = state.chatId;
   var rulesetId = state.ruleset.id;
   if (mrrChatUnboundVirginId === chatId) {
-    log("reconcileActiveAgents: chat " + chatId + " is unbound (no stamp, nothing derivable) — NOT claiming it for " + rulesetId + "; a ruleset must be deliberately activated for this chat first (Corey ruling 2026-08-24)");
+    log("reconcileActiveAgents: chat " + chatId + " is unbound (no stamp, nothing derivable) — NOT claiming it for " + rulesetId + "; a ruleset must be deliberately activated for this chat first (maintainer ruling 2026-08-24)");
     return;
   }
   Promise.all([ apiFetch("/chats/" + chatId), apiFetch("/agents") ]).then(function(results) {
@@ -14185,7 +14185,7 @@ function mrrCheckChatRulesetStamp(chatId) {
         return;
       }
       mrrChatUnboundVirginId = chatId;
-      log("virgin chat " + chatId + ": no ruleset stamp and nothing to derive — staying unbound until a ruleset is " + "deliberately activated (Corey ruling 2026-08-24). No stamp written, no agents added, sheet writes held.");
+      log("virgin chat " + chatId + ": no ruleset stamp and nothing to derive — staying unbound until a ruleset is " + "deliberately activated (maintainer ruling 2026-08-24). No stamp written, no agents added, sheet writes held.");
     });
     return;
   }).catch(function(e) {

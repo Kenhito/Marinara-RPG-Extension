@@ -53,7 +53,7 @@ var MRR_RUNS_POLLER_MODE = "apply"; // "off" | "dump" | "apply" — A6.7 apply s
 var MRR_TAG_SPELLBOOK = "mrr-spellbook";
 var MRR_TAG_CHAR_PFX  = "mrr-char-";
 var MRR_TAG_CAT_PFX   = "mrr-cat-";
-var EXT_VERSION      = "1.1.0";
+var EXT_VERSION      = "1.3.0";
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
 /* Markers used by the bundle installer to recognize artifacts it created
@@ -72,7 +72,7 @@ var MRR_AGENT_TYPE   = "mrr-overlay-v1";
          `if (hasPerChatAgentList && !perChatAgentSet.has(cfg.type)) continue;`
          (agent-resolution.ts:405). With one shared type, ONE entry in that
          list turns on ALL our agents at once and there is no way to enable
-         them individually — which is exactly what Corey saw.
+         them individually — which is exactly what the maintainer saw.
      (b) PRESET-OWNED INJECTION PLACEMENT (v2.4.0+). A pre_generation
          agent's context injection lands only at an `agent_data` marker
          section whose agentType matches, and both the injection map and
@@ -355,7 +355,7 @@ function lsDelRaw(key) { try { localStorage.removeItem(key); return true; } catc
    Storage layout: ONE record, ONE TOP-LEVEL KEY PER LS KEY, mirroring
    today's localStorage key strings exactly. Never a nested sub-object.
 
-   TIMESTAMPED ENVELOPES + NEWEST-WINS MERGE (Corey override, 2026-08-22,
+   TIMESTAMPED ENVELOPES + NEWEST-WINS MERGE (the maintainer override, 2026-08-22,
    coordinator validation round 4 — SUPERSEDES the original "deterministic,
    no timestamps" precedence below wherever the two conflict): crash
    recovery must never resurrect older character data. Every synced-key
@@ -468,7 +468,7 @@ function lsDelRaw(key) { try { localStorage.removeItem(key); return true; } catc
        - MRR_MIGRATED_FLAG "mrr-migrated-v1" — must be per-device by
          definition (the migration gate itself).
        - MRR_TS_MAP_KEY "mrr-ts-map" — per-device by definition (see the
-         "Corey override" section above for why syncing it would corrupt
+         "the maintainer override" section above for why syncing it would corrupt
          the merge it exists to drive).
        - RP_LEGACY_* ("mrrp-*") — read-only, owned by the retired RP
          extension, never written from here.
@@ -482,7 +482,7 @@ function lsDelRaw(key) { try { localStorage.removeItem(key); return true; } catc
 var hasServerStorage = !!(marinara && marinara.storage && typeof marinara.storage.get === "function");
 
 var MRR_MIGRATED_FLAG = "mrr-migrated-v1";
-var MRR_TS_MAP_KEY = "mrr-ts-map"; /* local-only sidecar: {<syncedKey>: <epoch ms>} — see "Corey override" header note. NOT a synced key. */
+var MRR_TS_MAP_KEY = "mrr-ts-map"; /* local-only sidecar: {<syncedKey>: <epoch ms>} — see "the maintainer override" header note. NOT a synced key. */
 var MRR_STORAGE_SIZE_GUARD_BYTES = 900000;
 var MRR_FLUSH_DEBOUNCE_MS = 1000;
 var MRR_RETRY_DELAYS_MS = [2000, 8000, 30000];
@@ -582,7 +582,7 @@ function mrrProjectedMergedRecord(patch) {
   return merged;
 }
 
-/* Defensive read (Corey override, round 4; tightened FIX-11, round 5): a
+/* Defensive read (the maintainer override, round 4; tightened FIX-11, round 5): a
    server value only counts as a valid envelope when `t` is a finite number
    AND `v` is a string or null — lsGet must never hand a caller a non-
    string, non-null value, so a malformed `v` (a foreign object, array,
@@ -610,7 +610,7 @@ function mrrNormalizeEnvelope(raw) {
   return { t: 0, v: null };
 }
 
-/* Local-only sidecar map — see MRR_TS_MAP_KEY / "Corey override" header
+/* Local-only sidecar map — see MRR_TS_MAP_KEY / "the maintainer override" header
    note for why this is never itself a synced key. Always reads/writes via
    the RAW helpers (never lsGet/lsSet) so it can never accidentally be
    routed through the synced-key path. */
@@ -651,7 +651,7 @@ function mrrAdoptLsIfNewer(key, lsTs, markDirtyOnAdopt) {
 /* Hydrate merge — replaces the old "server always wins once present"
    precedence. Runs on EVERY hydrate (unlike mrrRunMigration, which is
    one-time/flag-gated) — this is what makes crash recovery work every
-   session. See the "Corey override" header section for the full
+   session. See the "the maintainer override" header section for the full
    algorithm; this is the implementation of it verbatim. */
 function mrrHydrateMerge() {
   if (!hasServerStorage) return;
@@ -801,7 +801,7 @@ function hydrateStore() {
    logged and left for next session (does not block the other keys this
    session); the flag is only set once every attempted key this session
    reported success (patched, no-clobber-skipped, or deliberately
-   size-guard-skipped). Round 4 (Corey override): each migrated value is
+   size-guard-skipped). Round 4 (the maintainer override): each migrated value is
    now written as an envelope stamped with its mrr-ts-map entry when one
    exists, else 0 — see mrrMigrateOneKey and the header note on why 0 is
    correct (not a bug) for a never-locally-stamped legacy value. */
@@ -1100,7 +1100,7 @@ function mrrIsQuarantined(key) { return !!mrrQuarantinedKeys[key]; }
 
 /* Public wrappers — EVERY existing call site (~66) keeps calling these
    three names with the same signatures; server-storage awareness is
-   entirely internal. Round 4 (Corey override — SUPERSEDES the original
+   entirely internal. Round 4 (the maintainer override — SUPERSEDES the original
    "deterministic, no timestamps" precedence): reads are served straight
    from the cache, whose contents are decided once, at hydrate time, by
    mrrHydrateMerge's newest-wins timestamp comparison — lsGet itself no
@@ -2323,7 +2323,7 @@ function mrrWriteRecordKey(characterId, rulesetId) {
   return rid ? mrrRecordKey(characterId, rid) : characterKey(characterId);
 }
 
-/* Display label for the visible migration notice (Corey ruling R-3). The
+/* Display label for the visible migration notice (maintainer ruling R-3). The
    roster is the only place a character's NAME lives outside the sheet; a
    character being migrated for another chat's roster falls back to its id,
    which is still actionable. */
@@ -2429,8 +2429,8 @@ function mrrMigrateOneRecord(characterId, activeRulesetId) {
    a stronger property than a "done" flag, which would go stale the moment a
    character joined the roster (adopt, import, add).
 
-   NOTICE (Corey ruling R-3): ONE batched, dismissible warn-strip line per
-   sweep, because Corey's own edge case is deliberately giving a character a
+   NOTICE (maintainer ruling R-3): ONE batched, dismissible warn-strip line per
+   sweep, because the maintainer's own edge case is deliberately giving a character a
    new sheet — a record moving must be SEEN, not merely logged. Per-record
    console lines are emitted above as well. */
 function mrrMigrateRecordsForChat(activeRulesetId, why) {
@@ -2468,7 +2468,7 @@ function mrrMigrateRecordsForChat(activeRulesetId, why) {
    answers the other half of §1 — WHICH engine card or persona in a chat
    that identity belongs to, so entering a chat reconstitutes the party.
 
-   THE ONE INVARIANT THAT SHAPES EVERYTHING (spec §2.3, Corey ruling
+   THE ONE INVARIANT THAT SHAPES EVERYTHING (spec §2.3, maintainer ruling
    2026-08-25): WE NEVER WRITE TO AN ENGINE CARD OR PERSONA. Not a stamp,
    not a sentinel, not an `extensions` passthrough. Exports exist to hand a
    character to someone else's server, where our binding key is noise, so
@@ -2495,7 +2495,7 @@ function mrrMigrateRecordsForChat(activeRulesetId, why) {
    plus `metadata.gameGmCharacterId` for game mode, and `personaId`
    separately (scalar — a chat carries exactly one persona).
 
-   GAME MODE (Corey ruling R-2). Nothing here is gated on chat mode: the
+   GAME MODE (maintainer ruling R-2). Nothing here is gated on chat mode: the
    present set already unions gameGmCharacterId, so the wiring is identical
    for both modes and ships for both. Game-mode LIVE certification (are
    multiple sheets still readable post-2.4.0?) rides the B7/B8 tripwire and
@@ -2508,7 +2508,7 @@ function mrrMigrateRecordsForChat(activeRulesetId, why) {
                      nameHint } ] }
    TWO UNIQUENESS RULES, and they are different in kind:
      - one binding per charId — a sheet answers to ONE card. Re-binding
-       REPLACES, because that is exactly Corey's "new Mira card, same
+       REPLACES, because that is exactly the maintainer's "new Mira card, same
        character" case.
      - one binding per engineId — a card carries ONE sheet. Two sheets
        claiming one card would make Tier-1 restore ambiguous, so the latest
@@ -2711,7 +2711,7 @@ function mrrNoteChatRow(chatId, chat, source) {
   var changed = !!prev && mrrPresentSetSignature(prev) !== mrrPresentSetSignature(entry);
   mrrPresentSets[chatId] = entry;
   /* Post-Round-D polish: the preset watcher re-harvests every tick, and an
-     unchanged set logged every time buried the real signal in Corey's
+     unchanged set logged every time buried the real signal in the maintainer's
      morning logs (ex30546: 14 identical lines). Log the FIRST harvest of a
      chat and every CHANGE; a repeat harvest of an identical set is silent. */
   if (!prev || changed) {
@@ -3310,7 +3310,7 @@ function mrrRenderBindPrompt() {
    never arrived renders with its raw id rather than disappearing — an
    unlabelled option the user can still pick beats a missing one.
 
-   onChange IS the confirm (Corey direction): picking a different card is
+   onChange IS the confirm (the maintainer direction): picking a different card is
    the "new Mira card, same character" re-bind, and no second dialog is
    raised for it. */
 function mrrRenderBindingField(parent) {
@@ -3582,7 +3582,7 @@ function mrrMigrateIfNeeded(parsed, ruleset) {
 }
 
 /* ═══ ROUND 24 — cross-ruleset SHEET BLEED containment ═════════════════════
-   LIVE EVIDENCE (Corey, 2026-08-23): switching between a D&D chat and an
+   LIVE EVIDENCE (the maintainer, 2026-08-23): switching between a D&D chat and an
    Exalted chat "resets" the character sheet. Two distinct symptom shapes
    were reported, and they are the two halves of ONE mechanism:
      (a) same-named fields take the OTHER ruleset's stored number —
@@ -3675,7 +3675,7 @@ var mrrStampWarnedChatId = null;
 var mrrStampFetchWarnedChatId = null;
 
 /* ═══ ROUND 33 — THE VIRGIN CHAT ═══════════════════════════════════════════
-   COREY'S RULING (2026-08-24): a chat that carries no ruleset stamp AND
+   MAINTAINER RULING (2026-08-24): a chat that carries no ruleset stamp AND
    from which no stamp can be derived has never been claimed by anybody.
    Entering it is not a decision about it. It stays UNBOUND until the user
    deliberately activates a ruleset for it.
@@ -5451,7 +5451,7 @@ function deleteManagedAgents(ids, progressCb) {
      · The match key is the agent's TYPE, and one token is minted per type,
        consumed on first substitution — hence round-20 F1's per-role types.
 
-   Corey's consent rules: this is OFFERED, never automatic. It confirms with
+   the maintainer's consent rules: this is OFFERED, never automatic. It confirms with
    the preset's real name before writing, and it is idempotent — a type that
    already has an `agent_data` marker is skipped, never duplicated. */
 
@@ -5618,7 +5618,7 @@ function mrrAddAgentSectionsToActivePreset(confirmFn, progressCb) {
    The other half of the F3 assist. The add leg mints marker sections; this
    leg removes the ones that have gone dead, and it is deliberately built as
    a sibling of the add leg — same consent shape, same never-automatic rule,
-   same error vocabulary — because Corey's ruling was explicit: *"Let's
+   same error vocabulary — because the maintainer's ruling was explicit: *"Let's
    consent gate the delete — adding to the preset is easy (if weird),
    deleting isn't much harder but if the engine hallucinates what it's told
    to do that way lies rebuilding a preset which is annoying."*
@@ -14099,7 +14099,7 @@ function openAbilityDialog(abilityId, defaultCategoryId, onSaved) {
     var newCatId = catSel ? catSel.value : startingCatId;
     var costText = (costInput && costInput.value || "").trim();
     var kw = (kwInput && kwInput.value || "").trim();
-    if (!kw) kw = name;   // auto-fill from name when blank — Corey's directive
+    if (!kw) kw = name;   // auto-fill from name when blank — the maintainer's directive
 
     draft.name = name;
     draft.costText = costText;
@@ -15677,7 +15677,7 @@ function renderLibrarySection(dialog, msg) {
     marinara.addElement(row, "span", { "class": "mrr-dialog__lib-name", textContent: label });
 
     /* ─── Round 33 — the binding affordance for a virgin chat ─────────────
-       Corey's ruling leaves a stampless chat unbound until the user
+       the maintainer's ruling leaves a stampless chat unbound until the user
        deliberately activates a ruleset for it. Every existing deliberate
        path activates a DIFFERENT ruleset and reloads (Switch, paste, bundle
        install), and Switch is rendered only for rows that are not already
@@ -15829,7 +15829,7 @@ function mrrMechanicRoutingLines() {
    reached the agents as damage TOTALS only ("0 bashing / 0 lethal /
    0 aggravated"), never as the per-level BOX STRUCTURE. Ox-Body Technique
    adds extra -1/-2/-0 boxes to the base ladder, so with only totals the
-   narrator cannot count how much punishment is actually left; Corey's GM
+   narrator cannot count how much punishment is actually left; the maintainer's GM
    fell back to assuming the base template and said so honestly.
 
    LADDER SOURCE OF TRUTH (two parts, and the sheet DOES distinguish them):
@@ -17309,7 +17309,7 @@ function applyScenarioDefaultToCurrentChat(scenarioDefault, progressCb) {
    So why did our agents run? Because the ENGINE'S OWN per-chat agent toggle
    writes TYPES: its list is built from installed manifests and looked up via
    `agentConfigsByType.get(a.id)` (ChatSettingsDrawer.tsx:1485-1499), so the
-   `agent.id` it appends at :3589 is the agent TYPE. When Corey enabled the
+   `agent.id` it appends at :3589 is the agent TYPE. When the maintainer enabled the
    MRR agents for a game, the engine wrote "mrr-overlay-v1" — and because all
    seven shared that one type, one toggle switched on all seven. Our own
    pushed row ids were inert passengers the whole time; their ONLY effect was
@@ -17322,7 +17322,7 @@ function applyScenarioDefaultToCurrentChat(scenarioDefault, progressCb) {
    Pre-existing row ids left behind in a chat's list by earlier versions are
    harmless (they match no `cfg.type`) and are deliberately NOT purged — see
    the migration note at the union site below. */
-/* ─── Round-33 gate (Corey's ruling 2026-08-24) ──────────────────────────
+/* ─── Round-33 gate (the maintainer's ruling 2026-08-24) ──────────────────────────
    A chat POSITIVELY KNOWN to be virgin — no stamp on it, nothing derivable
    from its own agents — is claimed by nobody, and this function is the thing
    that used to claim it: its forward path both ADDS the active ruleset's
@@ -17352,7 +17352,7 @@ function reconcileActiveAgents(rebind) {
   var rulesetId = state.ruleset.id;
   if (mrrChatUnboundVirginId === chatId) {
     log("reconcileActiveAgents: chat " + chatId + " is unbound (no stamp, nothing derivable) — NOT claiming it for " +
-        rulesetId + "; a ruleset must be deliberately activated for this chat first (Corey ruling 2026-08-24)");
+        rulesetId + "; a ruleset must be deliberately activated for this chat first (maintainer ruling 2026-08-24)");
     return;
   }
 
@@ -17601,7 +17601,7 @@ function mrrRoleForOrphanType(orphanType, roleTypes) {
    "sole-writer filter inactive"; the uninstall sweep (which filters on
    mrrManaged) walked straight past the stripped rows; and the next import,
    whose findManagedAgent also filters on mrrManaged, created SECOND copies
-   of them — Corey's 10-agent morning.
+   of them — the maintainer's 10-agent morning.
 
    THE IDENTITY PROBLEM, and why type-matching alone cannot solve it.
    The obvious repair is "a row whose TYPE maps to a managed role but whose
@@ -17666,7 +17666,7 @@ function mrrRoleForOrphanType(orphanType, roleTypes) {
    (SHEET_INJECT_BEGIN .. END + a blank line) to every managed agent and
    PATCHes it back, so in any real install the marker leads and the prefix
    sits below it. The healer was therefore blind to EVERY row that had ever
-   received a sheet — live, Corey's roster degraded to 2 managed rows and not
+   received a sheet — live, the maintainer's roster degraded to 2 managed rows and not
    one "re-adopted" line was logged, against a green probe suite whose
    fixtures all carried bare prefixes.
 
@@ -18258,7 +18258,7 @@ function mrrWatchAppliedChatPreset(chatId) {
    stamp was read by exactly one consumer — reconcileActiveAgents, purely to
    stop one ruleset's overlay agents polluting another ruleset's chat. The
    SHEET side of the same mismatch went entirely unhandled, which is the
-   bleed Corey hit on 2026-08-23 (Strength carrying across D&D/Exalted,
+   bleed the maintainer hit on 2026-08-23 (Strength carrying across D&D/Exalted,
    Perception falling to 1, Brawl to 0 — see the round-24 header block above
    loadSheet for the full mechanism).
 
@@ -18372,7 +18372,7 @@ function mrrCheckChatRulesetStamp(chatId) {
          caller was missing this line entirely. Nothing to do here now. */
       if (derived) { decide(derived); return; }
 
-      /* ══ ROUND 33 — THE VIRGIN CHAT (Corey's ruling, 2026-08-24) ═════════
+      /* ══ ROUND 33 — THE VIRGIN CHAT (the maintainer's ruling, 2026-08-24) ═════════
          No stamp on the chat, and nothing to derive one from. THIS USED TO
          CONFIRM: "chat carries no ruleset stamp (nothing to disagree with)"
          — which opened the save latch, replayed the deferred bootstrap save,
@@ -18426,7 +18426,7 @@ function mrrCheckChatRulesetStamp(chatId) {
          route-poll tick. */
       mrrChatUnboundVirginId = chatId;
       log("virgin chat " + chatId + ": no ruleset stamp and nothing to derive — staying unbound until a ruleset is " +
-          "deliberately activated (Corey ruling 2026-08-24). No stamp written, no agents added, sheet writes held.");
+          "deliberately activated (maintainer ruling 2026-08-24). No stamp written, no agents added, sheet writes held.");
     });
     return;
   }).catch(function (e) {
@@ -19348,7 +19348,7 @@ function saveProcessedMessageIds() {
 
 /* ─── B2-R: swipe-revert mutation journal ──────────────────────────────────
    Design authority: Plans/2026-08-22_engine-2.4.3-upgrade-and-rolemaster-
-   plan.md § "B2-R — Swipe-revert" (Corey, 2026-08-23: "if we can do it we
+   plan.md § "B2-R — Swipe-revert" (the maintainer, 2026-08-23: "if we can do it we
    should" — save-scumming sanctioned).
 
    Shape (persisted per chat, LS_MUTATION_JOURNAL_PFX + chatId):
@@ -19441,7 +19441,7 @@ function mrrLoadMutationJournal(chatId) {
      journal bucket persisted by the prior build may still hold delta-kind
      entries, whose clamp-loss bug is exactly what 1b fixes. No back-compat
      shim is written for this: this is a session-fresh feature that has
-     never run live on Corey's machine (LS on his actual browser has no
+     never run live on the maintainer's machine (LS on his actual browser has no
      prior journal at all), so the honest, simplest thing is to discard
      any bucket containing even one delta-kind entry rather than attempt
      to reinterpret pre-fix data. One summary warn, not one per bucket. */
@@ -19653,7 +19653,7 @@ function mrrClearDedupKeysForBucket(anchor, bucket) {
     if (entry.sig == null) return; /* no captured sig (pre-round-10 entry, or created outside the gate) — nothing exact to clear */
     /* T2c (round 11, static-cost semantics): an entry left in place by
        mrrRevertBucket's skipSigs match keeps its dedup key intact ON
-       PURPOSE — Corey's ruling is that an identical-sig mutation (e.g. a
+       PURPOSE — the maintainer's ruling is that an identical-sig mutation (e.g. a
        fixed mote/essence spend) must NOT revert/reapply on a swipe that
        changes other content. Clearing its key here would re-admit the
        incoming duplicate through applyStateTagsWithDedup's gate and
@@ -19681,7 +19681,7 @@ function mrrClearDedupKeysForBucket(anchor, bucket) {
    doesn't exist, has no entries, or is already reverted. */
 /* ─── PARTY WRITES §4.3 — PER-CHARACTER GROUPING ──────────────────────────
    A swipe reverts the WHOLE message's consequences across every character it
-   touched (Corey ruling R3: a swiped-away narration un-happened for everyone
+   touched (maintainer ruling R3: a swiped-away narration un-happened for everyone
    in it). Entries are grouped by entry.charId (missing -> active, §3.3);
    ORDER WITHIN A GROUP IS PRESERVED EXACTLY, which is what keeps the strict
    LIFO/FIFO replay semantics intact. Groups are independent because each
@@ -19776,7 +19776,7 @@ function mrrRevertGroupEntries(entries, skipSigs, bucketKey) {
   var allOk = true;
   for (var i = entries.length - 1; i >= 0; i--) {
     var entry = entries[i];
-    /* T2c (round 11): Corey's static-cost ruling — "essence spends...
+    /* T2c (round 11): the maintainer's static-cost ruling — "essence spends...
        are static between swipes... the mutator not firing off to
        revert/redo that expenditure is a good thing." skipSigs is the
        incoming (new-swipe) tag content-sig set, computed by the caller
@@ -20273,7 +20273,7 @@ function mrrComputeIncomingSigs(tags) {
 }
 
 /* ─── Round-12 F2: THE single transition owner for a swipe on msgId ───────
-   Live wipe bug (Corey, retest logs 1787517870783 + 1787518829357): sheet
+   Live wipe bug (the maintainer, retest logs 1787517870783 + 1787518829357): sheet
    bytes changed (mutations genuinely applied) yet the NET visible effect
    was nothing. Root cause — round 11's revert lived ONLY inside
    processChatMessage, reached via a ~1.5s-debounced DOM-mutation observer;
@@ -21752,7 +21752,7 @@ function processChatMessage(node) {
     /* T2c (round 11): parsed here (not inside isMessageProcessed's guard
        below, where the pre-T2 code parsed it) so the swipe-change block
        can compute the incoming swipe's content-sig set BEFORE deciding
-       whether to fully revert the outgoing bucket — Corey's static-cost
+       whether to fully revert the outgoing bucket — the maintainer's static-cost
        ruling: an identical-sig mutation (e.g. a fixed mote/essence
        spend) must not revert/reapply-churn across a swipe that changes
        other content. Empty ([]) for a tag-less message — see
@@ -21996,7 +21996,7 @@ var runsPollDumpedOnce = false;
 var runsBaselineExists = false;
 
 /* ─── T1 (round 11): deterministic sole-writer AT THE TRANSPORT ───────────
-   Live evidence (Corey's morning smoke test): a poll logged "applied
+   Live evidence (the maintainer's morning smoke test): a poll logged "applied
    7/9 mutation(s)" — his 7 managed agents (state-mutator + 6 non-mutator
    pre_generation agents, all enabled) ran on ONE generation, and >=3 of
    the non-mutator agents echoed the SAME essence-spend tag with slightly
