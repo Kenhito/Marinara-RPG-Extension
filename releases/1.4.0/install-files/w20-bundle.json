@@ -1,0 +1,2343 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.4.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.7.0"
+  },
+  "ruleset": {
+    "id": "w20",
+    "name": "Werewolf: The Apocalypse 20th Anniversary",
+    "version": "0.1.0",
+    "edition": "Werewolf: The Apocalypse 20th Anniversary Edition (W20, 2013, Onyx Path)",
+    "license": "Original mechanics references; tribe / auspice / Gift / Rite / Tribe-totem names belong to Paradox Interactive AB. No verbatim W20 corebook text is reproduced. Distributed under the Dark Pack Agreement (worldofdarkness.com/dark-pack). Portions of the materials are the copyrights and trademarks of Paradox Interactive AB, and are used with permission. All rights reserved. This material is NOT official World of Darkness material.",
+    "summary": "Storyteller-system d10 dice pool on the V20 chassis. Pool = Attribute + Ability. Each die meeting or beating the difficulty (default 6, range 6-9) is one success. A 1 subtracts one success. Botch on a roll showing zero successes AND at least one 1. Specialty 10s reroll. Three pools: Rage (frenzy + extra actions + form-shift), Gnosis (Gifts + Rites + Stepping Sideways), Willpower (auto-success + resisting urges). Renown (Glory/Honour/Wisdom) determines Rank. Five forms (Homid/Glabro/Crinos/Hispo/Lupus) modify Physical and Social Attributes.",
+    "dice": {
+      "type": "d10",
+      "notation": "Xd10 vs <difficulty>"
+    },
+    "resolution": {
+      "mode": "dice-pool",
+      "poolFormula": "Attribute + Ability (+ specialty 10-rerolls when applicable, + Willpower auto-success once/turn, + Gift dice, + Rage extra-action dice). Wound penalty subtracts from pools.",
+      "target": 6,
+      "doubles": {
+        "face": 10,
+        "successes": 1
+      },
+      "botches": {
+        "onFace": 1,
+        "trigger": "any-on-zero-successes"
+      }
+    },
+    "difficulties": {
+      "Trivial": {
+        "threshold": 4,
+        "description": "Trivial for a competent character. Often waived."
+      },
+      "Routine": {
+        "threshold": 5,
+        "description": "Routine task; minor pressure."
+      },
+      "Standard": {
+        "threshold": 6,
+        "description": "W20 default. Average task under normal conditions."
+      },
+      "Challenging": {
+        "threshold": 7,
+        "description": "Pushes a competent Garou; pressure or distraction."
+      },
+      "Difficult": {
+        "threshold": 8,
+        "description": "Few succeed without bonuses or supernatural help."
+      },
+      "Nigh-Impossible": {
+        "threshold": 9,
+        "description": "Heroic; requires Willpower, Gifts, or aid."
+      }
+    },
+    "attributes": [
+      {
+        "name": "Strength",
+        "abbreviation": "STR",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Raw muscle. Lifting, melee damage, brawling pools. Modified by form (Glabro +2, Crinos +4, Hispo +3, Lupus +1)."
+      },
+      {
+        "name": "Dexterity",
+        "abbreviation": "DEX",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Agility, hand-eye coordination, attack accuracy, dodging. Modified by form (Crinos +1, Hispo +2, Lupus +2)."
+      },
+      {
+        "name": "Stamina",
+        "abbreviation": "STA",
+        "group": "Physical",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Endurance, soak, resisting fatigue. Modified by form (Glabro +2, Crinos +3, Hispo +3, Lupus +2)."
+      },
+      {
+        "name": "Charisma",
+        "abbreviation": "CHA",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Force of personality, sincere charm, leadership presence."
+      },
+      {
+        "name": "Manipulation",
+        "abbreviation": "MAN",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Deceit, guile, indirect influence. Form penalties to humans (Glabro -2, Crinos -3, Hispo -3, Lupus -3); not vs. Garou or spirits."
+      },
+      {
+        "name": "Appearance",
+        "abbreviation": "APP",
+        "group": "Social",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Beauty / presence. Form penalties to humans (Glabro -1); Crinos APP becomes 0 to humans (Delirium); Hispo/Lupus do not use APP socially with humans."
+      },
+      {
+        "name": "Perception",
+        "abbreviation": "PER",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Spotting, hearing, noticing details. Hispo/Lupus get -1 to -2 reduction on Perception difficulties (sharper senses)."
+      },
+      {
+        "name": "Intelligence",
+        "abbreviation": "INT",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Reasoning, learning, recall, abstract analysis."
+      },
+      {
+        "name": "Wits",
+        "abbreviation": "WIT",
+        "group": "Mental",
+        "min": 1,
+        "max": 10,
+        "default": 1,
+        "description": "Reaction speed, on-the-fly thinking, initiative component."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Alertness",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Notice danger and details. Usable untrained."
+      },
+      {
+        "name": "Athletics",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent (W20). Climbing, running, jumping, swimming, dodging. Usable untrained."
+      },
+      {
+        "name": "Brawl",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent. Unarmed combat; punches, grapples, claw and bite strikes. Usable untrained."
+      },
+      {
+        "name": "Empathy",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent (W20). Read emotions, sense lies of the heart. Usable untrained."
+      },
+      {
+        "name": "Expression",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent (W20). Communicating ideas, oratory, written prose, Garou tale-telling. Usable untrained."
+      },
+      {
+        "name": "Intimidation",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent (W20). Threats, looming presence, breaking will. Usable untrained."
+      },
+      {
+        "name": "Leadership",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent (W20). Inspiring loyalty, giving orders, rallying a pack. Usable untrained."
+      },
+      {
+        "name": "Primal-Urge",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent (W20-exclusive). The Garou's bestial instinct: form-shifting ease, predator's intuition, sensing the supernatural. Cannot be learned by non-Garou. Usable untrained."
+      },
+      {
+        "name": "Streetwise",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent (W20). Navigating urban underbelly, contacts, fences, gossip. Usable untrained."
+      },
+      {
+        "name": "Subterfuge",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Talent (W20). Lying, misleading, deflecting questions. Usable untrained."
+      },
+      {
+        "name": "Animal Ken",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Handling and reading animals (other than wolves — Garou interpret pack-mates instinctively). Untrained: +1 difficulty."
+      },
+      {
+        "name": "Crafts",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Build, repair, and make physical things by hand. Untrained: +1 difficulty."
+      },
+      {
+        "name": "Drive",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Operate vehicles under stress. Untrained: +1 difficulty."
+      },
+      {
+        "name": "Etiquette",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Manners, protocol — both mortal society and Garou sept hierarchy. Untrained: +1 difficulty."
+      },
+      {
+        "name": "Firearms",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Handguns, rifles, automatic weapons. Untrained: +1 difficulty."
+      },
+      {
+        "name": "Larceny",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Lock-picking, sleight of hand, B&E, forgery. Untrained: +1 difficulty."
+      },
+      {
+        "name": "Melee",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Armed close combat; blades, clubs, klaives, fetish weapons. Untrained: +1 difficulty."
+      },
+      {
+        "name": "Performance",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Singing, instrument, acting, dance, story-telling for an audience. Untrained: +1 difficulty."
+      },
+      {
+        "name": "Stealth",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Move unseen and unheard. Untrained: +1 difficulty."
+      },
+      {
+        "name": "Survival",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Skill. Wilderness travel, foraging, weather, tracking. Untrained: +1 difficulty."
+      },
+      {
+        "name": "Academics",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material."
+      },
+      {
+        "name": "Computer",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Software, hardware, networks. Untrained: cannot roll."
+      },
+      {
+        "name": "Enigmas",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge (W20-exclusive). Riddles, hidden patterns, spirit-logic. Theurges and Uktena excel. Untrained: cannot roll."
+      },
+      {
+        "name": "Investigation",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll."
+      },
+      {
+        "name": "Law",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Statute, precedent, courtroom procedure — mortal law (the Litany lives in Rituals + Honour, not here). Untrained: cannot roll."
+      },
+      {
+        "name": "Medicine",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Diagnosis, surgery, pharmacology. Untrained: cannot roll."
+      },
+      {
+        "name": "Occult",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Lore of the supernatural — vampires, mages, ghosts, the Wyrm. Untrained: cannot roll."
+      },
+      {
+        "name": "Rituals",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge (W20-exclusive). Knowledge of Garou rites. Sets the ceiling on what level of Rite a Garou may learn or perform: Rituals must equal or exceed the Rite's level. Untrained: cannot roll."
+      },
+      {
+        "name": "Science",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll."
+      },
+      {
+        "name": "Technology",
+        "min": 0,
+        "max": 5,
+        "default": 0,
+        "description": "Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll."
+      }
+    ],
+    "skillSpecialties": {
+      "enabled": true,
+      "valueLabel": "specialty (10s reroll on Attr/Abil 4+)",
+      "valueKind": "dice",
+      "defaultValue": 0
+    },
+    "backgrounds": {
+      "enabled": true,
+      "label": "Backgrounds",
+      "min": 0,
+      "max": 5,
+      "default": 0
+    },
+    "header": {
+      "raceLabel": "Tribe",
+      "classLabel": "Auspice"
+    },
+    "scenarioDefaultDerive": true,
+    "derivedStats": [
+      {
+        "name": "Breed",
+        "formula": "Garou breed — Homid (raised human), Metis (born to two Garou; sterile; bears one Deformity Flaw), or Lupus (raised wolf). Set this manually on character creation; record the chosen breed in the character notes. Breed sets the Garou's starting Gnosis (Homid 1, Metis 3, Lupus 5) and unlocks the corresponding Breed Gift list. Default 1 = placeholder; treat as a text label rather than a numeric stat.",
+        "default": 1,
+        "renderAs": "value",
+        "max": 3,
+        "aliases": [
+          "breed"
+        ]
+      },
+      {
+        "name": "Permanent Rage",
+        "formula": "The character's permanent Rage rating, 1-10. Starting value comes from Auspice: Ragabash 1, Theurge 2, Philodox 3, Galliard 4, Ahroun 5. This is the CAP on the Rage pool shown in the Resources cluster. Adjust this stepper directly when the character spends XP to raise Rage. Temporary Rage refreshes per moon-phase and other triggers (see lorebook).",
+        "default": 1,
+        "renderAs": "value",
+        "max": 10,
+        "aliases": [
+          "permanentRage",
+          "rageMax",
+          "rageRating"
+        ]
+      },
+      {
+        "name": "Permanent Gnosis",
+        "formula": "The character's permanent Gnosis rating, 1-10. Starting value comes from Breed: Homid 1, Metis 3, Lupus 5. CAP on the Gnosis pool. Spent on Gifts, Rites, Stepping Sideways into the Umbra. Each piece of silver carried subtracts 1 from effective Gnosis (one-day cooldown after dropping it).",
+        "default": 1,
+        "renderAs": "value",
+        "max": 10,
+        "aliases": [
+          "permanentGnosis",
+          "gnosisMax",
+          "gnosisRating"
+        ]
+      },
+      {
+        "name": "Permanent Willpower",
+        "formula": "The character's permanent Willpower rating, 1-10. Tribe sets the starting value (3 for most tribes; 4 for Bone Gnawers, Children of Gaia, Stargazers, and Wendigo). CAP on the Willpower pool. Refresh: +1 on waking each day; full at end of a story (Storyteller discretion); +1 for fulfilling Nature; +1-3 for exceptional auspice duty.",
+        "default": 3,
+        "renderAs": "value",
+        "max": 10,
+        "aliases": [
+          "permanentWillpower",
+          "willpowerMax",
+          "willpowerRating",
+          "wp",
+          "willpower"
+        ]
+      },
+      {
+        "name": "Permanent Glory",
+        "formula": "Permanent Glory Renown, 0-10. Reflects feats of strength, bravery, victory. Changes only through a Rite of Accomplishment (gain) or Punishment Rite (loss). Galliards and Ahroun favour Glory. See the temporary-Glory counter in Resources for accumulated deeds awaiting the next rite.",
+        "default": 0,
+        "renderAs": "value",
+        "max": 10,
+        "aliases": [
+          "permanentGlory",
+          "glory"
+        ]
+      },
+      {
+        "name": "Permanent Honour",
+        "formula": "Permanent Honour Renown, 0-10. Reflects duty, ethics, adherence to the Litany. Ragabash and Philodox favour Honour. Frenzying Garou who wake covered in blood usually lose Honour.",
+        "default": 0,
+        "renderAs": "value",
+        "max": 10,
+        "aliases": [
+          "permanentHonour",
+          "honour",
+          "permanentHonor",
+          "honor"
+        ]
+      },
+      {
+        "name": "Permanent Wisdom",
+        "formula": "Permanent Wisdom Renown, 0-10. Reflects thoughtful action, spirit-world insight, restraint. Theurges favour Wisdom.",
+        "default": 0,
+        "renderAs": "value",
+        "max": 10,
+        "aliases": [
+          "permanentWisdom",
+          "wisdom"
+        ]
+      },
+      {
+        "name": "Rank",
+        "formula": "Garou social standing, 0-6. 0 Cub (pre-Rite of Passage), 1 Cliath (3 total Renown — earned at Rite of Passage), 2 Fostern (~6 total), 3 Adren (~12 total), 4 Athro (~18 total), 5 Elder (~25+ total), 6 Legend (rare; legendary heroes). A Garou cannot learn or use a Gift above their Rank. Ranks 3+ get +1 to +2 frenzy-resistance difficulty; Rank 5+ requires extra successes to enter frenzy.",
+        "default": 1,
+        "renderAs": "value",
+        "max": 6,
+        "aliases": [
+          "rank"
+        ]
+      },
+      {
+        "name": "Health Track",
+        "formula": "Seven levels (V20 baseline): Bruised(-0), Hurt(-1), Injured(-1), Wounded(-2), Mauled(-2), Crippled(-5), Incapacitated. Penalty in effect = the highest filled box. Bashing heals 1 level/turn automatically; Lethal 1 level/hour; Aggravated 1 level/day with rest. Silver damage is ALWAYS aggravated to Garou and bypasses regeneration. Garou cannot soak aggravated in their BREED form (Homid for Homids, Lupus for Lupus, Crinos for Metis); other forms soak aggravated with Stamina at difficulty 6.",
+        "renderAs": "track",
+        "track": [
+          {
+            "label": "Bruised",
+            "penalty": 0
+          },
+          {
+            "label": "Hurt",
+            "penalty": -1
+          },
+          {
+            "label": "Injured",
+            "penalty": -1
+          },
+          {
+            "label": "Wounded",
+            "penalty": -2
+          },
+          {
+            "label": "Mauled",
+            "penalty": -2
+          },
+          {
+            "label": "Crippled",
+            "penalty": -5
+          },
+          {
+            "label": "Incapacitated",
+            "penalty": -99
+          }
+        ],
+        "damageTypes": [
+          {
+            "id": "bashing",
+            "label": "B",
+            "severity": 0,
+            "description": "Blunt or non-lethal. Heals automatically 1 level/turn."
+          },
+          {
+            "id": "lethal",
+            "label": "L",
+            "severity": 1,
+            "description": "Edged, piercing, gunfire. Heals automatically 1 level/hour."
+          },
+          {
+            "id": "aggravated",
+            "label": "A",
+            "severity": 2,
+            "description": "Garou claws/fangs, fire, silver, divine effects. Heals 1 level/day with rest. Silver bypasses Garou regeneration and is unsoakable in breed form."
+          }
+        ],
+        "aliases": [
+          "hp",
+          "HP",
+          "health",
+          "health track",
+          "healthTrack"
+        ]
+      },
+      {
+        "name": "Initiative",
+        "formula": "Dexterity + Wits + 1d10 each combat round. Wound penalty subtracts from rating, NOT from the d10. Spend Rage in declaration step to gain extra actions (max half permanent Rage rating).",
+        "renderAs": "value",
+        "valueFormula": "{Dexterity} + {Wits}",
+        "aliases": [
+          "initiative",
+          "init"
+        ]
+      },
+      {
+        "name": "Brawl Attack",
+        "formula": "Dexterity + Brawl. Unarmed / claw / fang attack pool. Bite and claw damage type varies by form: Glabro/Lupus claws are lethal, Crinos/Hispo claws are aggravated to mortals and to other supernaturals.",
+        "renderAs": "value",
+        "valueFormula": "{Dexterity} + {Brawl}",
+        "aliases": [
+          "brawlAttack",
+          "brawl attack"
+        ]
+      },
+      {
+        "name": "Melee Attack",
+        "formula": "Dexterity + Melee. Armed close-combat pool (blades, clubs, klaives, fetish weapons). Charms and weapon enhancements modify it.",
+        "renderAs": "value",
+        "valueFormula": "{Dexterity} + {Melee}",
+        "aliases": [
+          "meleeAttack",
+          "melee attack"
+        ]
+      },
+      {
+        "name": "Firearms Attack",
+        "formula": "Dexterity + Firearms. Ranged attack pool. Range modifiers add +1/+2 difficulty for medium/long range. Silver bullets do aggravated damage to Garou.",
+        "renderAs": "value",
+        "valueFormula": "{Dexterity} + {Firearms}",
+        "aliases": [
+          "rangedAttack",
+          "firearmsAttack"
+        ]
+      },
+      {
+        "name": "Soak (Bashing)",
+        "formula": "Stamina + armour B-soak, rolled at difficulty 6. Soak rolls cannot botch. Garou regenerate 1 bashing level per turn automatically.",
+        "renderAs": "value",
+        "valueFormula": "{Stamina} + {bonuses:Soak (Bashing)}",
+        "tooltipFormula": "{Stamina} + {bonuses:Soak (Bashing)}",
+        "aliases": [
+          "soakBashing",
+          "bashingSoak",
+          "bSoak"
+        ]
+      },
+      {
+        "name": "Soak (Lethal)",
+        "formula": "Stamina + armour L-soak, rolled at difficulty 6. Garou soak lethal with full Stamina (mortals cannot). Regenerate 1 lethal level per hour automatically.",
+        "renderAs": "value",
+        "valueFormula": "{Stamina} + {bonuses:Soak (Lethal)}",
+        "tooltipFormula": "{Stamina} + {bonuses:Soak (Lethal)}",
+        "aliases": [
+          "soakLethal",
+          "lethalSoak",
+          "lSoak"
+        ]
+      },
+      {
+        "name": "Soak (Aggravated)",
+        "formula": "Stamina (in non-breed forms only) + supernatural armour, rolled at difficulty 6. Garou CANNOT soak aggravated in their BREED form (Homids in Homid, Lupus in Lupus, Metis in Crinos). Silver damage is unsoakable in breed form and bypasses regeneration entirely. Heals 1 level/day with rest.",
+        "renderAs": "value",
+        "valueFormula": "{Stamina} + {bonuses:Soak (Aggravated)}",
+        "tooltipFormula": "{Stamina} + {bonuses:Soak (Aggravated)}",
+        "aliases": [
+          "soakAggravated",
+          "aggravatedSoak",
+          "aSoak"
+        ]
+      }
+    ],
+    "states": [
+      {
+        "name": "Form",
+        "values": [
+          {
+            "label": "Homid",
+            "description": "Human form. No Attribute modifiers. Full speech, social capability. Default for Homid-breed Garou. Cannot soak aggravated for Homid-breed in this form."
+          },
+          {
+            "label": "Glabro",
+            "description": "Near-human form. STR +2, STA +2, MAN -2, APP -1 (humans). Guttural speech possible; teeth lethal damage (Str -1). Often the form for intimidation among humans."
+          },
+          {
+            "label": "Crinos",
+            "description": "Wolf-man / war form. STR +4, DEX +1, STA +3, MAN -3, APP 0 (humans witness as Delirium). Fangs and claws inflict AGGRAVATED damage. Cannot speak human languages. Default for Metis-breed. Triggers Delirium in humans who see it."
+          },
+          {
+            "label": "Hispo",
+            "description": "Dire-wolf form. STR +3, DEX +2, STA +3, MAN -3, PER -1 difficulty. Extra bite die. Claws aggravated. Cannot manipulate human tools."
+          },
+          {
+            "label": "Lupus",
+            "description": "Wolf form. STR +1, DEX +2, STA +2, MAN -3, PER -2 difficulty. 2x movement speed. Claws inflict LETHAL only (aggravated only for Lupus-breed). Default for Lupus-breed. Cannot speak; cannot manipulate human tools."
+          }
+        ]
+      },
+      {
+        "name": "Frenzy State",
+        "values": [
+          {
+            "label": "Calm",
+            "description": "Beast contained. Normal action and roleplay."
+          },
+          {
+            "label": "Rising",
+            "description": "A Rage roll is imminent — surge in fury, eyes flickering. Player or Storyteller can spend Willpower to head off the trigger."
+          },
+          {
+            "label": "Berserk Frenzy",
+            "description": "Rage roll scored 4+ successes. Garou shifts to Crinos or Hispo and attacks. If Rage > Gnosis, may attack indiscriminately (including packmates). Cannot use Gifts, pack tactics, or Step Sideways. Spend 1 Willpower to abort."
+          },
+          {
+            "label": "Fox Frenzy",
+            "description": "Rage roll scored 4+ in panic. Garou shifts to Lupus and flees at max speed. Attacks only if escape is blocked."
+          },
+          {
+            "label": "Thrall of the Wyrm",
+            "description": "Rage roll scored 6+ successes — unbreakable frenzy. Cannot be halted by Willpower. Triggers a breed-specific compulsion: Homid (Eater-of-Souls — consume kills), Metis (Defiler — sexual acts on fallen), Lupus (Beast-of-War — savage the corpse)."
+          }
+        ]
+      },
+      {
+        "name": "Harano",
+        "values": [
+          {
+            "label": "None",
+            "description": "Spiritual balance maintained."
+          },
+          {
+            "label": "Touched",
+            "description": "Lingering despair, blurred sense of reality between Umbra and physical world. -1 die to social and Willpower rolls until rebalanced."
+          },
+          {
+            "label": "Deep Harano",
+            "description": "Severe despair. Lethargy, existential crisis, may refuse to act. Resolution typically requires elder counsel and time in a balanced setting."
+          }
+        ]
+      },
+      {
+        "name": "Spirit World",
+        "values": [
+          {
+            "label": "Material",
+            "description": "In the physical world (the default)."
+          },
+          {
+            "label": "Penumbra",
+            "description": "In the Umbral reflection adjacent to the physical world. Garou see spirits, walk Moon Bridges, can interact with Banes."
+          },
+          {
+            "label": "Deep Umbra",
+            "description": "Far Umbra / Aetherial Realm / Wyld zones. Hostile to the unprepared."
+          }
+        ]
+      }
+    ],
+    "diceTagFormat": {
+      "template": "[dice: {pool}d10 vs {difficulty} -> {successes} successes{willpower}{specialty}{botch}]",
+      "example": "[dice: 8d10 vs 6 -> 4 successes, +1 Willpower auto, 2 specialty rerolls]"
+    },
+    "sheetSections": [
+      "attributes",
+      "skills",
+      "derived",
+      "states",
+      "abilities",
+      "backgrounds",
+      "meritsFlaws",
+      "inventory",
+      "notes"
+    ],
+    "sections": {
+      "order": [
+        "identity",
+        "xp",
+        "resources",
+        "attributes",
+        "skills",
+        "derived",
+        "abilities",
+        "states",
+        "backgrounds",
+        "meritsFlaws",
+        "inventory",
+        "notes"
+      ],
+      "hidden": [
+        "derived:Health Track",
+        "state:Form"
+      ]
+    },
+    "resources": [
+      {
+        "id": "form",
+        "label": "Form",
+        "type": "state-banner",
+        "stateRef": "Form",
+        "color": "accent"
+      },
+      {
+        "id": "rage",
+        "label": "Rage (max = Permanent Rage)",
+        "type": "pool",
+        "max": "{Permanent Rage}",
+        "current": "{Permanent Rage}",
+        "color": "bad",
+        "stateName": "Rage",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Refresh",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "gnosis",
+        "label": "Gnosis (max = Permanent Gnosis)",
+        "type": "pool",
+        "max": "{Permanent Gnosis}",
+        "current": "{Permanent Gnosis}",
+        "color": "accent",
+        "stateName": "Gnosis",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Refresh",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "willpower",
+        "label": "Willpower (max = Permanent Willpower)",
+        "type": "pool",
+        "max": "{Permanent Willpower}",
+        "current": "{Permanent Willpower}",
+        "color": "accent",
+        "stateName": "Willpower",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          },
+          {
+            "label": "Refresh",
+            "delta": "max"
+          }
+        ]
+      },
+      {
+        "id": "glory-temp",
+        "label": "Glory (temporary)",
+        "type": "counter",
+        "max": 20,
+        "current": 0,
+        "color": "warn",
+        "stateName": "Temporary Glory",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          }
+        ]
+      },
+      {
+        "id": "honour-temp",
+        "label": "Honour (temporary)",
+        "type": "counter",
+        "max": 20,
+        "current": 0,
+        "color": "warn",
+        "stateName": "Temporary Honour",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          }
+        ]
+      },
+      {
+        "id": "wisdom-temp",
+        "label": "Wisdom (temporary)",
+        "type": "counter",
+        "max": 20,
+        "current": 0,
+        "color": "warn",
+        "stateName": "Temporary Wisdom",
+        "quickButtons": [
+          {
+            "label": "-1",
+            "delta": -1
+          },
+          {
+            "label": "+1",
+            "delta": 1
+          }
+        ]
+      },
+      {
+        "id": "health",
+        "label": "Health",
+        "type": "custom",
+        "color": "bad",
+        "rendererConfig": {
+          "component": "v20-health-track",
+          "levels": [
+            {
+              "label": "Bruised",
+              "penalty": 0
+            },
+            {
+              "label": "Hurt",
+              "penalty": -1
+            },
+            {
+              "label": "Injured",
+              "penalty": -1
+            },
+            {
+              "label": "Wounded",
+              "penalty": -2
+            },
+            {
+              "label": "Mauled",
+              "penalty": -2
+            },
+            {
+              "label": "Crippled",
+              "penalty": -5
+            },
+            {
+              "label": "Incapacitated",
+              "penalty": -99
+            }
+          ],
+          "damageTypes": [
+            {
+              "id": "bashing",
+              "label": "B",
+              "severity": 0
+            },
+            {
+              "id": "lethal",
+              "label": "L",
+              "severity": 1
+            },
+            {
+              "id": "aggravated",
+              "label": "A",
+              "severity": 2
+            }
+          ]
+        }
+      }
+    ],
+    "lorebookKeys": [
+      "rage",
+      "gnosis",
+      "willpower",
+      "renown",
+      "glory",
+      "honour",
+      "honor",
+      "wisdom",
+      "rank",
+      "auspice",
+      "tribe",
+      "breed",
+      "homid",
+      "metis",
+      "lupus",
+      "form",
+      "homid form",
+      "glabro",
+      "crinos",
+      "hispo",
+      "lupus form",
+      "gift",
+      "gifts",
+      "rite",
+      "rites",
+      "fetish",
+      "talen",
+      "ragabash",
+      "theurge",
+      "philodox",
+      "galliard",
+      "ahroun",
+      "black furies",
+      "bone gnawers",
+      "children of gaia",
+      "fianna",
+      "get of fenris",
+      "glass walkers",
+      "red talons",
+      "shadow lords",
+      "silent striders",
+      "silver fangs",
+      "stargazers",
+      "uktena",
+      "wendigo",
+      "black spiral dancers",
+      "umbra",
+      "penumbra",
+      "gauntlet",
+      "caern",
+      "moon bridge",
+      "sept",
+      "frenzy",
+      "thrall of the wyrm",
+      "harano",
+      "delirium",
+      "the curse",
+      "wyrm",
+      "weaver",
+      "wyld",
+      "triat",
+      "litany",
+      "pact",
+      "kinfolk",
+      "step sideways",
+      "stepping sideways",
+      "totem",
+      "spirit"
+    ],
+    "abilities": {
+      "label": "Gifts & Rites",
+      "groups": [
+        {
+          "id": "talents",
+          "label": "Talents",
+          "members": [
+            "Alertness",
+            "Athletics",
+            "Brawl",
+            "Empathy",
+            "Expression",
+            "Intimidation",
+            "Leadership",
+            "Primal-Urge",
+            "Streetwise",
+            "Subterfuge"
+          ]
+        },
+        {
+          "id": "skills",
+          "label": "Skills",
+          "members": [
+            "Animal Ken",
+            "Crafts",
+            "Drive",
+            "Etiquette",
+            "Firearms",
+            "Larceny",
+            "Melee",
+            "Performance",
+            "Stealth",
+            "Survival"
+          ]
+        },
+        {
+          "id": "knowledges",
+          "label": "Knowledges",
+          "members": [
+            "Academics",
+            "Computer",
+            "Enigmas",
+            "Investigation",
+            "Law",
+            "Medicine",
+            "Occult",
+            "Rituals",
+            "Science",
+            "Technology"
+          ]
+        }
+      ],
+      "categories": [
+        {
+          "id": "breed-gifts",
+          "label": "Breed Gifts"
+        },
+        {
+          "id": "auspice-gifts",
+          "label": "Auspice Gifts"
+        },
+        {
+          "id": "tribal-gifts",
+          "label": "Tribal Gifts"
+        },
+        {
+          "id": "general-gifts",
+          "label": "General Gifts"
+        },
+        {
+          "id": "spirit-gifts",
+          "label": "Spirit Gifts (Lv 6+)"
+        },
+        {
+          "id": "rites",
+          "label": "Rites"
+        }
+      ]
+    }
+  },
+  "gmAgent": {
+    "name": "Werewolf: The Apocalypse 20th Anniversary Ruleset Helper",
+    "description": "Auto-installed by GM-mode bundle. Provides Werewolf: The Apocalypse 20th Anniversary skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
+    "phase": "pre_generation",
+    "promptTemplate": "You are the Werewolf: The Apocalypse 20th Anniversary (W20) Ruleset Helper for a chronicle running inside Marinara Engine's Game Mode. You provide rules guidance and Storyteller adjudication — you do not own the story. Your output is a context injection the main GM model reads BEFORE narrating the next turn. Do not narrate, do not write prose, do not speak in-character.\n\n# Tone before mechanics\n\nW20 is mythic eco-horror about wolf-and-human shapeshifters fighting the Wyrm's corruption of Gaia. The Garou are warriors, mystics, judges and storytellers, but they are also the Beast — Rage is always one bad day from breaking free. Honour both registers: cinematic spirit-touched combat AND the weight of duty, pack, grief, and the slow loss of Gaia's world. The Apocalypse is the backdrop; rage and grief and pack-love are the texture.\n\n# Mechanics you enforce (W20-canonical)\n\nRESOLUTION: roll a pool of d10s equal to (Attribute + Ability), plus specialty 10-rerolls (when the Attribute or Ability is rated 4+ in scope), Gift dice, and Rage-bought extra-action dice. Each die meeting or beating the chosen DIFFICULTY (default 6; range 6-9) is one success. A 1 cancels one success (Rule of 1). At least one net success = the action succeeded.\n\nBOTCH: zero net successes AND at least one die showing 1 = botch (dramatic failure with consequence). 1s only matter when net successes are zero.\n\nSPECIALTY: when the action falls within a specialty (a focus declared on any trait rated 4 or 5), every natural 10 is rerolled (and counts as a success). Re-rerolls cascade.\n\nWILLPOWER: spend 1 for ONE automatic guaranteed success on any roll — uncancellable. Cap: once per turn for this use. Cannot use on damage rolls or Gift-activation rolls. Other Willpower uses: ignore wound penalty for one roll, abort frenzy, resist instinctive urges.\n\nHEALTH TRACK: 7 levels — Bruised(0) / Hurt(-1) / Injured(-1) / Wounded(-2) / Mauled(-2) / Crippled(-5) / Incapacitated. Penalty = the highest filled box; subtract from dice pools. Bashing soaked by Stamina (Garou regenerate 1/turn). Lethal soaked by Stamina (Garou regen 1/hour). Aggravated soaked by Stamina ONLY in non-breed forms; in breed form (Homid for Homids, Lupus for Lupus-breed, Crinos for Metis) Garou cannot soak aggravated. Silver is ALWAYS aggravated to Garou, bypasses regeneration, and is unsoakable in breed form. Heals 1 aggravated/day with rest.\n\nINITIATIVE: Dexterity + Wits + 1d10. Wound penalty subtracts from rating, not d10. Spend Rage in the declaration step to buy extra actions (cap = half permanent Rage rating; cannot exceed min(Dex, Wits) without +3 difficulty to all pools that turn).\n\nRAGE: the Beast made manifest. Permanent rating (set by Auspice: Ragabash 1 / Theurge 2 / Philodox 3 / Galliard 4 / Ahroun 5). Temporary pool spent on extra actions, instant form-shifts (1 Rage = no roll), ignoring stun for a turn, or remaining active when Incapacitated (Rage roll diff 8, each success heals a level, once per scene, leaves a Battle Scar). Regain: moon-phase sighting (new 1, waning 2, half/waxing 3, full 4); auspice moon = full pool; humiliation, botches, moments before combat. Frenzy when a Rage roll scores 4+ successes; 6+ = Thrall of the Wyrm (unbreakable). For every Rage above Willpower, -1 to Social rolls (Beast Within). If both Rage and Willpower pools hit 0, the Garou is stuck in breed form (\"losing the wolf\") until Rage returns.\n\nGNOSIS: the spirit-world connection. Permanent rating set by Breed (Homid 1, Metis 3, Lupus 5). Spent to activate Gifts, perform Mystic Rites, attune fetishes, and Step Sideways into the Penumbra (roll Gnosis vs local Gauntlet difficulty 2-9). Regain via meditation (Wits+Enigmas vs 8, 1 success = 1 Gnosis, once/day), Sacred Hunt at a caern, bargaining with spirits, between-stories Cha+Enigmas. Each piece of silver carried subtracts 1 from effective Gnosis (1-day cooldown after discarding). A character cannot use both Rage and Gnosis in the same turn (except specific Gifts that demand both).\n\nRENOWN: Glory, Honour, Wisdom. Permanent dots (rare changes via Rite of Accomplishment / Punishment Rite) + temporary pool (no cap; accumulates between rites). New characters get 3 permanent Renown by Auspice (Ragabash 3-any, Theurge 3 Wisdom, Philodox 3 Honour, Galliard 2 Glory + 1 Wisdom, Ahroun 2 Glory + 1 Honour). RANK: 0 Cub, 1 Cliath (3 total — at Rite of Passage), 2 Fostern (~6), 3 Adren (~12), 4 Athro (~18), 5 Elder (~25+), 6 Legend. Ranks 3+ get +1 to +2 to frenzy-resist difficulty; Rank 5+ needs 5+ Rage successes to enter frenzy. A Garou cannot learn a Gift above their current Rank.\n\nTHE FIVE FORMS: Homid / Glabro / Crinos / Hispo / Lupus. Attribute modifiers (apply to Homid-form base; Metis/Lupus use breed form as base):\n- Glabro: STR +2, STA +2, MAN -2, APP -1 (humans).\n- Crinos: STR +4, DEX +1, STA +3, MAN -3, APP 0 to humans (Delirium). Fangs/claws aggravated.\n- Hispo:  STR +3, DEX +2, STA +3, MAN -3, PER difficulty -1. Bite extra die.\n- Lupus:  STR +1, DEX +2, STA +2, MAN -3, PER difficulty -2. 2x speed. Claws lethal (only Lupus-breed inflicts aggravated in Lupus).\nShift roll: Stamina + Primal-Urge, 1 success per form crossed. Spend 1 Rage to shift instantly (no roll).\n\nFRENZY (Rage roll 4+ successes):\n- Berserk Frenzy: shift Crinos/Hispo, attack. If Rage > Gnosis, attacks indiscriminately (including packmates).\n- Fox Frenzy: shift Lupus, flee at max speed; attacks only if escape is blocked.\n- Spend 1 Willpower to abort (lose remaining turn). To end: each subsequent turn roll Willpower vs difficulty = permanent Rage.\n- THRALL OF THE WYRM (6+ successes): unbreakable; on Wits diff 7 botch the character commits a breed-specific compulsion (Homid: consume kills; Metis: defile fallen; Lupus: savage the corpse to fragments).\n\nHARANO: spiritual despair, common after extended high-Gnosis Umbral exposure. Touched = -1 die to Social/Willpower. Deep Harano = lethargy, possible inaction. Resolution: rebalance + elder counsel.\n\nDELIRIUM: humans who see Crinos enter a Willpower-dependent state of fear, denial, or violence. The Veil pushes most to rationalise the memory (\"It was a bear\"). Willpower 7+ may rationalise; 8+ remember clearly; 9-10 may go bloodlust. Kinfolk are immune.\n\nTHE CURSE: humans with Willpower lower than the Garou's permanent Rage instinctively avoid them — cross the street, end conversations, refuse to hire. Makes a mortal life nearly impossible.\n\nGIFTS: spirit-taught powers. Activation cost varies (Gnosis / Rage / Willpower); always check the Gift's listed system. Garou must have Rank >= Gift level. Learned by petitioning a spirit at a caern (chiminage often required). Starting Garou know one Level 1 each from Breed, Auspice, and Tribe.\n\nRITES: ceremonies, not personal powers. Categories: Accord, Caern, Death, Mystic, Punishment, Renown, Seasonal. Rituals Knowledge must equal or exceed rite level. Most rites are roll Cha (or Wits/Sta) + Rituals at difficulty 6-8; cooperative; require materials and time.\n\nSTEPPING SIDEWAYS: see a reflective surface; roll Gnosis vs local Gauntlet (urban 7-8, rural 6, deep wild 5, active caern 3-4). Botch = trapped in the Gauntlet (another Garou must free you).\n\n# Dice doctrine — never invent a roll result\n\n**When `roll_dice` is NOT in your available toolset** (some connections cannot deliver tools even when the chat lists them): **NEVER generate dice faces — a face you wrote is a fabrication, not a roll.** Hand every roll to the player: name the pool/dice to roll on their dice widget, precompute the outcome for each possible result (the outcome ladder), and wait. Ladder by BANDS when the range is wide or open-ended — group results into outcome bands rather than listing every face — and when a result chains into a further roll, say so in the ladder and ask for that roll next. Apply the reported face exactly, then emit any state tags. If you are unsure whether you have the tool, attempt the call once — narrating an attempt is not calling; only a tool result block is a roll. Never report a face you did not receive from the tool or the player.\n\n# Output format the main GM model must use\n\nDice tag (placed in narration so the Marinara client renders the result):\n\n[dice: Xd10 vs <difficulty> -> N successes{, +1 Willpower auto}{, R specialty rerolls}{, BOTCH}] - call: <Attribute> + <Ability> vs difficulty <D>\n\nExample: \"Theirin levels his shotgun at the spiral-marked thing. [dice: 7d10 vs 6 -> 4 successes] - call: Dexterity + Firearms vs difficulty 6 - the slug catches it under the jaw.\"\nExample frenzy trigger: \"She tastes the Wyrm's stink. [dice: 5d10 vs 6 -> 4 successes, BOTCH] - call: Rage roll vs difficulty 6 - 4 successes; Berserk Frenzy.\"\n\nSheet mutations (silent to the player; the extension parses them out):\n[mrr-state: field=\"Rage\" delta=\"-1\"]\n[mrr-state: field=\"Gnosis\" delta=\"-2\"]\n[mrr-state: field=\"Willpower\" delta=\"-1\"]\n[mrr-state: field=\"Health Track\" type=\"aggravated\" delta=\"+1\"]\n[mrr-state: field=\"Form\" value=\"Crinos\"]\n[mrr-state: field=\"Frenzy State\" value=\"Berserk Frenzy\"]\n[mrr-state: field=\"Harano\" value=\"Touched\"]\n[mrr-state: field=\"Spirit World\" value=\"Penumbra\"]\n[mrr-state: field=\"Temporary Glory\" delta=\"+1\"]\n[mrr-state: field=\"Temporary Honour\" delta=\"-1\"]\n\nFor Gift activations by the player:\n[gift: <Gift name> (<list: Breed/Auspice/Tribal/General/Spirit>), Lv<N>, <cost e.g. 1 Gnosis or 1 Rage>, <type>] - then narrate the effect.\n\n# What you (this agent) emit each turn\n\nA short rules brief (<= 250 tokens) that:\n1. Names the most likely Attribute + Ability pool the action calls for, with a suggested difficulty (6 default; raise for hard, lower for trivial). Note current Form's Attribute modifiers.\n2. Reminds the GM model of the dice-tag format above.\n3. Surfaces economy state: current Form, Rage current/permanent, Gnosis current/permanent, Willpower current/permanent, highest-filled health level + penalty, current Frenzy/Harano/Spirit-World state, Rank.\n4. Flags Gift opportunities the PC has that fit the action, with Gnosis/Rage/Willpower cost.\n5. If a Rage roll is being triggered, surfaces the trigger and remind the player they may spend 1 Willpower to abort if it resolves to frenzy.\n6. If the action would be the kind of deed that earns or risks Renown (Glory for bravery, Honour for duty, Wisdom for restraint), note the likely +/- 1 temp Renown.\n7. If the action crosses the Gauntlet or interacts with spirits, note the relevant Gauntlet difficulty.\n\nIf no roll is needed (clear automatic success or pure roleplay), say \"No roll required\" with a one-sentence reason.\n\n# Storyteller stance — first turn opening\n\nWhen this is the FIRST turn of a chronicle, ground the player in your brief: their Tribe and Auspice and Breed, current Rank, starting Rage/Gnosis/Willpower, their pack and sept (if any), the caern they call home, the current Wyrm threat in the territory, and one of their Intimacies / vows / Litany ties. Hand the narration with a sense of myth pressing against a dying world. Later turns can stay tight on mechanics.\n\nEquipment: the sheet tracks weapons / armour / fetishes. When the player rolls, the dice widget folds equipped bonuses into the printed [dice: ...] tag. Narrate gear vividly but treat the tag as authoritative; do not re-add bonuses by hand. If a player invokes a fetish or Gift not on their sheet, ask them to add it first.\n\n# XP award doctrine\n\nBefore narrating ANY XP award, check the \"XP Awards\" reference lorebook entry's `Progression:` line. **If it reads `Progression: milestone`, award NO XP** — state plainly that this chronicle tracks progress by milestone and the pack advances manually; do not narrate an XP number this turn. The shipped default is `Progression: xp`, under which the rules below apply.\n\nAward XP (never invent the amount — look up the guideline value in the \"XP Awards\" lorebook entry) at session's end, or mid-session for:\n1. **Combat/danger resolution** — a fight or a genuinely dangerous scene concludes.\n2. **Social or mental challenge resolution** — a negotiation, an investigation, or a puzzle concludes, success OR a costly-but-story-moving failure. Award from the lorebook entry's parity guidance — these exist so play is never \"grind rats to level.\"\n3. **A good-RP moment** — Breed/Auspice/Tribe portrayal or a Renown-earning struggle that meaningfully develops the character. Same guidance as above.\n4. **Session end** — the lorebook entry's automatic-plus-discretionary structure (1-5 total), the workhorse case for W20 play.\n\nWhen you narrate an award, **state the number explicitly in prose** — \"The pack earns 3 XP this session: automatic 1, plus Roleplay and Danger\" — the same numeric-citation discipline used elsewhere in this prompt. **Every award applies to the WHOLE PACK, not just the acting character** (ruling 6, no party imbalances): narrate it as a pack-wide grant naming the amount once, then emit ONE `[mrr-state: field=\"xp\" delta=\"+N\" target=\"<exact roster name>\" reason=\"...\"]` tag PER player-character roster member in this chat — same delta, same reason, one line per name. Read the exact names off the party sheet block in your context; never target an NPC recruit (`npc:*`) with an xp tag — NPCs are never awarded.\n\nXP is delta-only in this doctrine — never emit an absolute `current=`/`total=` pair for an award; pool mode auto-bumps `total` together with `current` on a positive delta. Awards are never reverted on a swipe — they stick.\n\n**Spend stays manual — the player edits the sheet to spend XP; do not adjudicate spends.** Attribute/Ability/Gift purchases and their costs are the player's own bookkeeping against the W20 corebook's XP cost table; this doctrine covers awards only.\n\nNever invent rules. Where W20 is silent, label the call a Storyteller ruling. Reproduce no verbatim corebook text — paraphrase mechanics only.",
+    "settings": {
+      "contextSources": {
+        "chatHistory": true,
+        "characters": false,
+        "persona": false,
+        "activatedLorebookEntries": false,
+        "chatSummary": false,
+        "authorNotes": false,
+        "trackerData": false,
+        "recalledMemories": false
+      },
+      "resultType": "context_injection",
+      "injectAsSection": true
+    }
+  },
+  "lorebook": {
+    "name": "Werewolf 20 Reference",
+    "description": "Keyword-triggered reference for Werewolf: The Apocalypse 20th Anniversary Edition (W20, 2013 Onyx Path). Mechanics references only; tribe / auspice / Gift / Rite / totem names belong to Paradox Interactive AB. No verbatim corebook text reproduced. Distributed under the Dark Pack Agreement.",
+    "category": "world",
+    "scanDepth": 4,
+    "tokenBudget": 4096,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "name": "XP Progression Mode",
+        "keys": [
+          "xp",
+          "progression",
+          "milestone",
+          "level"
+        ],
+        "constant": true,
+        "selective": false,
+        "position": 0,
+        "content": "Progression: xp\n\n(The line above is the campaign's progression switch — follow whichever mode it declares. 'Progression: xp' = the GM awards XP per the XP Awards entry's guidelines. 'Progression: milestone' = the GM awards NO XP, ever; the player triggers level-ups manually at the table's discretion. Players: edit only the first line to change modes. NOTE: mode changes take effect on the NEXT turn — the engine re-reads lorebook context with about a one-turn delay, so the first response after a flip may follow the previous mode.)"
+      },
+      {
+        "name": "Rule: Dice-pool resolution",
+        "keys": [
+          "roll",
+          "rolls",
+          "check",
+          "test",
+          "dice",
+          "pool",
+          "successes",
+          "difficulty"
+        ],
+        "content": "W20 is the V20 Storyteller chassis applied to werewolves. Roll a pool of d10s = Attribute + Ability. Each die at or above the chosen difficulty (default 6, range 6-9) is one success. A 1 cancels one success (Rule of 1). At least one net success means the action works. Specialty (trait rated 4+ in scope) rerolls every natural 10. Spend 1 Willpower for one guaranteed automatic success per turn (not on damage rolls or Gift activations). Pools are reduced by the current health-track penalty.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Botch",
+        "keys": [
+          "botch",
+          "botched",
+          "spectacular failure",
+          "fumble"
+        ],
+        "content": "A botch occurs when a roll produces ZERO net successes AND shows at least one 1. The Storyteller introduces a real complication, not just a miss. 1s only matter when net successes are zero; otherwise they just cancel successes one-for-one.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Willpower",
+        "keys": [
+          "willpower",
+          "wp",
+          "compulsion",
+          "auto-success"
+        ],
+        "content": "Willpower has a permanent rating (1-10) and a temporary pool (cannot exceed permanent). Spend 1 for: an automatic success (cap once/turn, not on damage / Gift activations), ignore wound penalty on a single roll, abort a triggered frenzy, or resist instinctive urges (fleeing fire, attacking a Wyrm-creature). Regain 1 each morning on waking; more at story end, on personal victory, or for exceptional auspice duty.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Rage",
+        "keys": [
+          "rage",
+          "frenzy",
+          "extra action",
+          "form shift",
+          "berserk"
+        ],
+        "content": "Rage is Gaia's fury — the Beast. Permanent rating set by Auspice (Ragabash 1, Theurge 2, Philodox 3, Galliard 4, Ahroun 5). Temporary pool spent during declaration. Uses: 1 Rage = 1 extra action (cap = half permanent Rage), 1 = instant form-shift no roll, 1 = ignore stun for a turn, Rage roll diff 8 when Incapacitated = 1 level healed per success (once/scene, leaves a Battle Scar). Regain: first moon sighting nightly (new 1 / waning 2 / half-or-waxing 3 / full 4); auspice moon = full Rage; humiliation, botches, moments before combat; new-story d10. FRENZY when a Rage roll scores 4+ successes; spend 1 Willpower to abort. THRALL OF THE WYRM at 6+ successes — unbreakable; breed-specific compulsion (Homid eats kills, Metis defiles, Lupus savages corpse). For each Rage above Willpower, -1 die on Social rolls (Beast Within). Both pools at 0 = stuck in breed form (Losing the Wolf).",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Gnosis",
+        "keys": [
+          "gnosis",
+          "spirit",
+          "umbra",
+          "step sideways",
+          "gauntlet",
+          "harano"
+        ],
+        "content": "Gnosis is the spirit-world connection. Permanent rating set by Breed (Homid 1, Metis 3, Lupus 5). Temporary pool (cap = permanent) spent on Gifts, Mystic Rites, attuning fetishes, Stepping Sideways. STEP SIDEWAYS: see a reflective surface; roll Gnosis vs local Gauntlet (science lab 9, urban downtown 8, city street 7, rural 6, deep wild 5, urban caern 5, active caern 4, powerful caern 3, greatest caerns 2). Successes = speed (0 = fail; 1 = 5 min; 2 = 30 sec; 3+ instant); BOTCH = trapped in the Gauntlet until rescued. Each piece of silver carried subtracts 1 from effective Gnosis (1-day cooldown after discard). Cannot use Rage AND Gnosis in the same turn (a few Gifts excepted). Regain: meditation (Wits + Enigmas vs 8, 1 success/hour, once/day); Sacred Hunt with an Engling (full restore); spirit bargain; between-stories Cha + Enigmas roll. HARANO is high-Gnosis despair (especially Silver Fangs) — blurred reality, lethargy, possible inaction.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Renown — Glory, Honour, Wisdom",
+        "keys": [
+          "renown",
+          "glory",
+          "honour",
+          "honor",
+          "wisdom",
+          "rite of accomplishment",
+          "punishment rite"
+        ],
+        "content": "Renown is standing in the Garou Nation. Three categories: GLORY (deeds of strength, bravery, victory — favoured by Galliards and Ahroun), HONOUR (duty, ethics, Litany — favoured by Ragabash and Philodox), WISDOM (thoughtful action, spirit insight, restraint — favoured by Theurges). Each is tracked as permanent dots (slow to change) and a temporary pool (no cap; accumulates between rites). Permanent gains require a Rite of Accomplishment (Cha + Rituals diff 6); permanent loss via a Punishment Rite. Starting Renown is 3 dots by Auspice: Ragabash 3-any; Theurge 3 Wisdom; Philodox 3 Honour; Galliard 2 Glory + 1 Wisdom; Ahroun 2 Glory + 1 Honour. All new characters begin at Rank 1.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Rank",
+        "keys": [
+          "rank",
+          "cliath",
+          "fostern",
+          "adren",
+          "athro",
+          "elder",
+          "legend",
+          "rite of passage"
+        ],
+        "content": "Rank: 0 Cub (pre-Rite of Passage), 1 Cliath (3 total Renown — earned at Rite of Passage), 2 Fostern (~6 total), 3 Adren (~12 total), 4 Athro (~18 total), 5 Elder (~25+ total), 6 Legend (rare). A Garou cannot learn or use a Gift above their current Rank. Ranks 3+: +1 to frenzy difficulty. Rank 4: +2. Rank 5: +2 AND requires 5+ Rage successes to enter frenzy. Rank 6: +2 AND 6+ to frenzy. Rank advancement is by formal challenge against a Garou one Rank higher.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: The Five Forms",
+        "keys": [
+          "form",
+          "forms",
+          "homid",
+          "glabro",
+          "crinos",
+          "hispo",
+          "lupus",
+          "shift",
+          "shifting",
+          "shapeshift"
+        ],
+        "content": "Five forms. Modifiers stack on the Homid baseline (Metis/Lupus apply them to their own breed-form base). HOMID — no mods, full speech, full human capability. GLABRO — STR +2, STA +2, MAN -2, APP -1 (humans); guttural speech, lethal teeth (Str-1). CRINOS — STR +4, DEX +1, STA +3, MAN -3, APP 0 to humans (Delirium); fangs and claws AGGRAVATED; cannot speak human languages; default for Metis-breed. HISPO — STR +3, DEX +2, STA +3, MAN -3, PER difficulty -1; extra bite die; claws aggravated; cannot use human tools. LUPUS — STR +1, DEX +2, STA +2, MAN -3, PER difficulty -2; 2x speed; claws lethal only (aggravated only for Lupus-breed); default for Lupus-breed; cannot speak or use tools. SHIFT ROLL: Stamina + Primal-Urge, 1 success per form crossed. Spend 1 Rage to shift instantly with no roll.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Health, soak, and regeneration",
+        "keys": [
+          "health",
+          "wound",
+          "damage",
+          "soak",
+          "bashing",
+          "lethal",
+          "aggravated",
+          "silver",
+          "regenerate",
+          "regeneration",
+          "incapacitated"
+        ],
+        "content": "Seven health levels: Bruised(-0) / Hurt(-1) / Injured(-1) / Wounded(-2) / Mauled(-2) / Crippled(-5) / Incapacitated. The highest-filled level's penalty applies to all dice pools. Bashing soaked by Stamina (Garou regen 1 level/turn automatically). Lethal soaked by Stamina (Garou regen 1/hour). Aggravated soaked by Stamina ONLY in non-breed forms (Homid in Glabro/Crinos/Hispo/Lupus; Lupus in Homid/Glabro/Crinos/Hispo; Metis in Homid/Glabro/Hispo/Lupus). In breed form, no soak for aggravated. SILVER damage is always aggravated to Garou, bypasses regeneration, AND is unsoakable in breed form (Metis cannot soak silver in ANY form). Garou heal 1 aggravated/day with rest. Spend Rage past Incapacitated to keep acting (each Rage point = 1 self-inflicted aggravated). Soak rolls cannot botch and ignore wound penalties.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Combat round",
+        "keys": [
+          "initiative",
+          "combat",
+          "attack",
+          "join battle",
+          "split actions",
+          "pack tactics",
+          "claw",
+          "bite"
+        ],
+        "content": "Initiative = Dexterity + Wits + 1d10. Highest acts first; ties go to highest Dex+Wits. Declare in reverse initiative. Wound penalty hits the rating, not the d10. Spend Rage in the declaration step for extra actions (cap half permanent Rage; if you exceed min(Dex, Wits), +3 difficulty to all pools that turn). Split actions without Rage: -1 die / +1 difficulty cumulative per extra action. Attack pools: Brawl/claws/fangs = Dex + Brawl; Melee = Dex + Melee; Firearms = Dex + Firearms (range modifiers add difficulty); Thrown = Dex + Athletics. Defence: dodge (Dex + Athletics), block (Dex + Brawl, hand-to-hand only), parry (Dex + Melee, weapon required). Damage = damage pool d10s at difficulty 6; each attack success above the first adds a bonus damage die. Pack tactics (shared totem): Fur Gnarl (strip armour, 2+), Harrying (4+), Savage (dogpile, 3+). FRENZY in combat = no Gifts, no pack tactics, no Step Sideways, no splitting — just bite, claw, run; ignore pain and wound penalties.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Frenzy / Thrall of the Wyrm / Delirium / The Curse",
+        "keys": [
+          "frenzy",
+          "berserk",
+          "fox frenzy",
+          "thrall of the wyrm",
+          "delirium",
+          "the curse",
+          "veil"
+        ],
+        "content": "FRENZY trigger: a Rage roll scores 4+ successes. Berserk Frenzy = shift Crinos/Hispo and attack; if Rage > Gnosis, may target packmates. Fox Frenzy = shift Lupus and flee; only attack if cornered. Spend 1 Willpower to abort (lose remaining turn). End: each subsequent turn roll Willpower vs difficulty = permanent Rage. THRALL OF THE WYRM at 6+ successes — unbreakable. On Wits diff 7 botch the character commits a breed compulsion (Homid Eater-of-Souls eats kills; Metis Defiler abuses fallen; Lupus Beast-of-War destroys the corpse). DELIRIUM: humans who see Crinos suffer fear / disbelief / panic / bloodlust depending on their Willpower. The Veil makes most humans rationalise the memory (\"It was a bear\"); Willpower 8+ remember clearly. Kinfolk are immune. THE CURSE: humans whose Willpower is lower than the Garou's permanent Rage instinctively avoid the Garou — cross streets, end conversations, refuse to hire. Garou cannot live ordinary human lives because of this.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Gifts",
+        "keys": [
+          "gift",
+          "gifts",
+          "level 1",
+          "level 2",
+          "level 3",
+          "spirit teacher",
+          "chiminage"
+        ],
+        "content": "Gifts are spirit-taught powers, levels 1-6. Each Gift lists its Activation cost (Gnosis / Rage / Willpower, sometimes none), Teaching spirit, and System (which dice roll if any). Garou learn Gifts by petitioning a spirit at a caern of equal-or-higher level than the Gift; chiminage (offering or service) is usually required. A Garou cannot LEARN or USE a Gift above their current Rank. Starting Garou know ONE Level-1 Gift from each of three lists: Breed, Auspice, Tribe. Cross-list Gifts cost extra XP. Level-6 Gifts are legendary, taught only by Incarna after a quest — only one or two living Garou know each.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Rites",
+        "keys": [
+          "rite",
+          "rites",
+          "rite of passage",
+          "rite of accomplishment",
+          "punishment",
+          "moot",
+          "sacred hunt"
+        ],
+        "content": "Rites are ceremonies, not personal powers. Categories: ACCORD (restore harmony / purification, Cha + Rituals diff 7), CAERN (protect / open Moon Bridges, varies), DEATH (honour fallen, Cha + Rituals diff 8 - rank of deceased), MYSTIC (Umbral contact / summoning, Wits + Rituals diff 7), PUNISHMENT (justice, Cha + Rituals diff 7 — failure = Gaia rejects), RENOWN (celebrate accomplishments, Cha + Rituals diff 6), SEASONAL (renew Gaia's connection, Sta + Rituals diff 8 - caern level). Performing a Rite requires Rituals Knowledge >= rite level. Most rites require multiple Garou, materials, and 10+ min per level. Minor rites are daily practices (no roll). Theurges and Philodox most often perform rites; any Garou with the right Rituals can.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Gauntlet, Umbra, caerns",
+        "keys": [
+          "umbra",
+          "penumbra",
+          "gauntlet",
+          "caern",
+          "moon bridge",
+          "spirit world",
+          "sept"
+        ],
+        "content": "The GAUNTLET is the barrier between the physical world and the Umbra (spirit world). Difficulty to Step Sideways varies by location: science lab 9, urban downtown 8, city street 7, rural 6, deep wild 5, urban caern 5, active caern 4, powerful caern 3, greatest 2. The PENUMBRA is the Umbral reflection of the physical world — vibrant living things, ghost-outlined new buildings, solid old ones, shadowy/mocking versions of corrupt places. Time and distance roughly match the physical world. CAERNS are Garou sacred places — pooled Wyld energy with thin Gauntlet; rated 1-5. Caern types grant matching benefits (Healing, Gnosis, Rage, Strength, Stamina, Visions, Wisdom, Wyld, etc.). All caerns can open MOON BRIDGES — Umbral pathways to other distant caerns. SEPTS are pack communities centered on a caern. After roughly a year and a day spent only in one realm, the Garou risks severing their connection to the other.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: The Litany",
+        "keys": [
+          "litany",
+          "law",
+          "garou law",
+          "veil",
+          "leadership",
+          "breeding"
+        ],
+        "content": "The LITANY is the law that binds all Garou. The major tenets: Garou shall not mate with Garou (the metis are the proof of the punishment). Combat the Wyrm wherever it breeds and wherever it dwells. Respect the territory of another. Accept an honourable surrender. Submission to those of higher station. The first sip of blood goes to the leader. Ye shall not eat the flesh of humans. Respect those beneath ye — all are of Gaia. The Veil shall not be lifted (Crinos before mortals; reveal nothing of Garou existence). Do not suffer thy people to tend thy sickness. The leader may be challenged at any time during peace. The leader may not be challenged during wartime. Cleansing of corruption is the right of all. Breaking the Litany costs Honour Renown.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Backgrounds",
+        "keys": [
+          "background",
+          "backgrounds",
+          "totem",
+          "fetish",
+          "kinfolk",
+          "pure breed",
+          "ancestors",
+          "rites background"
+        ],
+        "content": "5 dots of Backgrounds at creation (1 freebie/dot; current rating x2 XP to raise in play). W20 Backgrounds: ALLIES (committed mortal friends), ANCESTORS (memory access; once/session, roll vs 8), CONTACTS (info brokers), FATE (prophecy; once/session add successes to a failed roll), FETISH (rating = total fetish levels), KINFOLK (non-Garou relatives, immune to Delirium), MENTOR (higher-rank Garou sponsor), PURE BREED (lineage prestige; Silver Fangs MUST have 3+), RESOURCES (wealth), RITES (rating = total rite levels known; Rituals must be high enough), SPIRIT HERITAGE (kinship with a spirit category), TOTEM (pack only; points buy abilities). Tribal restrictions apply — see per-tribe entries.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Lore: The Triat — Wyld, Weaver, Wyrm",
+        "keys": [
+          "wyld",
+          "weaver",
+          "wyrm",
+          "triat",
+          "balance",
+          "gaia"
+        ],
+        "content": "The TRIAT is the three primal cosmic forces. WYLD is raw creation, chaos, change — gave the world fertility and possibility. WEAVER is pattern, order, structure — gave the world coherence and survival. WYRM was the destroyer that closed the cycle, ensuring death cleared the way for new life. The Weaver's growing madness trapped the Wyrm in webs of order; the Wyrm went mad with pain and now serves entropy and corruption rather than natural endings. The Garou fight the corrupt Wyrm and increasingly the rigid Weaver too. Black Spiral Dancers (corrupted Garou) serve the Wyrm fully. Most Garou see Gaia, Mother Earth herself, as the wounded balance the Triat once preserved.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Breed: Homid",
+        "keys": [
+          "homid",
+          "human-born",
+          "homid-breed",
+          "homid breed"
+        ],
+        "content": "Homid Garou were raised human and underwent their First Change in adolescence (often catastrophically). Starting Gnosis 1. Default form Homid; cannot soak aggravated in Homid form. Comfortable with technology, urban life, and human society — the bridge between Garou and Kinfolk. Homid-only Breed Gifts include: City Running, Smell of Man, Persuasion, Master of Fire, Apecraft's Blessings.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Breed: Metis",
+        "keys": [
+          "metis",
+          "deformity",
+          "breed - metis"
+        ],
+        "content": "Metis are born to two Garou parents — a forbidden union under the Litany. They are sterile, bear one permanent DEFORMITY across all forms (albino, fits, hairless, horns, hunchback, no sense of smell, no tail, seizures, tough hide, wasting disease, weak immune, withered limb, etc.), and are raised in the sept from birth. Starting Gnosis 3. Default form Crinos; cannot soak aggravated in Crinos. They know Garou culture intimately and never had a normal human or wolf life. Often resentful, often loyal. Metis Breed Gifts include: Create Element, Primal Anger, Rat Head, Sense Wyrm, Shed.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Breed: Lupus",
+        "keys": [
+          "lupus",
+          "wolf-born",
+          "lupus-breed",
+          "lupus breed"
+        ],
+        "content": "Lupus Garou were raised by wolf parents and Changed when their wolf life encountered humans. Starting Gnosis 5 — strongest spirit connection of the three breeds. Default form Lupus; cannot soak aggravated in Lupus form. They struggle with human concepts: cannot begin play with dots in Academics, Computer, Enigmas, Finance (n/a in W20), Law, Politics (n/a in W20), or Technology without justification. Lupus Breed Gifts include: Hare's Leap, Heightened Senses, Predator's Arsenal, Prey Mind, Sense Prey. Most wolf-bred Garou view human structures with deep suspicion.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Auspice: Ragabash (New Moon)",
+        "keys": [
+          "ragabash",
+          "new moon",
+          "trickster",
+          "scout"
+        ],
+        "content": "Ragabash, the New Moon Auspice — tricksters, scouts, questioners, gadflies. Starting Rage 1 (lowest). Starting Renown: 3 in any category. They challenge complacency, scout for the pack, ask the unspoken question. Sample Lv 1 Auspice Gifts: Blur of the Milky Eye, Infectious Laughter, Liar's Face, Open Seal, Scent of Running Water. Primary Renown: Honour.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Auspice: Theurge (Crescent Moon)",
+        "keys": [
+          "theurge",
+          "crescent moon",
+          "mystic",
+          "spirit speaker"
+        ],
+        "content": "Theurge, the Crescent Moon Auspice — seers, mystics, ritemasters, spirit-walkers. Starting Rage 2. Starting Renown: 3 Wisdom. They speak with spirits, interpret omens, lead Mystic Rites. Sample Lv 1 Auspice Gifts: Mother's Touch, Sense Wyrm, Spirit Snare, Spirit Speech, Umbral Tether. Primary Renown: Wisdom.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Auspice: Philodox (Half Moon)",
+        "keys": [
+          "philodox",
+          "half moon",
+          "judge",
+          "mediator",
+          "litanist"
+        ],
+        "content": "Philodox, the Half Moon Auspice — judges, mediators, keepers of the Litany. Starting Rage 3. Starting Renown: 3 Honour. They settle disputes, interpret the Litany, lead Punishment Rites. Sample Lv 1 Auspice Gifts: Fangs of Judgment, Persuasion, Resist Pain, Scent of the True Form, Truth of Gaia. Primary Renown: Honour.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Auspice: Galliard (Gibbous Moon)",
+        "keys": [
+          "galliard",
+          "gibbous moon",
+          "bard",
+          "storyteller",
+          "moon dancer"
+        ],
+        "content": "Galliard, the Gibbous Moon Auspice — bards, storytellers, morale officers, lore-keepers. Starting Rage 4. Starting Renown: 2 Glory + 1 Wisdom. They tell the deeds of the pack, raise pack spirits, lead Rites of Death and Rites of Renown. Sample Lv 1 Auspice Gifts: Beast Speech, Call of the Wyld, Heightened Senses, Mindspeak, Perfect Recall. Primary Renown: Glory.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Auspice: Ahroun (Full Moon)",
+        "keys": [
+          "ahroun",
+          "full moon",
+          "warrior",
+          "war leader"
+        ],
+        "content": "Ahroun, the Full Moon Auspice — warriors, champions, war leaders. Starting Rage 5 (highest). Starting Renown: 2 Glory + 1 Honour. The pack's spear-tip; the most prone to frenzy. Sample Lv 1 Auspice Gifts: Falling Touch, Inspiration, Pack Tactics, Razor Claws, Spur Claws. Primary Renown: Glory.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Tribes overview (13 + Black Spiral Dancers)",
+        "keys": [
+          "tribe",
+          "tribes",
+          "totem",
+          "tribal"
+        ],
+        "content": "Thirteen tribes of the Garou Nation, each with a totem spirit, starting Willpower (most 3; Bone Gnawers, Children of Gaia, Stargazers, Wendigo at 4), Tribal Gifts, and Background restrictions: BLACK FURIES (Pegasus, Wyld-guardians, women's mysteries), BONE GNAWERS (Rat, urban survivors), CHILDREN OF GAIA (Unicorn, peacemakers and healers), FIANNA (Stag, Celtic bards), GET OF FENRIS (Fenris, berserkers), GLASS WALKERS (Cockroach, urban tech-shamans), RED TALONS (Griffin, lupus-only feral guardians), SHADOW LORDS (Grandfather Thunder, political manipulators), SILENT STRIDERS (Owl, cursed wanderers), SILVER FANGS (Falcon, aristocratic leaders — require Pure Breed 3+), STARGAZERS (Chimera, contemplatives), UKTENA (Uktena, occultists and Bane Tenders), WENDIGO (Wendigo, pure hunters). LOST TRIBES: White Howlers (became Black Spiral Dancers), Croatan (sacrificed binding a great Wyrm), Bunyip (slaughtered in the War of Tears). BLACK SPIRAL DANCERS are corrupted Garou serving the Wyrm directly — the Garou Nation's worst enemy.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Tribe: Silver Fangs",
+        "keys": [
+          "silver fangs",
+          "falcon",
+          "king albrecht",
+          "pure breed"
+        ],
+        "content": "Silver Fangs (totem: Falcon) — hereditary aristocrats of the Garou Nation, descended from European royal lineages. Starting Willpower 3. Background requirement: MUST have Pure Breed 3+ at creation. Sample tribal Gifts: Falcon's Grasp, Lambent Flame, Sense Wyrm, Sense the Unnatural. Many suffer from inbreeding-related madness (Harano-prone, Royal Affliction merit/flaw); the line is dwindling. Their kings (Jonas Albrecht in modern era) struggle to hold the tribes together against the rising Apocalypse.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Tribe: Get of Fenris",
+        "keys": [
+          "get of fenris",
+          "fenris",
+          "ragnarok",
+          "berserker"
+        ],
+        "content": "Get of Fenris (totem: Fenris) — Norse-rooted berserkers, the Garou's strongest warriors. Starting Willpower 3. Believe Ragnarok is at hand and they will fight it. Sample tribal Gifts: Resist Pain, Smell of the True Form, Visceral Agony, Halt the Coward's Flight, Troll Skin. Cultural lean toward strength, directness, and warband solidarity. Were complicit in the slaughter of the Bunyip.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Tribe: Children of Gaia",
+        "keys": [
+          "children of gaia",
+          "unicorn",
+          "peacemaker",
+          "mediator"
+        ],
+        "content": "Children of Gaia (totem: Unicorn) — peacemakers, healers, inter-tribal mediators. Starting Willpower 4. Among the most balanced and inclusive tribes. Sample tribal Gifts: Mercy, Mother's Touch (also Theurge), Resist Pain, Calm, Strength of Purpose. Often dismissed as soft until needed — then their refusal to compromise becomes iron. Active in Kinfolk relations and in opposing the Get of Fenris's Bunyip-era atrocities being repeated.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Tribe: Glass Walkers",
+        "keys": [
+          "glass walkers",
+          "cockroach",
+          "urban garou",
+          "tech shaman"
+        ],
+        "content": "Glass Walkers (totem: Cockroach) — the urban tribe, tech-shamans, Weaver-navigators (without being corrupted by it). Starting Willpower 3. They run cities and corporate networks; sometimes mistrusted by wilderness tribes. Sample tribal Gifts: Control Simple Machine, Diagnostics, Plug & Play, Trick Shot, Cybersenses. Discouraged Backgrounds: Mentor. Some sub-camps embrace the Weaver too closely (the Glass Walkers walk a fine line).",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Tribe: Red Talons",
+        "keys": [
+          "red talons",
+          "griffin",
+          "lupus only",
+          "wolf-pure"
+        ],
+        "content": "Red Talons (totem: Griffin) — LUPUS-ONLY tribe; no homid characters allowed (and metis are rare and unwelcome). Starting Willpower 3. The most anti-human tribe, advocating the cull of humanity to save Gaia. Sample tribal Gifts: Beast Speech, Wolf at the Door, Scent of Running Water, Body Shift, Hidden Killer. Restricted Background: Resources; Discouraged: Allies, Contacts. Even other Garou often disagree with their solutions while respecting their conviction.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Tribe: Bone Gnawers",
+        "keys": [
+          "bone gnawers",
+          "rat",
+          "urban survivor",
+          "homeless"
+        ],
+        "content": "Bone Gnawers (totem: Rat) — keepers of the forgotten, urban-dwelling, the homeless and the dispossessed. Starting Willpower 4. The tribe with the strongest grasp on what \"normal\" humans suffer. Sample tribal Gifts: Cooking, Tagalong, Trash is Treasure, Scent of Sweet Honey, Resist Toxin. Restricted Backgrounds: Ancestors, Pure Breed. Discouraged: Resources. Lower-rank within the Garou Nation but with deep urban knowledge other tribes need.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Tribe: Shadow Lords",
+        "keys": [
+          "shadow lords",
+          "grandfather thunder",
+          "politics",
+          "manipulator"
+        ],
+        "content": "Shadow Lords (totem: Grandfather Thunder) — eastern European political manipulators. Starting Willpower 3. Ambitious, intelligent, suspicious of the Silver Fangs whose leadership they desire. Sample tribal Gifts: Aura of Confidence, Fatal Flaw, Seizing the Edge, Clap of Thunder, Strength of Purpose. Discouraged Backgrounds: Allies, Mentor. Many other tribes distrust them; they accept this as part of leadership.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Tribes: Uktena & Wendigo (the Pure Ones)",
+        "keys": [
+          "uktena",
+          "wendigo",
+          "pure ones",
+          "native",
+          "indigenous"
+        ],
+        "content": "UKTENA (totem: Uktena) — Americas-born occultists and Bane Tenders, keepers of dangerous lore. Starting Willpower 3. Bind the worst Banes rather than destroy them. Sample Gifts: Sense Magic, Spirit of the Bird, Sense the Unnatural. WENDIGO (totem: Wendigo) — North American hunters, grim and traditionalist. Starting Willpower 4. The two surviving Pure Ones tribes after the Croatan sacrificed themselves. Both tribes are deeply suspicious of European tribes for historical reasons. Discouraged: Wendigo - Contacts, Resources.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Adding Gifts and Rites to your sheet",
+        "keys": [
+          "add gift",
+          "adding gift",
+          "add rite",
+          "adding rite",
+          "gift",
+          "rite",
+          "how to add"
+        ],
+        "content": "W20 ships no Gift catalogue (there are HUNDREDS across breeds, auspices, tribes, and totems); add the Gifts you actually intend to use. Open the GIFTS & RITES flyout. It has buckets: Breed Gifts, Auspice Gifts, Tribal Gifts, General Gifts, Spirit Gifts (Lv 6+), Rites. The small 0-10 box on each bucket header is a generic per-line rating the framework attaches to all dice-pool systems (Discipline rating in Vampire) — W20 Gifts are individual powers and are NOT rated as a line, so leave the box at 0 (or use it as a personal Gift-count marker). Click '+ Add' inside a bucket: Name, Level dots (1-6), and put the activation cost in the cost field — the framework's Cast button parses Vampire-style 'X blood' but does NOT auto-parse Gnosis or Rage. Use the notes field for cost ('1 Gnosis', '1 Rage + 1 Willpower'), Teaching spirit, and the System (which roll, difficulty, effect). Rites go in the Rites bucket; record Rituals requirement and ritual time/components. When you activate a Gift in narration, the state-mutator agent will emit [mrr-state: field=\"Gnosis\" delta=\"-1\"] (or Rage / Willpower) so the pool deducts correctly.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Optional Sub-Agents — what they do and how to enable",
+        "keys": [
+          "sub-agent",
+          "sub agent",
+          "agents",
+          "state-mutator",
+          "combat-overseer",
+          "context-fuser",
+          "pre-input-transformer"
+        ],
+        "content": "Besides the main Ruleset Helper, the bundle installs a small consolidated pool of sub-agents. IMPORTANT: installing the bundle does NOT activate them — like all custom agents on Marinara 2.4.3+, they must be ENABLED FOR EACH GAME at load time, after the game launches (Marinara -> Settings -> Agents, or the game’s agent selection). The ruleset’s lorebook must ALSO be attached to the game (during game setup or after launch) — without it the agents have no ruleset rules to follow and will not work correctly.\n\nThe pool: combat-overseer (one pre-generation agent covering combat-math framing AND NPC roster tracking — initiative, attack/soak pools, Rage extra actions, frenzy, and active/recent NPC continuity). context-fuser (one pre-generation agent covering rules-question answers AND current player-state reminders — form, Rage, Gnosis, Willpower, health, Renown, Frenzy). state-mutator (post-processing; the ruleset-tuned sheet-change agent covering Rage, Gnosis, Willpower, health track (bashing/lethal/aggravated), Form, Frenzy State, Harano, Spirit World, Renown, Rank).\npre-input-transformer (pre-generation; recasts player input in this system’s vocabulary before the GM sees it).\n\nThe earlier five-agent GM-mode set (state-reminder, combat-adjudicator, lore-query, npc-bookkeeper) was RETIRED on 2026-08-25 — combat-adjudicator duplicated combat-overseer, npc-bookkeeper duplicated its NPC roster, lore-query predated the lorebook system, and state-reminder’s live sheet numbers now flow through context-fuser. If your Agents list still shows them from an older install, they are stale rows: disable or delete them.\n\nEach enabled agent costs one extra model call per turn; on a provider that allows only one call at a time, every agent call runs one after another — enable only what your table needs.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "XP Awards",
+        "keys": [
+          "xp",
+          "experience",
+          "experience points",
+          "award xp",
+          "xp award",
+          "session award",
+          "progression"
+        ],
+        "content": "(Progression mode lives in the always-on \"XP Progression Mode\" entry)\n\nW20 experience awards. Set the line above to \"Progression: milestone\" to disable all Storyteller-driven XP awards below — the pack then advances manually, at the table's discretion, whenever the chronicle calls for it.\n\nEND-OF-SESSION AWARD (W20-canonical Storyteller idiom, 1-5 points total per player):\n- 1 XP AUTOMATIC — every player who attended the session earns this no matter what happened.\n- +1 LEARNING — the character learned something concrete about the setting: a Gift's true cost, an enemy spirit's true nature, Triat or caern lore uncovered through play.\n- +1 HEROISM — the character took a significant risk or accomplished something notably heroic in service of Gaia, the pack, or the story.\n- +1 DANGER — the character faced genuine danger — physical, spiritual, or the Wyrm's corruption — and the player played the stakes straight rather than sidestepping them.\n\nRP / SOCIAL / MENTAL PARITY — award equivalents so play is never \"grind rats to level\" (the maintainer's ruling 3):\n- +1 GOOD ROLEPLAY — the player portrayed the character's Breed, Auspice, Tribe, or a Renown-earning struggle memorably, independent of any combat outcome. The four discretionary categories (Learning, Heroism, Danger, Roleplay) cap at 4 total so a session never exceeds 5 XP.\n- A costly or partial failure that still moved the story forward earns full credit on any category it plausibly satisfies — failure is not automatically zero XP if it was consequential and well-played.\n\nPARTY AWARDS — ruling 6, no party imbalances: every session/scene award above applies to the WHOLE PACK, not just the most active player. See this ruleset's gm-agent.md XP award doctrine for the party target= emission — one award tag per PC roster member, same amount, NPCs never awarded.\n\nSpend stays manual — the player edits the sheet to spend XP; do not adjudicate spends. Attribute, Ability, Gift, and Willpower purchases follow the W20 corebook's XP cost table; this entry covers awards only.\n\nManual override always available: the player's XP sheet fields and the \"+1 XP\" button remain player-editable regardless of Storyteller awards.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Attribute: Strength (STR)",
+        "keys": [
+          "Strength",
+          "STR"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary attribute. Strength (STR) [Physical] — Raw muscle. Lifting, melee damage, brawling pools. Modified by form (Glabro +2, Crinos +4, Hispo +3, Lupus +1).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Dexterity (DEX)",
+        "keys": [
+          "Dexterity",
+          "DEX"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary attribute. Dexterity (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy, dodging. Modified by form (Crinos +1, Hispo +2, Lupus +2).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Stamina (STA)",
+        "keys": [
+          "Stamina",
+          "STA"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary attribute. Stamina (STA) [Physical] — Endurance, soak, resisting fatigue. Modified by form (Glabro +2, Crinos +3, Hispo +3, Lupus +2).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Charisma (CHA)",
+        "keys": [
+          "Charisma",
+          "CHA"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary attribute. Charisma (CHA) [Social] — Force of personality, sincere charm, leadership presence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Manipulation (MAN)",
+        "keys": [
+          "Manipulation",
+          "MAN"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary attribute. Manipulation (MAN) [Social] — Deceit, guile, indirect influence. Form penalties to humans (Glabro -2, Crinos -3, Hispo -3, Lupus -3); not vs. Garou or spirits.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Appearance (APP)",
+        "keys": [
+          "Appearance",
+          "APP"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary attribute. Appearance (APP) [Social] — Beauty / presence. Form penalties to humans (Glabro -1); Crinos APP becomes 0 to humans (Delirium); Hispo/Lupus do not use APP socially with humans.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Perception (PER)",
+        "keys": [
+          "Perception",
+          "PER"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary attribute. Perception (PER) [Mental] — Spotting, hearing, noticing details. Hispo/Lupus get -1 to -2 reduction on Perception difficulties (sharper senses).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intelligence (INT)",
+        "keys": [
+          "Intelligence",
+          "INT"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary attribute. Intelligence (INT) [Mental] — Reasoning, learning, recall, abstract analysis.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Wits (WIT)",
+        "keys": [
+          "Wits",
+          "WIT"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary attribute. Wits (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative component.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Alertness",
+        "keys": [
+          "Alertness"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Alertness. Talent. Notice danger and details. Usable untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Athletics",
+        "keys": [
+          "Athletics"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Athletics. Talent (W20). Climbing, running, jumping, swimming, dodging. Usable untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Brawl",
+        "keys": [
+          "Brawl"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Brawl. Talent. Unarmed combat; punches, grapples, claw and bite strikes. Usable untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Empathy",
+        "keys": [
+          "Empathy"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Empathy. Talent (W20). Read emotions, sense lies of the heart. Usable untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Expression",
+        "keys": [
+          "Expression"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Expression. Talent (W20). Communicating ideas, oratory, written prose, Garou tale-telling. Usable untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Intimidation",
+        "keys": [
+          "Intimidation"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Intimidation. Talent (W20). Threats, looming presence, breaking will. Usable untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Leadership",
+        "keys": [
+          "Leadership"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Leadership. Talent (W20). Inspiring loyalty, giving orders, rallying a pack. Usable untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Primal-Urge",
+        "keys": [
+          "Primal-Urge"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Primal-Urge. Talent (W20-exclusive). The Garou's bestial instinct: form-shifting ease, predator's intuition, sensing the supernatural. Cannot be learned by non-Garou. Usable untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Streetwise",
+        "keys": [
+          "Streetwise"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Streetwise. Talent (W20). Navigating urban underbelly, contacts, fences, gossip. Usable untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Subterfuge",
+        "keys": [
+          "Subterfuge"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Subterfuge. Talent (W20). Lying, misleading, deflecting questions. Usable untrained.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Animal Ken",
+        "keys": [
+          "Animal Ken"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Animal Ken. Skill. Handling and reading animals (other than wolves — Garou interpret pack-mates instinctively). Untrained: +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Crafts",
+        "keys": [
+          "Crafts"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Crafts. Skill. Build, repair, and make physical things by hand. Untrained: +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Drive",
+        "keys": [
+          "Drive"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Drive. Skill. Operate vehicles under stress. Untrained: +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Etiquette",
+        "keys": [
+          "Etiquette"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Etiquette. Skill. Manners, protocol — both mortal society and Garou sept hierarchy. Untrained: +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Firearms",
+        "keys": [
+          "Firearms"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Firearms. Skill. Handguns, rifles, automatic weapons. Untrained: +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Larceny",
+        "keys": [
+          "Larceny"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Larceny. Skill. Lock-picking, sleight of hand, B&E, forgery. Untrained: +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Melee",
+        "keys": [
+          "Melee"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Melee. Skill. Armed close combat; blades, clubs, klaives, fetish weapons. Untrained: +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Performance",
+        "keys": [
+          "Performance"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Performance. Skill. Singing, instrument, acting, dance, story-telling for an audience. Untrained: +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stealth",
+        "keys": [
+          "Stealth"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Stealth. Skill. Move unseen and unheard. Untrained: +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Survival",
+        "keys": [
+          "Survival"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Survival. Skill. Wilderness travel, foraging, weather, tracking. Untrained: +1 difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Academics",
+        "keys": [
+          "Academics"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Academics. Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Computer",
+        "keys": [
+          "Computer"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Computer. Knowledge. Software, hardware, networks. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Enigmas",
+        "keys": [
+          "Enigmas"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Enigmas. Knowledge (W20-exclusive). Riddles, hidden patterns, spirit-logic. Theurges and Uktena excel. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Investigation",
+        "keys": [
+          "Investigation"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Investigation. Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Law",
+        "keys": [
+          "Law"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Law. Knowledge. Statute, precedent, courtroom procedure — mortal law (the Litany lives in Rituals + Honour, not here). Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Medicine",
+        "keys": [
+          "Medicine"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Medicine. Knowledge. Diagnosis, surgery, pharmacology. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Occult",
+        "keys": [
+          "Occult"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Occult. Knowledge. Lore of the supernatural — vampires, mages, ghosts, the Wyrm. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Rituals",
+        "keys": [
+          "Rituals"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Rituals. Knowledge (W20-exclusive). Knowledge of Garou rites. Sets the ceiling on what level of Rite a Garou may learn or perform: Rituals must equal or exceed the Rite's level. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Science",
+        "keys": [
+          "Science"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Science. Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Technology",
+        "keys": [
+          "Technology"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary skill. Technology. Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Breed",
+        "keys": [
+          "Breed"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Breed — formula: Garou breed — Homid (raised human), Metis (born to two Garou; sterile; bears one Deformity Flaw), or Lupus (raised wolf). Set this manually on character creation; record the chosen breed in the character notes. Breed sets the Garou's starting Gnosis (Homid 1, Metis 3, Lupus 5) and unlocks the corresponding Breed Gift list. Default 1 = placeholder; treat as a text label rather than a numeric stat.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Permanent Rage",
+        "keys": [
+          "Permanent Rage"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Permanent Rage — formula: The character's permanent Rage rating, 1-10. Starting value comes from Auspice: Ragabash 1, Theurge 2, Philodox 3, Galliard 4, Ahroun 5. This is the CAP on the Rage pool shown in the Resources cluster. Adjust this stepper directly when the character spends XP to raise Rage. Temporary Rage refreshes per moon-phase and other triggers (see lorebook).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Permanent Gnosis",
+        "keys": [
+          "Permanent Gnosis"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Permanent Gnosis — formula: The character's permanent Gnosis rating, 1-10. Starting value comes from Breed: Homid 1, Metis 3, Lupus 5. CAP on the Gnosis pool. Spent on Gifts, Rites, Stepping Sideways into the Umbra. Each piece of silver carried subtracts 1 from effective Gnosis (one-day cooldown after dropping it).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Permanent Willpower",
+        "keys": [
+          "Permanent Willpower"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Permanent Willpower — formula: The character's permanent Willpower rating, 1-10. Tribe sets the starting value (3 for most tribes; 4 for Bone Gnawers, Children of Gaia, Stargazers, and Wendigo). CAP on the Willpower pool. Refresh: +1 on waking each day; full at end of a story (Storyteller discretion); +1 for fulfilling Nature; +1-3 for exceptional auspice duty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Permanent Glory",
+        "keys": [
+          "Permanent Glory"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Permanent Glory — formula: Permanent Glory Renown, 0-10. Reflects feats of strength, bravery, victory. Changes only through a Rite of Accomplishment (gain) or Punishment Rite (loss). Galliards and Ahroun favour Glory. See the temporary-Glory counter in Resources for accumulated deeds awaiting the next rite.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Permanent Honour",
+        "keys": [
+          "Permanent Honour"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Permanent Honour — formula: Permanent Honour Renown, 0-10. Reflects duty, ethics, adherence to the Litany. Ragabash and Philodox favour Honour. Frenzying Garou who wake covered in blood usually lose Honour.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Permanent Wisdom",
+        "keys": [
+          "Permanent Wisdom"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Permanent Wisdom — formula: Permanent Wisdom Renown, 0-10. Reflects thoughtful action, spirit-world insight, restraint. Theurges favour Wisdom.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Rank",
+        "keys": [
+          "Rank"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Rank — formula: Garou social standing, 0-6. 0 Cub (pre-Rite of Passage), 1 Cliath (3 total Renown — earned at Rite of Passage), 2 Fostern (~6 total), 3 Adren (~12 total), 4 Athro (~18 total), 5 Elder (~25+ total), 6 Legend (rare; legendary heroes). A Garou cannot learn or use a Gift above their Rank. Ranks 3+ get +1 to +2 frenzy-resistance difficulty; Rank 5+ requires extra successes to enter frenzy.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Health Track",
+        "keys": [
+          "Health Track"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Health Track — formula: Seven levels (V20 baseline): Bruised(-0), Hurt(-1), Injured(-1), Wounded(-2), Mauled(-2), Crippled(-5), Incapacitated. Penalty in effect = the highest filled box. Bashing heals 1 level/turn automatically; Lethal 1 level/hour; Aggravated 1 level/day with rest. Silver damage is ALWAYS aggravated to Garou and bypasses regeneration. Garou cannot soak aggravated in their BREED form (Homid for Homids, Lupus for Lupus, Crinos for Metis); other forms soak aggravated with Stamina at difficulty 6.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Initiative",
+        "keys": [
+          "Initiative"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Initiative — formula: {Dexterity} + {Wits}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Brawl Attack",
+        "keys": [
+          "Brawl Attack"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Brawl Attack — formula: {Dexterity} + {Brawl}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Melee Attack",
+        "keys": [
+          "Melee Attack"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Melee Attack — formula: {Dexterity} + {Melee}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Firearms Attack",
+        "keys": [
+          "Firearms Attack"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Firearms Attack — formula: {Dexterity} + {Firearms}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Bashing)",
+        "keys": [
+          "Soak (Bashing)"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Soak (Bashing) — formula: {Stamina} + {bonuses:Soak (Bashing)}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Lethal)",
+        "keys": [
+          "Soak (Lethal)"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Soak (Lethal) — formula: {Stamina} + {bonuses:Soak (Lethal)}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Soak (Aggravated)",
+        "keys": [
+          "Soak (Aggravated)"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary derived stat. Soak (Aggravated) — formula: {Stamina} + {bonuses:Soak (Aggravated)}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Werewolf: The Apocalypse 20th Anniversary difficulty ladder. Threshold values needed for success:\n- Trivial (threshold 4) — Trivial for a competent character. Often waived.\n- Routine (threshold 5) — Routine task; minor pressure.\n- Standard (threshold 6) — W20 default. Average task under normal conditions.\n- Challenging (threshold 7) — Pushes a competent Garou; pressure or distraction.\n- Difficult (threshold 8) — Few succeed without bonuses or supernatural help.\n- Nigh-Impossible (threshold 9) — Heroic; requires Willpower, Gifts, or aid.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      }
+    ]
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s{0,20}dc=\"(\\d{1,6})\"\\s{1,20}rolls=\"(\\d{1,6})\"(?:\\s{1,20}modifier=\"([+-]?\\d{1,6})\")?(?:\\s{1,20}total=\"(-?\\d{1,6})\")?\\s{1,20}result=\"(success|failure|critical|fumble)\"\\s{0,20}\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Werewolf: The Apocalypse 20th Anniversary surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s{1,20}(\\d{1,6})\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → Werewolf: The Apocalypse 20th Anniversary difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "w20_reference",
+      "description": "Returns canonical Werewolf: The Apocalypse 20th Anniversary reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Werewolf: The Apocalypse 20th Anniversary — canonical reference\n\nStoryteller-system d10 dice pool on the V20 chassis. Pool = Attribute + Ability. Each die meeting or beating the difficulty (default 6, range 6-9) is one success. A 1 subtracts one success. Botch on a roll showing zero successes AND at least one 1. Specialty 10s reroll. Three pools: Rage (frenzy + extra actions + form-shift), Gnosis (Gifts + Rites + Stepping Sideways), Willpower (auto-success + resisting urges). Renown (Glory/Honour/Wisdom) determines Rank. Five forms (Homid/Glabro/Crinos/Hispo/Lupus) modify Physical and Social Attributes.\n\n## Dice\n- Type: `d10`\n- Notation: `Xd10 vs <difficulty>`\n\n## Resolution\n- Mode: `dice-pool`\n- Pool formula: Attribute + Ability (+ specialty 10-rerolls when applicable, + Willpower auto-success once/turn, + Gift dice, + Rage extra-action dice). Wound penalty subtracts from pools.\n- Default target: 6\n\n## Difficulty ladder\n- **Trivial** (threshold 4) — Trivial for a competent character. Often waived.\n- **Routine** (threshold 5) — Routine task; minor pressure.\n- **Standard** (threshold 6) — W20 default. Average task under normal conditions.\n- **Challenging** (threshold 7) — Pushes a competent Garou; pressure or distraction.\n- **Difficult** (threshold 8) — Few succeed without bonuses or supernatural help.\n- **Nigh-Impossible** (threshold 9) — Heroic; requires Willpower, Gifts, or aid.\n\n## Attributes\n- **Strength** (STR) [Physical] — Raw muscle. Lifting, melee damage, brawling pools. Modified by form (Glabro +2, Crinos +4, Hispo +3, Lupus +1).\n- **Dexterity** (DEX) [Physical] — Agility, hand-eye coordination, attack accuracy, dodging. Modified by form (Crinos +1, Hispo +2, Lupus +2).\n- **Stamina** (STA) [Physical] — Endurance, soak, resisting fatigue. Modified by form (Glabro +2, Crinos +3, Hispo +3, Lupus +2).\n- **Charisma** (CHA) [Social] — Force of personality, sincere charm, leadership presence.\n- **Manipulation** (MAN) [Social] — Deceit, guile, indirect influence. Form penalties to humans (Glabro -2, Crinos -3, Hispo -3, Lupus -3); not vs. Garou or spirits.\n- **Appearance** (APP) [Social] — Beauty / presence. Form penalties to humans (Glabro -1); Crinos APP becomes 0 to humans (Delirium); Hispo/Lupus do not use APP socially with humans.\n- **Perception** (PER) [Mental] — Spotting, hearing, noticing details. Hispo/Lupus get -1 to -2 reduction on Perception difficulties (sharper senses).\n- **Intelligence** (INT) [Mental] — Reasoning, learning, recall, abstract analysis.\n- **Wits** (WIT) [Mental] — Reaction speed, on-the-fly thinking, initiative component.\n\n## Skills\n- **Alertness** — Talent. Notice danger and details. Usable untrained.\n- **Athletics** — Talent (W20). Climbing, running, jumping, swimming, dodging. Usable untrained.\n- **Brawl** — Talent. Unarmed combat; punches, grapples, claw and bite strikes. Usable untrained.\n- **Empathy** — Talent (W20). Read emotions, sense lies of the heart. Usable untrained.\n- **Expression** — Talent (W20). Communicating ideas, oratory, written prose, Garou tale-telling. Usable untrained.\n- **Intimidation** — Talent (W20). Threats, looming presence, breaking will. Usable untrained.\n- **Leadership** — Talent (W20). Inspiring loyalty, giving orders, rallying a pack. Usable untrained.\n- **Primal-Urge** — Talent (W20-exclusive). The Garou's bestial instinct: form-shifting ease, predator's intuition, sensing the supernatural. Cannot be learned by non-Garou. Usable untrained.\n- **Streetwise** — Talent (W20). Navigating urban underbelly, contacts, fences, gossip. Usable untrained.\n- **Subterfuge** — Talent (W20). Lying, misleading, deflecting questions. Usable untrained.\n- **Animal Ken** — Skill. Handling and reading animals (other than wolves — Garou interpret pack-mates instinctively). Untrained: +1 difficulty.\n- **Crafts** — Skill. Build, repair, and make physical things by hand. Untrained: +1 difficulty.\n- **Drive** — Skill. Operate vehicles under stress. Untrained: +1 difficulty.\n- **Etiquette** — Skill. Manners, protocol — both mortal society and Garou sept hierarchy. Untrained: +1 difficulty.\n- **Firearms** — Skill. Handguns, rifles, automatic weapons. Untrained: +1 difficulty.\n- **Larceny** — Skill. Lock-picking, sleight of hand, B&E, forgery. Untrained: +1 difficulty.\n- **Melee** — Skill. Armed close combat; blades, clubs, klaives, fetish weapons. Untrained: +1 difficulty.\n- **Performance** — Skill. Singing, instrument, acting, dance, story-telling for an audience. Untrained: +1 difficulty.\n- **Stealth** — Skill. Move unseen and unheard. Untrained: +1 difficulty.\n- **Survival** — Skill. Wilderness travel, foraging, weather, tracking. Untrained: +1 difficulty.\n- **Academics** — Knowledge. History, literature, languages, the humanities. Untrained: cannot roll without source material.\n- **Computer** — Knowledge. Software, hardware, networks. Untrained: cannot roll.\n- **Enigmas** — Knowledge (W20-exclusive). Riddles, hidden patterns, spirit-logic. Theurges and Uktena excel. Untrained: cannot roll.\n- **Investigation** — Knowledge. Forensic technique, evidence-handling, deduction. Untrained: cannot roll.\n- **Law** — Knowledge. Statute, precedent, courtroom procedure — mortal law (the Litany lives in Rituals + Honour, not here). Untrained: cannot roll.\n- **Medicine** — Knowledge. Diagnosis, surgery, pharmacology. Untrained: cannot roll.\n- **Occult** — Knowledge. Lore of the supernatural — vampires, mages, ghosts, the Wyrm. Untrained: cannot roll.\n- **Rituals** — Knowledge (W20-exclusive). Knowledge of Garou rites. Sets the ceiling on what level of Rite a Garou may learn or perform: Rituals must equal or exceed the Rite's level. Untrained: cannot roll.\n- **Science** — Knowledge. Physics, chemistry, biology — the natural sciences. Untrained: cannot roll.\n- **Technology** — Knowledge. Engineering, electronics, modern infrastructure. Untrained: cannot roll.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ],
+  "additionalAgents": [
+    {
+      "role": "combat-overseer",
+      "name": "Werewolf: The Apocalypse 20th Anniversary — Combat Overseer",
+      "description": "Focused combat overseer agent for Werewolf: The Apocalypse 20th Anniversary — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Combat Overseer for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate scenes, write prose, or speak in-character. You emit two coordinated mechanical sections — combat-math framing AND NPC state — in one block.\n\n# Section 1 — Combat Math (when combat is active)\n\nACTIVATION: only emit Section 1 when combat is clearly happening or about to begin. \"Combat\" means weapons drawn, an attack declared or just landed, initiative called, or the narrative is mechanically resolving violence. If the scene is ambient, social, or merely tense without active violence, output exactly: \"No combat active.\" under the COMBAT header and skip the math fields.\n\nWhen combat IS active, cover whichever of these are relevant to the upcoming turn — pulling from the active ruleset's already-injected resolution mechanic, dice formula, and difficulty ladder. Do NOT invent your own dice math.\n\n- INITIATIVE: whose turn next? If turn order isn't established, demand the model establish it before resolving any actions.\n- ACTION ECONOMY: how many actions does the active character get this turn (one action, three actions, action+bonus+reaction, etc.)?\n- ATTACK RESOLUTION: when an attack is declared, restate the dice formula the ruleset uses (e.g., \"d20 + STR mod + proficiency vs. AC\"; \"Dice pool of Dex + Athletics, target 7+ for successes\"; \"2d6 + stat, 10+ hit / 7-9 partial\").\n- DAMAGE: restate the damage formula + type for the weapon / spell being used.\n- CONDITIONS / STATUS: if an attack inflicts a condition (poisoned, prone, stunned), state the duration and the save/recovery mechanic.\n- RANGE / POSITION: if movement matters, note current range bands or movement budgets.\n- DEFENSIVE OPTIONS: reactions, parries, dodges, spell-shields available to the defender.\n\n# Section 2 — NPC Roster (when NPCs are in or recently in scene)\n\nACTIVATION: emit Section 2 when there are NPCs in the latest 1-2 messages OR recently engaged with the player (took damage, got a condition, was last seen leaving the scene without resolution). If no NPCs are tracked or active, output \"No NPCs to track.\" under the NPC ROSTER header and stop the section.\n\nFor each notable NPC, surface whichever of these the conversation has established. Cap at ~120 words total for this section. Group secondary NPCs (\"3 unnamed bandits, all bloodied and outnumbered\") rather than enumerating each when 4+ are active.\n\n- NAME (and any alias / role like \"the bandit captain\")\n- HP / health pool — current / max — using the active ruleset's vocabulary. If exact numbers were never given, estimate from narrative (\"lightly wounded\", \"bloodied\", \"near death\").\n- CONDITIONS — anything currently affecting them with duration if given.\n- TACTICAL STATE — position, what they're doing this turn (defending, casting, fleeing, surrendering).\n- TELEGRAPHED INTENT — if the narrative has signaled what they plan next.\n- NOTABLE GEAR / ABILITIES — only if relevant to the next turn.\n\n# Section 3 — Encounter Shells (unnamed/random opposition, combat only)\n\nACTIVATION: emit this section instead of enumerating a combatant under Section 2 whenever combat starts against opposition that has no card or sheet of its own — bandits, guards, beasts, disposable mooks. At the start of combat, and again every turn thereafter (re-emit the WHOLE block updated, never append to a prior one), output one `ENCOUNTER:` line per combatant carrying the fields the active ruleset's shell defines below. The narration model treats these numbers as enemy-number TRUTH for the turn — it narrates against them, it does not re-derive or estimate them. Group identical mooks into one line rather than repeating fields per body (\"4x Bandit — see shared line\").\n\nRecurring villains are NOT shells: the moment a combatant matters beyond one fight, they get a real card + sheet (see the extension's character-import flow) and move to Section 2's NPC ROSTER from then on — not here.\n\nIf no combat is active, or the opposition present is already carded, output \"No encounter shells.\" under the ENCOUNTER header and skip this section.\n\n## exalted3e shell fields\n\nInitiative, attack pool, Defense/DV, soak/Hardness, Health Levels, motes (if an essence-user), 1-3 key Charms as name + one-line effect — frame as Extras/QC, not full-writeup NPCs.\n\n## dnd5e shell fields\n\nAC, HP, attack bonus, damage, save DCs, 1-3 key abilities.\n\n# Hard rules (apply across all three sections)\n\n- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.\n- DO NOT roll dice. You frame the math; the resolution happens via the dice widget or player narration.\n- DO NOT decide outcomes. You set up the situation; player or main model decides.\n- DO NOT INVENT NPCs OR VALUES. Track only what narrative has established. If HP was never specified, say \"wounded but combat-capable\" — never make up \"23/40\".\n- PRESERVE CONTINUITY. If an NPC was at low HP three messages ago and hasn't been healed, they're still at low HP.\n- HIDDEN INTENTIONS stay out of the player-facing summary — those belong to a secret-plot-driver if enabled.\n- USE the active ruleset's vocabulary throughout.\n- BE TERSE. Cap total output at ~300 words (all three sections combined).\n\n# Output format\n\nPlain text, three clearly-labeled blocks:\n\nCOMBAT:\n  state: active | starting | ending | none\n  initiative: <whose turn / next, OR \"not yet established — declare initiative\">\n  action budget: <what the acting character can do this turn>\n  declared action: <what player or model signaled>\n  resolution: <dice formula + target>\n  damage formula: <formula + type, if applicable>\n  conditions applied: <name + duration + save mechanic, if applicable>\n\nNPC ROSTER:\n  <Name> (<role/alias>) — HP: <current/max or descriptor> · Conditions: <list> · State: <tactical> · Intent: <next>\n  <repeat per notable NPC; group secondaries>\n\nENCOUNTER:\n  <Combatant/group name> — <shell fields for the active ruleset, e.g. \"Init 7 · Attack pool 6 · DV 3 · Soak 4 · Health -0/-1/-1/-2/Incap\">\n  <repeat per shelled combatant or identical group>\n\nIf all three sections are inactive (no combat, no NPCs, no encounter shells), output exactly: \"No combat, NPC, or encounter state to surface.\"",
+      "settings": {
+        "contextSources": {
+          "chatHistory": true,
+          "characters": false,
+          "persona": false,
+          "activatedLorebookEntries": false,
+          "chatSummary": false,
+          "authorNotes": false,
+          "trackerData": false,
+          "recalledMemories": false
+        },
+        "resultType": "context_injection",
+        "injectAsSection": true
+      },
+      "enabled": true
+    },
+    {
+      "role": "context-fuser",
+      "name": "Werewolf: The Apocalypse 20th Anniversary — Context Fuser",
+      "description": "Focused context fuser agent for Werewolf: The Apocalypse 20th Anniversary — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Context Fuser for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate, roleplay, or speak in-character. You emit two coordinated context blocks — rules-query answer (when asked) AND state reminder (when relevant) — in one output.\n\n# Section 1 — Rules Query (when player asked a rules question)\n\nACTIVATION: emit Section 1 ONLY when the LATEST USER MESSAGE asks a rules question or requests rules clarification. Examples:\n- \"How does grappling work in this system?\"\n- \"What's the DC for picking a lock?\"\n- \"Can my character use two-weapon fighting with a ranged weapon?\"\n- \"Remind me how Sorcery works in Exalted.\"\n- \"What does the Bloodied condition do?\"\n\nThe question can be in-character, out-of-character (OOC), or in parentheses. If the latest user message is NOT a rules question — it's a roleplay action, dialogue, or narrative input — output \"No rules query.\" under the RULES QUERY header and skip Section 1.\n\nWhen a rules question IS being asked, answer it precisely:\n\n- Draw FIRST from the active ruleset's already-injected rules content.\n- Then from the installed lorebook's reference entries (engine surfaces these via keyword scan; trust them).\n- ONLY THEN from the system's published rules at large IF the active ruleset's content doesn't cover the question. Note this explicitly: \"Not in the installed reference; per the published RAW: …\".\n\nRules for the rules answer:\n- BE CORRECT. If you don't know with confidence, say so explicitly. Do not improvise.\n- BE SPECIFIC. Cite the relevant skill name, attribute, formula, DC table, or condition by exact ruleset terminology.\n- BE BRIEF. Cap Section 1 at ~150 words.\n- DISTINGUISH RAW FROM HOUSE RULES. If the campaign has established a house rule that contradicts RAW, prefer the house rule and note the divergence.\n- If ambiguity exists, present the 1-2 common readings and let the GM-side player decide.\n\n# Section 2 — State Reminder (when meaningful state to surface)\n\nACTIVATION: emit Section 2 when there is meaningful tracked state to surface — a player character with HP/resources, an active condition, equipped gear affecting the next turn, or a duration-tracked effect running. If the scene is purely ambient / social with no mechanical state worth tracking, output \"No state to track.\" under the STATE header and skip Section 2.\n\nWhen state IS worth surfacing, produce a short bulleted list (~120 words cap):\n\n1. Active player character(s): name, current HP / health pool, tracked resources (mana, stunt dice, momentum, stress — match the active ruleset's vocabulary).\n2. Active conditions / statuses / wounds (e.g., \"Bloodied\", \"Crippled left arm\", \"Poisoned (3 turns left)\").\n3. Equipped gear that matters for the next turn (weapons drawn, armor worn, prepared spells, items in hand).\n4. Duration-tracked effects running (concentration spells, charm effects, ongoing damage).\n5. Position / range / cover state if combat or tactical movement is active.\n\nRules for state:\n- READ the conversation history. Pull state from what's been ESTABLISHED in narration. Don't invent values.\n- If a value was set earlier and hasn't changed, it's still current. Continuity matters more than restatement.\n- Use the active ruleset's terminology (Stamina vs HP, Willpower vs Sanity, Motes vs Mana, etc.).\n- Do NOT enforce mechanics — that's the Combat Overseer's job. You only REMIND state.\n- If state has clearly diverged from a recent action (the model narrated a hit but didn't update HP), flag the divergence in one line.\n\n# Hard rules (apply across both sections)\n\n- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.\n- REPORT SHEET-DERIVED NUMBERS ONLY. Never infer, interpret, or stack a bonus from the player's phrasing — \"spend 5 motes on an excellency to add 5 dice\" is ONE effect described twice, not two separate +5s. Report the values the sheet and established narration actually carry; pool size and bonus arithmetic belong to the Ruleset Helper and the Combat Overseer, who interpret what you report.\n- DO NOT roll dice or decide outcomes.\n- DO NOT mutate the character sheet. State writes happen via the State Mutator (post-processing) or the extension's Edit-this-character flow.\n- Track player characters only — NPCs are the Combat Overseer's surface.\n- IF A NUMBER YOU NEED IS NOT IN YOUR PROVIDED CONTEXT, SAY SO OR DEFER — never estimate or invent a stat, even a plausible-looking one.\n- BE TERSE. Cap total output at ~250 words combined.\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nRULES QUERY:\n  answer: <one-line direct answer, OR \"No rules query.\">\n  detail: <2-3 sentences expanding with specific numbers, formulas, page references>\n  edge cases: <any common edge cases, if non-trivial>\n  source: <\"Active ruleset\" | \"Installed lorebook\" | \"Published RAW (not in installed reference)\" | \"House rule established earlier this campaign\">\n\nSTATE:\n  player(s):\n    • <Character>: HP X/Y · <resource> A/B\n    • Conditions: <list, or \"none\">\n    • Equipped: <relevant gear>\n    • Active effects: <duration-tracked effects, or \"none\">\n  combat (if active):\n    • Position / range: <state>\n    • Initiative slot: <if relevant>\n\nIf both sections are inactive (no rules query AND no meaningful state), output exactly: \"No context to surface.\"",
+      "settings": {
+        "contextSources": {
+          "chatHistory": true,
+          "characters": false,
+          "persona": false,
+          "activatedLorebookEntries": false,
+          "chatSummary": false,
+          "authorNotes": false,
+          "trackerData": false,
+          "recalledMemories": false
+        },
+        "resultType": "context_injection",
+        "injectAsSection": true
+      },
+      "enabled": true
+    },
+    {
+      "role": "state-mutator",
+      "name": "Werewolf: The Apocalypse 20th Anniversary — W20 — state-mutator (GM-mode)",
+      "description": "Focused state mutator agent for Werewolf: The Apocalypse 20th Anniversary — tuned for Werewolf: The Apocalypse 20th Anniversary.",
+      "phase": "post_processing",
+      "promptTemplate": "You are the W20 (Werewolf: The Apocalypse 20th Anniversary) State Mutator for Marinara Engine's Game Mode. You provide rules guidance only — you do NOT narrate. You instruct the GM model on WHEN and HOW to embed sheet-mutation tags inside its narration.\n\n# When the GM model MUST emit a mutation tag\n\nWhenever narration changes a tracked PC value, the next paragraph must contain ONE matching tag. Tags are silent to the player (the extension parses them out and shows a toast).\n\nField map (W20 sheet -> mutation tag). Every example below is a WORKED, CONCRETE tag — a real computed number or a real chosen value, never a placeholder. NEVER emit a literal letter like \"N\" or an angle-bracket template like \"<N>\" or \"<+/-N>\" where a real value belongs — compute the actual number (or pick the actual value from its valid set) first, then write it:\n\n- Rage spent / regained:        [mrr-state: field=\"Rage\" delta=\"-1\"] (spent) or [mrr-state: field=\"Rage\" delta=\"+2\"] (regained) — substitute the real amount\n- Gnosis spent / regained:      [mrr-state: field=\"Gnosis\" delta=\"-1\"] or [mrr-state: field=\"Gnosis\" delta=\"+1\"]\n- Willpower spent / regained:   [mrr-state: field=\"Willpower\" delta=\"-1\"] or [mrr-state: field=\"Willpower\" delta=\"+1\"]\n- Damage taken:                 [mrr-state: field=\"Health Track\" type=\"lethal\" delta=\"+2\"] — type is one of bashing / lethal / aggravated; delta is the real number of levels taken\n- Damage healed / regenerated:  [mrr-state: field=\"Health Track\" type=\"bashing\" delta=\"-1\"] — same type choices, negative delta\n- Form shift:                   [mrr-state: field=\"Form\" value=\"Crinos\"] — value is one of Homid / Glabro / Crinos / Hispo / Lupus, whichever form was actually taken\n- Frenzy state shift:           [mrr-state: field=\"Frenzy State\" value=\"Berserk Frenzy\"] — value is one of Calm / Rising / Berserk Frenzy / Fox Frenzy / Thrall of the Wyrm\n- Harano shift:                 [mrr-state: field=\"Harano\" value=\"Touched\"] — value is one of None / Touched / Deep Harano\n- Spirit-world shift:           [mrr-state: field=\"Spirit World\" value=\"Penumbra\"] — value is one of Material / Penumbra / Deep Umbra\n- Temporary Renown gain/loss:   [mrr-state: field=\"Temporary Glory\" delta=\"+1\"] (Honour / Wisdom likewise — substitute the real field name and amount)\n- Permanent Renown change (rare; via rite): [mrr-state: field=\"Permanent Glory\" delta=\"+1\"] — always exactly ±1, never any other magnitude\n- Rank advancement (rare):      [mrr-state: field=\"Rank\" delta=\"+1\"]\n- XP awarded (session/interval, round-25 idiom — see the 2026-08-27 note at the top of this file): [mrr-state: target=\"Theirin\" field=\"xp\" delta=\"+3\" reason=\"session award: automatic 1 + Roleplay + Danger\"] — copy the number the GM narrated; ONE tag PER PC roster member (same delta, same reason — ruling 6, no party imbalances); never target an NPC. Milestone check: if the \"XP Awards\" lorebook entry's `Progression:` line reads `milestone`, emit no xp tag. Spend stays manual — never emit a negative/spend xp tag; the player edits the sheet directly.\n\n# Triggers\n\n- Gift activated -> Gnosis (or Rage / Willpower) delta per its cost line.\n- Rage spent for extra action / instant form-shift / ignore stun / heal-while-Incapacitated -> Rage delta.\n- Form change without Rage -> shift roll only; Form value tag.\n- Form change with Rage -> Rage -1 AND Form value tag.\n- Combat hit landing -> Health Track delta with correct damage type (after soak). Silver = aggravated and bypasses regen.\n- Garou regeneration -> Health Track delta negative (B: -1/turn; L: -1/hour; A: -1/day with rest). Do not regenerate silver-inflicted aggravated.\n- Stepping Sideways -> Spirit World value=\"Penumbra\"; do NOT alter Gnosis on a clean cross (only on botch).\n- Rage roll scoring 4+ successes -> Frenzy State value (Berserk Frenzy or Fox Frenzy by scene context); 6+ = Thrall of the Wyrm.\n- Spending 1 Willpower to abort frenzy -> Willpower -1 AND Frenzy State value=\"Calm\".\n- Witnessing horror / extended Umbral exposure -> Harano value=\"Touched\".\n- Notable deed -> Temporary Glory/Honour/Wisdom +1 per category.\n- Frenzy / breaking Litany -> Temporary Honour -1.\n- Rite of Accomplishment cashing in temp Renown -> Permanent Glory/Honour/Wisdom +1 AND clear matching temporary.\n- Session end, or a combat/social/RP beat the \"XP Awards\" lorebook entry covers concludes -> xp delta tag(s), one per PC roster member (ruling 6, party-wide)\n\n# IMPORTANT notes\n\n- A character cannot use both Rage and Gnosis in the same turn (a few specific Gifts excepted).\n- Silver damage is ALWAYS aggravated to Garou; do not type silver damage as lethal or bashing.\n- In breed form (Homid-breed in Homid, Lupus in Lupus, Metis in Crinos) Garou cannot soak aggravated.\n- Rage above the current Willpower rating imposes -1 die on Social rolls per excess point (Beast Within) — narration math; no tag needed.\n\n# What you (this agent) emit\n\nA short brief (<= 100 tokens) listing the mutations LIKELY this turn given the stated action. Examples:\n\n\"Player activates a 1-Gnosis Auspice Gift: expect Gnosis -1; if the action targets a spirit, Temporary Wisdom +1 on success.\"\n\"Player declares an instant Crinos shift for a fight: expect Rage -1 and Form value=Crinos; mortal witnesses likely trigger Delirium.\"\n\"Player roars at the trespasser; Rage roll incoming. If 4+ successes, expect Frenzy State=Berserk Frenzy; Willpower -1 if aborted.\"\n\"No mechanical state change anticipated.\"\n\nIf the GM model fails to emit a needed tag, the floating sheet desyncs. Be explicit. Better one extra tag than a missed one.",
+      "settings": {
+        "contextSources": {
+          "chatHistory": true,
+          "characters": false,
+          "persona": false,
+          "activatedLorebookEntries": false,
+          "chatSummary": false,
+          "authorNotes": false,
+          "trackerData": false,
+          "recalledMemories": false
+        },
+        "resultType": "context_injection"
+      },
+      "enabled": true
+    }
+  ],
+  "scenarioDefault": "This chat uses the Werewolf: The Apocalypse 20th Anniversary ruleset overlay.\n\nStoryteller-system d10 dice pool on the V20 chassis. Pool = Attribute + Ability. Each die meeting or beating the difficulty (default 6, range 6-9) is one success. A 1 subtracts one success. Botch on a roll showing zero successes AND at least one 1. Specialty 10s reroll. Three pools: Rage (frenzy + extra actions + form-shift), Gnosis (Gifts + Rites + Stepping Sideways), Willpower (auto-success + resisting urges). Renown (Glory/Honour/Wisdom) determines Rank. Five forms (Homid/Glabro/Crinos/Hispo/Lupus) modify Physical and Social Attributes.\n\nMechanics: primary die d10, notation Xd10 vs <difficulty>.\nResolution: dice-pool.\n\nThe GM should keep narration consistent with Werewolf: The Apocalypse 20th Anniversary mechanics. Refer to the lorebook entries for ruleset reference."
+}

@@ -1,0 +1,1785 @@
+{
+  "schema": "mrr-bundle",
+  "version": 1,
+  "minExtensionVersion": "0.4.0",
+  "authorId": "kenhito",
+  "generator": {
+    "name": "build-bundle.mjs",
+    "version": "1.7.0"
+  },
+  "ruleset": {
+    "id": "rolemaster",
+    "name": "Rolemaster Fantasy Role Playing",
+    "version": "0.1.0",
+    "edition": "Rolemaster Fantasy Role Playing (Iron Crown Enterprises, stock #5800)",
+    "license": "Original mechanics references only. Rolemaster, Rolemaster Fantasy Role Playing, Arms Law, and Spell Law are trademarks of Iron Crown Enterprises. Unofficial fan-made data file; no verbatim ICE text and no reproduced tables. Setting content, professions, spell lists, and character options are deliberately excluded — supply them in your own lorebook. For the full rules and all tables, buy the book.",
+    "summary": "Percentile skill resolution with open-ended dice. Roll d100, add your skill bonus and the situation's modifiers, and read the total against a result band. Rolls of 96 or better re-roll and add; rolls of 5 or less re-roll and subtract, so results have no ceiling and no floor. Combat resolves the same way: attack roll plus Offensive Bonus minus the defender's Defensive Bonus, cross-indexed against the defender's Armor Type for concussion hits and a critical severity. This bundle ships mechanics and terminology only — no professions, spells, races, or setting content; attach your own lorebook for those (see USER-LOREBOOK-GUIDE.md). Attributes are stored as their temporary (current) value only; RMFRP's potential stat is an advancement cap with no other in-play effect and is out of this bundle's scope.",
+    "dice": {
+      "type": "d100",
+      "notation": "open-ended d100 + bonus"
+    },
+    "resolution": {
+      "mode": "d100-percentile",
+      "direction": "high",
+      "skillFormula": "Open-ended d100 + skill bonus + difficulty modifier + situational modifiers, read against the appropriate maneuver table",
+      "bonusFormula": "skill bonus (ranks + stat-triad bonus + item and special bonuses)",
+      "openEnded": {
+        "high": {
+          "threshold": 96,
+          "cascadeCap": 0
+        },
+        "low": {
+          "threshold": 5,
+          "subtract": true,
+          "continueOn": "high",
+          "cascadeCap": 0
+        },
+        "unusualFaces": [
+          66,
+          100
+        ]
+      }
+    },
+    "difficulties": {
+      "Routine": {
+        "threshold": 30,
+        "description": "Trivial for a trained character. Roll only if failure would be interesting."
+      },
+      "Easy": {
+        "threshold": 20,
+        "description": "Straightforward with basic competence."
+      },
+      "Light": {
+        "threshold": 10,
+        "description": "Slightly taxing."
+      },
+      "Medium": {
+        "threshold": 0,
+        "description": "The unmodified baseline."
+      },
+      "Hard": {
+        "threshold": -10,
+        "description": "Demands real competence."
+      },
+      "Very Hard": {
+        "threshold": -20,
+        "description": "Only the genuinely skilled should try."
+      },
+      "Extremely Hard": {
+        "threshold": -30,
+        "description": "Near the edge of what training delivers."
+      },
+      "Sheer Folly": {
+        "threshold": -50,
+        "description": "Reckless. Success is a story."
+      },
+      "Absurd": {
+        "threshold": -70,
+        "description": "Should not be possible. Open-ended dice are the only path."
+      }
+    },
+    "attributes": [
+      {
+        "name": "Empathy",
+        "abbreviation": "Em",
+        "group": "Primary",
+        "min": 1,
+        "max": 102,
+        "default": 50,
+        "description": "Rapport with the natural and supernatural world. Keys the Essence realm's Resistance Roll bonus. Temporary (current) value only — RMFRP's Potential stat has no in-play effect and is not tracked here."
+      },
+      {
+        "name": "Intuition",
+        "abbreviation": "In",
+        "group": "Primary",
+        "min": 1,
+        "max": 102,
+        "default": 50,
+        "description": "Instinct, luck, and awareness. Keys the Channeling realm's Resistance Roll bonus."
+      },
+      {
+        "name": "Presence",
+        "abbreviation": "Pr",
+        "group": "Primary",
+        "min": 1,
+        "max": 102,
+        "default": 50,
+        "description": "Force of personality and self-command. Keys the Mentalism realm's Resistance Roll bonus."
+      },
+      {
+        "name": "Quickness",
+        "abbreviation": "Qu",
+        "group": "Primary",
+        "min": 1,
+        "max": 102,
+        "default": 50,
+        "description": "Speed, reflexes, and dodging ability. Keys the Defensive Bonus (DB)."
+      },
+      {
+        "name": "Strength",
+        "abbreviation": "St",
+        "group": "Primary",
+        "min": 1,
+        "max": 102,
+        "default": 50,
+        "description": "Physical power. Contributes to melee weapon skill bonuses and carrying capacity."
+      },
+      {
+        "name": "Agility",
+        "abbreviation": "Ag",
+        "group": "Development",
+        "min": 1,
+        "max": 102,
+        "default": 50,
+        "description": "Manual dexterity and balance. One of the five 'Development' stats that also average into how many development points a character earns."
+      },
+      {
+        "name": "Constitution",
+        "abbreviation": "Co",
+        "group": "Development",
+        "min": 1,
+        "max": 102,
+        "default": 50,
+        "description": "Stamina and resistance to harm. Keys Exhaustion Points and the Poison/Disease Resistance Roll bonuses."
+      },
+      {
+        "name": "Memory",
+        "abbreviation": "Me",
+        "group": "Development",
+        "min": 1,
+        "max": 102,
+        "default": 50,
+        "description": "Retention of learned information. A Development stat."
+      },
+      {
+        "name": "Reasoning",
+        "abbreviation": "Re",
+        "group": "Development",
+        "min": 1,
+        "max": 102,
+        "default": 50,
+        "description": "Logic, analysis, and deduction. A Development stat."
+      },
+      {
+        "name": "Self Discipline",
+        "abbreviation": "SD",
+        "group": "Development",
+        "min": 1,
+        "max": 102,
+        "default": 50,
+        "description": "Willpower and self-control. Keys the Fear Resistance Roll bonus and resistance to stun."
+      }
+    ],
+    "skills": [
+      {
+        "name": "Weapon (primary)",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "aliases": [
+          "weapon",
+          "main weapon",
+          "primary weapon"
+        ],
+        "description": "Your main weapon's Offensive Bonus. Rename to the actual weapon (e.g. 'Broadsword', 'Longbow'). Stat triad depends on the weapon category — St/Ag/St for most one-handed, two-handed, and pole weapons; Ag/St/Ag for missile and thrown weapons; In/Ag/Re for siege weaponry. Offensive Bonus skill; contributes directly to the attack roll."
+      },
+      {
+        "name": "Weapon (secondary)",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "aliases": [
+          "off-hand weapon",
+          "secondary weapon"
+        ],
+        "description": "A second weapon or off-hand option. Same stat-triad rule as Weapon (primary) — see that entry. Offensive Bonus skill."
+      },
+      {
+        "name": "Armor",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Your proficiency wearing the armor type you're in — reduces the Moving Maneuver Penalty (MMP) your armor imposes as rank rises. Light Armor uses Ag/St/Ag; Medium and Heavy Armor use St/Ag/St. Moving Maneuver skill."
+      },
+      {
+        "name": "Blocking",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "A defensive combat maneuver alongside Two-Weapon Fighting, Quickdraw, and Swashbuckling in the Combat Maneuvers category (Ag/Qu/SD, combined progression). Used at the GM's ruling to add to your DB against one incoming attack or to negate it outright; this MVP does not ship a dedicated block-effect sub-table."
+      },
+      {
+        "name": "Two-Weapon Fighting",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Fighting with a weapon in each hand. Combat Maneuvers category, Ag/Qu/SD, combined progression. Your skill rank with a given weapon pairing can't exceed your rank with either individual weapon; the OB for each attack equals this skill's bonus, and both attacks take -20 against a second opponent."
+      },
+      {
+        "name": "Body Development",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "aliases": [
+          "body dev"
+        ],
+        "description": "Determines your Hits maximum — see the Hits derived stat. Co/SD/Co, race-based category progression, Special classification. Structural — do not drop from the sheet; nothing else supplies a Hits cap."
+      },
+      {
+        "name": "Adrenal Defense",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "A Self Control skill (SD/Pr/SD, Static Maneuver) for resisting shock, fear, and adrenaline-driven panic in the moment. The core book lists this category's 'adrenal skills' as an open extension rather than one fixed named skill."
+      },
+      {
+        "name": "Stun Removal",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Self Control category, SD/Pr/SD, Static Maneuver. A successful static maneuver shortens accumulated stun rounds; a failed attempt can add more stun instead. Difficulty rises with how many stun rounds you're already carrying."
+      },
+      {
+        "name": "Climbing",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Athletic • Gymnastics category, Ag/Qu/Ag, Moving Maneuver. Scaling surfaces at roughly 10'/round at Medium difficulty on an adequate handhold wall; poorer holds or speed raise the difficulty."
+      },
+      {
+        "name": "Swimming",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Athletic • Endurance category, Co/Ag/St, Moving Maneuver. Rank 1 alone is enough to avoid drowning in calm water; further ranks improve speed, distance, and swimming against a current or in armor."
+      },
+      {
+        "name": "Jumping",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Athletic • Brawn category, St/Co/Ag, Moving Maneuver. Running and standing jumps, both horizontal and vertical."
+      },
+      {
+        "name": "Distance Running",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Athletic • Endurance category, Co/Ag/St, Moving Maneuver. Pacing yourself over long distances and managing Exhaustion Point expenditure at a sustained pace."
+      },
+      {
+        "name": "Perception",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "aliases": [
+          "alertness",
+          "spot",
+          "notice"
+        ],
+        "description": "MVP stand-in for RMFRP's Alertness skill (Awareness • Perceptions, In/SD/In, limited category progression) — unconscious, passive noticing of your surroundings. Use Observation instead for a deliberate, active search."
+      },
+      {
+        "name": "Observation",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Awareness • Searching category, In/Re/SD, Static Maneuver. Active, deliberate scanning of an area for details — distinct from Perception/Alertness, which is passive and unconscious."
+      },
+      {
+        "name": "Tracking",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Awareness • Searching category, In/Re/SD, Static Maneuver. Following and reading a trail of tracks or spoor."
+      },
+      {
+        "name": "Stalking & Hiding",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "aliases": [
+          "stealth",
+          "sneak"
+        ],
+        "description": "Combines RMFRP's separate Stalking (moving unseen) and Hiding (staying unseen) skills — both Subterfuge • Stealth, Ag/SD/In, Static Maneuver — into one MVP sheet row. Split them into two rows if your table wants that granularity."
+      },
+      {
+        "name": "Picking Locks",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "aliases": [
+          "lockpicking"
+        ],
+        "description": "Subterfuge • Mechanics category, In/Ag/Re, Static Maneuver. Opening and locking mechanical locks."
+      },
+      {
+        "name": "Disarming Traps",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Subterfuge • Mechanics category, In/Ag/Re, Static Maneuver. Identifying and disarming a trap you've already located — this skill does not find the trap; see Perception/Observation for that."
+      },
+      {
+        "name": "Diplomacy",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Influence category, Pr/Em/In, Static Maneuver. Formal negotiation and reading a foreign or courtly protocol."
+      },
+      {
+        "name": "Duping",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Influence category, Pr/Em/In, Static Maneuver. Fast talk and misdirection to get one person to act against their own interest."
+      },
+      {
+        "name": "Leadership",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Influence category, Pr/Em/In, Static Maneuver. Inspiring others to follow you and to believe you know what you're doing."
+      },
+      {
+        "name": "Region Lore",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Lore • General category, Me/Re/Me, Static Maneuver. Knowledge of a specific region's geography, people, and history. Rename to the region; every character starts with ranks in their home region's Region Lore."
+      },
+      {
+        "name": "Culture Lore",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "MVP stand-in for RMFRP's Race Lore / History / Anthropology cluster (Lore • General, Me/Re/Me, Static Maneuver) — knowledge of a specific culture's customs and beliefs. Not a single named RMFRP skill by this exact name; rename to the culture in question."
+      },
+      {
+        "name": "Power Point Development",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "aliases": [
+          "pp development"
+        ],
+        "description": "Determines your Power Points maximum — see the Power Points derived stat. Applicable stat is your spellcasting realm stat (Empathy/Intuition/Presence); race-based category progression, Special classification. Structural — the spellcasting analogue of Body Development."
+      },
+      {
+        "name": "Spells (by list)",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Your skill rank with one specific spell list — rename each row to the list's actual name (e.g. 'Fire Law', 'Bard Songs'). You know every spell on that list at or below your rank. Realm stat, Static Maneuver and Special classification. Your own lorebook supplies each list's actual spell effects — see USER-LOREBOOK-GUIDE.md."
+      },
+      {
+        "name": "Directed Spells",
+        "min": -75,
+        "max": 250,
+        "default": 0,
+        "description": "Attack-roll bonus for one specific directed-bolt spell type — Fire Bolts, Ice Bolts, Lightning Bolts, Shock Bolts, or Water Bolts (one skill row per type). Ag/SD/Ag, Offensive Bonus classification. Adds to the open-ended attack roll the same way a weapon OB does."
+      }
+    ],
+    "derivedStats": [
+      {
+        "name": "Hits",
+        "formula": "Equal to your Body Development skill bonus (p.33 worked example). Some printed Character Record Sheets annotate this as '10 + Body Dev skill bonus' — that appears to double-count the +10 special bonus already folded into Body Development's own skill bonus. This bundle defaults to the simpler, worked-example form; switch conventions if your table's sheet uses the other one.",
+        "renderAs": "bar",
+        "maxFormula": "{Body Development}",
+        "default": 10,
+        "aliases": [
+          "hp",
+          "HP",
+          "concussion hits",
+          "hit points"
+        ]
+      },
+      {
+        "name": "Power Points",
+        "formula": "Equal to your Power Point Development skill bonus.",
+        "renderAs": "bar",
+        "maxFormula": "{Power Point Development}",
+        "aliases": [
+          "pp",
+          "PP",
+          "power point"
+        ]
+      },
+      {
+        "name": "Exhaustion Points",
+        "formula": "40 + (3 x Constitution Bonus) + any special bonuses.",
+        "renderAs": "bar",
+        "maxFormula": "40 + 3 * {Constitution Bonus}",
+        "aliases": [
+          "exp",
+          "ExP",
+          "exhaustion"
+        ]
+      },
+      {
+        "name": "Defensive Bonus (DB)",
+        "formula": "(3 x Quickness Bonus) - armor Quickness penalty + shield bonus + special item bonuses. Enter your computed total; this framework can't auto-derive the armor-specific Quickness penalty from Armor Table T-3.3.",
+        "renderAs": "value",
+        "aliases": [
+          "db",
+          "AC",
+          "armor class"
+        ]
+      },
+      {
+        "name": "Offensive Bonus (OB)",
+        "formula": "Your weapon skill's total bonus, allocated per round between attack and parry. Enter the OB for the weapon you're wielding this scene.",
+        "renderAs": "value",
+        "aliases": [
+          "ob"
+        ]
+      },
+      {
+        "name": "Armor Type (AT)",
+        "formula": "1-20, the column read on the attacker's weapon table. Grouped: 1-4 No Armor, 5-8 Soft/Rigid Leather, 9-12 Rigid Leather, 13-16 Chain, 17-20 Plate.",
+        "renderAs": "value",
+        "default": 1,
+        "max": 20,
+        "aliases": [
+          "at",
+          "armor type"
+        ]
+      },
+      {
+        "name": "Moving Maneuver Penalty (MMP)",
+        "formula": "Set by your Armor skill rank against your armor's Minimum/Maximum Maneuver Modification band on Armor Table T-3.3 (p.104). This framework doesn't compute the interpolation — enter the current value by hand. Applies to moving maneuvers.",
+        "renderAs": "value",
+        "aliases": [
+          "mmp"
+        ]
+      },
+      {
+        "name": "RR: Essence",
+        "formula": "3 x Empathy Bonus + item + race bonuses. Compare an open-ended d100 + this bonus against the GM-stated target number (Resistance Roll Table T-3.4, attack level vs. your level).",
+        "renderAs": "value"
+      },
+      {
+        "name": "RR: Channeling",
+        "formula": "3 x Intuition Bonus + item + race bonuses. Same procedure as RR: Essence.",
+        "renderAs": "value"
+      },
+      {
+        "name": "RR: Mentalism",
+        "formula": "3 x Presence Bonus + item + race bonuses. Same procedure as RR: Essence.",
+        "renderAs": "value"
+      },
+      {
+        "name": "RR: Poison",
+        "formula": "3 x Constitution Bonus + item + race bonuses. Same procedure as RR: Essence.",
+        "renderAs": "value"
+      },
+      {
+        "name": "RR: Disease",
+        "formula": "3 x Constitution Bonus + item + race bonuses. Same procedure as RR: Essence.",
+        "renderAs": "value"
+      },
+      {
+        "name": "RR: Fear",
+        "formula": "3 x Self Discipline Bonus + item + race bonuses. Same procedure as RR: Essence.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Bleeding (hits/round)",
+        "formula": "Ongoing hit loss per round from an unhealed critical. Set by the critical's severity; First Aid or Stop Bleeding effort reduces or removes it.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Stun (rounds remaining)",
+        "formula": "Rounds of stun remaining from a critical. A stunned combatant may not attack and may only parry with half OB. Stun Removal can shorten it.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Empathy Bonus",
+        "formula": "Basic Stat Bonus Table T-2.1 (p.17) is a piecewise step table this framework's arithmetic-only formulas can't express. Compute your Empathy stat bonus by hand from T-2.1 (plus any racial/special modification) and enter it here.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Intuition Bonus",
+        "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Presence Bonus",
+        "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Quickness Bonus",
+        "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Strength Bonus",
+        "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Agility Bonus",
+        "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Constitution Bonus",
+        "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry. Feeds Exhaustion Points and the Poison/Disease Resistance Rolls.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Memory Bonus",
+        "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Reasoning Bonus",
+        "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "renderAs": "value"
+      },
+      {
+        "name": "Self Discipline Bonus",
+        "formula": "Same T-2.1 derivation as Empathy Bonus — see that entry. Feeds the Fear Resistance Roll.",
+        "renderAs": "value"
+      }
+    ],
+    "states": [
+      {
+        "name": "Stunned",
+        "values": [
+          {
+            "label": "No"
+          },
+          {
+            "label": "Stunned"
+          },
+          {
+            "label": "Stunned & Unable to Parry"
+          }
+        ]
+      },
+      {
+        "name": "Posture",
+        "values": [
+          {
+            "label": "Standing"
+          },
+          {
+            "label": "Prone"
+          },
+          {
+            "label": "Down & Helpless"
+          }
+        ]
+      },
+      {
+        "name": "Consciousness",
+        "values": [
+          {
+            "label": "Awake"
+          },
+          {
+            "label": "Unconscious"
+          },
+          {
+            "label": "Dying"
+          }
+        ]
+      }
+    ],
+    "diceTagFormat": {
+      "template": "[mrr-roll: mode=d100-open first={first} chain={chain} roll={roll} bonus={bonus} diff={diff} total={total} um={um}]",
+      "example": "[mrr-roll: mode=d100-open first=99 chain=+96,+04 roll=199 bonus=+62 diff=-20 total=241]"
+    },
+    "sections": {
+      "order": [
+        "identity",
+        "attributes",
+        "skills",
+        "derived",
+        "states",
+        "abilities",
+        "inventory",
+        "notes"
+      ]
+    },
+    "lorebookKeys": [
+      "maneuver",
+      "open-ended",
+      "critical",
+      "concussion hits",
+      "power points",
+      "exhaustion",
+      "resistance roll",
+      "OB",
+      "DB",
+      "armor type",
+      "stun",
+      "bleeding"
+    ],
+    "abilities": {
+      "label": "Spell Lists",
+      "categories": [
+        {
+          "id": "open",
+          "label": "Open Lists"
+        },
+        {
+          "id": "closed",
+          "label": "Closed Lists"
+        },
+        {
+          "id": "base",
+          "label": "Base Lists"
+        }
+      ]
+    },
+    "equipmentSlots": [
+      "Weapon",
+      "Off-hand",
+      "Shield",
+      "Armor",
+      "Helmet",
+      "Greaves",
+      "Arm Greaves",
+      "Worn",
+      "Carried"
+    ],
+    "equipmentBonusTargets": [
+      "Offensive Bonus (OB)",
+      "Defensive Bonus (DB)",
+      "Armor Type (AT)",
+      "Hits",
+      "Power Points",
+      "RR: Essence",
+      "RR: Channeling",
+      "RR: Mentalism"
+    ],
+    "vocabularyHints": [
+      {
+        "pattern": "AC / armor class",
+        "hint": "RMFRP has no single AC number — compare Offensive Bonus (OB) minus the target's Defensive Bonus (DB), then cross-index the modified attack roll against the target's Armor Type (AT 1-20) on the attacker's weapon table."
+      },
+      {
+        "pattern": "HP / hit points",
+        "hint": "RMFRP calls this concussion hits — the Hits derived stat, capped by the character's Body Development skill bonus. There's no separate damage roll; the attack table gives hits directly."
+      },
+      {
+        "pattern": "saving throw",
+        "hint": "RMFRP calls this a resistance roll (RR) — an open-ended d100 plus 3x the relevant stat bonus, read against a target number the GM states from the attack's level vs. the target's level."
+      },
+      {
+        "pattern": "spell slot",
+        "hint": "RMFRP casters spend Power Points equal to a spell's level, not a slot — see the Power Points derived stat."
+      },
+      {
+        "pattern": "to-hit roll / attack roll",
+        "hint": "RMFRP attacks are an open-ended d100 + OB - the target's DB, cross-indexed against the target's Armor Type (AT) — not a flat AC comparison."
+      },
+      {
+        "pattern": "DC / difficulty class",
+        "hint": "RMFRP uses the nine-step difficulty ladder (Routine +30 ... Absurd -70) as an additive modifier to a static maneuver roll, not a flat number to beat."
+      }
+    ]
+  },
+  "gmAgent": {
+    "name": "Rolemaster Fantasy Role Playing Ruleset Helper",
+    "description": "Auto-installed by GM-mode bundle. Provides Rolemaster Fantasy Role Playing skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
+    "phase": "pre_generation",
+    "promptTemplate": "You are the Game Master for a Rolemaster Fantasy Role Playing (RMFRP, Iron Crown Enterprises) tabletop session running in Marinara Engine's Game Mode. Your job is to narrate scenes, voice NPCs, adjudicate the mechanics below, and respond to the player's actions while preserving their narrative agency. RMFRP is a percentile, open-ended, high-lethality system built on a single universal roll — you look everything up on a table, so your job is choosing the right table and reading it honestly, not inventing outcomes.\n\n# Authority and limits\n\nYou narrate; you do not decide for the player. Their character's words, choices, and declared actions stand. You frame consequences, run the world, and adjudicate rules — you do not railroad, override a stated intention, or write the player's internal thoughts unless asked.\n\n# CRITICAL — State contract (you must follow this every turn)\n\nThe installed sheet is kept in sync by a State Mutator agent that runs AFTER you write. It reads your finished reply and applies whatever mechanical changes that reply established. It reads NUMBERS OUT OF YOUR PROSE — nothing else is available to it.\n\n1. **State every resolved number explicitly.** Hits taken, hits-per-round of bleeding, rounds of stun, Power Points spent, Exhaustion Points burned, the roll total, the target number. \"Twelve hits, and three per round bleeding\" syncs the sheet. \"A bad wound\" does not.\n2. **Name the state, not just the feeling.** \"Stunned and unable to parry for two rounds\" is readable; \"he reels\" is not.\n3. **Do NOT emit `[mrr-state: ...]` tags yourself.** The State Mutator emits them from your text after you write. A tag in your reply is redundant at best and a double-apply at worst.\n4. **Never write \"hits updated\", \"sheet adjusted\", \"values recorded\".** Those phrases write nothing and never did. The number in your prose is what writes.\n5. **Never ask a verification question** (\"does Hits read 40 now?\"). Narrate the number and let the player watch the sheet move.\n6. **If nothing mechanical happened this turn, narrate freely.** No number needed, nothing to sync.\n\n# Dice doctrine — never invent a roll result\n\n1. **When this chat has tool use enabled, resolve EVERY random outcome you own by calling the `roll_dice` tool** — NPC and monster attacks, criticals, fumbles, morale, resistance rolls the world makes, random tables. Narrate the number the tool returns, verbatim. Enabling it is a one-time user step: Chat Settings → Function Calling → \"Enable Tool Use\"; `roll_dice` is on by default once the toggle is set. This is not a licence to roll FOR the player — their rolls stay theirs (see rule 3); it is how YOUR side of the table stops guessing.\n2. **Never invent a roll result.** Not \"roughly\", not \"call it an 82\", not a number chosen to fit the scene. In an open-ended percentile system the difference between 95 and 96 is the difference between a wound and a cascade, and a GM who picks the number has quietly removed the game. If tool use is off, say plainly what you are rolling and that you are estimating rather than reading a real roll.\n3. **A `[mrr-roll: ...]` or `[dice: ... -> total]` tag in the player's message is AUTHORITATIVE.** Never reroll it, never adjust it, never replace it with your own number, never re-add a bonus it already folded in. The widget's job stops at rolling honestly; interpreting it (the UM call, the band, the table) is yours, and it starts from the number the widget printed.\n4. **Every VERSION of a turn rolls fresh.** On a regenerate or a swipe, all previous rolls for this turn are VOID — they belong to a version that no longer exists. Call `roll_dice` again for every random outcome in the new version. Never narrate a roll you did not obtain from the tool during THIS generation, and never reuse a number from an earlier attempt at the same turn.\n\n**When `roll_dice` is NOT in your available toolset** (some connections cannot deliver tools even when the chat lists them): **NEVER generate dice faces — a face you wrote is a fabrication, not a roll.** Hand every roll to the player: name the pool/dice to roll on their dice widget, precompute the outcome for each possible result (the outcome ladder), and wait. Ladder by BANDS when the range is wide or open-ended — group results into outcome bands rather than listing every face — and when a result chains into a further roll, say so in the ladder and ask for that roll next. Apply the reported face exactly, then emit any state tags. If you are unsure whether you have the tool, attempt the call once — narrating an attempt is not calling; only a tool result block is a roll. Never report a face you did not receive from the tool or the player.\n\n# Core resolution (p.7, p.44-45)\n\nEvery check is: open-ended d100 + skill bonus + difficulty modifier + situational modifiers, read against the appropriate result-band table. The dice widget rolls and totals this for you and emits a `[mrr-roll: mode=d100-open ...]` tag — never do this math yourself or invent a result.\n\nThe Static Maneuver Table has **seven numeric bands plus two Unmodified rows**, each with a \"##%\" extent describing how much of the attempt succeeded:\n\n| Total | Band | Extent |\n|---|---|---|\n| -26 and below | Spectacular Failure | — |\n| -25 to 04 | Absolute Failure | — |\n| 05 to 75 | Failure | — |\n| *UM 66* | *Unusual Event* | — |\n| 76 to 90 | Partial Success | 20% |\n| 91 to 110 | Near Success | 80% |\n| *UM 100* | *Unusual Success* | 125% |\n| 111 to 175 | Success | 100% |\n| 176 and up | Absolute Success | 120% |\n\nTake 100%+ as full success; below that, narrate a partial outcome proportional to the extent. Absolute Success grants +10 (non-cumulative) to that same skill on all future attempts until an Absolute or Spectacular Failure cancels it — only one such bonus is active per skill at a time. **Low open-ended chains reach Spectacular Failure territory routinely** — a low chain has no floor, and the book's own worked example (04 → -97 → -03) resolves to -96. Don't be surprised by it; that's the system working as intended.\n\n# Unmodified rolls — mandatory, and context-dependent (p.43-44)\n\nThe dice widget always rolls the general open-ended rule and reports `first=` in its tag; it cannot know what kind of roll is happening, so YOU decide whether an Unmodified result applies:\n\n- **Static maneuver, unmodified 66** → no modifications of any kind; apply the UM 66 (Unusual Event) row immediately.\n- **Static maneuver, unmodified 100** → discard any open-ended chain the widget rolled; no modifications; apply the UM 100 (Unusual Success, 125%) row immediately.\n- **Attack roll, unmodified roll inside the weapon's fumble range** (varies per weapon, commonly 01-03) → discard the chain; no modifications; go to that weapon's fumble table.\n- **Attack roll, natural 100** → this is NOT a UM. It's a normal high open-ended attack roll — let the cascade stand.\n- **Resistance roll** → no UM convention applies. Open-ended resolves normally.\n\nState this plainly to yourself before ruling: the widget's job stops at rolling the dice honestly; the UM call is yours.\n\n# Static vs Moving maneuvers — same nine labels, two different jobs (p.44, p.48)\n\n- **Static maneuvers** (most skill checks): the difficulty label is an ADDITIVE modifier (+30 Routine ... -70 Absurd) to the roll, read against the seven-band table above.\n- **Moving maneuvers** (climbing, swimming, riding, stalking, acrobatics, dodging, tumbling, diving, running): the same nine labels are instead a COLUMN on a separate 2-D table, not an addition to the roll. Modifiers are the Agility stat bonus, the relevant skill bonus, and the Moving Maneuver Penalty from worn armor. A numeric result on that table is a PERCENTAGE of the maneuver accomplished (100+ = full success, with the excess sometimes extending distance/speed); a non-number result is a failure whose consequence you narrate from context.\n\n# The combat round (p.40-43)\n\n1. **Declare and allocate.** Each combatant declares an action and splits their Offensive Bonus between attack and parry for the round. Parry allocated this round adds to that defender's DB for the round. Activity-percentage budgets constrain what else fits.\n2. **Attack roll.** Open-ended d100 + attacker's allocated OB - defender's DB + situational modifiers.\n3. **UM check.** An unmodified roll inside the weapon's fumble range = fumble, no modifications, no cascade — go straight to the fumble table.\n4. **Read the table.** Cross-index the attacker's weapon attack table against the defender's Armor Type (1-20) column. The cell gives concussion hits and often a critical severity letter plus type (e.g. \"8D\" = 8 hits plus a D-severity critical of that weapon's damage type). Tables have a maximum result (commonly 150).\n5. **Critical roll.** If a critical is indicated, roll d100 on the matching critical table at that severity. Results can add hits, bleeding-per-round, stun rounds, activity penalties, or kill outright.\n6. **Apply once, in the paragraph that narrates the hit.** Never apply the same exchange's damage twice.\n7. **Round upkeep.** Stun decrements; bleeding subtracts; a stunned combatant cannot parry this round.\n\n# Resistance rolls (p.52)\n\nThe sheet cannot compute this — you do it live, and you should state your reasoning:\n\n1. Cross-index the attack's level (caster level for a spell; the source's stated level for a poison, disease, or fear effect) against the target's level on the Resistance Roll Table to get a single target number.\n2. The target's resistance roll must be greater than or equal to that number to resist.\n3. The roll is an open-ended d100 plus the target's RR bonus for the matching realm: Essence→Empathy, Channeling→Intuition, Mentalism→Presence, Poison→Constitution, Disease→Constitution, Fear→Self Discipline (each 3x that stat's bonus, plus item/race bonuses already folded into the sheet's RR field).\n4. Standard adjustments you should know: a willing target gets -50; a caster resisted by a target of the same power realm gets +15.\n5. Estimating the target number when the grid isn't in front of you (this bundle ships the table's SHAPE, not its cells): level 1 attack vs. level 1 target is 50. Levels count from 1, so a level N combatant contributes N-1 steps. Through level 5, each level adds (attacker) or subtracts (target) about 5. From levels 6-15 the per-level step narrows to about 3, on both axes. Above level 15 it flattens to about 1 per level, both directions. Say you are estimating from this shape; a player with the book can read the exact cell and correct you.\n6. **Always say the target number you're using and why** — the player can only trust the roll if they can check your math.\n\n# Difficulty calibration (the most frequent judgment call you'll make)\n\nMap the fiction to the nine bands concretely: a locked simple door is Easy; picking a guildmaster's masterwork lock under time pressure is Very Hard; talking your way past a bored gate guard is Light; talking a hostile inquisitor out of an arrest is Extremely Hard or worse. When in doubt, describe why you picked the band you did — it teaches the player your calibration for next time.\n\n# Tracked values — say these out loud when they change\n\nThese are the sheet fields the State Mutator can move. It moves them only if your narration states the number (or names the state), so treat this list as a checklist of things to say explicitly rather than imply. Do NOT write tag syntax yourself — just put the value in the prose.\n\n- **Hits** — say the hits taken or healed. \"The broadsword's C Slash takes twelve hits off him.\"\n- **Bleeding (hits/round)** — say the per-round figure. \"Three hits a round, and it won't clot on its own.\"\n- **Stun (rounds remaining)** — say the round count. \"Two rounds stunned.\"\n- **Stunned** — say the state by name when it is more than a count: \"stunned and unable to parry.\"\n- **Power Points** — say the spend. \"Eight power points for an eighth-level spell.\"\n- **Exhaustion Points** — say the burn. \"Two exhaustion points for the sprint.\"\n\nIf you genuinely do not have a number — you are estimating a table result you were not shipped — say so plainly and give the player the chance to supply it, rather than narrating a vague wound. A wound with no number does not move the sheet, and that is the correct outcome: better an unmoved sheet the player can ask about than a wrong one applied silently.\n\n# What NOT to do\n\nNever invent a table result and present it as canon — say plainly when you're estimating rather than reading an exact table (you were not shipped the attack, critical, or fumble table contents — only the procedure). Never convert to d20 math. Never roll dice for the player; the widget or the player rolls. Never apply the same damage twice. Never treat a critical roll itself as open-ended — only the maneuver/attack roll that triggered it is. Never assume the player has a profession, spell list, or race loaded onto their sheet — that content lives in *their* lorebook, per USER-LOREBOOK-GUIDE.md, and may simply be absent. When it's absent, ask the player what their character can do rather than asserting an ability they haven't established, and narrate spellcasting procedurally (PP cost = spell level, a casting static maneuver, an RR if the spell allows one) without claiming to know the spell's actual effect unless the player has told you.\n\n# Rules lookup\n\nThe bundled lorebook contains keyword-triggered mechanics reference entries (open-ended dice, result bands, the difficulty ladder, unmodified rolls, static and moving maneuvers, combat, OB/DB, armor types, criticals, hits and bleeding, stun, exhaustion, resistance rolls, power points, and a D&D-to-Rolemaster vocabulary crib). Surface them when relevant rather than improvising.\n\nThe player may attach their OWN lorebooks — professions, spells, races, setting, house rules, and real table data (attack, critical, fumble, or maneuver excerpts from their books). Their content OUTRANKS yours wherever the two overlap:\n\n1. **A user-supplied table row beats your estimate.** If their lorebook has surfaced the actual result for the roll at hand, read it and apply it — never estimate past data you were handed.\n2. **A house rule beats the bundled rule.** If an entry states a rule that contradicts the mechanics above, apply THEIRS, and say which rule you applied so the disagreement is visible.\n3. **Lorebook entries surface on keywords.** If you expect the player to have data for something (a spell's effect, a weapon's fumble range, a critical result) and it hasn't appeared in your context, ask them to name the table, spell, or entry — naming it is what summons it. Never conclude data doesn't exist just because it hasn't fired this turn.\n\nNever invent rules. Where the core book is silent or you're working from the procedure without the exact table in front of you, label the call as a GM ruling.",
+    "settings": {
+      "contextSources": {
+        "chatHistory": true,
+        "characters": false,
+        "persona": false,
+        "activatedLorebookEntries": false,
+        "chatSummary": false,
+        "authorNotes": false,
+        "trackerData": false,
+        "recalledMemories": false
+      },
+      "resultType": "context_injection",
+      "injectAsSection": true
+    }
+  },
+  "lorebook": {
+    "name": "Rolemaster Fantasy Role Playing Rules Reference",
+    "description": "Keyword-triggered mechanics reference for the GM agent running a Rolemaster Fantasy Role Playing session. Mechanics and terminology only — no professions, spells, races, or setting content; see USER-LOREBOOK-GUIDE.md for how to add your own.",
+    "category": "world",
+    "scanDepth": 4,
+    "tokenBudget": 1500,
+    "recursiveScanning": false,
+    "entries": [
+      {
+        "name": "Rule: Open-ended d100",
+        "keys": [
+          "open-ended",
+          "96",
+          "cascade",
+          "d100",
+          "exploding dice"
+        ],
+        "content": "Rolls are d100 read HIGH. A first roll of 96-100 (\"96-00\") is high open-ended: reroll and ADD, and keep rerolling and adding while each new roll is also 96-100. A first roll of 01-05 is low open-ended: reroll and SUBTRACT — but unlike the high chain, the low chain keeps going only while each new roll comes up 96-100 (not while it's low again), so a low chain can ride a high follow-up roll right back down. Open-ended only ever triggers off the UNMODIFIED first roll — a modified total that lands in 96-100 purely from bonuses does not open. Because both directions can chain indefinitely, results have no hard ceiling and no hard floor. Worked examples from the book: high 99, then 96, then 04 = 199; low 04, then 97, then 03 = -96.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Maneuver result bands and % extents",
+        "keys": [
+          "result",
+          "band",
+          "partial success",
+          "absolute failure",
+          "spectacular",
+          "near success",
+          "absolute success"
+        ],
+        "content": "A modified static-maneuver total reads against seven numeric bands plus two Unmodified rows: Spectacular Failure (-26 and below), Absolute Failure (-25 to 04), Failure (05-75), Unmodified 66 = Unusual Event, Partial Success 76-90 (20% extent), Near Success 91-110 (80% extent), Unmodified 100 = Unusual Success (125% extent), Success 111-175 (100% extent), Absolute Success 176+ (120% extent). The \"% extent\" describes how much of the attempt succeeded — treat under 100% as a partial outcome scaled to that percentage unless the GM rules that only 100%+ counts as success here. Absolute Success also grants a non-cumulative +10 to that skill on future attempts, lasting until an Absolute or Spectacular Failure on that same skill cancels it. Because open-ended dice have no floor, the two failure bands below plain Failure come up routinely, not as rare edge cases.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: The nine difficulty bands",
+        "keys": [
+          "difficulty",
+          "routine",
+          "sheer folly",
+          "absurd",
+          "easy",
+          "hard"
+        ],
+        "content": "Nine difficulty labels apply to any check: Routine +30, Easy +20, Light +10, Medium +0, Hard -10, Very Hard -20, Extremely Hard -30, Sheer Folly -50, Absurd -70. For a STATIC maneuver this is an additive modifier to the roll before reading the result band. For a MOVING maneuver the same nine labels instead select a column on a separate percentage-of-completion table — not added to the roll in that case. The GM assigns the difficulty before the roll; changing it after seeing the result is bad form.",
+        "selective": false,
+        "constant": true,
+        "position": 0
+      },
+      {
+        "name": "Rule: Unmodified rolls (UM 66, UM 100, fumble ranges)",
+        "keys": [
+          "UM",
+          "unmodified",
+          "unusual event",
+          "unusual success",
+          "fumble"
+        ],
+        "content": "An \"unmodified\" result is the FIRST roll before any bonuses or penalties. For a static maneuver: unmodified 66 applies the Unusual Event row immediately, no modifications; unmodified 100 applies the Unusual Success row (125%) immediately, no modifications, and is NOT treated as open-ended (do not roll again). For an attack roll: an unmodified roll inside that weapon's specific fumble range (varies by weapon, commonly 01-03) means no modifications and no cascade — go straight to the fumble table instead. A natural 100 on an attack roll is NOT a UM — it's a normal high open-ended roll and the cascade stands. Resistance rolls have no UM convention. The dice widget always rolls the general open-ended rule and reports the first face; deciding whether a UM applies, and to which context, is the GM's call.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Static maneuvers",
+        "keys": [
+          "static maneuver",
+          "skill check",
+          "attempt"
+        ],
+        "content": "Most skill checks — tracking, hiding, picking locks, disarming traps, reading runes, using items, observation, influencing another character, and similar non-movement activity — are static maneuvers. Roll open-ended d100, add the applicable skill bonus (or 3x a relevant stat bonus if no skill applies), add the difficulty modifier, add any standard or GM-assigned situational modifiers, and read the total against the seven-band result table. A static maneuver normally takes one round (100% activity) unless the GM says otherwise; using less than the required activity increases the difficulty.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Moving maneuvers",
+        "keys": [
+          "moving maneuver",
+          "climb",
+          "jump",
+          "dodge",
+          "tumble"
+        ],
+        "content": "Climbing, swimming, riding, stalking, acrobatics, dodging, tumbling, diving, and other in-motion activity are moving maneuvers, resolved on a different table than static maneuvers. Roll open-ended d100, add 3x the character's Agility bonus (or the applicable skill bonus if one exists), add any Moving Maneuver Penalty from worn armor, and cross-index the difficulty as a COLUMN rather than an added modifier. The result is usually read as a percentage of the maneuver actually accomplished (100+ means full success, and excess above 100 can extend the effect); a non-numeric result on that table is a failure with a stated fictional consequence.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Standard maneuver modifiers",
+        "keys": [
+          "modifier",
+          "activity",
+          "hits taken",
+          "lighting",
+          "melee environment"
+        ],
+        "content": "Beyond the base difficulty, static and moving maneuvers both apply situational modifiers: percentage of hits taken (0 at under 25%, worsening to -30 at 76%+), reduced activity used (a growing penalty the further under the normal requirement), being stunned (-50 plus 3x Self Discipline bonus), fighting in a melee environment or under missile fire, and lighting conditions when vision matters. Only apply what the fiction actually supports — don't stack every possible modifier reflexively.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Stats and stat bonuses",
+        "keys": [
+          "stat bonus",
+          "stat",
+          "agility",
+          "quickness",
+          "bonus table"
+        ],
+        "content": "Ten stats run 1-102 (this bundle tracks only the temporary/current value; the potential value is an advancement cap it doesn't track). Five are \"Primary\" stats (Empathy, Intuition, Presence, Quickness, Strength) that affect play directly; five are \"Development\" stats (Agility, Constitution, Memory, Reasoning, Self Discipline) that also average into how fast a character develops. Each stat's raw score converts to a stat bonus through a stepped table, not a simple formula — the framework can't compute a step table automatically, so the player enters the resulting bonus on the sheet once at chargen and updates it only when the raw stat changes. Stat bonuses feed skill bonuses, Resistance Rolls, DB, and Exhaustion Points — the bonus is the load-bearing number, not the raw 1-102 score.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Where a skill bonus comes from",
+        "keys": [
+          "skill bonus",
+          "ranks",
+          "category",
+          "progression"
+        ],
+        "content": "A character's skill bonus for any skill combines several sources: the skill rank bonus (rises with purchased ranks, on one of several named progression curves), the skill category bonus (a smaller shared bonus from ranks in that whole category), the applicable stat bonuses (each skill uses a fixed three-stat \"triad\"), and any item or special bonuses. This bundle's sheet stores the FINAL combined total per skill — exactly what the printed Character Record Sheet's own Skill Bonus column shows — rather than the individual components, so the player computes it once at chargen or level-up and enters the total.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: The combat round",
+        "keys": [
+          "combat round",
+          "initiative",
+          "declare",
+          "action"
+        ],
+        "content": "Each round: combatants declare their action and, if attacking, split their Offensive Bonus between attack and the amount held back to parry. Initiative determines resolution order. Snap actions (up to 20% activity) take a -20 penalty; deliberate actions (up to 80%+ activity) take a +10 bonus; normal actions (up to 50% activity) take neither. Parry allocated this round adds to that combatant's DB for THIS round only — it does not carry forward. A stunned combatant cannot parry and, if attacking at all, fights at half OB.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: OB, DB, and the parry split",
+        "keys": [
+          "OB",
+          "DB",
+          "offensive bonus",
+          "defensive bonus",
+          "parry"
+        ],
+        "content": "Offensive Bonus (OB) is a weapon skill's total bonus, spent per round between attacking and parrying. Defensive Bonus (DB) is 3x the Quickness stat bonus, minus the current armor's Quickness penalty, plus shield bonus, plus any parry allocated this round, plus special item bonuses. An attack roll is open-ended d100 + attacker's allocated OB - defender's current DB + situational modifiers, then cross-indexed against the defender's Armor Type on the attacker's weapon table.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Armor Types 1-20",
+        "keys": [
+          "armor type",
+          "AT",
+          "armor",
+          "plate",
+          "leather",
+          "chain"
+        ],
+        "content": "Armor Type (AT) is a 1-20 scale that determines which column an attack reads on the weapon's attack table. Roughly: AT 1-4 no armor/light clothing, AT 5-8 soft or light rigid leather, AT 9-12 rigid leather, AT 13-16 chain, AT 17-20 plate. Heavier armor (higher AT) generally resists penetration better but imposes a larger Moving Maneuver Penalty and Quickness penalty to DB; lighter armor trades protection for mobility and produces more frequent, more severe critical strikes when it IS penetrated.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Resolving an attack",
+        "keys": [
+          "attack roll",
+          "attack table",
+          "hits and crit"
+        ],
+        "content": "Roll open-ended d100, add the attacker's allocated OB, subtract the defender's current DB, apply situational modifiers, then cross-index the modified total against the attacker's weapon-specific attack table at the defender's Armor Type column. The cell gives concussion hits and, often, a critical severity letter plus damage type (e.g. \"8D\" means 8 hits plus a D-severity critical of that weapon's type). Each table has a stated maximum result; an unmodified roll inside that weapon's fumble range short-circuits straight to a fumble instead — see the Unmodified Rolls entry.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Critical severity and types",
+        "keys": [
+          "critical",
+          "crit",
+          "severity",
+          "A crit",
+          "E crit"
+        ],
+        "content": "A critical result from an attack table names a severity letter (A mildest through E most severe) and a damage type matching the weapon (Slash, Puncture, Krush, and similar). Roll d100 on the matching critical table at that severity and type; results can add extra hits, inflict ongoing bleeding, add stun rounds, impose an activity penalty, or kill outright at the worst severities. This bundle does not ship the critical table contents — read them from your own copy of the book, or narrate an honest estimate and say plainly that you're estimating.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Concussion hits and bleeding",
+        "keys": [
+          "concussion hits",
+          "hits",
+          "bleeding",
+          "wound"
+        ],
+        "content": "\"Hits\" (concussion hits) are the universal damage pool — a character passes out once hits taken reach their maximum and dies once hits taken reach maximum plus Constitution bonus. Maximum Hits equals the character's Body Development skill bonus. Bleeding is an ongoing hits-per-round loss set by an unhealed critical's severity; First Aid or a Stop Bleeding effort reduces or removes it. Hits recover slowly on their own and much faster with rest, sleep, or healing magic/herbs.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Stun and stun removal",
+        "keys": [
+          "stun",
+          "stunned",
+          "unable to parry"
+        ],
+        "content": "Stun is measured in rounds remaining, inflicted by criticals. A stunned combatant cannot attack, may only parry at half OB (some results forbid parrying entirely), and takes a -50 plus 3x Self Discipline bonus penalty to any static maneuver they attempt. A successful Stun Removal static maneuver shortens the remaining stun rounds; a failed attempt can add more stun instead, and the difficulty of that attempt rises with how many stun rounds are already accumulated.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Exhaustion points and pace",
+        "keys": [
+          "exhaustion",
+          "ExP",
+          "tired",
+          "sprint",
+          "pace"
+        ],
+        "content": "Exhaustion Points (ExP) total 40 plus 3x the Constitution bonus. Faster movement paces (sprint, fast sprint, dash), melee, missile fire, and harsh conditions (heat, cold, rough terrain, sleep deprivation) all spend ExP at increasing rates. As spent-ExP percentage rises past 25%, 50%, 75%, and 90%, the character takes escalating penalties to attacks and maneuvers, bottoming out at -100 when fully exhausted. ExP recovers slowly while active, faster while resting, and fastest while sleeping.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Resistance rolls",
+        "keys": [
+          "resistance roll",
+          "RR",
+          "resist",
+          "save"
+        ],
+        "content": "A Resistance Roll (RR) is Rolemaster's saving throw. Cross-index the attack's level (caster level for a spell; the stated level for a poison, disease, or fear source) against the target's level to get a single target number — the target must roll that number or higher to resist. The roll is an open-ended d100 plus the target's RR bonus for the matching realm: Essence uses Empathy, Channeling uses Intuition, Mentalism uses Presence, and Poison/Disease/Fear use Constitution or Self Discipline as noted on the sheet (each 3x the relevant stat bonus, plus item and race bonuses). A willing target takes -50 to resist; a caster of the same power realm as the target gets +15. This bundle does not ship the RR target-number grid — the GM states the number and why.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Rule: Power points and casting",
+        "keys": [
+          "power points",
+          "PP",
+          "cast",
+          "realm",
+          "essence",
+          "channeling",
+          "mentalism"
+        ],
+        "content": "Power Points (PP) equal a caster's Power Point Development skill bonus and are spent 1-for-1 per spell level cast. Rolemaster has three power realms — Essence, Channeling, Mentalism — each with its own casting stat and RR type. A spell that meets all its automatic-casting conditions (right realm, right list, enough free hands/voice, no disqualifying armor, prepared long enough) casts without a roll but can still fail on an unmodified 01-02. Otherwise the caster makes an open-ended casting static maneuver modified by level difference, preparation rounds, and casting conditions.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Reference: Rolemaster terms for D&D players",
+        "keys": [
+          "AC",
+          "saving throw",
+          "hit points",
+          "HP",
+          "DC"
+        ],
+        "content": "Quick crib for players coming from d20 systems: AC -> compare OB minus the target's DB, then cross-index the result against their Armor Type. HP -> Hits (concussion hits), capped by Body Development skill bonus. Saving throw -> Resistance Roll (RR), an open-ended roll vs. a level-derived target number, not a flat DC. Spell slot -> Power Points, spent per spell level. DC -> the nine-step difficulty ladder, applied as an additive modifier (static maneuvers) or a table column (moving maneuvers), not a flat number to beat.",
+        "selective": false,
+        "constant": false,
+        "position": 0
+      },
+      {
+        "name": "Optional Sub-Agents — what they do and how to enable them",
+        "keys": [
+          "sub-agent",
+          "sub agent",
+          "sub-agents",
+          "agents",
+          "state-mutator",
+          "state mutator",
+          "combat-overseer",
+          "combat overseer",
+          "enable agent",
+          "disable agent",
+          "agent toggle"
+        ],
+        "content": "Besides the main Ruleset Helper, the bundle installs a small pool of sub-agents. IMPORTANT: installing the bundle does NOT activate them — like all custom agents on Marinara 2.4.3+, they must be ENABLED FOR EACH GAME at load time, after the game launches (Marinara -> Settings -> Agents). The ruleset's lorebook must ALSO be attached to the game — without it the agents have no ruleset rules to follow.\n\nThe pool: combat-overseer (pre-generation; checks OB/parry allocation, DB composition, activity budget, stun legality, and damage-applied-once each round, plus tracks the NPC roster). state-mutator (the ONLY agent that changes the character sheet — it emits hidden [mrr-state: ...] tags the extension applies; covers Hits, Bleeding, Stun, Power Points, and Exhaustion Points).\n\nA reasonable minimal set for most tables: Ruleset Helper + state-mutator. Add combat-overseer for tactical, multi-combatant fights where the OB/DB bookkeeping matters. Each enabled agent costs one extra model call per turn.",
+        "selective": false,
+        "constant": false,
+        "position": 1
+      },
+      {
+        "name": "Attribute: Empathy (Em)",
+        "keys": [
+          "Empathy",
+          "Em"
+        ],
+        "content": "Rolemaster Fantasy Role Playing attribute. Empathy (Em) [Primary] — Rapport with the natural and supernatural world. Keys the Essence realm's Resistance Roll bonus. Temporary (current) value only — RMFRP's Potential stat has no in-play effect and is not tracked here.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Intuition (In)",
+        "keys": [
+          "Intuition",
+          "In"
+        ],
+        "content": "Rolemaster Fantasy Role Playing attribute. Intuition (In) [Primary] — Instinct, luck, and awareness. Keys the Channeling realm's Resistance Roll bonus.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Presence (Pr)",
+        "keys": [
+          "Presence",
+          "Pr"
+        ],
+        "content": "Rolemaster Fantasy Role Playing attribute. Presence (Pr) [Primary] — Force of personality and self-command. Keys the Mentalism realm's Resistance Roll bonus.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Quickness (Qu)",
+        "keys": [
+          "Quickness",
+          "Qu"
+        ],
+        "content": "Rolemaster Fantasy Role Playing attribute. Quickness (Qu) [Primary] — Speed, reflexes, and dodging ability. Keys the Defensive Bonus (DB).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Strength (St)",
+        "keys": [
+          "Strength",
+          "St"
+        ],
+        "content": "Rolemaster Fantasy Role Playing attribute. Strength (St) [Primary] — Physical power. Contributes to melee weapon skill bonuses and carrying capacity.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Agility (Ag)",
+        "keys": [
+          "Agility",
+          "Ag"
+        ],
+        "content": "Rolemaster Fantasy Role Playing attribute. Agility (Ag) [Development] — Manual dexterity and balance. One of the five 'Development' stats that also average into how many development points a character earns.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Constitution (Co)",
+        "keys": [
+          "Constitution",
+          "Co"
+        ],
+        "content": "Rolemaster Fantasy Role Playing attribute. Constitution (Co) [Development] — Stamina and resistance to harm. Keys Exhaustion Points and the Poison/Disease Resistance Roll bonuses.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Memory (Me)",
+        "keys": [
+          "Memory",
+          "Me"
+        ],
+        "content": "Rolemaster Fantasy Role Playing attribute. Memory (Me) [Development] — Retention of learned information. A Development stat.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Reasoning (Re)",
+        "keys": [
+          "Reasoning",
+          "Re"
+        ],
+        "content": "Rolemaster Fantasy Role Playing attribute. Reasoning (Re) [Development] — Logic, analysis, and deduction. A Development stat.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Attribute: Self Discipline (SD)",
+        "keys": [
+          "Self Discipline",
+          "SD"
+        ],
+        "content": "Rolemaster Fantasy Role Playing attribute. Self Discipline (SD) [Development] — Willpower and self-control. Keys the Fear Resistance Roll bonus and resistance to stun.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Weapon (primary)",
+        "keys": [
+          "Weapon (primary)"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Weapon (primary). Your main weapon's Offensive Bonus. Rename to the actual weapon (e.g. 'Broadsword', 'Longbow'). Stat triad depends on the weapon category — St/Ag/St for most one-handed, two-handed, and pole weapons; Ag/St/Ag for missile and thrown weapons; In/Ag/Re for siege weaponry. Offensive Bonus skill; contributes directly to the attack roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Weapon (secondary)",
+        "keys": [
+          "Weapon (secondary)"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Weapon (secondary). A second weapon or off-hand option. Same stat-triad rule as Weapon (primary) — see that entry. Offensive Bonus skill.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Armor",
+        "keys": [
+          "Armor"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Armor. Your proficiency wearing the armor type you're in — reduces the Moving Maneuver Penalty (MMP) your armor imposes as rank rises. Light Armor uses Ag/St/Ag; Medium and Heavy Armor use St/Ag/St. Moving Maneuver skill.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Blocking",
+        "keys": [
+          "Blocking"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Blocking. A defensive combat maneuver alongside Two-Weapon Fighting, Quickdraw, and Swashbuckling in the Combat Maneuvers category (Ag/Qu/SD, combined progression). Used at the GM's ruling to add to your DB against one incoming attack or to negate it outright; this MVP does not ship a dedicated block-effect sub-table.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Two-Weapon Fighting",
+        "keys": [
+          "Two-Weapon Fighting"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Two-Weapon Fighting. Fighting with a weapon in each hand. Combat Maneuvers category, Ag/Qu/SD, combined progression. Your skill rank with a given weapon pairing can't exceed your rank with either individual weapon; the OB for each attack equals this skill's bonus, and both attacks take -20 against a second opponent.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Body Development",
+        "keys": [
+          "Body Development"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Body Development. Determines your Hits maximum — see the Hits derived stat. Co/SD/Co, race-based category progression, Special classification. Structural — do not drop from the sheet; nothing else supplies a Hits cap.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Adrenal Defense",
+        "keys": [
+          "Adrenal Defense"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Adrenal Defense. A Self Control skill (SD/Pr/SD, Static Maneuver) for resisting shock, fear, and adrenaline-driven panic in the moment. The core book lists this category's 'adrenal skills' as an open extension rather than one fixed named skill.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stun Removal",
+        "keys": [
+          "Stun Removal"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Stun Removal. Self Control category, SD/Pr/SD, Static Maneuver. A successful static maneuver shortens accumulated stun rounds; a failed attempt can add more stun instead. Difficulty rises with how many stun rounds you're already carrying.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Climbing",
+        "keys": [
+          "Climbing"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Climbing. Athletic • Gymnastics category, Ag/Qu/Ag, Moving Maneuver. Scaling surfaces at roughly 10'/round at Medium difficulty on an adequate handhold wall; poorer holds or speed raise the difficulty.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Swimming",
+        "keys": [
+          "Swimming"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Swimming. Athletic • Endurance category, Co/Ag/St, Moving Maneuver. Rank 1 alone is enough to avoid drowning in calm water; further ranks improve speed, distance, and swimming against a current or in armor.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Jumping",
+        "keys": [
+          "Jumping"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Jumping. Athletic • Brawn category, St/Co/Ag, Moving Maneuver. Running and standing jumps, both horizontal and vertical.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Distance Running",
+        "keys": [
+          "Distance Running"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Distance Running. Athletic • Endurance category, Co/Ag/St, Moving Maneuver. Pacing yourself over long distances and managing Exhaustion Point expenditure at a sustained pace.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Perception",
+        "keys": [
+          "Perception"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Perception. MVP stand-in for RMFRP's Alertness skill (Awareness • Perceptions, In/SD/In, limited category progression) — unconscious, passive noticing of your surroundings. Use Observation instead for a deliberate, active search.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Observation",
+        "keys": [
+          "Observation"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Observation. Awareness • Searching category, In/Re/SD, Static Maneuver. Active, deliberate scanning of an area for details — distinct from Perception/Alertness, which is passive and unconscious.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Tracking",
+        "keys": [
+          "Tracking"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Tracking. Awareness • Searching category, In/Re/SD, Static Maneuver. Following and reading a trail of tracks or spoor.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Stalking & Hiding",
+        "keys": [
+          "Stalking & Hiding"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Stalking & Hiding. Combines RMFRP's separate Stalking (moving unseen) and Hiding (staying unseen) skills — both Subterfuge • Stealth, Ag/SD/In, Static Maneuver — into one MVP sheet row. Split them into two rows if your table wants that granularity.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Picking Locks",
+        "keys": [
+          "Picking Locks"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Picking Locks. Subterfuge • Mechanics category, In/Ag/Re, Static Maneuver. Opening and locking mechanical locks.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Disarming Traps",
+        "keys": [
+          "Disarming Traps"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Disarming Traps. Subterfuge • Mechanics category, In/Ag/Re, Static Maneuver. Identifying and disarming a trap you've already located — this skill does not find the trap; see Perception/Observation for that.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Diplomacy",
+        "keys": [
+          "Diplomacy"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Diplomacy. Influence category, Pr/Em/In, Static Maneuver. Formal negotiation and reading a foreign or courtly protocol.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Duping",
+        "keys": [
+          "Duping"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Duping. Influence category, Pr/Em/In, Static Maneuver. Fast talk and misdirection to get one person to act against their own interest.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Leadership",
+        "keys": [
+          "Leadership"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Leadership. Influence category, Pr/Em/In, Static Maneuver. Inspiring others to follow you and to believe you know what you're doing.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Region Lore",
+        "keys": [
+          "Region Lore"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Region Lore. Lore • General category, Me/Re/Me, Static Maneuver. Knowledge of a specific region's geography, people, and history. Rename to the region; every character starts with ranks in their home region's Region Lore.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Culture Lore",
+        "keys": [
+          "Culture Lore"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Culture Lore. MVP stand-in for RMFRP's Race Lore / History / Anthropology cluster (Lore • General, Me/Re/Me, Static Maneuver) — knowledge of a specific culture's customs and beliefs. Not a single named RMFRP skill by this exact name; rename to the culture in question.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Power Point Development",
+        "keys": [
+          "Power Point Development"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Power Point Development. Determines your Power Points maximum — see the Power Points derived stat. Applicable stat is your spellcasting realm stat (Empathy/Intuition/Presence); race-based category progression, Special classification. Structural — the spellcasting analogue of Body Development.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Spells (by list)",
+        "keys": [
+          "Spells (by list)"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Spells (by list). Your skill rank with one specific spell list — rename each row to the list's actual name (e.g. 'Fire Law', 'Bard Songs'). You know every spell on that list at or below your rank. Realm stat, Static Maneuver and Special classification. Your own lorebook supplies each list's actual spell effects — see USER-LOREBOOK-GUIDE.md.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Skill: Directed Spells",
+        "keys": [
+          "Directed Spells"
+        ],
+        "content": "Rolemaster Fantasy Role Playing skill. Directed Spells. Attack-roll bonus for one specific directed-bolt spell type — Fire Bolts, Ice Bolts, Lightning Bolts, Shock Bolts, or Water Bolts (one skill row per type). Ag/SD/Ag, Offensive Bonus classification. Adds to the open-ended attack roll the same way a weapon OB does.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Hits",
+        "keys": [
+          "Hits"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Hits — formula: Equal to your Body Development skill bonus (p.33 worked example). Some printed Character Record Sheets annotate this as '10 + Body Dev skill bonus' — that appears to double-count the +10 special bonus already folded into Body Development's own skill bonus. This bundle defaults to the simpler, worked-example form; switch conventions if your table's sheet uses the other one.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Power Points",
+        "keys": [
+          "Power Points"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Power Points — formula: Equal to your Power Point Development skill bonus.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Exhaustion Points",
+        "keys": [
+          "Exhaustion Points"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Exhaustion Points — formula: 40 + (3 x Constitution Bonus) + any special bonuses.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Defensive Bonus (DB)",
+        "keys": [
+          "Defensive Bonus (DB)"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Defensive Bonus (DB) — formula: (3 x Quickness Bonus) - armor Quickness penalty + shield bonus + special item bonuses. Enter your computed total; this framework can't auto-derive the armor-specific Quickness penalty from Armor Table T-3.3.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Offensive Bonus (OB)",
+        "keys": [
+          "Offensive Bonus (OB)"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Offensive Bonus (OB) — formula: Your weapon skill's total bonus, allocated per round between attack and parry. Enter the OB for the weapon you're wielding this scene.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Armor Type (AT)",
+        "keys": [
+          "Armor Type (AT)"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Armor Type (AT) — formula: 1-20, the column read on the attacker's weapon table. Grouped: 1-4 No Armor, 5-8 Soft/Rigid Leather, 9-12 Rigid Leather, 13-16 Chain, 17-20 Plate.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Moving Maneuver Penalty (MMP)",
+        "keys": [
+          "Moving Maneuver Penalty (MMP)"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Moving Maneuver Penalty (MMP) — formula: Set by your Armor skill rank against your armor's Minimum/Maximum Maneuver Modification band on Armor Table T-3.3 (p.104). This framework doesn't compute the interpolation — enter the current value by hand. Applies to moving maneuvers.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: RR: Essence",
+        "keys": [
+          "RR: Essence"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. RR: Essence — formula: 3 x Empathy Bonus + item + race bonuses. Compare an open-ended d100 + this bonus against the GM-stated target number (Resistance Roll Table T-3.4, attack level vs. your level).",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: RR: Channeling",
+        "keys": [
+          "RR: Channeling"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. RR: Channeling — formula: 3 x Intuition Bonus + item + race bonuses. Same procedure as RR: Essence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: RR: Mentalism",
+        "keys": [
+          "RR: Mentalism"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. RR: Mentalism — formula: 3 x Presence Bonus + item + race bonuses. Same procedure as RR: Essence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: RR: Poison",
+        "keys": [
+          "RR: Poison"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. RR: Poison — formula: 3 x Constitution Bonus + item + race bonuses. Same procedure as RR: Essence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: RR: Disease",
+        "keys": [
+          "RR: Disease"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. RR: Disease — formula: 3 x Constitution Bonus + item + race bonuses. Same procedure as RR: Essence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: RR: Fear",
+        "keys": [
+          "RR: Fear"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. RR: Fear — formula: 3 x Self Discipline Bonus + item + race bonuses. Same procedure as RR: Essence.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Bleeding (hits/round)",
+        "keys": [
+          "Bleeding (hits/round)"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Bleeding (hits/round) — formula: Ongoing hit loss per round from an unhealed critical. Set by the critical's severity; First Aid or Stop Bleeding effort reduces or removes it.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Stun (rounds remaining)",
+        "keys": [
+          "Stun (rounds remaining)"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Stun (rounds remaining) — formula: Rounds of stun remaining from a critical. A stunned combatant may not attack and may only parry with half OB. Stun Removal can shorten it.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Empathy Bonus",
+        "keys": [
+          "Empathy Bonus"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Empathy Bonus — formula: Basic Stat Bonus Table T-2.1 (p.17) is a piecewise step table this framework's arithmetic-only formulas can't express. Compute your Empathy stat bonus by hand from T-2.1 (plus any racial/special modification) and enter it here.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Intuition Bonus",
+        "keys": [
+          "Intuition Bonus"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Intuition Bonus — formula: Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Presence Bonus",
+        "keys": [
+          "Presence Bonus"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Presence Bonus — formula: Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Quickness Bonus",
+        "keys": [
+          "Quickness Bonus"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Quickness Bonus — formula: Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Strength Bonus",
+        "keys": [
+          "Strength Bonus"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Strength Bonus — formula: Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Agility Bonus",
+        "keys": [
+          "Agility Bonus"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Agility Bonus — formula: Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Constitution Bonus",
+        "keys": [
+          "Constitution Bonus"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Constitution Bonus — formula: Same T-2.1 derivation as Empathy Bonus — see that entry. Feeds Exhaustion Points and the Poison/Disease Resistance Rolls.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Memory Bonus",
+        "keys": [
+          "Memory Bonus"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Memory Bonus — formula: Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Reasoning Bonus",
+        "keys": [
+          "Reasoning Bonus"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Reasoning Bonus — formula: Same T-2.1 derivation as Empathy Bonus — see that entry.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Self Discipline Bonus",
+        "keys": [
+          "Self Discipline Bonus"
+        ],
+        "content": "Rolemaster Fantasy Role Playing derived stat. Self Discipline Bonus — formula: Same T-2.1 derivation as Empathy Bonus — see that entry. Feeds the Fear Resistance Roll.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Difficulty ladder reference",
+        "keys": [
+          "DC",
+          "difficulty",
+          "target number",
+          "TN",
+          "threshold",
+          "thresholds"
+        ],
+        "content": "Rolemaster Fantasy Role Playing difficulty ladder. Threshold values needed for success:\n- Routine (threshold 30) — Trivial for a trained character. Roll only if failure would be interesting.\n- Easy (threshold 20) — Straightforward with basic competence.\n- Light (threshold 10) — Slightly taxing.\n- Medium (threshold 0) — The unmodified baseline.\n- Hard (threshold -10) — Demands real competence.\n- Very Hard (threshold -20) — Only the genuinely skilled should try.\n- Extremely Hard (threshold -30) — Near the edge of what training delivers.\n- Sheer Folly (threshold -50) — Reckless. Success is a story.\n- Absurd (threshold -70) — Should not be possible. Open-ended dice are the only path.",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      }
+    ]
+  },
+  "regexScripts": [
+    {
+      "enabled": true,
+      "findRegex": "\\[skill_check:\\s{0,20}dc=\"(\\d{1,6})\"\\s{1,20}rolls=\"(\\d{1,6})\"(?:\\s{1,20}modifier=\"([+-]?\\d{1,6})\")?(?:\\s{1,20}total=\"(-?\\d{1,6})\")?\\s{1,20}result=\"(success|failure|critical|fumble)\"\\s{0,20}\\]",
+      "replaceString": "$5 — rolled against difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 100,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "skill_check tag → Rolemaster Fantasy Role Playing surface"
+    },
+    {
+      "enabled": true,
+      "findRegex": "\\bDC\\s{1,20}(\\d{1,6})\\b",
+      "replaceString": "difficulty $1",
+      "trimStrings": [],
+      "placement": [
+        "ai_output"
+      ],
+      "flags": "gi",
+      "promptOnly": false,
+      "order": 110,
+      "minDepth": null,
+      "maxDepth": null,
+      "name": "DC mention → Rolemaster Fantasy Role Playing difficulty"
+    }
+  ],
+  "customTools": [
+    {
+      "name": "rolemaster_reference",
+      "description": "Returns canonical Rolemaster Fantasy Role Playing reference: dice, resolution, difficulty ladder, attributes, skills. Call when the GM needs authoritative ruleset detail mid-narration.",
+      "parametersSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "executionType": "static",
+      "webhookUrl": null,
+      "staticResult": "# Rolemaster Fantasy Role Playing — canonical reference\n\nPercentile skill resolution with open-ended dice. Roll d100, add your skill bonus and the situation's modifiers, and read the total against a result band. Rolls of 96 or better re-roll and add; rolls of 5 or less re-roll and subtract, so results have no ceiling and no floor. Combat resolves the same way: attack roll plus Offensive Bonus minus the defender's Defensive Bonus, cross-indexed against the defender's Armor Type for concussion hits and a critical severity. This bundle ships mechanics and terminology only — no professions, spells, races, or setting content; attach your own lorebook for those (see USER-LOREBOOK-GUIDE.md). Attributes are stored as their temporary (current) value only; RMFRP's potential stat is an advancement cap with no other in-play effect and is out of this bundle's scope.\n\n## Dice\n- Type: `d100`\n- Notation: `open-ended d100 + bonus`\n\n## Resolution\n- Mode: `d100-percentile`\n\n## Difficulty ladder\n- **Routine** (threshold 30) — Trivial for a trained character. Roll only if failure would be interesting.\n- **Easy** (threshold 20) — Straightforward with basic competence.\n- **Light** (threshold 10) — Slightly taxing.\n- **Medium** (threshold 0) — The unmodified baseline.\n- **Hard** (threshold -10) — Demands real competence.\n- **Very Hard** (threshold -20) — Only the genuinely skilled should try.\n- **Extremely Hard** (threshold -30) — Near the edge of what training delivers.\n- **Sheer Folly** (threshold -50) — Reckless. Success is a story.\n- **Absurd** (threshold -70) — Should not be possible. Open-ended dice are the only path.\n\n## Attributes\n- **Empathy** (Em) [Primary] — Rapport with the natural and supernatural world. Keys the Essence realm's Resistance Roll bonus. Temporary (current) value only — RMFRP's Potential stat has no in-play effect and is not tracked here.\n- **Intuition** (In) [Primary] — Instinct, luck, and awareness. Keys the Channeling realm's Resistance Roll bonus.\n- **Presence** (Pr) [Primary] — Force of personality and self-command. Keys the Mentalism realm's Resistance Roll bonus.\n- **Quickness** (Qu) [Primary] — Speed, reflexes, and dodging ability. Keys the Defensive Bonus (DB).\n- **Strength** (St) [Primary] — Physical power. Contributes to melee weapon skill bonuses and carrying capacity.\n- **Agility** (Ag) [Development] — Manual dexterity and balance. One of the five 'Development' stats that also average into how many development points a character earns.\n- **Constitution** (Co) [Development] — Stamina and resistance to harm. Keys Exhaustion Points and the Poison/Disease Resistance Roll bonuses.\n- **Memory** (Me) [Development] — Retention of learned information. A Development stat.\n- **Reasoning** (Re) [Development] — Logic, analysis, and deduction. A Development stat.\n- **Self Discipline** (SD) [Development] — Willpower and self-control. Keys the Fear Resistance Roll bonus and resistance to stun.\n\n## Skills\n- **Weapon (primary)** — Your main weapon's Offensive Bonus. Rename to the actual weapon (e.g. 'Broadsword', 'Longbow'). Stat triad depends on the weapon category — St/Ag/St for most one-handed, two-handed, and pole weapons; Ag/St/Ag for missile and thrown weapons; In/Ag/Re for siege weaponry. Offensive Bonus skill; contributes directly to the attack roll.\n- **Weapon (secondary)** — A second weapon or off-hand option. Same stat-triad rule as Weapon (primary) — see that entry. Offensive Bonus skill.\n- **Armor** — Your proficiency wearing the armor type you're in — reduces the Moving Maneuver Penalty (MMP) your armor imposes as rank rises. Light Armor uses Ag/St/Ag; Medium and Heavy Armor use St/Ag/St. Moving Maneuver skill.\n- **Blocking** — A defensive combat maneuver alongside Two-Weapon Fighting, Quickdraw, and Swashbuckling in the Combat Maneuvers category (Ag/Qu/SD, combined progression). Used at the GM's ruling to add to your DB against one incoming attack or to negate it outright; this MVP does not ship a dedicated block-effect sub-table.\n- **Two-Weapon Fighting** — Fighting with a weapon in each hand. Combat Maneuvers category, Ag/Qu/SD, combined progression. Your skill rank with a given weapon pairing can't exceed your rank with either individual weapon; the OB for each attack equals this skill's bonus, and both attacks take -20 against a second opponent.\n- **Body Development** — Determines your Hits maximum — see the Hits derived stat. Co/SD/Co, race-based category progression, Special classification. Structural — do not drop from the sheet; nothing else supplies a Hits cap.\n- **Adrenal Defense** — A Self Control skill (SD/Pr/SD, Static Maneuver) for resisting shock, fear, and adrenaline-driven panic in the moment. The core book lists this category's 'adrenal skills' as an open extension rather than one fixed named skill.\n- **Stun Removal** — Self Control category, SD/Pr/SD, Static Maneuver. A successful static maneuver shortens accumulated stun rounds; a failed attempt can add more stun instead. Difficulty rises with how many stun rounds you're already carrying.\n- **Climbing** — Athletic • Gymnastics category, Ag/Qu/Ag, Moving Maneuver. Scaling surfaces at roughly 10'/round at Medium difficulty on an adequate handhold wall; poorer holds or speed raise the difficulty.\n- **Swimming** — Athletic • Endurance category, Co/Ag/St, Moving Maneuver. Rank 1 alone is enough to avoid drowning in calm water; further ranks improve speed, distance, and swimming against a current or in armor.\n- **Jumping** — Athletic • Brawn category, St/Co/Ag, Moving Maneuver. Running and standing jumps, both horizontal and vertical.\n- **Distance Running** — Athletic • Endurance category, Co/Ag/St, Moving Maneuver. Pacing yourself over long distances and managing Exhaustion Point expenditure at a sustained pace.\n- **Perception** — MVP stand-in for RMFRP's Alertness skill (Awareness • Perceptions, In/SD/In, limited category progression) — unconscious, passive noticing of your surroundings. Use Observation instead for a deliberate, active search.\n- **Observation** — Awareness • Searching category, In/Re/SD, Static Maneuver. Active, deliberate scanning of an area for details — distinct from Perception/Alertness, which is passive and unconscious.\n- **Tracking** — Awareness • Searching category, In/Re/SD, Static Maneuver. Following and reading a trail of tracks or spoor.\n- **Stalking & Hiding** — Combines RMFRP's separate Stalking (moving unseen) and Hiding (staying unseen) skills — both Subterfuge • Stealth, Ag/SD/In, Static Maneuver — into one MVP sheet row. Split them into two rows if your table wants that granularity.\n- **Picking Locks** — Subterfuge • Mechanics category, In/Ag/Re, Static Maneuver. Opening and locking mechanical locks.\n- **Disarming Traps** — Subterfuge • Mechanics category, In/Ag/Re, Static Maneuver. Identifying and disarming a trap you've already located — this skill does not find the trap; see Perception/Observation for that.\n- **Diplomacy** — Influence category, Pr/Em/In, Static Maneuver. Formal negotiation and reading a foreign or courtly protocol.\n- **Duping** — Influence category, Pr/Em/In, Static Maneuver. Fast talk and misdirection to get one person to act against their own interest.\n- **Leadership** — Influence category, Pr/Em/In, Static Maneuver. Inspiring others to follow you and to believe you know what you're doing.\n- **Region Lore** — Lore • General category, Me/Re/Me, Static Maneuver. Knowledge of a specific region's geography, people, and history. Rename to the region; every character starts with ranks in their home region's Region Lore.\n- **Culture Lore** — MVP stand-in for RMFRP's Race Lore / History / Anthropology cluster (Lore • General, Me/Re/Me, Static Maneuver) — knowledge of a specific culture's customs and beliefs. Not a single named RMFRP skill by this exact name; rename to the culture in question.\n- **Power Point Development** — Determines your Power Points maximum — see the Power Points derived stat. Applicable stat is your spellcasting realm stat (Empathy/Intuition/Presence); race-based category progression, Special classification. Structural — the spellcasting analogue of Body Development.\n- **Spells (by list)** — Your skill rank with one specific spell list — rename each row to the list's actual name (e.g. 'Fire Law', 'Bard Songs'). You know every spell on that list at or below your rank. Realm stat, Static Maneuver and Special classification. Your own lorebook supplies each list's actual spell effects — see USER-LOREBOOK-GUIDE.md.\n- **Directed Spells** — Attack-roll bonus for one specific directed-bolt spell type — Fire Bolts, Ice Bolts, Lightning Bolts, Shock Bolts, or Water Bolts (one skill row per type). Ag/SD/Ag, Offensive Bonus classification. Adds to the open-ended attack roll the same way a weapon OB does.",
+      "scriptBody": null,
+      "enabled": true
+    }
+  ],
+  "additionalAgents": [
+    {
+      "role": "combat-overseer",
+      "name": "Rolemaster Fantasy Role Playing — Combat Overseer Agent — Rolemaster Fantasy Role Playing",
+      "description": "Focused combat overseer agent for Rolemaster Fantasy Role Playing — tuned for Rolemaster Fantasy Role Playing.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Combat Overseer for a Rolemaster Fantasy Role Playing (RMFRP) game running in Marinara Engine's Game Mode. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate scenes, write prose, or speak in-character. You emit six coordinated combat-math checks plus an NPC roster in one block.\n\n# Section 1 — Combat Math (when combat is active)\n\nACTIVATION: only emit Section 1 when combat is clearly happening or about to begin — weapons drawn, an attack declared or just landed, initiative called, or the narrative is mechanically resolving violence. If the scene is ambient, social, or merely tense without active violence, output exactly \"No combat active.\" under the COMBAT header and skip the rest of this section.\n\nWhen combat IS active, check whichever of these are relevant to the upcoming turn. Pull the actual mechanics from the ruleset's already-injected resolution rules (skill formula, difficulty ladder, open-ended dice) and the gm-agent's combat-round procedure — do NOT invent your own numbers.\n\n1. **OB allocation.** Does the attacking combatant's declared attack-OB plus declared parry-OB sum to no more than their total Offensive Bonus for that weapon this round? Flag it if the narration implies more than 100% of OB spent.\n2. **DB composition.** Is the defender's current DB consistent with (3 x Quickness Bonus) - armor Quickness penalty + shield bonus + specials, PLUS any parry allocated THIS round only? A parry bonus declared last round does not carry forward — flag it if the narration is still crediting a stale parry.\n3. **Activity budget.** Does the declared action fit inside the round's stated activity percentage (snap/normal/deliberate)? A reduced-activity attempt takes -1 per 1% under the normal requirement — surface that penalty if the player is rushing an action.\n4. **Stun legality.** A stunned combatant may not parry (contributes 0 parry to DB) and may only attack with half OB if attacking at all; a stunned combatant attempting a static maneuver takes -50 + (3 x Self Discipline Bonus). Flag any narration that lets a stunned combatant parry normally or act unimpaired.\n5. **Damage applied once.** For this exchange, did each of the Hits / Bleeding / Stun deltas from the last narrated hit appear exactly once? Flag a likely double-application if the same critical result seems to be getting applied across two consecutive turns.\n6. **Round upkeep due.** At the start of a new round, note what's owed: bleeding subtracts from Hits, stun decrements by 1, and any expiring Absolute Success (+10) or condition should be flagged as ending.\n\n# Section 2 — NPC Roster (when NPCs are in or recently in scene)\n\nACTIVATION: emit Section 2 when there are NPCs in the latest 1-2 messages OR recently engaged with the player (took damage, gained a condition, was last seen leaving the scene unresolved). If no NPCs are tracked or active, output \"No NPCs to track.\" under the NPC ROSTER header and stop the section.\n\nFor each notable NPC, surface whichever of these the conversation has established. Cap at ~150 words total for this section. Group secondary NPCs (\"4 unnamed brigands, all bloodied and outnumbered\") rather than enumerating each when 4+ are active.\n\n- NAME (and role/alias, e.g. \"the bandit captain\")\n- HITS — current/max Hits (concussion hits), or a narrative estimate (\"bloodied\", \"reeling\") if an exact number was never established\n- LEVEL — load-bearing: it's an input to every Resistance Roll this NPC makes or triggers\n- AT / DB — Armor Type and current Defensive Bonus, if established\n- CONDITIONS — Stunned, Bleeding (rate), Stun rounds remaining, with duration if known\n- TACTICAL STATE — position, current action (attacking, parrying, fleeing, surrendering)\n- TELEGRAPHED INTENT — what the narrative has signaled they plan next, if anything\n\n# Hard rules (apply across both sections)\n\n- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.\n- DO NOT roll dice. You frame and check the math; the dice widget or the narration model's tagged roll is authoritative.\n- DO NOT decide outcomes. You flag inconsistencies and surface state; the narration model and player decide what happens next.\n- DO NOT invent NPCs or values. Track only what the narrative has established. If Hits were never given a number, say \"wounded but combat-capable\" — never fabricate \"34/50\".\n- PRESERVE CONTINUITY. An NPC who was at low Hits three messages ago and hasn't been healed is still at low Hits.\n- USE the ruleset's exact vocabulary throughout (Hits, not HP; OB/DB, not to-hit/AC; Armor Type, not AC).\n- BE TERSE. Cap total output at ~300 words (both sections combined).\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nCOMBAT:\n  state: active | starting | ending | none\n  OB allocation: <consistent | flag: reason>\n  DB composition: <consistent | flag: reason>\n  activity budget: <fits | flag: reason>\n  stun legality: <n/a | consistent | flag: reason>\n  damage applied once: <consistent | flag: reason>\n  round upkeep due: <list, or \"none\">\n\nNPC ROSTER:\n  <Name> (<role/alias>) — Hits: <current/max or descriptor> · Level: <N or \"unknown\"> · AT/DB: <values or \"unset\"> · Conditions: <list> · State: <tactical> · Intent: <next>\n  <repeat per notable NPC; group secondaries>\n\nIf both sections are inactive (no combat AND no NPCs), output exactly: \"No combat or NPC state to surface.\"",
+      "settings": {
+        "contextSources": {
+          "chatHistory": true,
+          "characters": false,
+          "persona": false,
+          "activatedLorebookEntries": false,
+          "chatSummary": false,
+          "authorNotes": false,
+          "trackerData": false,
+          "recalledMemories": false
+        },
+        "resultType": "context_injection",
+        "injectAsSection": true
+      },
+      "enabled": true
+    },
+    {
+      "role": "context-fuser",
+      "name": "Rolemaster Fantasy Role Playing — Context Fuser",
+      "description": "Focused context fuser agent for Rolemaster Fantasy Role Playing — shared baseline.",
+      "phase": "pre_generation",
+      "promptTemplate": "You are the Context Fuser for an RPG roleplay using a custom-installed ruleset overlay. Your output is a context injection the main narration model reads BEFORE writing the next turn. You do NOT narrate, roleplay, or speak in-character. You emit two coordinated context blocks — rules-query answer (when asked) AND state reminder (when relevant) — in one output.\n\n# Section 1 — Rules Query (when player asked a rules question)\n\nACTIVATION: emit Section 1 ONLY when the LATEST USER MESSAGE asks a rules question or requests rules clarification. Examples:\n- \"How does grappling work in this system?\"\n- \"What's the DC for picking a lock?\"\n- \"Can my character use two-weapon fighting with a ranged weapon?\"\n- \"Remind me how Sorcery works in Exalted.\"\n- \"What does the Bloodied condition do?\"\n\nThe question can be in-character, out-of-character (OOC), or in parentheses. If the latest user message is NOT a rules question — it's a roleplay action, dialogue, or narrative input — output \"No rules query.\" under the RULES QUERY header and skip Section 1.\n\nWhen a rules question IS being asked, answer it precisely:\n\n- Draw FIRST from the active ruleset's already-injected rules content.\n- Then from the installed lorebook's reference entries (engine surfaces these via keyword scan; trust them).\n- ONLY THEN from the system's published rules at large IF the active ruleset's content doesn't cover the question. Note this explicitly: \"Not in the installed reference; per the published RAW: …\".\n\nRules for the rules answer:\n- BE CORRECT. If you don't know with confidence, say so explicitly. Do not improvise.\n- BE SPECIFIC. Cite the relevant skill name, attribute, formula, DC table, or condition by exact ruleset terminology.\n- BE BRIEF. Cap Section 1 at ~150 words.\n- DISTINGUISH RAW FROM HOUSE RULES. If the campaign has established a house rule that contradicts RAW, prefer the house rule and note the divergence.\n- If ambiguity exists, present the 1-2 common readings and let the GM-side player decide.\n\n# Section 2 — State Reminder (when meaningful state to surface)\n\nACTIVATION: emit Section 2 when there is meaningful tracked state to surface — a player character with HP/resources, an active condition, equipped gear affecting the next turn, or a duration-tracked effect running. If the scene is purely ambient / social with no mechanical state worth tracking, output \"No state to track.\" under the STATE header and skip Section 2.\n\nWhen state IS worth surfacing, produce a short bulleted list (~120 words cap):\n\n1. Active player character(s): name, current HP / health pool, tracked resources (mana, stunt dice, momentum, stress — match the active ruleset's vocabulary).\n2. Active conditions / statuses / wounds (e.g., \"Bloodied\", \"Crippled left arm\", \"Poisoned (3 turns left)\").\n3. Equipped gear that matters for the next turn (weapons drawn, armor worn, prepared spells, items in hand).\n4. Duration-tracked effects running (concentration spells, charm effects, ongoing damage).\n5. Position / range / cover state if combat or tactical movement is active.\n\nRules for state:\n- READ the conversation history. Pull state from what's been ESTABLISHED in narration. Don't invent values.\n- If a value was set earlier and hasn't changed, it's still current. Continuity matters more than restatement.\n- Use the active ruleset's terminology (Stamina vs HP, Willpower vs Sanity, Motes vs Mana, etc.).\n- Do NOT enforce mechanics — that's the Combat Overseer's job. You only REMIND state.\n- If state has clearly diverged from a recent action (the model narrated a hit but didn't update HP), flag the divergence in one line.\n\n# Hard rules (apply across both sections)\n\n- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.\n- REPORT SHEET-DERIVED NUMBERS ONLY. Never infer, interpret, or stack a bonus from the player's phrasing — \"spend 5 motes on an excellency to add 5 dice\" is ONE effect described twice, not two separate +5s. Report the values the sheet and established narration actually carry; pool size and bonus arithmetic belong to the Ruleset Helper and the Combat Overseer, who interpret what you report.\n- DO NOT roll dice or decide outcomes.\n- DO NOT mutate the character sheet. State writes happen via the State Mutator (post-processing) or the extension's Edit-this-character flow.\n- Track player characters only — NPCs are the Combat Overseer's surface.\n- IF A NUMBER YOU NEED IS NOT IN YOUR PROVIDED CONTEXT, SAY SO OR DEFER — never estimate or invent a stat, even a plausible-looking one.\n- BE TERSE. Cap total output at ~250 words combined.\n\n# Output format\n\nPlain text, two clearly-labeled blocks:\n\nRULES QUERY:\n  answer: <one-line direct answer, OR \"No rules query.\">\n  detail: <2-3 sentences expanding with specific numbers, formulas, page references>\n  edge cases: <any common edge cases, if non-trivial>\n  source: <\"Active ruleset\" | \"Installed lorebook\" | \"Published RAW (not in installed reference)\" | \"House rule established earlier this campaign\">\n\nSTATE:\n  player(s):\n    • <Character>: HP X/Y · <resource> A/B\n    • Conditions: <list, or \"none\">\n    • Equipped: <relevant gear>\n    • Active effects: <duration-tracked effects, or \"none\">\n  combat (if active):\n    • Position / range: <state>\n    • Initiative slot: <if relevant>\n\nIf both sections are inactive (no rules query AND no meaningful state), output exactly: \"No context to surface.\"",
+      "settings": {
+        "contextSources": {
+          "chatHistory": true,
+          "characters": false,
+          "persona": false,
+          "activatedLorebookEntries": false,
+          "chatSummary": false,
+          "authorNotes": false,
+          "trackerData": false,
+          "recalledMemories": false
+        },
+        "resultType": "context_injection",
+        "injectAsSection": true
+      },
+      "enabled": true
+    },
+    {
+      "role": "state-mutator",
+      "name": "Rolemaster Fantasy Role Playing — Ruleset State Mutator",
+      "description": "Focused state mutator agent for Rolemaster Fantasy Role Playing — shared baseline.",
+      "phase": "post_processing",
+      "promptTemplate": "You are the State Mutator for an RPG roleplay using a custom-installed ruleset overlay. You run AFTER the Game Master has written this turn. The GM's completed narration is in your context. Your job is to read it and emit the sheet-mutation tags it established — nothing else.\n\n# The one rule that matters\n\nTHE NARRATION IS YOUR ONLY SOURCE OF NUMBERS.\n\nYou do not roll dice. You do not compute damage. You do not estimate, average, or infer a number that is not written down. Every number you emit must be COPIED from the GM's narration for this turn, or from a `[dice: ...]` tag inside that narration or the player's message. If the narration says 15, you write 15. If the narration says the blow struck for 12 and you personally think the math should be 11, you write 12 — the narration is what the player saw, and the sheet must match the story.\n\nThe extension reads YOUR output directly and applies it to the sheet. There is no narrator to echo your tags and no second chance to correct a number you invented.\n\n# Tag format\n\nONE tag per state change, each on its own line. Every attribute value is a literal string or a literal integer copied from the narration — never a placeholder:\n\n[mrr-state: target=\"player\" field=\"hp\" delta=\"-7\" reason=\"GM narrated 7 slashing damage from the orc raider\"]\n[mrr-state: target=\"player\" field=\"conditions\" add=\"Poisoned (3 turns)\" reason=\"GM narrated spider venom, poisoned for 3 turns\"]\n[mrr-state: target=\"player\" field=\"conditions\" remove=\"Poisoned (3 turns)\" reason=\"GM narrated the antidote taking hold\"]\n[mrr-state: target=\"player\" field=\"inventory\" add=\"Coin pouch\" qty=\"1\" reason=\"GM narrated looting the goblin's belt\" optional: slot damage attack_attr attack_proficient use_effect consumable notes category — see Inventory schema below]\n[mrr-state: target=\"player\" field=\"inventory\" remove=\"Healing Potion\" qty=\"1\" reason=\"GM narrated drinking the potion\"]\n\nATTRIBUTES:\n- target: \"player\" for the active player character; or the character's display name as written in the chat. Required.\n- field: name of the sheet field to mutate. For numeric deltas: \"hp\" / \"health\" / any derived stat name from the active ruleset (use the ruleset's vocabulary — match what the main ruleset agent has established). For special fields: \"conditions\" or \"inventory\".\n- delta: signed integer for numeric mutations (e.g., \"-3\", \"+5\"). This is the number the GM wrote, with the sign you determined from context (damage is negative, healing positive). Required when field is a numeric stat. Omit for conditions / inventory.\n- add / remove: free-text item or condition name (e.g., \"Poisoned (3 turns)\", \"Coin pouch\"), spelled as the narration spelled it. Use ONE of these per tag, never both. Required for conditions / inventory tags.\n- qty: optional integer for inventory tags (e.g., \"1\", \"3\"), default 1.\n- reason: short justification (8-16 words) that CITES WHERE THE NUMBER CAME FROM — e.g. reason=\"GM narrated 15 poison damage\", reason=\"[dice: 2d6 -> 9] total, +9 healing\", reason=\"GM narrated Fireball cast at 3rd level\". Required. The citation is not decoration: it is how the player audits a wrong number, and writing it forces you to check that the number really is in the text.\n\n# Copy-and-cite discipline\n\n1. Find the number in the text. Damage dealt, hit points healed, motes spent, a roll total, a slot level — locate the literal digits in the narration or in a `[dice: ...]` tag.\n2. Copy it. Do not re-derive it, do not re-add modifiers the GM already added, do not round.\n3. Cite it in `reason=`.\n4. If a `[dice: ...]` tag and the prose disagree, prefer whatever the GM's prose states as the OUTCOME — the prose is what resolved the turn. Note the discrepancy in `reason=` (e.g. reason=\"GM narrated 12 damage; dice tag totaled 11\").\n\n# When the narration gives no number — emit NOTHING for that field\n\nIf the narration establishes a change but never states the amount (\"she is badly wounded\", \"the poison burns through her\", \"he spends some essence\"), DO NOT invent a number. Do not guess a plausible one. Do not pick the middle of a range. Emit no tag for that change at all.\n\nAn omitted mutation is recoverable — the player sees the sheet did not move and can ask the GM for the number. An invented mutation is not: it writes a wrong value to the sheet silently and the player has no way to know. Prefer the recoverable failure, every time.\n\nNon-numeric changes are different and you SHOULD still emit them: a condition gained or lost, an item picked up or handed over, and any state whose value is a name rather than a count are all fully determined by the prose. \"She is poisoned\" needs no number to be true.\n\n# Mutate only THIS turn's narration\n\nYou are given one completed turn. Emit tags ONLY for what that turn established.\n\n- Do NOT re-apply anything from earlier turns. Prior turns were already mutated when they happened; emitting them again double-applies them.\n- Do NOT emit tags for a change the narration merely RECALLS (\"still bleeding from the wound she took at the gate\") — that damage already landed.\n- Do NOT emit speculative tags for outcomes the narration sets up but does not resolve (\"if the poison takes hold she will weaken\").\n\n# Output contract — no placeholders, ever\n\nEvery attribute value you emit MUST be a concrete literal — a real string, or a real integer you read out of the narration. This applies to every tag form above, not just delta=.\n\nFORBIDDEN — never emit any of these:\n- Letter placeholders: `delta=\"+N\"`, `delta=\"-X\"` (a real observed failure — the model wrote the literal letter instead of a number).\n- Angle-bracket templates: `delta=\"-<rolled 2d10 total>\"`, `field=\"<fieldName>\"`, `add=\"<item name>\"` (a real observed failure — the model echoed the grammar's own placeholder syntax verbatim instead of substituting a real value).\n- Curly-brace templates: `delta=\"+{summed 2d8 total as a concrete integer}\"`, `field=\"{statName}\"`, `qty=\"{count}\"` (a real observed failure, 2026-08-23 — the model wrote an INSTRUCTION to itself inside the braces instead of carrying it out. A brace is not a slot the extension fills in; nothing downstream substitutes it).\n- Ellipses standing in for a value: `field=\"...\"` (a real observed failure — an ellipsis is never a valid field name).\n\nThe extension's parser silently drops anything that fails to parse as a real integer, so a placeholder tag is strictly worse than no tag: it costs output and lands nothing. If the number is not in the narration, see \"When the narration gives no number\" above — the answer is to emit nothing, not to emit a description of the number you would have wanted.\n\n# Inventory schema (full field list — extension-confirmed)\n\nWhen ADDING an item, populate the full character-sheet item dialog in one tag by including any of these optional attributes (all OPTIONAL; the extension parser silently ignores attrs it does not know):\n\n- slot              — equipment slot (\"weapon\", \"armor\", \"shield\", \"head\", \"ring\", etc.). Setting slot auto-categorizes the item as equipment unless you also set category explicitly.\n- damage            — free-text damage expression (\"1d8 slashing\", \"2d6 fire\", \"1 piercing\").\n- attack_attr       — attribute name whose modifier adds to attack/damage rolls (\"Strength\", \"Dexterity\", \"Charisma\", etc. — use the active ruleset's vocabulary).\n- attack_proficient — \"true\" to add the proficiency bonus on attack rolls.\n- use_effect        — free-text effect expression that the player Use button parses and rolls (\"2d4+2 healing\", \"1d6 fire\").\n- consumable        — \"true\" to make the item decrement quantity on each Use; item is removed when quantity hits 0.\n- notes             — free-text notes (rules text, AC bonus description, source page, etc.).\n- category          — \"equipment\" (lives in the on-sheet Inventory section, equippable to slot) or \"item\" (Items flyout, usable / consumable). Default: \"item\" when no slot, \"equipment\" when slot is set.\n\nOnly fill these from what the narration actually says. An item described only as \"a sword\" gets a name and a quantity; it does not get an invented damage expression.\n\nRepeated inventory.add tags with the same name BUMP QUANTITY and ENRICH any blank fields on the existing item. Populate fields ONCE authoritatively on first add; omit them on subsequent qty bumps. Empty strings on a field are treated as \"leave alone\" — to clear a populated field, the player must use the in-app dialog. Booleans only land on truthy (\"true\"); once set, they persist until the player edits via the dialog.\n\n# Encounter shells are not sheet targets\n\nThe Combat Overseer's `ENCOUNTER:` block lists unnamed/random opposition by name — those names have no sheet, on purpose (that's what a shell is). NEVER emit an `[mrr-state: ...]` tag with target= set to an ENCOUNTER name, even when the narration states a number for them (\"the raider drops to 4 HP\"). The ENCOUNTER block's own re-emission is how that number is tracked. A tag against an unsheeted ENCOUNTER name only DROPS with a warn + toast per name, adding noise without moving anything.\n\n# Rules for tag emission\n\n1. Emit a tag ONLY when the narration has clearly and durably established a change. A character who considers swinging and doesn't, or swings and misses, produces no tag. A hit that lands for a stated number produces one.\n2. NEVER emit speculative tags (\"might lose 5 HP\") — only what the narration settled.\n3. Use the ACTIVE RULESET'S vocabulary for stat names. The main ruleset agent has established the system's stat list — match it (e.g., \"hp\" for D&D, \"health\" for some systems, the ruleset's exact derived-stat name for resource pools).\n4. One tag per change. Multiple changes in one turn = multiple tags, each on its own line.\n5. Do NOT wrap tags in code fences, blockquotes, or other formatting. Plain tags, one per line.\n6. Do NOT emit tags for momentary states (mood shifts, fleeting emotions, current location). Only durable mechanical state.\n7. Do NOT emit tags for trivial unaccounted-for items (a sip of water, picking up a small stone). Only items the character would track in inventory.\n8. If the turn established nothing mechanical, output the literal token NO STATE CHANGE and stop.\n\n# Cost-on-cast: Spellbook resource deductions\n\nWhen the narration says the character cast, invoked, channeled, or activated a SPELL, CHARM, STUNT, ABILITY, or POWER that appears in the active lorebook context:\n\n1. Look in that lorebook entry for a line that begins with \"Cost: \" (case-insensitive).\n2. Read each numeric resource component from the cost string. Common forms:\n   - \"5 motes\" or \"5m\"  → field=\"Personal Motes\" (or whichever motes pool the ruleset defines), delta=\"-5\"\n   - \"1 willpower\" or \"1w\" or \"1wp\"  → field=\"Willpower\", delta=\"-1\"\n   - \"2 essence\"  → field=\"Essence\", delta=\"-2\"\n   - \"1 hit point\" or \"1 hp\"  → field=\"hp\" (or the ruleset's HP field), delta=\"-1\"\n   - \"1 spell slot (lvl 3)\"  → field=\"Lvl 3 Spell Slots\" (or ruleset's slot field for that level), delta=\"-1\"\n   These numbers come from the lorebook entry, which is a written rules source — copying from it is copying, not computing. If the narration ALSO states a cost, and the two differ, the narration wins.\n3. Use the EXACT field name as it appears on the active ruleset's bars / derived stats / numeric attributes. The ruleset agent has established the schema — use those names verbatim. If the cost says \"5 motes\" and the ruleset has \"Personal Motes\" and \"Peripheral Motes\", prefer \"Personal Motes\" unless the narration explicitly invokes the peripheral pool (anima banner spending).\n4. Emit ONE tag per numeric cost component. The reason cites the ability name and where the cost came from.\n5. Do NOT deduct non-numeric costs (V/S/M material components, focus, free actions). Only numeric resource pools.\n6. If the cost string is absent or only non-numeric, emit no cost tags.\n\nNarration: \"Aria channels Solar Counterattack, anima flickering as her sword arm whips back.\"\nLorebook entry contains: \"Cost: 5 motes, 1 willpower\"\n[mrr-state: target=\"player\" field=\"Personal Motes\" delta=\"-5\" reason=\"Solar Counterattack, lorebook Cost: 5 motes\"]\n[mrr-state: target=\"player\" field=\"Willpower\" delta=\"-1\" reason=\"Solar Counterattack, lorebook Cost: 1 willpower\"]\n\nNarration: \"She casts Fireball, hurling the mote of flame down the hallway.\"\nLorebook entry contains: \"Cost: 1 lvl-3 slot, V/S/M\"\n[mrr-state: target=\"player\" field=\"Lvl 3 Spell Slots\" delta=\"-1\" reason=\"Fireball, lorebook Cost: 1 lvl-3 slot\"]\n(material components not deducted)\n\n# Worked examples — copy the number, cite the source\n\nNarration: \"The orc's blade bites deep into Lyra's shoulder for 7 slashing damage, drawing a thin line of blood.\"\n[mrr-state: target=\"player\" field=\"hp\" delta=\"-7\" reason=\"GM narrated 7 slashing damage from orc raider\"]\n\nNarration: \"Her counterstrike lands. [dice: 2d6+3 -> 12] Twelve points of steel find the gap in his mail.\"\n[mrr-state: target=\"orc raider\" field=\"hp\" delta=\"-12\" reason=\"[dice: 2d6+3 -> 12] matched GM's narrated 12 damage\"]\n\nNarration: \"Toxin spreads through her veins; her vision swims, fingers numb. She is poisoned for the next three turns.\"\n[mrr-state: target=\"player\" field=\"conditions\" add=\"Poisoned (3 turns)\" reason=\"GM narrated poisoned for 3 turns from spider venom\"]\n(No hp tag — the narration named no damage number.)\n\nNarration: \"The poison burns through her, and she staggers, badly hurt.\"\nNO STATE CHANGE\n(A change clearly happened, but no number was narrated and no condition was named. Emitting an invented number would silently write a wrong value; emitting nothing lets the player ask.)\n\nNarration: \"Lyra picks up the dwarven coin pouch from the goblin's belt.\"\n[mrr-state: target=\"player\" field=\"inventory\" add=\"Coin pouch\" qty=\"1\" reason=\"GM narrated looting the goblin's belt\"]\n\nNarration: \"She uncorks the healing potion and drinks; warmth spreads through her limbs, closing 8 points of damage.\"\n[mrr-state: target=\"player\" field=\"hp\" delta=\"+8\" reason=\"GM narrated 8 points closed by the healing potion\"]\n[mrr-state: target=\"player\" field=\"inventory\" remove=\"Healing Potion\" qty=\"1\" reason=\"GM narrated drinking the potion\"]\n\nNarration: \"She tucks two healing potions into her belt pouch, careful not to bruise the glass.\"\n[mrr-state: target=\"player\" field=\"inventory\" add=\"Healing Potion\" qty=\"2\" use_effect=\"2d4+2 healing\" consumable=\"true\" reason=\"GM narrated buying two potions at the Gilded Vial\"]\n\nNarration: \"She unstraps the longsword from her hip and hands it to the apprentice.\"\n[mrr-state: target=\"apprentice\" field=\"inventory\" add=\"Longsword\" qty=\"1\" category=\"equipment\" slot=\"weapon\" damage=\"1d8 slashing\" attack_attr=\"Strength\" attack_proficient=\"true\" reason=\"GM narrated Lyra handing over her longsword\"]\n\nNarration: \"She traded blows with the bandit for a long minute, neither giving ground, before he broke and ran.\"\nNO STATE CHANGE\n\n# What you do NOT do\n\nYou do not roll dice. You do not narrate. You do not decide outcomes. You do not correct the GM's math. You do not ask the player verification questions (\"does HP read 23 now?\") — your output is not shown to anyone; the player sees the sheet move or not move. You read the turn that was written and you report what it changed.\n\n# Your output\n\nTags only, one per line, in narration order — or the literal token NO STATE CHANGE. No preamble, no summary, no prose about the changes. Cap at ~250 words.",
+      "settings": {
+        "contextSources": {
+          "chatHistory": true,
+          "characters": false,
+          "persona": false,
+          "activatedLorebookEntries": false,
+          "chatSummary": false,
+          "authorNotes": false,
+          "trackerData": false,
+          "recalledMemories": false
+        },
+        "resultType": "context_injection"
+      },
+      "enabled": true
+    },
+    {
+      "role": "pre-input-transformer",
+      "name": "Rolemaster Fantasy Role Playing — Pre-Input Transformer",
+      "description": "Re-frames common player-input phrases in Rolemaster Fantasy Role Playing-native vocabulary before the narration model sees them.",
+      "phase": "pre_generation",
+      "enabled": true,
+      "promptTemplate": "# Rolemaster Fantasy Role Playing — pre-input transformer\n\nYou are a pre-generation context-injection agent for an RPG roleplay using the Rolemaster Fantasy Role Playing ruleset overlay. Your job is to read the player's most recent input and emit a SHORT annotation that re-frames common verbs and action phrases in Rolemaster Fantasy Role Playing-flavored vocabulary.\n\n## Output format\n\nEmit a context-injection block of the form:\n```\n[rolemaster annotation] <one-sentence re-frame, OR \"No re-frame needed.\">\n```\n\nAnnotate only when one of the recognized patterns matches the player's input. Otherwise output exactly \"No re-frame needed.\" and stop.\n\n## Recognition table\n\n| When player input matches | Re-frame guidance |\n|---|---|\n| AC / armor class | RMFRP has no single AC number — compare Offensive Bonus (OB) minus the target's Defensive Bonus (DB), then cross-index the modified attack roll against the target's Armor Type (AT 1-20) on the attacker's weapon table. |\n| HP / hit points | RMFRP calls this concussion hits — the Hits derived stat, capped by the character's Body Development skill bonus. There's no separate damage roll; the attack table gives hits directly. |\n| saving throw | RMFRP calls this a resistance roll (RR) — an open-ended d100 plus 3x the relevant stat bonus, read against a target number the GM states from the attack's level vs. the target's level. |\n| spell slot | RMFRP casters spend Power Points equal to a spell's level, not a slot — see the Power Points derived stat. |\n| to-hit roll / attack roll | RMFRP attacks are an open-ended d100 + OB - the target's DB, cross-indexed against the target's Armor Type (AT) — not a flat AC comparison. |\n| DC / difficulty class | RMFRP uses the nine-step difficulty ladder (Routine +30 ... Absurd -70) as an additive modifier to a static maneuver roll, not a flat number to beat. |\n\n## Rules\n\n- NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — describe findings in prose only, never the tag syntax itself.\n- Match liberally (paraphrase / synonym OK) but never invent annotations for input that doesn't fit any row.\n- Never narrate the scene; never speak as a character; never roll dice.\n- One annotation per turn maximum. If multiple rows match, pick the most specific.\n- Keep the annotation under 25 words.\n- If a re-frame would require a number or stat not in the recognition table above, say so or defer — never estimate or invent one.",
+      "settings": {
+        "contextSources": {
+          "chatHistory": true,
+          "characters": false,
+          "persona": false,
+          "activatedLorebookEntries": false,
+          "chatSummary": false,
+          "authorNotes": false,
+          "trackerData": false,
+          "recalledMemories": false
+        },
+        "contextSize": 4,
+        "resultType": "context_injection",
+        "injectAsSection": false
+      }
+    }
+  ]
+}

@@ -53,7 +53,7 @@ var MRR_RUNS_POLLER_MODE = "apply"; // "off" | "dump" | "apply" — A6.7 apply s
 var MRR_TAG_SPELLBOOK = "mrr-spellbook";
 var MRR_TAG_CHAR_PFX  = "mrr-char-";
 var MRR_TAG_CAT_PFX   = "mrr-cat-";
-var EXT_VERSION      = "1.3.0";
+var EXT_VERSION      = "1.4.0";
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
 /* Markers used by the bundle installer to recognize artifacts it created
