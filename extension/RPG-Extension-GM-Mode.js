@@ -17851,8 +17851,49 @@ function mrrStrippedManagedRows(agents, rulesetId) {
   return out;
 }
 
+/* ═══ TIERING ROUND (Stage 2C, 2026-08-27) — settings.contextSources, loader
+   copy ═══════════════════════════════════════════════════════════════════
+   SAME table as tools/lib/agent-roster.mjs's contextSourcesForRole — see
+   COUPLINGS.md row 18 and that module's header for the engine facts. This
+   is a deliberate SECOND copy, not drift: the loader is a single browser-
+   side file and cannot import the build tool's module, and the plan calls
+   for both places to carry it (build time bakes it into agents.json /
+   bundle.json; this copy re-stamps it on a HEALED row whose settings an
+   engine UI edit may have stripped alongside our identity tags). Keep the
+   two tables in sync by hand if this map ever changes — there is no
+   mechanism enforcing that, the same honest limitation COUPLINGS.md's B18
+   entry already documents for a different pair of files in this repo. */
+var MRR_CONTEXT_SOURCES_BY_ROLE = {
+  "main":                  { chatHistory: true, activatedLorebookEntries: true,  characters: true,  persona: false, chatSummary: false, others: false },
+  "combat-overseer":       { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
+  "state-mutator":         { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
+  "context-fuser":         { chatHistory: true, activatedLorebookEntries: false, characters: true,  persona: true,  chatSummary: true,  others: false },
+  "essence-manager":       { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
+  "pre-input-transformer": { chatHistory: true, activatedLorebookEntries: false, characters: false, persona: false, chatSummary: false, others: false }
+};
+var MRR_CONTEXT_SIZE_BY_ROLE = {
+  "pre-input-transformer": 4
+};
+/* A role this table doesn't name falls back to the "main" row — a bounded,
+   intentional context rather than the engine's own ALL-sources default,
+   which is what an unset contextSources object would otherwise mean. */
+function mrrContextSourcesForRole(role) {
+  var key = (typeof role === "string" && role && Object.prototype.hasOwnProperty.call(MRR_CONTEXT_SOURCES_BY_ROLE, role))
+    ? role : "main";
+  var src = MRR_CONTEXT_SOURCES_BY_ROLE[key];
+  var out = { contextSources: {} };
+  for (var k in src) if (Object.prototype.hasOwnProperty.call(src, k)) out.contextSources[k] = src[k];
+  if (Object.prototype.hasOwnProperty.call(MRR_CONTEXT_SIZE_BY_ROLE, key)) {
+    out.contextSize = MRR_CONTEXT_SIZE_BY_ROLE[key];
+  }
+  return out;
+}
+
 /* The settings body for a re-adoption: the row's CURRENT settings, spread,
-   with our four keys added. MERGE, never replace — every foreign key
+   with our four identity keys added, PLUS a fresh re-stamp of
+   contextSources (+ contextSize where the table declares one) — a heal
+   restores the tiering round's intent exactly as an install would, not just
+   the identity tags. MERGE, never replace — every foreign key
    (maxOutputTokens, connectionId, anything the engine UI or a future engine
    version writes) survives byte-for-byte. Replacing wholesale here would be
    us committing the exact crime this pass exists to heal. */
@@ -17864,6 +17905,9 @@ function mrrReadoptionSettings(agent, rulesetId, role, authorId) {
   merged.mrrRulesetId = rulesetId;
   merged.mrrAuthorId = authorId;
   merged.mrrAgentRole = role;
+  var ctx = mrrContextSourcesForRole(role);
+  merged.contextSources = ctx.contextSources;
+  if (Object.prototype.hasOwnProperty.call(ctx, "contextSize")) merged.contextSize = ctx.contextSize;
   return merged;
 }
 

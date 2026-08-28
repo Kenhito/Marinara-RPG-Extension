@@ -219,6 +219,54 @@ export function phaseForRole(role, md, sourcePath, manifest, repoRoot) {
   return extractPhaseStrict(md, where);
 }
 
+/* TIERING ROUND (Stage 2C, 2026-08-27) — per-role settings.contextSources.
+   Engine `packages/shared/src/types/agent.ts:583-592`: an agent whose
+   settings carry a `contextSources` object runs in SELECTIVE context mode —
+   only the sources listed `true` are included in its prompt build. An agent
+   created without the object (`packages/server/src/services/agents/
+   agent-executor.ts:125-131`) gets EVERY source. See COUPLINGS.md row 18.
+
+   Every kept source is listed explicitly, `true` or `false`, never omitted —
+   an omitted key reads as "nobody decided" where this table means "no."
+   `contextSize` (message-count cap on chatHistory) is set only for
+   pre-input-transformer, which needs just enough recent turns to rewrite the
+   user's input and nothing else.
+
+   ONE place, no duplication (Phase 0 discipline): both build-agents.mjs and
+   build-bundle.mjs call this, exactly the reason agent-roster.mjs exists at
+   all (see this file's header). The loader (extension/RPG-Extension-GM-Mode.js)
+   cannot import this module — it is a single browser-side file — so
+   mrrReadoptionSettings carries its own copy of this same table for the heal
+   path; that second copy is the plan's explicit second half, not drift. */
+const MRR_CONTEXT_SOURCES_BY_ROLE = {
+  "main":                  { chatHistory: true, activatedLorebookEntries: true,  characters: true,  persona: false, chatSummary: false, others: false },
+  "combat-overseer":       { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
+  "state-mutator":         { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
+  "context-fuser":         { chatHistory: true, activatedLorebookEntries: false, characters: true,  persona: true,  chatSummary: true,  others: false },
+  "essence-manager":       { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
+  "pre-input-transformer": { chatHistory: true, activatedLorebookEntries: false, characters: false, persona: false, chatSummary: false, others: false }
+};
+const MRR_CONTEXT_SIZE_BY_ROLE = {
+  "pre-input-transformer": 4
+};
+
+/**
+ * The settings fragment for one role's contextSources (+ contextSize where
+ * the table declares one). A role this table doesn't name (future role, or
+ * a ruleset-local override with no round-27 entry) falls back to the "main"
+ * row — a bounded, intentional context rather than the engine's own
+ * ALL-sources default, which is what an unset object would otherwise mean.
+ */
+export function contextSourcesForRole(role) {
+  const key = (typeof role === "string" && role && Object.prototype.hasOwnProperty.call(MRR_CONTEXT_SOURCES_BY_ROLE, role))
+    ? role : "main";
+  const out = { contextSources: Object.assign({}, MRR_CONTEXT_SOURCES_BY_ROLE[key]) };
+  if (Object.prototype.hasOwnProperty.call(MRR_CONTEXT_SIZE_BY_ROLE, key)) {
+    out.contextSize = MRR_CONTEXT_SIZE_BY_ROLE[key];
+  }
+  return out;
+}
+
 /**
  * "N agents: M blocking / K parallel / J post" — the line both builders print
  * so a roster's latency shape is visible at build time rather than discovered

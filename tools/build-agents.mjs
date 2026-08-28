@@ -28,7 +28,7 @@ import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, basename, join } from "node:path";
 import {
-  loadRosterManifest, resolveRoster, phaseForRole, phaseSummary
+  loadRosterManifest, resolveRoster, phaseForRole, phaseSummary, contextSourcesForRole
 } from "./lib/agent-roster.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -77,7 +77,7 @@ function loadRoleAgents(rulesetName, rulesetDir) {
       phase,
       enabled: true,
       promptTemplate,
-      settings: {}
+      settings: contextSourcesForRole(role)
     };
   });
 }
@@ -94,7 +94,7 @@ function buildAgents(dir) {
     phase: "pre_generation",
     enabled: true,
     promptTemplate: mainPrompt,
-    settings: {}
+    settings: contextSourcesForRole("main")
   };
 
   const subAgents = loadRoleAgents(ruleset.name, dir);

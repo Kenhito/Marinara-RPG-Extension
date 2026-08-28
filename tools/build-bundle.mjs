@@ -22,7 +22,7 @@ import buildLorebookExpansions from "./build-lorebook-expansions.mjs";
 import buildPreInputTransformer from "./build-pre-input-transformer.mjs";
 import buildScenarioDefault from "./build-scenario-default.mjs";
 import {
-  loadRosterManifest, resolveRoster, phaseForRole, phaseSummary
+  loadRosterManifest, resolveRoster, phaseForRole, phaseSummary, contextSourcesForRole
 } from "./lib/agent-roster.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -110,7 +110,11 @@ function loadAdditionalAgents(rulesetName, rulesetDir) {
       description: "Focused " + role.replace(/-/g, " ") + " agent for " + rulesetName + tunedNote + ".",
       phase,
       promptTemplate,
-      settings: mrrInjectionSettings(role, phase)
+      /* TIERING ROUND (Stage 2C): contextSourcesForRole is the SAME shared
+         helper build-agents.mjs calls (tools/lib/agent-roster.mjs) — merged
+         ahead of mrrInjectionSettings so a key collision (there is none
+         today) would let the injection-eligibility fields win. */
+      settings: Object.assign({}, contextSourcesForRole(role), mrrInjectionSettings(role, phase))
     };
   });
 }
@@ -234,7 +238,7 @@ function buildBundle(dir) {
       description: "Auto-installed by GM-mode bundle. Provides " + ruleset.name + " skill resolution, dice formatting, and ruleset-aware narration framing for Marinara's Game Mode.",
       phase: "pre_generation",
       promptTemplate: mainPromptTemplate,
-      settings: mrrInjectionSettings("main", "pre_generation")
+      settings: Object.assign({}, contextSourcesForRole("main"), mrrInjectionSettings("main", "pre_generation"))
     },
     lorebook: {
       name: lb.name,
@@ -286,6 +290,7 @@ function buildBundle(dir) {
       settings: Object.assign(
         {},
         transformerAgent.settings || {},
+        contextSourcesForRole("pre-input-transformer"),
         mrrInjectionSettings("pre-input-transformer", transformerAgent.phase || "pre_generation")
       )
     }));
