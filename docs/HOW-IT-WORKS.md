@@ -6,15 +6,15 @@ For click-by-click install screenshots, see [`docs/INSTALL.md`](INSTALL.md). To 
 
 Examples below use two placeholder characters, **Mira** and **Vex**, and their Game Master, running whatever system you've installed. Nothing here is specific to one system — swap in your own attribute names, dice, and vocabulary as you read.
 
-## What this extension does (one screen)
+## What this extension does
 
-Marinara Engine's built-in Game Mode ships with a Game Master biased toward D&D-style mechanics: six attributes, a single d20 roll, a difficulty class to beat. This extension replaces that mechanical brain — for any tabletop system you want to run — without forking the engine or writing code.
+Marinara Engine's built-in Game Mode ships with a Game Master biased toward D&D-style mechanics: six attributes, a single d20 roll, a difficulty class to beat. This extension replaces that mechanical brain with any tabletop system you want to run, without forking the engine or writing code.
 
 Installing a ruleset gives you:
 
 - **A character sheet** shaped like your system's, not D&D's — attributes, skills, derived stats (health, mana, motes, whatever your system tracks), inventory, and conditions, rendered as a floating panel over the chat.
-- **A dice widget** that rolls the way your system rolls (a d10 pool, a d20 plus modifier, 4dF, a d100, whatever) and hands the result to the AI with the real die faces attached, not just a summary number.
-- **Instructions for the AI** — how your system resolves actions, what the dice-tag format looks like, how combat math works, how experience and leveling work — so the Game Master narrates mechanically correct turns instead of quietly defaulting back to D&D habits.
+- **A dice widget** that rolls the way your system rolls (a d10 pool, a d20 plus modifier, 4dF, a d100) and hands the result to the AI with the real die faces attached, not just a summary number.
+- **Instructions for the AI** — how your system resolves actions, what the dice-tag format looks like, how combat math works, how experience and leveling work — so the Game Master narrates mechanically correct turns instead of drifting back to D&D habits.
 - **A rules reference** that surfaces the relevant entry automatically when it's needed — a spell's cost, a condition's effect, a class's XP table — without you looking it up mid-scene.
 
 Sixteen systems ship ready to use — D&D 5e, Exalted 3e, Vampire, Werewolf, Call of Cthulhu, Pathfinder 2e, and more — and the framework is built so a new one can be authored for anything it doesn't cover yet.
@@ -32,7 +32,7 @@ Behind the scenes, a small set of specialist agents brief the Game Master before
 
 You don't see any of these run directly — you see their effects: a mechanically-grounded turn, and your sheet moving to match what actually happened. If a story ever references an agent or role that isn't one of these four (or a system-specific variant of them), that's a sign something's out of date — see [When something looks wrong](#when-something-looks-wrong).
 
-**A turn, end to end:** you describe what Mira does. The Ruleset Helper, and the Combat Overseer or Context Fuser if enabled, quietly brief the Game Master on the relevant rules and current scene state. The Game Master narrates the outcome, rolling real dice if tool use is on. Only after that narration is finished does the State Mutator read it and update Mira's sheet to match. You never see the briefing or the sheet-write happen directly — you see the sheet move and the story stay honest about your numbers.
+**A turn, end to end:** you describe what Mira does. The Ruleset Helper, and the Combat Overseer or Context Fuser if enabled, brief the Game Master on the relevant rules and current scene state. The Game Master narrates the outcome, rolling real dice if tool use is on. Only after that narration is finished does the State Mutator read it and update Mira's sheet to match. You never see the briefing or the sheet-write happen directly — you see the sheet move and the story stay honest about your numbers.
 
 ## Install: the three-artifact model
 
@@ -92,7 +92,7 @@ A control bar at the top of the panel lets you:
 
 ### It syncs automatically, two ways at once
 
-Every edit saves to your browser instantly, so the panel stays responsive, and syncs to Marinara's own server in the background, so your characters survive a cleared browser or follow you to a second device. Both copies carry a timestamp, and whichever one is newer wins when the sheet loads — so an edit that saved locally but never made it to the server (say, before a crash) is recovered on your next load instead of silently lost to a stale server copy. If storage ever degrades, a warning strip appears at the top of the sheet telling you so rather than failing quietly.
+Every edit saves to your browser instantly, keeping the panel responsive. In the background it also syncs to Marinara's own server, so your characters survive a cleared browser and follow you to a second device. Both copies carry a timestamp, and whichever one is newer wins when the sheet loads — so an edit that saved locally but never made it to the server (say, before a crash) is recovered on your next load instead of silently lost to a stale server copy. If storage ever degrades, a warning strip appears at the top of the sheet telling you so rather than failing quietly.
 
 ### The sheet is the truth
 
@@ -123,7 +123,7 @@ The **save** button downloads every character in the current chat as a single JS
 
 ## Dice
 
-There are two separate sources of randomness in play, and they're kept apart on purpose so neither can quietly override the other.
+There are two separate sources of randomness in play, and they're kept apart on purpose so neither can override the other.
 
 ### Your rolls come from the widget, and they're authoritative
 
@@ -135,7 +135,7 @@ The Game Master reads that tag and narrates from it — it never re-rolls it, ad
 
 With **Enable Tool Use** on, the narrating AI has access to Marinara's server-side `roll_dice` tool — a genuine random number generator — for anything it needs to roll itself: an NPC's attack, a saving throw it calls for, a random encounter table.
 
-Without that toggle on — or on a connection type that structurally can't deliver tools at all, which does happen with some connection types, and the extension surfaces a one-time notice when it does — the doctrine is explicit: **never invent a face.** Instead, the Game Master names the pool or dice you need to roll, lays out what each realistic outcome would mean, and waits for you to roll it yourself in the widget and report the result back.
+Without that toggle on — or on a connection type that can't deliver tools at all (some can't; the extension shows a one-time notice when yours is one of them) — the doctrine is explicit: **never invent a face.** Instead, the Game Master names the pool or dice you need to roll, lays out what each realistic outcome would mean, and waits for you to roll it yourself in the widget and report the result back.
 
 ### A worked example
 
@@ -282,4 +282,4 @@ Come back to the three-artifact model from [Install](#install-the-three-artifact
 
 **Do I have to use the Universal RPG GM character card?** No. It's a ready-made narrator persona for roleplay mode, but Marinara's built-in Game Mode narrator, or a character card you write yourself, both work with an installed ruleset the same way — what matters is that whichever narrator you're using knows to read the sheet block and the sub-agents' briefings as authoritative.
 
-**Why doesn't an agent's "no connection configured" warning worry me?** Because it isn't an error — see the troubleshooting table above. It's informational, and the agent runs normally regardless.
+**Should I worry about an agent's "no connection configured" warning?** No — it isn't an error. It's an informational billing/attribution notice, and the agent runs normally regardless (see the troubleshooting table above).
