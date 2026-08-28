@@ -191,7 +191,7 @@ The moment an enemy is going to matter beyond one encounter, treat them like you
 
 ## Powers & the spellbook
 
-Spells, Charms, powers — whatever your system calls them — live in the ruleset's **lorebook**: a set of entries that fire automatically when their trigger words show up in recent chat. Ask about a spell by name, or narrate casting it, and its entry surfaces in the Game Master's context on that turn without you needing to look it up yourself.
+Spells, Charms, powers — whatever your system calls them — live in the ruleset's **lorebook**: a set of entries that fire automatically when their trigger words show up in recent chat. Ask about a spell by name, or narrate casting it, and its entry surfaces in the Game Master's context on that turn without you needing to look it up yourself. No spell lorebooks ship with the system, just the default rules lorebook. You'll need to create a lorebook with those abilities. It is recommended that if a system has more than 100 spell entries you use multiple spell books as Marinara Engine can only access 100 entries in a lorebook, anything beyond that gets ignored entirely.
 
 ### Costs are deducted automatically when a lorebook entry states them
 
@@ -209,7 +209,7 @@ If you're authoring a ruleset, or homebrewing content for one you're already pla
 2. Give it trigger words that match how you'll actually refer to it in play.
 3. Put its baseline stats and one or two signature abilities in the content, the same shape a Combat Overseer shell already expects.
 
-The next time that type shows up, its `ENCOUNTER:` line can be filled in consistently from that entry instead of being re-improvised from scratch each time. You get consistency for the *type* across many appearances without saving a full character for every mook that shares it. Full authoring detail, including where this pattern sits relative to a ruleset's other lorebook entries, is in [`AUTHORING.md`](AUTHORING.md).
+The next time that type shows up, its `ENCOUNTER:` line can be filled in consistently from that entry instead of being re-improvised from scratch each time. You get consistency for the *type* across many appearances without saving a full character for every mook that shares it. Full authoring detail, including where this pattern sits relative to a ruleset's other lorebook entries, is in [`AUTHORING.md`](AUTHORING.md). A Bestiary style lorebook would be beneficial for games with large numbers of pre-defined enemies, again there's the 100 entry cap on lorebook reads that will cut off anything beyond that.
 
 ## XP & progression
 
