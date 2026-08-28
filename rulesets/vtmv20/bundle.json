@@ -1068,7 +1068,7 @@
         "constant": true,
         "selective": false,
         "position": 0,
-        "content": "Progression: xp — XP awards are ACTIVE; award per the XP Awards entry's guidelines. To use milestone leveling instead, change this line to 'Progression: milestone' — then award NO XP; the player triggers level-ups manually."
+        "content": "Progression: xp\n\n(The line above is the campaign's progression switch — follow whichever mode it declares. 'Progression: xp' = the GM awards XP per the XP Awards entry's guidelines. 'Progression: milestone' = the GM awards NO XP, ever; the player triggers level-ups manually at the table's discretion. Players: edit only the first line to change modes.)"
       },
       {
         "name": "Rule: Dice-pool resolution (V20)",
