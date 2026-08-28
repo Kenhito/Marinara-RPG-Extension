@@ -75,17 +75,17 @@ That's all six pieces. The per-ruleset INSTALL files (`rulesets/dnd5e/INSTALL.md
 
 ## Switching rulesets
 
-To switch from D&D 5e to Exalted 3e (or vice versa) on the same Marinara install:
+To switch systems (say, D&D 5e to Exalted 3e) on the same Marinara install:
 
-- Click the **Ruleset** button. Paste the new `ruleset.json` (or fetch by URL). Save and reload.
-- Disable the previous ruleset's GM agent in **Settings -> Agents** and enable the new one.
+- Click the **Ruleset** button. Use **Choose file…** to pick the new system's `bundle.json` (or **Fetch URL** with a raw GitHub link to one). Click **Save and reload**.
+- Disable the previous system's `MRR: <System> — <Role>` agents in your game's agent selection and enable the new system's set.
 - Detach the previous lorebook from the chat and attach the new one.
 
-The character sheet state is per-chat (stored in browser `localStorage` keyed by chat ID), so different chats can run different rulesets concurrently as long as you remember to switch the ruleset selection when you change chats.
+The character sheet state is per-chat — synced to your Marinara server via `marinara.storage` on engine 2.4.x+, with `localStorage` kept as a local mirror — so different chats can run different rulesets concurrently as long as you remember to switch the ruleset selection when you change chats.
 
 ## Updates
 
-If you used **Fetch URL** to install a ruleset, you can re-fetch it whenever the upstream version changes — Save-and-reload pulls the new `ruleset.json` into the active state.
+If you used **Fetch URL** to install a ruleset, you can re-fetch it whenever the upstream version changes — Save-and-reload pulls the new `bundle.json` into the active state.
 
 The extension itself updates by re-importing the package (same form as install) and re-approving the new hash via **Review and Run** — every code/CSS change requires this, with no exceptions. Marinara doesn't have an extension marketplace, so updates are manual.
 
