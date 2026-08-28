@@ -28,7 +28,7 @@ import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, basename, join } from "node:path";
 import {
-  loadRosterManifest, resolveRoster, phaseForRole, phaseSummary, contextSourcesForRole
+  loadRosterManifest, resolveRoster, phaseForRole, phaseSummary, contextSourcesForRole, filterSharedShellSections
 } from "./lib/agent-roster.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -66,7 +66,11 @@ function loadRoleAgents(rulesetName, rulesetDir) {
     const role = entry.role;
     const isOverride = entry.isOverride;
     const md = readFileSync(entry.sourcePath, "utf8");
-    const promptTemplate = extractPromptBlock(md);
+    /* F#19: shared prompts are filtered to this system's own shell-fields
+       section; overrides are already system-specific. */
+    const promptTemplate = isOverride
+      ? extractPromptBlock(md)
+      : filterSharedShellSections(extractPromptBlock(md), basename(rulesetDir));
     const phase = phaseForRole(role, md, entry.sourcePath, manifest, root);
     const firstHeading = (md.match(/^#\s+(.+)$/m) || [])[1] || titleCase(role);
     const tunedNote = isOverride ? " — tuned for " + rulesetName : " — shared baseline";

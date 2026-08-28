@@ -57,6 +57,28 @@ function validateFile(path) {
       );
     }
   }
+
+  // F#19 gate (2026-08-28): no shipped agent prompt may carry another
+  // system's "## <id> shell fields" section. The shared combat-overseer
+  // source holds one section per system and the builders filter to the
+  // bundle's own — this check makes cross-system prompt bleed a validation
+  // FAILURE forever, not a live-session discovery (a dnd5e narrator once
+  // reported its idle overseer "loading as a Rolemaster agent" because the
+  // overseer's own prompt taught Rolemaster OB/DB/Hits/AT).
+  const ownId = data.ruleset && data.ruleset.id;
+  if (ownId) {
+    const promptsToCheck = [["gmAgent", data.gmAgent && data.gmAgent.promptTemplate]]
+      .concat((Array.isArray(data.additionalAgents) ? data.additionalAgents : [])
+        .map((a, i) => [`additionalAgents[${i}] (${a && a.name || "unnamed"})`, a && a.promptTemplate]));
+    for (const [label, pt] of promptsToCheck) {
+      if (typeof pt !== "string") continue;
+      for (const m of pt.matchAll(/^##\s+(\S+)\s+shell fields\s*$/gm)) {
+        if (m[1] !== ownId) {
+          errors.push(`${label}: carries "## ${m[1]} shell fields" — another system's shell section in this bundle's prompt (F#19 cross-system bleed)`);
+        }
+      }
+    }
+  }
   return errors;
 }
 

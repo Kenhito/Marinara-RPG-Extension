@@ -303,3 +303,34 @@ export function phaseSummary(agents) {
   }
   return agents.length + " agents: " + blocking + " blocking / " + parallel + " parallel / " + post + " post";
 }
+
+/* F#19 (2026-08-28, found live): the shared agents/combat-overseer.md
+   prompt carries one "## <system> shell fields" section PER SYSTEM, and
+   both builders embedded the WHOLE extracted block — shipping every other
+   system's stat vocabulary into every system's overseer. Observed impact:
+   a dnd5e game's narrator reported the (idle) Combat Overseer "loading as
+   a Rolemaster agent" — the overseer's own prompt was teaching Rolemaster
+   OB/DB/Hits/AT alongside 14 other systems. Cross-system prompt bleed +
+   token bloat, both shipped x16.
+   Shared prompts are filtered to the target system's own section; per-
+   ruleset override files are never touched (they are already
+   system-specific). A section is "## <id> shell fields" verbatim, ended
+   by the next heading line. Exact id match only — same fail-closed rule
+   as the House Rules stamp. */
+export function filterSharedShellSections(prompt, rulesetId) {
+  if (typeof prompt !== "string" || !prompt) return prompt;
+  const lines = prompt.split("\n");
+  const out = [];
+  let dropping = false;
+  for (const line of lines) {
+    const m = /^##\s+(\S+)\s+shell fields\s*$/.exec(line);
+    if (m) {
+      dropping = m[1] !== rulesetId;
+      if (!dropping) out.push(line);
+      continue;
+    }
+    if (dropping && /^#\s/.test(line)) dropping = false;
+    if (!dropping) out.push(line);
+  }
+  return out.join("\n").replace(/\n{3,}/g, "\n\n");
+}
