@@ -136,6 +136,24 @@ Keep the template under ~2000 words; offload deep reference into the lorebook.
 
 Aim for 15-25 entries: core mechanics (always-on, ~5), conditions / states (~5), example powers / charms / spells (~10).
 
+Set the lorebook's top-level `tokenBudget` to **at least 4096**. The engine applies this budget per book across every entry activated in a turn; the shipped default of 2048 (and older bundles' 1500) silently drops large entries — such as an XP award table — from context while smaller ones still surface. There is no error when this happens; the entry is simply invisible to the GM.
+
+### Step 6a — XP & Progression standard entries (required if the system has advancement)
+
+Every ruleset whose system has character advancement ships these entries. They exist so a table can flip between GM-driven XP and manual milestone leveling by editing ONE word — without touching prompts or agents — and so the GM always reads authored numbers instead of guessing from model memory.
+
+**1. `XP Progression Mode` — the switch (always-on).** `constant: true`, keys `["xp","progression","milestone","level"]`. The FIRST LINE is the bare switch and nothing else; the explainer below it must be mode-neutral (it describes both modes and says "follow whichever mode the line above declares" — never fuse mode-specific prose onto the switch line itself, or a one-word flip produces a self-contradicting entry the model resolves unpredictably). Canonical content:
+
+> Progression: xp
+>
+> (The line above is the campaign's progression switch — follow whichever mode it declares. 'Progression: xp' = the GM awards XP per the XP Awards entry's guidelines. 'Progression: milestone' = the GM awards NO XP, ever; the player triggers level-ups manually at the table's discretion. Players: edit only the first line to change modes. NOTE: mode changes take effect on the NEXT turn — the engine re-reads lorebook context with about a one-turn delay, so the first response after a flip may follow the previous mode.)
+
+**2. `XP Awards` — the system's award guidelines.** Keyword-triggered (`keys` should include `xp`, `experience`, `award`). Must contain: the system's award values or formulas (encounter tables, session/interval awards — whatever the system uses); the **parity clause** — mental and social challenges and good roleplay earn award equivalents, never combat-only ("not just grind rats to level"); the **party clause** — every award goes to every player character in the party (one award per PC, uniform value; never award NPCs); and, for pool-spend systems (World of Darkness family, Exalted), the line **"the player edits the sheet to spend XP; do not adjudicate spends"**. Open with a pointer to the Progression Mode entry.
+
+**3. `Level-Up Procedure` — leveled systems only.** Carries the system's FULL level/XP threshold ladder (every level, exact numbers) framed as **authoritative over model memory for all level math** — this is what keeps "level me to 12" from landing on 13 — plus the per-level procedure (HP raise rule, feature/feat levels *mentioned, not automated*, anything the player confirms by hand). See `rulesets/dnd5e/lorebook.json` for the worked example; `rulesets/exalted3e/lorebook.json` shows the pool-system shape.
+
+The GM prompt's award doctrine (Step 5) references these entries — award triggers and the milestone gate check belong in the prompt; the *numbers* belong here, editable by the user.
+
 ## Step 7 — write INSTALL.md
 
 Mirror the structure of `rulesets/dnd5e/INSTALL.md` or `rulesets/exalted3e/INSTALL.md`:

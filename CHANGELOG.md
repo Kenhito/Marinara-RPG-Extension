@@ -9,6 +9,23 @@ explicitly when they do).
 
 ## [Unreleased]
 
+### Added
+
+**XP & Leveling** — the extension now runs character advancement, not just character state. The short version: the GM awards XP from your system's own rules, the whole party advances together, and one word in a lorebook entry switches any campaign to manual milestone leveling.
+
+- Award doctrine for seven systems. Leveled systems (dnd5e, pathfinder2e, ose) get `XP Awards` and `Level-Up Procedure` reference-lorebook entries plus GM award doctrine; Storyteller pool systems (vtmv20, w20, exalted3e, exwod) get session/interval award doctrine (awards only — spending XP stays a player sheet edit). Combat, social and mental challenges, and good roleplay all earn awards in every system.
+- Party-wide awards: every award goes to every player character in the party — never just the acting character, never NPCs.
+- The Progression switch: an always-on "XP Progression Mode" lorebook entry whose first line — `Progression: xp` or `Progression: milestone` — controls whether the GM awards XP at all. Milestone mode zero-emits: the GM keeps hands off the XP field and players level manually. Mode changes take effect on the next turn (the engine re-reads lorebook context with about a one-turn delay — noted in the entry itself).
+- Level-up support: the XP card shows a "LEVEL UP" badge when current XP reaches the next threshold; each leveled system's full XP ladder ships in its lorebook, framed as authoritative for all level math; the level input's maximum follows the ruleset's own table (OSE caps at 14, not a phantom 20).
+- Narrator max-value writes: `[mrr-state: field="Hit Points" max=...]` updates a bar-type derived stat's maximum (journaled and swipe-revertible like any scalar); the agent-visible sheet block now shows current / max for bar stats.
+- Authoring standard: `docs/AUTHORING.md` Step 6a and the AUTHORING-PROMPT now require the XP & Progression entries for any new system with advancement, so community rulesets ship the milestone switch and award doctrine from day one.
+
+### Fixed
+
+- Level lived in two places (pre-existing): the XP card's Level and the derived "Level" stat that modifier formulas read were separate stores — editing one left the other, and everything computed from it, stale. Level now has a single source of truth with write-through in both directions and a one-time heal for drifted sheets.
+- Agents could be told a stale XP threshold (pre-existing): the sheet block serialized the editable homebrew `next` field rather than the ruleset's XP table, so a sheet that leveled past an old value fed every agent a wrong "next level" number. The prompt now derives the threshold from the XP table, annotated with the level it belongs to.
+- Large lorebook entries could be silently starved (pre-existing): reference books shipped token budgets (1500-2500) that the engine applies per book across all activated entries, so big entries — an XP award table, for instance — lost the assembly cut with no error while small ones surfaced. Reference-book budgets are now 4096.
+
 ## v1.2.0 (2026-08-25)
 
 - **Party writes — `target=` honored end to end.** A `[mrr-state:]` tag can now

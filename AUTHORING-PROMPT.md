@@ -90,6 +90,26 @@ Then produce **one** valid `bundle.json` for `<<YOUR SYSTEM>>` that:
   mechanics, common terminology, archetypes/classes/playbooks, and
   conditions/states. Each entry needs a `name`, `content`, `keys` array,
   and `position: 0`.
+- Includes the **XP & Progression standard entries** (REQUIRED for any system
+  with character advancement; see `docs/AUTHORING.md` Step 6a for the canonical
+  text — mirror `rulesets/dnd5e/lorebook.json` for a leveled system or
+  `rulesets/exalted3e/lorebook.json` for a pool-spend system):
+  1. An always-on entry named exactly `XP Progression Mode` with
+     `constant: true`, whose FIRST LINE is the bare switch `Progression: xp`,
+     followed by the mode-neutral explainer (both modes described, "follow
+     whichever mode the line above declares", the players-edit-one-line note,
+     and the one-turn re-read latency note). This is how a table flips between
+     GM-driven XP and manual milestone leveling without editing prompts.
+  2. An `XP Awards` entry: the system's award guidelines (combat AND
+     social/mental challenges AND good roleplay all earn awards — never
+     combat-only), the party-wide clause (awards go to every player character,
+     one award per PC, never NPCs), and for pool-spend systems the line "the
+     player edits the sheet to spend XP; do not adjudicate spends".
+  3. For leveled systems: a `Level-Up Procedure` entry carrying the system's
+     FULL level/XP threshold ladder, framed as authoritative over model
+     memory for all level math, plus the per-level procedure.
+  4. Set the lorebook's top-level `tokenBudget` to at least 4096 so the large
+     reference entries survive the engine's per-book assembly budget.
 - Includes the engine compatibility paragraph from the reference bundles
   about the `[reputation: action="..."]` length cap (verified against current
   engine HEAD at 500 characters via `GAME_REPUTATION_ACTION_MAX_LENGTH` in
