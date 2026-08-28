@@ -16946,6 +16946,98 @@ function mrrInvalidateSheetSyncMemo(why) {
   log("sheet-sync content memo cleared (" + why + ") — the next sync re-PATCHes every managed agent");
 }
 
+/* ═══ TIERING ROUND (Stage 1, 2026-08-27) — per-role sheet tiers ═══════════
+   Not every managed agent needs the same amount of sheet. The main gmAgent,
+   combat-overseer and the state-mutator adjudicate or write numbers
+   directly and need the FULL party block, byte for byte; context-fuser only
+   needs enough to keep narration consistent (a light per-character
+   summary); essence-manager only cares about pool/commitment math;
+   pre-input-transformer runs before generation has anything worth
+   sheet-injecting at all. Four tiers, one pure function
+   (mrrSheetBlockForTier) below, so every tier is a deterministic slice of
+   the SAME `party` object syncSheetToAgents already assembles — no tier
+   re-walks the roster or re-derives a number on its own. Unknown/future
+   roles default to "summary": some context, never the full multi-character
+   block, never nothing. */
+var MRR_ROLE_SHEET_TIER = {
+  "main": "full",
+  "combat-overseer": "full",
+  "state-mutator": "full",
+  "context-fuser": "summary",
+  "essence-manager": "pools",
+  "pre-input-transformer": "none"
+};
+var MRR_DEFAULT_SHEET_TIER = "summary";
+
+/* The first two lines of an assembled party.text — the "PARTY ROSTER — N
+   character(s)..." line and the one right after it (buildPartySheetBlock's
+   preamble). Solo play's party.text is the bare active sheet with no such
+   preamble (buildPartySheetBlock's own solo short-circuit), so this simply
+   returns that sheet's own first two lines in that case — every tier below
+   degrades gracefully to whatever solo play already produced, nothing
+   special-cased here. */
+function mrrSheetBlockHeaderLines(partyText) {
+  var lines = String(partyText || "").split("\n");
+  return lines.slice(0, 2).join("\n");
+}
+
+/* Committed-motes lines for the ACTIVE sheet only, one per ruleset resource
+   that declares a commitmentPool. Reuses computeCommittedMotes — the same
+   pure, no-side-effect helper the Resources snapshot in buildSheetForPrompt
+   reads (see its "Phase 6 — apply commitment-aware effective max" comment)
+   — rather than re-deriving the commitment count by hand. A ruleset with no
+   commitmentPool resources at all (every non-Exalted ruleset today, and any
+   Exalted character with nothing committed) yields an empty array; the
+   "pools" tier then degrades to bar lines only, which is the same "say
+   there is nothing here, never invent a number" posture the rest of this
+   file uses. */
+function mrrCommittedMotesLines() {
+  var out = [];
+  if (!state.ruleset || !Array.isArray(state.ruleset.resources)) return out;
+  state.ruleset.resources.forEach(function (r) {
+    if (!r || typeof r.commitmentPool !== "string" || !r.commitmentPool) return;
+    var committed = computeCommittedMotes(r.commitmentPool);
+    if (committed > 0) out.push("- " + (r.label || r.id) + ": " + committed + " committed");
+  });
+  return out;
+}
+
+/* THE tier slicer. `party` is exactly what buildPartySheetBlock() returned
+   — never re-fetched, never re-derived here. `full` is party.text
+   byte-identical by construction (no transform at all). `none` is the
+   empty string, which injectSheetIntoPromptTemplate already treats as
+   "strip any existing block, inject nothing". `pools` and `summary` are
+   built from the SAME per-character bar/track summarizer
+   (mrrPartyMemberSummaryLines) buildPartySheetBlock's own collapse path
+   already uses — no second copy of "what does a bar-type stat look like as
+   text" exists anywhere in this file. */
+function mrrSheetBlockForTier(party, tier) {
+  if (!party || !party.text) return "";
+  if (tier === "full") return party.text;
+  if (tier === "none") return "";
+  var header = mrrSheetBlockHeaderLines(party.text);
+  if (tier === "pools") {
+    var barLines = mrrPartyMemberSummaryLines(state.sheet, state.activeCharacterId);
+    var motesLines = mrrCommittedMotesLines();
+    var poolParts = [header, barLines.join("\n")];
+    if (motesLines.length) poolParts.push(motesLines.join("\n"));
+    return poolParts.join("\n");
+  }
+  /* "summary" — also the default for any role this map doesn't name. One
+     labeled section per roster member (active included), using the same
+     mrrPartySectionHeader shape buildPartySheetBlock's own member sections
+     use, so a multi-character party's lines stay attributable to a name
+     rather than an unlabeled run of bar values nobody can tell apart. */
+  var order = mrrPartyRosterOrder();
+  var memberSections = order.map(function (m) {
+    var sheet = (m.id === state.activeCharacterId) ? state.sheet : mrrPartyMemberSheet(m.id, state.ruleset);
+    var label = m.active ? MRR_PARTY_LABEL_ACTIVE : MRR_PARTY_LABEL_MEMBER;
+    if (!sheet) return mrrPartySectionHeader(label, m.name, "(no sheet for this system)");
+    return mrrPartySectionHeader(label, m.name) + "\n" + mrrPartyMemberSummaryLines(sheet, m.id).join("\n");
+  });
+  return [header].concat(memberSections).join("\n");
+}
+
 function syncSheetToAgents() {
   if (!state.ruleset) return;
   /* ROUND D: the block is now the WHOLE party (active + every roster member
@@ -16962,6 +17054,21 @@ function syncSheetToAgents() {
   var mutatorClause = mrrMutatorPartyRoutingClause(party);
   var rulesetId = state.ruleset.id;
 
+  /* ═══ TIERING ROUND — precompute every DISTINCT tier body once from
+     `party` ══════════════════════════════════════════════════════════════
+     Every managed role maps to one of these four tiers
+     (MRR_ROLE_SHEET_TIER, default "summary"); computing all four up front
+     means both the per-agent PATCH loop below and the content-gate
+     signature read from the SAME values, so "which tier a role gets" can
+     never diverge between what the gate compared and what was actually
+     sent. `full` is `sheetBlock` (party.text) byte-identical. */
+  var mrrSheetTierBody = {
+    full: mrrSheetBlockForTier(party, "full"),
+    summary: mrrSheetBlockForTier(party, "summary"),
+    pools: mrrSheetBlockForTier(party, "pools"),
+    none: mrrSheetBlockForTier(party, "none")
+  };
+
   /* ═══ ROUND E-2 (a) — THE CONTENT GATE ════════════════════════════════════
      LIVE FINDING (ex3game0610). Game mode emits a turn as many separate
      messages; each one reached this pipeline, and one session ran 57 full
@@ -16973,8 +17080,11 @@ function syncSheetToAgents() {
      CONTENT, not a save counter or a timestamp: what the agents carry in
      their promptTemplates is a pure function of (party block + mutator
      clause), so identical content provably means identical PATCH bodies.
-     The signature joins the two halves on NUL, a byte neither the block nor
-     the clause can contain, so no concatenation can alias.
+     TIERING ROUND: the signature now joins EVERY DISTINCT tier body (not
+     just the full block) plus the clause, all on NUL, a byte none of them
+     can contain, so no concatenation can alias and a content change in ANY
+     one tier (e.g. a "pools" recompute that the "full" block doesn't
+     reflect) defeats the memo exactly as a full-block change always did.
 
      Identical => return here: no GET /agents, no PATCH fan-out, and no log
      line. The party-aware log line below now fires ONLY on an actual fan-out,
@@ -16996,7 +17106,8 @@ function syncSheetToAgents() {
      WHERE THE MEMO LIVES. On `state`, beside state.installing and the dialog
      handles — session-scoped bookkeeping that is not sheet data. */
   if (!state.mrrSyncLastBlock) state.mrrSyncLastBlock = Object.create(null);
-  var signature = sheetBlock + "\u0000" + (mutatorClause || "");
+  var signature = mrrSheetTierBody.full + "\u0000" + mrrSheetTierBody.summary + "\u0000" +
+    mrrSheetTierBody.pools + "\u0000" + mrrSheetTierBody.none + "\u0000" + (mutatorClause || "");
   if (state.mrrSyncLastBlock[rulesetId] === signature) return;
 
   /* ═══ ROUND E-2 (c) — THE IN-FLIGHT DIRTY LATCH ═══════════════════════════
@@ -17037,9 +17148,14 @@ function syncSheetToAgents() {
     var mutatorCount = 0;
     return Promise.all(managed.map(function (a) {
       var s = parseAgentSettings(a);
-      var block = sheetBlock;
-      if (mutatorClause && s && s.mrrAgentRole === "state-mutator") {
-        block = sheetBlock + "\n\n" + mutatorClause;
+      /* role resolution matches the file's one existing convention
+         (:1378-1386, :5972, :17843): no mrrAgentRole on settings, or an
+         explicit "main", is the main gmAgent row. */
+      var role = (s && typeof s.mrrAgentRole === "string" && s.mrrAgentRole) ? s.mrrAgentRole : "main";
+      var tier = MRR_ROLE_SHEET_TIER.hasOwnProperty(role) ? MRR_ROLE_SHEET_TIER[role] : MRR_DEFAULT_SHEET_TIER;
+      var block = mrrSheetTierBody[tier];
+      if (mutatorClause && role === "state-mutator") {
+        block = (block ? block + "\n\n" : "") + mutatorClause;
         mutatorCount++;
       }
       var newPrompt = injectSheetIntoPromptTemplate(a.promptTemplate, block);
