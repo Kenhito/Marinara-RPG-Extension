@@ -238,13 +238,33 @@ export function phaseForRole(role, md, sourcePath, manifest, repoRoot) {
    cannot import this module — it is a single browser-side file — so
    mrrReadoptionSettings carries its own copy of this same table for the heal
    path; that second copy is the plan's explicit second half, not drift. */
+/* ⚠️ CORRECTED 2026-08-28 (Cato audit, findings 1/2/5). The engine treats
+   every MRR row as a CUSTOM agent (`isCustomAgent: !BUILT_IN_AGENTS.some(...)`,
+   agent-resolution.ts:503), so the pre-round default was ALREADY the
+   selective mode with chatHistory-only — NOT the ALL-sources default the
+   tiering spec's 1D claimed. The original table here therefore GRANTED new
+   context (lorebook to 4 roles; characters/persona/summary to the fuser)
+   instead of trimming. Until Corey rules on those grants (priced as
+   additions), this table stamps EXPLICIT PARITY with the engine default —
+   chatHistory only — which changes nothing behaviorally while protecting
+   against future engine-default drift. Keys are the engine's real enum
+   (types/agent.ts:570-579); the earlier "others" pseudo-key is gone.
+   Also per audit: batching ORs sources across a same-connection phase group
+   (getBatchContextSources), so any future per-role grant is effectively
+   group-wide within pre_generation on a single connection. */
+const MRR_PARITY_SOURCES = Object.freeze({
+  chatHistory: true, characters: false, persona: false,
+  activatedLorebookEntries: false, chatSummary: false,
+  authorNotes: false, trackerData: false, recalledMemories: false
+});
 const MRR_CONTEXT_SOURCES_BY_ROLE = {
-  "main":                  { chatHistory: true, activatedLorebookEntries: true,  characters: true,  persona: false, chatSummary: false, others: false },
-  "combat-overseer":       { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
-  "state-mutator":         { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
-  "context-fuser":         { chatHistory: true, activatedLorebookEntries: false, characters: true,  persona: true,  chatSummary: true,  others: false },
-  "essence-manager":       { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
-  "pre-input-transformer": { chatHistory: true, activatedLorebookEntries: false, characters: false, persona: false, chatSummary: false, others: false }
+  "main":                  MRR_PARITY_SOURCES,
+  "combat-overseer":       MRR_PARITY_SOURCES,
+  "state-mutator":         MRR_PARITY_SOURCES,
+  "context-fuser":         MRR_PARITY_SOURCES,
+  "essence-manager":       MRR_PARITY_SOURCES,
+  "blood-pool-tracker":    MRR_PARITY_SOURCES,
+  "pre-input-transformer": MRR_PARITY_SOURCES
 };
 const MRR_CONTEXT_SIZE_BY_ROLE = {
   "pre-input-transformer": 4
@@ -252,10 +272,12 @@ const MRR_CONTEXT_SIZE_BY_ROLE = {
 
 /**
  * The settings fragment for one role's contextSources (+ contextSize where
- * the table declares one). A role this table doesn't name (future role, or
- * a ruleset-local override with no round-27 entry) falls back to the "main"
- * row — a bounded, intentional context rather than the engine's own
- * ALL-sources default, which is what an unset object would otherwise mean.
+ * the table declares one). A role this table doesn't name falls back to the
+ * "main" row — today that is the same parity row every role gets, so the
+ * fallback is behavior-neutral; it exists so a future per-role grant table
+ * still has a defined answer for unnamed roles. (The old comment claimed the
+ * engine default was ALL-sources; RETRACTED 2026-08-28 — custom agents
+ * default to chatHistory-only, see the table's correction note.)
  */
 export function contextSourcesForRole(role) {
   const key = (typeof role === "string" && role && Object.prototype.hasOwnProperty.call(MRR_CONTEXT_SOURCES_BY_ROLE, role))

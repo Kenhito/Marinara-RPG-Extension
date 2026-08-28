@@ -16967,7 +16967,12 @@ var MRR_ROLE_SHEET_TIER = {
   "essence-manager": "pools",
   "pre-input-transformer": "none"
 };
-var MRR_DEFAULT_SHEET_TIER = "summary";
+/* ⚠️ CORRECTED 2026-08-28 (Cato audit finding 3): default was "summary",
+   which silently DOWNGRADED any built role the map doesn't name (vtmv20's
+   blood-pool-tracker — a numeric bookkeeping agent — was real, not
+   hypothetical). Unknown roles now keep pre-round behavior (full block);
+   only explicitly-mapped roles are trimmed. */
+var MRR_DEFAULT_SHEET_TIER = "full";
 
 /* The first two lines of an assembled party.text — the "PARTY ROSTER — N
    character(s)..." line and the one right after it (buildPartySheetBlock's
@@ -17863,20 +17868,31 @@ function mrrStrippedManagedRows(agents, rulesetId) {
    two tables in sync by hand if this map ever changes — there is no
    mechanism enforcing that, the same honest limitation COUPLINGS.md's B18
    entry already documents for a different pair of files in this repo. */
+/* ⚠️ CORRECTED 2026-08-28 (Cato audit): the engine already ran MRR rows in
+   selective mode (custom agents → chatHistory-only default); the ruled
+   "trim" table was actually a GRANT. Parity stamping until Corey rules on
+   grants. Keys = the engine's real enum; "others" pseudo-key removed.
+   MUST stay identical to tools/lib/agent-roster.mjs's table (probe T7). */
+var MRR_PARITY_SOURCES = {
+  chatHistory: true, characters: false, persona: false,
+  activatedLorebookEntries: false, chatSummary: false,
+  authorNotes: false, trackerData: false, recalledMemories: false
+};
 var MRR_CONTEXT_SOURCES_BY_ROLE = {
-  "main":                  { chatHistory: true, activatedLorebookEntries: true,  characters: true,  persona: false, chatSummary: false, others: false },
-  "combat-overseer":       { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
-  "state-mutator":         { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
-  "context-fuser":         { chatHistory: true, activatedLorebookEntries: false, characters: true,  persona: true,  chatSummary: true,  others: false },
-  "essence-manager":       { chatHistory: true, activatedLorebookEntries: true,  characters: false, persona: false, chatSummary: false, others: false },
-  "pre-input-transformer": { chatHistory: true, activatedLorebookEntries: false, characters: false, persona: false, chatSummary: false, others: false }
+  "main":                  MRR_PARITY_SOURCES,
+  "combat-overseer":       MRR_PARITY_SOURCES,
+  "state-mutator":         MRR_PARITY_SOURCES,
+  "context-fuser":         MRR_PARITY_SOURCES,
+  "essence-manager":       MRR_PARITY_SOURCES,
+  "blood-pool-tracker":    MRR_PARITY_SOURCES,
+  "pre-input-transformer": MRR_PARITY_SOURCES
 };
 var MRR_CONTEXT_SIZE_BY_ROLE = {
   "pre-input-transformer": 4
 };
-/* A role this table doesn't name falls back to the "main" row — a bounded,
-   intentional context rather than the engine's own ALL-sources default,
-   which is what an unset contextSources object would otherwise mean. */
+/* A role this table doesn't name falls back to the "main" row — today the
+   same parity row as everyone, so behavior-neutral. (Old claim that unset =
+   engine ALL-sources default: RETRACTED 2026-08-28, see table note.) */
 function mrrContextSourcesForRole(role) {
   var key = (typeof role === "string" && role && Object.prototype.hasOwnProperty.call(MRR_CONTEXT_SOURCES_BY_ROLE, role))
     ? role : "main";
@@ -17905,9 +17921,19 @@ function mrrReadoptionSettings(agent, rulesetId, role, authorId) {
   merged.mrrRulesetId = rulesetId;
   merged.mrrAuthorId = authorId;
   merged.mrrAgentRole = role;
+  /* ⚠️ CORRECTED 2026-08-28 (Cato audit finding 4): stamp contextSources /
+     contextSize ONLY when the row lacks them. A wholesale replace here broke
+     this function's own MERGE promise — a user who tuned these in the engine
+     UI had them silently reverted every heal cycle. Existing objects now
+     survive byte-for-byte; only a stripped/fresh row gets the table's stamp. */
   var ctx = mrrContextSourcesForRole(role);
-  merged.contextSources = ctx.contextSources;
-  if (Object.prototype.hasOwnProperty.call(ctx, "contextSize")) merged.contextSize = ctx.contextSize;
+  if (!merged.contextSources || typeof merged.contextSources !== "object") {
+    merged.contextSources = ctx.contextSources;
+  }
+  if (!Object.prototype.hasOwnProperty.call(merged, "contextSize") &&
+      Object.prototype.hasOwnProperty.call(ctx, "contextSize")) {
+    merged.contextSize = ctx.contextSize;
+  }
   return merged;
 }
 

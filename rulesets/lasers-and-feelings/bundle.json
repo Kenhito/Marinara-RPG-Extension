@@ -120,11 +120,13 @@
     "settings": {
       "contextSources": {
         "chatHistory": true,
-        "activatedLorebookEntries": true,
-        "characters": true,
+        "characters": false,
         "persona": false,
+        "activatedLorebookEntries": false,
         "chatSummary": false,
-        "others": false
+        "authorNotes": false,
+        "trackerData": false,
+        "recalledMemories": false
       },
       "resultType": "context_injection",
       "injectAsSection": true
@@ -336,11 +338,13 @@
       "settings": {
         "contextSources": {
           "chatHistory": true,
-          "activatedLorebookEntries": true,
           "characters": false,
           "persona": false,
+          "activatedLorebookEntries": false,
           "chatSummary": false,
-          "others": false
+          "authorNotes": false,
+          "trackerData": false,
+          "recalledMemories": false
         },
         "resultType": "context_injection",
         "injectAsSection": true
@@ -356,11 +360,13 @@
       "settings": {
         "contextSources": {
           "chatHistory": true,
+          "characters": false,
+          "persona": false,
           "activatedLorebookEntries": false,
-          "characters": true,
-          "persona": true,
-          "chatSummary": true,
-          "others": false
+          "chatSummary": false,
+          "authorNotes": false,
+          "trackerData": false,
+          "recalledMemories": false
         },
         "resultType": "context_injection",
         "injectAsSection": true
@@ -376,11 +382,13 @@
       "settings": {
         "contextSources": {
           "chatHistory": true,
-          "activatedLorebookEntries": true,
           "characters": false,
           "persona": false,
+          "activatedLorebookEntries": false,
           "chatSummary": false,
-          "others": false
+          "authorNotes": false,
+          "trackerData": false,
+          "recalledMemories": false
         },
         "resultType": "context_injection"
       },
