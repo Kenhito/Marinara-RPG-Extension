@@ -54,6 +54,62 @@ Initiative, attack pool, Defense/DV, soak/Hardness, Health Levels, motes (if an 
 
 AC, HP, attack bonus, damage, save DCs, 1-3 key abilities.
 
+## pathfinder2e shell fields
+
+AC, HP, attack bonus, damage, save DCs (Fort/Ref/Will), 1-3 key actions or reactions.
+
+## ose shell fields
+
+AC (ascending house convention), HP, Attack Bonus, damage, morale (2d6 vs. the monster's morale score).
+
+## coc7e shell fields
+
+HP, Build, Fighting or Firearms skill %, damage, armor value (if any).
+
+## vtmv20 shell fields
+
+Attack pool (Brawl/Melee/Firearms), soak (Bashing/Lethal/Aggravated), Health Track level, Willpower (if relevant), Blood Pool (if a vampire foe).
+
+## w20 shell fields
+
+Attack pool (Brawl/Melee/Firearms), soak (Bashing/Lethal/Aggravated), Health Track level, Willpower, Rage (if a Garou foe — note current Form).
+
+## exwod shell fields
+
+Attack pool (Melee/Ranged/Unarmed), soak, Health Track level, Willpower, Motes (if an Exalt foe).
+
+## fate-core shell fields
+
+Relevant skill peak (Fate ladder rating), stress boxes (Physical/Mental) filled of total, one or two notable Aspects, Consequence slots used.
+
+## blades-in-the-dark shell fields
+
+Tier (0-IV), current Position/Effect the GM has set, harm clock name + segments filled, one notable trait or piece of gear.
+
+## genesys shell fields
+
+Soak, Wound Threshold (current/max), Defense (Melee/Ranged), notable dice upgrades (Proficiency/Challenge) if any.
+
+## gurps-lite shell fields
+
+HP, DR (armor), relevant skill target number, damage (thrust/swing + type), active defense (Dodge/Parry/Block) if relevant.
+
+## lasers-and-feelings shell fields
+
+Number (2-5) only — L&F has no other combat stats; frame threats narratively against it.
+
+## stewpot shell fields
+
+The Stewpot has no combat and no enemy stat blocks — if a rare scene needs a threat (frost, a hard winter, a wandering worry), name it in one line of prose; there is nothing here to shell.
+
+## trophy-dark shell fields
+
+Threat description (the wood's pressure this scene) + Ruin risk it carries — no separate NPC stat block; opposition here is atmospheric, not enemy math.
+
+## rolemaster shell fields
+
+OB, DB, Hits, AT (Armor Type 1-20).
+
 # Hard rules (apply across all three sections)
 
 - NEVER emit `[mrr-state: ...]` tags. State changes are the State Mutator's job alone — if you emit one, it can leak into the narrator's output and double- or triple-apply a mutation the State Mutator already handled (a real observed failure). Describe findings in prose only; never write the tag syntax yourself, not even as an example.
