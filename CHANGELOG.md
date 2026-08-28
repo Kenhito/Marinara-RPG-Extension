@@ -11,6 +11,12 @@ explicitly when they do).
 
 ### Added
 
+### Fixed
+
+## v1.3.0 (2026-08-27)
+
+### Added
+
 **XP & Leveling** — the extension now runs character advancement, not just character state. The short version: the GM awards XP from your system's own rules, the whole party advances together, and one word in a lorebook entry switches any campaign to manual milestone leveling.
 
 - Award doctrine for seven systems. Leveled systems (dnd5e, pathfinder2e, ose) get `XP Awards` and `Level-Up Procedure` reference-lorebook entries plus GM award doctrine; Storyteller pool systems (vtmv20, w20, exalted3e, exwod) get session/interval award doctrine (awards only — spending XP stays a player sheet edit). Combat, social and mental challenges, and good roleplay all earn awards in every system.
