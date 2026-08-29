@@ -12756,19 +12756,21 @@ function renderHouseRulesSection(dialog, msg) {
   var btnRow = marinara.addElement(dialog, "div", {
     class: "mrr-dialog__buttons"
   });
-  var applyBtn = marinara.addElement(btnRow, "button", {
-    type: "button",
-    textContent: "Save house rules"
-  });
   var resetBtn = marinara.addElement(btnRow, "button", {
     type: "button",
     textContent: "Reset to RAW (keeps entry)"
   });
-  if (applyBtn) applyBtn.disabled = true;
   if (resetBtn) resetBtn.disabled = true;
   var lastSnap = null;
+  function setBusy(b) {
+    names.forEach(function(n) {
+      if (selects[n]) selects[n].disabled = b;
+    });
+    if (resetBtn) resetBtn.disabled = b;
+  }
   mrrHrCaptureSnapshot(ruleset).then(function(snap) {
     lastSnap = snap;
+    log("house rules: dialog snapshot — " + snap.entryState + (snap.book ? " (book: " + snap.book + ")" : "") + (snap.parseError ? " parseError=" + snap.parseError : ""));
     if (snap.entryState === "api-error") {
       setMsg(hrMsg, "House Rules unavailable: " + snap.error, "err");
       return;
@@ -12784,15 +12786,13 @@ function renderHouseRulesSection(dialog, msg) {
     names.forEach(function(name) {
       if (selects[name]) {
         selects[name].value = snap.levers[name].value;
-        selects[name].disabled = false;
       }
     });
-    if (applyBtn) applyBtn.disabled = false;
-    if (resetBtn) resetBtn.disabled = false;
+    setBusy(false);
     if (snap.entryState === "absent") {
-      setMsg(hrMsg, "All RAW. Changing a lever creates the 'MRR House Rules' lorebook for this system - attach it to your game so the GM can see your rules.", "info");
+      setMsg(hrMsg, "All RAW. Changing a lever saves immediately and creates the 'MRR House Rules' lorebook for this system - attach it to your game so the GM can see your rules.", "info");
     } else {
-      setMsg(hrMsg, "Loaded from " + snap.book + ". Reminder: that book must be attached to your game for the GM to see it.", "info");
+      setMsg(hrMsg, "Loaded from " + snap.book + ". Changes save immediately. Reminder: that book must be attached to your game for the GM to see it.", "info");
     }
   });
   function currentMap() {
@@ -12808,26 +12808,28 @@ function renderHouseRulesSection(dialog, msg) {
     });
   }
   function write(map, label) {
-    if (applyBtn) applyBtn.disabled = true;
-    if (resetBtn) resetBtn.disabled = true;
+    setBusy(true);
     mrrHrEnsureBookAndEntry(ruleset, map).then(function(res) {
       lastSnap = null;
-      setMsg(hrMsg, label + (res.created ? " Created 'MRR House Rules - " + (ruleset.name || ruleset.id) + "' - attach it to your game(s) so the GM sees your rules." : ""), "ok");
-      if (applyBtn) applyBtn.disabled = false;
-      if (resetBtn) resetBtn.disabled = false;
+      log("house rules: " + (res.created ? "created book+entry" : "patched levers") + " for " + ruleset.id + " — " + JSON.stringify(map));
+      setMsg(hrMsg, label + (res.created ? " Created 'MRR House Rules - " + (ruleset.name || ruleset.id) + "' - attach it to your game(s) so the GM sees your rules." : " Saved."), "ok");
+      setBusy(false);
     })["catch"](function(err) {
+      warn("house rules: write FAILED for " + ruleset.id + " — " + String(err && err.message || err));
       setMsg(hrMsg, String(err && err.message || err), "err");
-      if (applyBtn) applyBtn.disabled = false;
-      if (resetBtn) resetBtn.disabled = false;
+      setBusy(false);
     });
   }
-  if (applyBtn) marinara.on(applyBtn, "click", function() {
-    var map = currentMap();
-    if (lastSnap && lastSnap.entryState === "absent" && allDefaults(map)) {
-      setMsg(hrMsg, "Everything is RAW - nothing to save. The entry is created when a lever departs from default.", "info");
-      return;
-    }
-    write(map, "House rules saved.");
+  names.forEach(function(n) {
+    if (!selects[n]) return;
+    marinara.on(selects[n], "change", function() {
+      var map = currentMap();
+      if (lastSnap && lastSnap.entryState === "absent" && allDefaults(map)) {
+        setMsg(hrMsg, "Everything is RAW - nothing to create yet.", "info");
+        return;
+      }
+      write(map, "House rules saved.");
+    });
   });
   if (resetBtn) marinara.on(resetBtn, "click", function() {
     names.forEach(function(n) {
@@ -13836,8 +13838,12 @@ function mrrPartyMemberSummaryLines(sheet, characterId) {
     var defs = state.ruleset && Array.isArray(state.ruleset.derivedStats) ? state.ruleset.derivedStats : [];
     var lines = [];
     defs.forEach(function(d) {
-      if (!d || !d.name || d.renderAs !== "bar") return;
-      var cur = state.sheet.derived && state.sheet.derived[d.name] || 0;
+      if (!d || !d.name) return;
+      var isBar = d.renderAs === "bar";
+      var dv = state.sheet.derived && state.sheet.derived[d.name];
+      var isPool = !isBar && typeof d.maxFormula === "string" && typeof dv === "number" && isFinite(dv);
+      if (!isBar && !isPool) return;
+      var cur = typeof dv === "number" && isFinite(dv) ? dv : 0;
       var max = mrrP3ComputeBarMax(d);
       lines.push("- " + d.name + ": " + cur + " / " + max);
     });
@@ -14703,6 +14709,13 @@ function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progres
       }
     }
     var staleMarkers = [];
+    var nameByType = Object.create(null);
+    var agentList = Array.isArray(agents) ? agents : [];
+    for (var na = 0; na < agentList.length; na++) {
+      var ag = agentList[na];
+      if (ag && typeof ag.type === "string" && typeof ag.name === "string") nameByType[ag.type] = ag.name;
+    }
+    var renames = [];
     var work = [];
     for (var i = 0; i < sections.length; i++) {
       var sec = sections[i];
@@ -14720,7 +14733,17 @@ function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progres
         });
         continue;
       }
-      if (live[t]) continue;
+      if (live[t]) {
+        var liveName = nameByType[t];
+        if (typeof liveName === "string" && liveName && sec.name !== liveName) {
+          renames.push({
+            id: sec.id,
+            from: sec.name || sec.id,
+            to: liveName
+          });
+        }
+        continue;
+      }
       var role = mrrRoleForOrphanType(t, roleTypes);
       if (!role) continue;
       var target = roleTypes[role];
@@ -14743,25 +14766,44 @@ function mrrReconcilePresetMarkers(chat, chatId, rulesetId, agents, out, progres
         return s.role + ' -> "' + s.name + '"';
       }).join(", ") + "). They are inert now that those agents no longer run, so they inject nothing — but they are " + "still listed in the preset. To tidy them: delete the retired agent rows (Manage MRR Agents), then " + 'use "Remove stale agent sections" in the same dialog — it lists exactly what it will delete and ' + "asks before touching anything. Deleting them by hand in the Preset Editor works too.");
     }
-    if (!work.length) return;
-    progress("Repointing " + work.length + " agent marker section(s)...");
-    return work.reduce(function(c, w) {
-      return c.then(function() {
-        return apiFetch("/prompts/" + encodeURIComponent(presetId) + "/sections/" + encodeURIComponent(w.id), {
-          method: "PATCH",
-          body: JSON.stringify({
-            content: "{{agent::" + w.to + "}}",
-            markerConfig: {
-              type: "agent_data",
-              agentType: w.to
-            }
-          })
-        }).then(function() {
-          out.rewritten++;
-          log("reconcile: repointed the '" + w.role + "' agent marker from dead type '" + w.from + "' to '" + w.to + "'");
+    var renameChain = Promise.resolve();
+    if (renames.length) {
+      progress("Renaming " + renames.length + " stale agent marker label(s)...");
+      renameChain = renames.reduce(function(c, r) {
+        return c.then(function() {
+          return apiFetch("/prompts/" + encodeURIComponent(presetId) + "/sections/" + encodeURIComponent(r.id), {
+            method: "PATCH",
+            body: JSON.stringify({
+              name: r.to
+            })
+          }).then(function() {
+            log('reconcile: renamed marker section "' + r.from + '" -> "' + r.to + '" (label had gone stale; the agent inside was already correct)');
+          });
         });
-      });
-    }, Promise.resolve()).then(function() {
+      }, Promise.resolve());
+    }
+    if (!work.length) return renameChain;
+    return renameChain.then(function() {
+      progress("Repointing " + work.length + " agent marker section(s)...");
+      return work.reduce(function(c, w) {
+        return c.then(function() {
+          return apiFetch("/prompts/" + encodeURIComponent(presetId) + "/sections/" + encodeURIComponent(w.id), {
+            method: "PATCH",
+            body: JSON.stringify({
+              content: "{{agent::" + w.to + "}}",
+              markerConfig: {
+                type: "agent_data",
+                agentType: w.to
+              },
+              name: typeof nameByType[w.to] === "string" && nameByType[w.to] ? nameByType[w.to] : undefined
+            })
+          }).then(function() {
+            out.rewritten++;
+            log("reconcile: repointed the '" + w.role + "' agent marker from dead type '" + w.from + "' to '" + w.to + "'");
+          });
+        });
+      }, Promise.resolve());
+    }).then(function() {
       if (out.rewritten > 0) {
         log("reconciled " + out.rewritten + ' orphaned agent marker(s) after reinstall — preset "' + presetName + '" now points at the live agent types');
       }
