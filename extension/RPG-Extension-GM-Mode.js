@@ -9450,6 +9450,17 @@ function mrrGetResourceCurrent(resource, ctx) {
     }
     var dv = state.sheet.derived[resource.stateName];
     if (typeof dv === "number" && isFinite(dv)) return dv;
+    /* Migration guard (hit-dice stateName adoption, 2026-08-28): when a
+       resource GAINS a stateName after sheets already carry a value under
+       resources[id].current, seeding the derived key from the DEFAULT
+       (max) would silently refill whatever the player had spent. Adopt
+       the existing legacy value first; default only when neither store
+       has one. */
+    var legacy = state.sheet.resources[id];
+    if (legacy && typeof legacy.current === "number" && isFinite(legacy.current)) {
+      state.sheet.derived[resource.stateName] = legacy.current;
+      return legacy.current;
+    }
     var maxL = mrrResolveResourceMax(resource, ctx);
     var defL = mrrResolveResourceDefaultCurrent(resource, ctx, maxL);
     state.sheet.derived[resource.stateName] = defL;

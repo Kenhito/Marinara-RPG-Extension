@@ -40,6 +40,8 @@ Names listed in the Combat Overseer's `ENCOUNTER:` block (unnamed opposition run
 ONE tag per state change, each on its own line. Every attribute value is a literal copied from the narration:
 
 [mrr-state: target="player" field="hp" delta="-11" reason="GM narrated 11 damage from the greatsword hit"]
+[mrr-state: target="player" field="hit_dice" delta="-2" reason="GM narrated spending 2 Hit Dice on the short rest"]
+[mrr-state: target="player" field="hit_dice" delta="+7" reason="GM narrated regaining half of 15 Hit Dice on the long rest"]
 [mrr-state: target="player" field="conditions" add="Poisoned (1 minute)" reason="GM narrated a failed save vs the poison dart"]
 [mrr-state: target="player" field="conditions" remove="Poisoned (1 minute)" reason="GM narrated the duration expiring"]
 [mrr-state: target="player" field="inventory" add="Healing Potion" qty="1" reason="GM narrated buying a potion at the general store" optional: slot damage attack_attr attack_proficient use_effect consumable notes category — see Inventory schema below]

@@ -342,6 +342,18 @@
       ]
     },
     {
+      "name": "Hit Dice",
+      "formula": "one per level; spend on short rests (1dX+CON each), regain half on a long rest",
+      "maxFormula": "{Level}",
+      "aliases": [
+        "hit_dice",
+        "hitDice",
+        "hitdice",
+        "hd",
+        "HD"
+      ]
+    },
+    {
       "name": "Armor Class",
       "formula": "10 + DEX_mod (or armor formula)",
       "renderAs": "value",
@@ -461,6 +473,7 @@
       "label": "Hit Dice",
       "type": "dice",
       "die": "d8",
+      "stateName": "Hit Dice",
       "max": "{Level}",
       "current": "{Level}",
       "color": "ok",

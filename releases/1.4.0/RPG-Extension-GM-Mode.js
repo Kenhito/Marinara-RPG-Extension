@@ -6710,6 +6710,11 @@ function mrrGetResourceCurrent(resource, ctx) {
     }
     var dv = state.sheet.derived[resource.stateName];
     if (typeof dv === "number" && isFinite(dv)) return dv;
+    var legacy = state.sheet.resources[id];
+    if (legacy && typeof legacy.current === "number" && isFinite(legacy.current)) {
+      state.sheet.derived[resource.stateName] = legacy.current;
+      return legacy.current;
+    }
     var maxL = mrrResolveResourceMax(resource, ctx);
     var defL = mrrResolveResourceDefaultCurrent(resource, ctx, maxL);
     state.sheet.derived[resource.stateName] = defL;
