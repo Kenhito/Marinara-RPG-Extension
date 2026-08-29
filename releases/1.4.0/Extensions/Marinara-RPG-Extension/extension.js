@@ -40,7 +40,7 @@ var MRR_TAG_CAT_PFX = "mrr-cat-";
 
 var EXT_VERSION = "1.4.0";
 
-var MRR_BUILD_STAMP = "2026-08-28-rest-houserules";
+var MRR_BUILD_STAMP = "2026-08-28-round29-lever-labels";
 
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
