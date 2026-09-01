@@ -243,7 +243,7 @@ node tools/validate-bundle.mjs rulesets/your-system/bundle.json
 #    Success: PASS, exit 0.
 
 # 4. Confirm you broke nothing repo-wide (all sixteen must stay green)
-npm run validate-rulesets    # → 17/17 PASS expected... plus yours = 18
+npm run validate-rulesets    # → 16/16 PASS expected... plus yours = 17
 npm run validate-bundles
 ```
 

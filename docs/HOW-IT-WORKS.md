@@ -26,7 +26,7 @@ Installing a ruleset gives you:
 - **Instructions for the AI** — how your system resolves actions, what the dice-tag format looks like, how combat math works, how experience and leveling work — so the Game Master narrates mechanically correct turns instead of drifting back to D&D habits.
 - **A rules reference** that surfaces the relevant entry automatically when it's needed — a spell's cost, a condition's effect, a class's XP table — without you looking it up mid-scene.
 
-Seventeen systems ship ready to use — D&D 5e, Exalted 3e, Vampire, Werewolf, Call of Cthulhu, Pathfinder 2e, and more — and the framework is built so a new one can be authored for anything it doesn't cover yet.
+Sixteen systems ship ready to use — D&D 5e, Exalted 3e, Vampire, Werewolf, Call of Cthulhu, Pathfinder 2e, and more — and the framework is built so a new one can be authored for anything it doesn't cover yet.
 
 ### The agents, in plain terms
 

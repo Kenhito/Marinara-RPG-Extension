@@ -39,7 +39,7 @@ Import via **Fetch URL** in the Ruleset dialog (`https://raw.githubusercontent.c
 
 ## Current feature set
 
-- **Seventeen ready-to-play systems**, each a single-file `bundle.json` install: sheet, dice widget, GM doctrine, and rules lorebook in one shot.
+- **Sixteen ready-to-play systems**, each a single-file `bundle.json` install: sheet, dice widget, GM doctrine, and rules lorebook in one shot.
 - **A validating schema** with nine resolution modes (d20, dice-pool, d100 percentile including roll-high/open-ended, PbtA 2d6, Fate ladder, roll-under, stance-modal pool, dice-pool-sum, narrative-handled) plus multi-mechanic routing for systems that mix more than one.
 - **Server-backed character sheets** — sheets, the per-chat roster, and ruleset selection sync through Marinara's own extension storage with local-storage mirroring, so characters survive a cleared browser and follow you to a second one.
 - **Party writes** — sheet-mutation tags can target any roster member by name, not just the active character, with per-character swipe revert/redo.
@@ -76,6 +76,6 @@ Marinara Engine itself is AGPL-3.0 — this repo is an **overlay** (it does not 
 
 ## Roadmap & status
 
-Seventeen shipped rulesets on a validating schema, single-file bundle install, zip/folder/manifest extension packaging, server-backed character storage, swipe-aware party writes, real server-side dice, XP/leveling, combat encounter shells, per-system declared equipment, and one-click rests with enforced house-rule levers. Built and live-tested against Marinara Engine 2.4.3+.
+Sixteen shipped rulesets on a validating schema, single-file bundle install, zip/folder/manifest extension packaging, server-backed character storage, swipe-aware party writes, real server-side dice, XP/leveling, combat encounter shells, per-system declared equipment, and one-click rests with enforced house-rule levers. Built and live-tested against Marinara Engine 2.4.3+.
 
 Next up: interop with the community **RPG Inventory** graphical-sheet extension (optional two-way gear bridging, in cooperation with its author) and tag-driven sprite generation for items — plus whatever the next played session surfaces. Full version history in [`CHANGELOG.md`](CHANGELOG.md). Bug reports welcome; PRs adding a new system more so.
