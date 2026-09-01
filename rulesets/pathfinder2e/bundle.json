@@ -923,6 +923,54 @@
           "promptVisible": true
         },
         {
+          "id": "shieldHardness",
+          "label": "Shield Hardness",
+          "type": "number",
+          "appliesTo": [
+            "Shield"
+          ],
+          "default": 0,
+          "min": 0,
+          "promptVisible": true,
+          "help": "Damage soaked when blocking (Shield Block). GM-applied on block; never enters AC."
+        },
+        {
+          "id": "shieldMaxHP",
+          "label": "Shield Max HP",
+          "type": "number",
+          "appliesTo": [
+            "Shield"
+          ],
+          "default": 0,
+          "min": 0,
+          "promptVisible": true,
+          "help": "The shield's full Hit Point pool."
+        },
+        {
+          "id": "shieldHP",
+          "label": "Shield HP (current)",
+          "type": "number",
+          "appliesTo": [
+            "Shield"
+          ],
+          "default": 0,
+          "min": 0,
+          "promptVisible": true,
+          "help": "Current HP. At or below Break Threshold the shield is broken; at 0 it is destroyed."
+        },
+        {
+          "id": "shieldBT",
+          "label": "Break Threshold",
+          "type": "number",
+          "appliesTo": [
+            "Shield"
+          ],
+          "default": 0,
+          "min": 0,
+          "promptVisible": true,
+          "help": "BT from the shield's stat line (normally half its max HP)."
+        },
+        {
           "id": "armorPotencyRune",
           "label": "Armor Potency (+N)",
           "type": "number",

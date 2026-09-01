@@ -322,6 +322,7 @@
         "skills",
         "derived",
         "states",
+        "resources",
         "inventory"
       ]
     },
