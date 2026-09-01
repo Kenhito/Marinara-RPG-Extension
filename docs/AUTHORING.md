@@ -4,7 +4,7 @@
 >
 > **If you are an AI authoring a bundle:** this file plus `schema/ruleset.schema.json` plus one reference ruleset directory (`rulesets/dnd5e/` or `rulesets/exalted3e/`) is the complete required reading. Where this doc and the schema disagree, the schema wins. Do not invent fields — the schema rejects unknown keys (`additionalProperties: false`), so every key you write must already exist there.
 
-This guide walks through adding a new ruleset to this repo (seventeen ship today). Time budget: ~2 hours for a rules-light system, ~1 day for a full mid-weight one.
+This guide walks through adding a new ruleset to this repo (sixteen ship today). Time budget: ~2 hours for a rules-light system, ~1 day for a full mid-weight one.
 
 ## Anatomy of a ruleset bundle
 
@@ -242,7 +242,7 @@ node tools/build-agents.mjs rulesets/your-system/
 node tools/validate-bundle.mjs rulesets/your-system/bundle.json
 #    Success: PASS, exit 0.
 
-# 4. Confirm you broke nothing repo-wide (all seventeen must stay green)
+# 4. Confirm you broke nothing repo-wide (all sixteen must stay green)
 npm run validate-rulesets    # → 17/17 PASS expected... plus yours = 18
 npm run validate-bundles
 ```
