@@ -94,7 +94,100 @@ export function extraChecks(data) {
   checkResolutionIds(data && data.skills, "skills");
   checkResolutionIds(data && data.derivedStats, "derivedStats");
 
+  /*
+   * S5 — inventory validation gate (ruling R9-as-amended + R17). Everything
+   * the schema can already express (inventory shape, field required props,
+   * id pattern, the `type`/`bonusKind`/`capMode` closed enums) is left to
+   * ajv above; these three are the only inventory-field checks a plain
+   * JSON Schema can't express without a bespoke if/then per property:
+   *   1. field ids must be unique within inventory.fields (sibling-array
+   *      uniqueness — same limitation as additionalModes[].id above).
+   *   2. type:"enum" without a non-empty options[] renders no choices; the
+   *      schema's own description marks this "by convention, not schema
+   *      enforcement".
+   *   3. capMode is only meaningful alongside capsToken — a field with
+   *      capMode and no capsToken is a meaningless declaration the schema
+   *      has no way to cross-check.
+   */
+  const invFields = (data && data.inventory && Array.isArray(data.inventory.fields))
+    ? data.inventory.fields
+    : [];
+
+  const seenFieldIds = new Map();
+  invFields.forEach((f, idx) => {
+    if (!f || typeof f.id !== "string") return;
+    if (seenFieldIds.has(f.id)) {
+      errors.push(`inventory.fields: duplicate id "${f.id}" (also used by entry ${seenFieldIds.get(f.id)})`);
+    } else {
+      seenFieldIds.set(f.id, idx);
+    }
+
+    if (f.type === "enum" && (!Array.isArray(f.options) || f.options.length === 0)) {
+      errors.push(`inventory.fields[${idx}] ("${f.id}"): type "enum" requires a non-empty options[] array`);
+    }
+
+    if (f.capMode !== undefined && typeof f.capsToken !== "string") {
+      errors.push(`inventory.fields[${idx}] ("${f.id}"): capMode declared without capsToken`);
+    }
+  });
+
   return errors;
+}
+
+/*
+ * S5 warn-level companion to extraChecks — advisory cross-references the
+ * loader does not enforce at runtime, so a miss here must never fail the
+ * run:
+ *   1. bonusTarget should name a declared attribute, skill, or derivedStat
+ *      (or, per ose's ad-hoc equipment vocabulary, an
+ *      equipmentBonusTargets[] entry). bonusTarget is strictly optional —
+ *      rulesets with no derivedStats at all produce no warnings simply
+ *      because they declare no inventory fields that use it.
+ *   2. appliesTo should only name slots the ruleset declares in
+ *      equipmentSlots[] — advisory because item slots are free text at
+ *      runtime, but it catches transcription typos that now matter
+ *      arithmetically since appliesTo gates the bonus resolvers (F22).
+ * Returns an array of human-readable warning strings; empty = clean.
+ */
+export function extraWarnings(data) {
+  const warnings = [];
+  const invFields = (data && data.inventory && Array.isArray(data.inventory.fields))
+    ? data.inventory.fields
+    : [];
+  if (invFields.length === 0) return warnings;
+
+  const statNames = new Set();
+  for (const list of [data && data.attributes, data && data.skills, data && data.derivedStats]) {
+    if (!Array.isArray(list)) continue;
+    for (const item of list) {
+      if (item && typeof item.name === "string") statNames.add(item.name);
+    }
+  }
+  const bonusTargetLabels = new Set(
+    Array.isArray(data && data.equipmentBonusTargets) ? data.equipmentBonusTargets : []
+  );
+  const declaredSlots = new Set(
+    Array.isArray(data && data.equipmentSlots) ? data.equipmentSlots : []
+  );
+
+  invFields.forEach((f, idx) => {
+    if (!f) return;
+    const label = typeof f.id === "string" ? f.id : `#${idx}`;
+
+    if (typeof f.bonusTarget === "string" && !statNames.has(f.bonusTarget) && !bonusTargetLabels.has(f.bonusTarget)) {
+      warnings.push(`inventory.fields[${idx}] ("${label}"): bonusTarget "${f.bonusTarget}" does not match any declared attribute, skill, or derivedStat name (or equipmentBonusTargets[] entry)`);
+    }
+
+    if (Array.isArray(f.appliesTo)) {
+      f.appliesTo.forEach((slot) => {
+        if (typeof slot === "string" && !declaredSlots.has(slot)) {
+          warnings.push(`inventory.fields[${idx}] ("${label}"): appliesTo "${slot}" is not in equipmentSlots[]`);
+        }
+      });
+    }
+  });
+
+  return warnings;
 }
 
 async function main() {
@@ -152,6 +245,12 @@ async function main() {
     } else {
       process.stderr.write(`FAIL ${t}\n${fmtErrors(validator.errors)}\n`);
       failures++;
+    }
+    // S5 warn-level: printed regardless of pass/fail, never counted toward failures.
+    if (ok) {
+      for (const w of extraWarnings(data)) {
+        process.stdout.write(`WARN ${data.id}: ${w}\n`);
+      }
     }
   }
 
