@@ -40,7 +40,7 @@ var MRR_TAG_CAT_PFX = "mrr-cat-";
 
 var EXT_VERSION = "1.4.0";
 
-var MRR_BUILD_STAMP = "2026-09-01-legf-complete";
+var MRR_BUILD_STAMP = "2026-09-01-legc-faces";
 
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
@@ -9051,7 +9051,10 @@ function rollParsedDamage(parsed, opts) {
         cls
       });
     }
-    var text = "[damage: " + n + "d10 = " + successes + " " + parsed.type + " (" + label + ")]";
+    var facesCsv = faces.map(function(fc) {
+      return fc.face;
+    }).join(",");
+    var text = "[damage: " + n + "d10 = " + successes + " " + parsed.type + " (" + label + ")" + (n > 1 ? ", faces: " + facesCsv : "") + "]";
     return {
       text,
       faces,
@@ -9079,7 +9082,10 @@ function rollParsedDamage(parsed, opts) {
     if (bonus) modPart += (bonus > 0 ? "+" : "") + bonus;
     if (attrMod) modPart += (attrMod > 0 ? "+" : "") + attrMod;
     var typePart = parsed.type ? " " + parsed.type : "";
-    var dndText = "[damage: " + count + "d" + size + modPart + " = " + total + typePart + " (" + label + ")]";
+    var dndFacesCsv = dndFaces.map(function(fc) {
+      return fc.face;
+    }).join(",");
+    var dndText = "[damage: " + count + "d" + size + modPart + " = " + total + typePart + " (" + label + ")" + (count > 1 ? ", faces: " + dndFacesCsv : "") + "]";
     return {
       text: dndText,
       faces: dndFaces,
@@ -12228,7 +12234,8 @@ function rollDicePoolSum() {
   var explodesText = wildExplodes.length ? " explodes=[" + wildExplodes.join(",") + "]" : "";
   var wildText = wdOn ? " wild=" + wildFace + explodesText + (critFail ? " critFail=true" : "") : "";
   var pipsText = pips ? pips > 0 ? "+" + pips : String(pips) : "";
-  var text = "[mrr-roll: mode=dice-pool-sum pool=" + pool + " dieSize=" + dieSize + pipsText + wildText + " total=" + total + " vs " + diff + " => " + (pass ? "success" : "fail") + "]";
+  var diceText = faces.length ? " dice=[" + faces.join(",") + "]" : "";
+  var text = "[mrr-roll: mode=dice-pool-sum pool=" + pool + " dieSize=" + dieSize + diceText + pipsText + wildText + " total=" + total + " vs " + diff + " => " + (pass ? "success" : "fail") + "]";
   var kind = critFail ? "botch" : pass ? "success" : "fail";
   var renderFaces = faces.map(function(f) {
     return {
