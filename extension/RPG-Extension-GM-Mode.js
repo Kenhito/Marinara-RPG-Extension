@@ -18105,6 +18105,69 @@ function mrrCommittedMotesLines() {
   return out;
 }
 
+/* ═══ LEG F S6b (finding F23, 2026-08-31) — equipped gear in the summary
+   tier ══════════════════════════════════════════════════════════════════
+   The context-fuser is the only narration-facing managed agent on the
+   "summary" tier, and that tier carried resource bars and NOTHING ELSE —
+   zero inventory. Live play proved the consequence: with no gear in its
+   slice the narrator confabulates gear detail (a sword it invented, armor
+   the character never wore), because the sheet gave it nothing to
+   corroborate against. This adds the SECOND corroborating surface: the
+   items the character is actually WEARING/WIELDING right now.
+
+   Deliberately narrow, because the summary tier exists to be small:
+     - EQUIPPED ONLY. A 40-item satchel must never reach this tier; the
+       equipped map is at most one item per slot. Equipped-ness is resolved
+       exactly the way buildSheetForPrompt's full-tier inventory loop
+       resolves it (sheet.equipped[item.slot] === item.id), against THIS
+       member's sheet rather than the active character's, so a party
+       member's gear is their own.
+     - category "equipment" only, using the same resolution the item
+       dialogs use ((category || (slot ? equipment : item))). An equipped
+       item necessarily has a slot, so this is belt-and-braces against a
+       row explicitly categorized "item" sitting in the equipped map.
+     - identity chips come from mrrFieldAppliesToItem +
+       mrrFormatDeclaredFieldEntry — the SAME two helpers the full tier
+       calls. No second copy of "how is a declared field's value written"
+       exists, so a formatting change lands in both tiers at once.
+     - the core description is truncated (MRR_SUMMARY_DESC_MAX_CHARS) since
+       a summary tier must not inherit an unbounded free-text field.
+   A character with nothing equipped adds exactly zero lines, so the tier
+   stays byte-identical to pre-S6b output for gearless sheets and for every
+   ruleset whose player has not equipped anything. */
+var MRR_SUMMARY_DESC_MAX_CHARS = 120;
+
+function mrrSummaryEquippedLines(sheet) {
+  var out = [];
+  if (!sheet || !Array.isArray(sheet.inventory) || !sheet.inventory.length) return out;
+  var equipped = (sheet.equipped && typeof sheet.equipped === "object") ? sheet.equipped : null;
+  if (!equipped) return out;
+  var declaredFields = (state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields))
+    ? state.ruleset.inventory.fields : [];
+  sheet.inventory.forEach(function (it) {
+    if (!it || !it.name || !it.slot) return;
+    if ((it.category || (it.slot ? "equipment" : "item")) !== "equipment") return;
+    if (equipped[it.slot] !== it.id) return;
+    var segments = ["  Equipped: " + it.name + " [" + it.slot + "]"];
+    var chips = [];
+    declaredFields.forEach(function (field) {
+      if (!field || field.promptVisible !== true) return;
+      if (!mrrFieldAppliesToItem(field, it)) return;
+      var entry = mrrFormatDeclaredFieldEntry(field, it);
+      if (entry) chips.push(entry);
+    });
+    if (chips.length) segments.push(chips.join(" · "));
+    var desc = (typeof it.description === "string") ? it.description.trim() : "";
+    if (desc) {
+      segments.push(desc.length > MRR_SUMMARY_DESC_MAX_CHARS
+        ? desc.slice(0, MRR_SUMMARY_DESC_MAX_CHARS) + "…"
+        : desc);
+    }
+    out.push(segments.join(" — "));
+  });
+  return out;
+}
+
 /* THE tier slicer. `party` is exactly what buildPartySheetBlock() returned
    — never re-fetched, never re-derived here. `full` is party.text
    byte-identical by construction (no transform at all). `none` is the
@@ -18130,13 +18193,18 @@ function mrrSheetBlockForTier(party, tier) {
      labeled section per roster member (active included), using the same
      mrrPartySectionHeader shape buildPartySheetBlock's own member sections
      use, so a multi-character party's lines stay attributable to a name
-     rather than an unlabeled run of bar values nobody can tell apart. */
+     rather than an unlabeled run of bar values nobody can tell apart.
+
+     S6b: each member's bar lines are followed by their EQUIPPED gear lines
+     (mrrSummaryEquippedLines). A member with nothing equipped contributes
+     an empty array, so their section stays byte-identical to pre-S6b. */
   var order = mrrPartyRosterOrder();
   var memberSections = order.map(function (m) {
     var sheet = (m.id === state.activeCharacterId) ? state.sheet : mrrPartyMemberSheet(m.id, state.ruleset);
     var label = m.active ? MRR_PARTY_LABEL_ACTIVE : MRR_PARTY_LABEL_MEMBER;
     if (!sheet) return mrrPartySectionHeader(label, m.name, "(no sheet for this system)");
-    return mrrPartySectionHeader(label, m.name) + "\n" + mrrPartyMemberSummaryLines(sheet, m.id).join("\n");
+    var memberLines = mrrPartyMemberSummaryLines(sheet, m.id).concat(mrrSummaryEquippedLines(sheet));
+    return mrrPartySectionHeader(label, m.name) + "\n" + memberLines.join("\n");
   });
   return [header].concat(memberSections).join("\n");
 }
