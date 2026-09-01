@@ -12103,7 +12103,13 @@ function rollParsedDamage(parsed, opts) {
       if (f >= 7) { successes++; cls += " mrr-dice__face--success"; }
       faces.push({ face: f, cls: cls });
     }
-    var text = "[damage: " + n + "d10 = " + successes + " " + parsed.type + " (" + label + ")]";
+    /* Faces evidence (2026-09-01 rider): multi-die damage rolls need the
+       per-die faces in the TAG TEXT, not just the widget's rendered faces
+       row, so face-dependent rules (rerolls, doubles) have something to
+       read. Single-die rolls (n<=1) already show their result via the
+       total and need no separate faces segment. */
+    var facesCsv = faces.map(function (fc) { return fc.face; }).join(",");
+    var text = "[damage: " + n + "d10 = " + successes + " " + parsed.type + " (" + label + ")" + (n > 1 ? ", faces: " + facesCsv : "") + "]";
     return { text: text, faces: faces, kind: "exalted" };
   }
   if (parsed.kind === "dnd") {
@@ -12124,7 +12130,10 @@ function rollParsedDamage(parsed, opts) {
     if (bonus) modPart += (bonus > 0 ? "+" : "") + bonus;
     if (attrMod) modPart += (attrMod > 0 ? "+" : "") + attrMod;
     var typePart = parsed.type ? " " + parsed.type : "";
-    var dndText = "[damage: " + count + "d" + size + modPart + " = " + total + typePart + " (" + label + ")]";
+    /* Faces evidence (2026-09-01 rider): see the "exalted" branch above for
+       rationale — same rule, count>1 gate. */
+    var dndFacesCsv = dndFaces.map(function (fc) { return fc.face; }).join(",");
+    var dndText = "[damage: " + count + "d" + size + modPart + " = " + total + typePart + " (" + label + ")" + (count > 1 ? ", faces: " + dndFacesCsv : "") + "]";
     return { text: dndText, faces: dndFaces, kind: "dnd" };
   }
   /* flat */
@@ -15593,8 +15602,15 @@ function rollDicePoolSum() {
   var explodesText = wildExplodes.length ? " explodes=[" + wildExplodes.join(",") + "]" : "";
   var wildText  = wdOn ? " wild=" + wildFace + explodesText + (critFail ? " critFail=true" : "") : "";
   var pipsText  = pips ? (pips > 0 ? "+" + pips : String(pips)) : "";
+  /* Faces evidence (2026-09-01 rider): the regular (non-wild) pool dice
+     had no per-die evidence in the tag text — only the summed total. The
+     wild die (and its explode chain) already carries its own face via
+     wild=/explodes= above; dice=[...] here covers the rest of the pool,
+     following the same bracketed-attr grammar as explodes=[...] and the
+     stance-modal-pool roller's dice=[...] emit. */
+  var diceText = faces.length ? " dice=[" + faces.join(",") + "]" : "";
   var text = "[mrr-roll: mode=dice-pool-sum pool=" + pool + " dieSize=" + dieSize +
-             pipsText + wildText + " total=" + total + " vs " + diff +
+             diceText + pipsText + wildText + " total=" + total + " vs " + diff +
              " => " + (pass ? "success" : "fail") + "]";
 
   var kind = critFail ? "botch" : (pass ? "success" : "fail");

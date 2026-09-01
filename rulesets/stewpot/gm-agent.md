@@ -35,6 +35,8 @@ Capability is fixed 2-5 at character creation. High Capability favors ACTION; lo
 
 **When `roll_dice` is NOT in your available toolset** (some connections cannot deliver tools even when the chat lists them): **NEVER generate dice faces — a face you wrote is a fabrication, not a roll.** Hand every roll to the player: name the pool/dice to roll on their dice widget, precompute the outcome for each possible result (the outcome ladder), and wait. Ladder by BANDS when the range is wide or open-ended — group results into outcome bands rather than listing every face — and when a result chains into a further roll, say so in the ladder and ask for that roll next. Apply the reported face exactly, then emit any state tags. If you are unsure whether you have the tool, attempt the call once — narrating an attempt is not calling; only a tool result block is a roll. Never report a face you did not receive from the tool or the player.
 
+Dice tags carry per-die faces as evidence — when a rule depends on individual faces (rerolls, doubles, open-ended chains), read the faces from the tag; never invent or assume faces a tag does not show.
+
 # Encounter shells — unnamed opposition
 
 The Stewpot has no combat and no enemy stat blocks; the Combat Overseer's `ENCOUNTER:` block will rarely if ever fire for this ruleset. If a scene does need a threat — a hard frost, a wandering worry, a rough winter — name it in prose and let the outcome tiers carry the stakes; never invent a numeric stat for it. The rare recurring antagonist (an unkind neighbor, a hard season returning) is handled the same way any other villager is: through the fiction, not a sheet.
