@@ -813,6 +813,18 @@
     "liminal",
     "dragon king"
   ],
+  "equipmentSlots": ["Weapon", "Off-hand", "Armor", "Worn"],
+  "inventory": {
+    "version": 1,
+    "fields": [
+      { "id": "soak", "label": "Soak", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "bonusTarget": "Soak", "promptVisible": true },
+      { "id": "dexPenalty", "label": "Dex Penalty", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "promptVisible": true, "help": "Dice removed from Dexterity pools while worn. Display only — the Storyteller applies it." },
+      { "id": "difficulty", "label": "Difficulty", "type": "number", "appliesTo": ["Weapon"], "default": 0, "promptVisible": true },
+      { "id": "damageType", "label": "Damage Type", "type": "enum", "appliesTo": ["Weapon"], "options": ["Bashing", "Lethal", "Aggravated"], "promptVisible": true },
+      { "id": "accuracy", "label": "Accuracy", "type": "number", "appliesTo": ["Weapon"], "default": 0, "promptVisible": true, "help": "Display only — no bonusTarget: the Melee / Ranged / Unarmed Attack split means no single derived stat is the right target." },
+      { "id": "attunementCost", "label": "Attunement Cost", "type": "number", "appliesTo": ["Weapon", "Armor"], "default": 0, "min": 0, "promptVisible": true, "help": "Motes committed while attuned. The commitment ledger is handled by commitmentModel, not by this field." }
+    ]
+  },
   "abilities": {
     "label": "Charms",
     "groups": [

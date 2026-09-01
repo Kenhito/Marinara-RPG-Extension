@@ -449,6 +449,23 @@
     "wyrm", "weaver", "wyld", "triat", "litany", "pact", "kinfolk",
     "step sideways", "stepping sideways", "totem", "spirit"
   ],
+  "equipmentSlots": ["Weapon", "Armor", "Fetish", "Worn"],
+  "inventory": {
+    "version": 1,
+    "fields": [
+      { "id": "soakBashing", "label": "Soak (Bashing)", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "bonusTarget": "Soak (Bashing)", "promptVisible": true },
+      { "id": "soakLethal", "label": "Soak (Lethal)", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "bonusTarget": "Soak (Lethal)", "promptVisible": true },
+      { "id": "soakAggravated", "label": "Soak (Aggravated)", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "bonusTarget": "Soak (Aggravated)", "promptVisible": true, "help": "Only silver or mystically warded armour soaks aggravated damage — leave at 0 for ordinary gear." },
+      { "id": "dexPenalty", "label": "Dex Penalty", "type": "number", "appliesTo": ["Armor"], "default": 0, "promptVisible": true, "help": "Display only — the Storyteller applies it." },
+      { "id": "difficulty", "label": "Difficulty", "type": "number", "appliesTo": ["Weapon"], "default": 0, "promptVisible": true },
+      { "id": "range", "label": "Range", "type": "text", "appliesTo": ["Weapon"], "placeholder": "20", "promptVisible": true },
+      { "id": "rate", "label": "Rate", "type": "number", "appliesTo": ["Weapon"], "default": 0, "min": 0, "promptVisible": true },
+      { "id": "clip", "label": "Clip", "type": "number", "appliesTo": ["Weapon"], "default": 0, "min": 0, "promptVisible": true },
+      { "id": "conceal", "label": "Conceal", "type": "enum", "appliesTo": ["Weapon"], "options": ["P", "J", "T", "N"], "promptVisible": true },
+      { "id": "fetishLevel", "label": "Fetish Level", "type": "number", "appliesTo": ["Fetish"], "min": 1, "max": 5, "promptVisible": true },
+      { "id": "gnosisRating", "label": "Gnosis", "type": "number", "appliesTo": ["Fetish"], "default": 0, "min": 0, "promptVisible": true }
+    ]
+  },
   "abilities": {
     "label": "Gifts & Rites",
     "groups": [

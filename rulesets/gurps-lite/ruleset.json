@@ -147,6 +147,13 @@
       "renderAs": "value",
       "tooltipFormula": "(({Dexterity} + {Health}) / 4) + 3",
       "aliases": ["dodge"]
+    },
+    {
+      "name": "DR",
+      "formula": "Damage Resistance, subtracted from each hit's damage; from armor.",
+      "renderAs": "value",
+      "default": 0,
+      "aliases": ["dr", "DR", "damageResistance", "damage resistance"]
     }
   ],
   "states": [
@@ -225,6 +232,21 @@
       ]
     }
   ],
+  "equipmentSlots": ["Weapon", "Armor", "Worn"],
+  "inventory": {
+    "version": 1,
+    "fields": [
+      { "id": "dr", "label": "DR", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "bonusTarget": "DR", "promptVisible": true },
+      { "id": "location", "label": "Location", "type": "text", "appliesTo": ["Armor"], "placeholder": "torso", "promptVisible": true, "help": "Where the armour covers: torso, all, head, arms, legs." },
+      { "id": "damageFormula", "label": "Damage", "type": "text", "appliesTo": ["Weapon"], "placeholder": "sw+2", "promptVisible": true, "help": "GURPS damage expression: \"sw+2\", \"thr+1\", \"2d-1\"." },
+      { "id": "damageType", "label": "Damage Type", "type": "enum", "appliesTo": ["Weapon"], "options": ["cut", "imp", "cr", "pi", "burn"], "promptVisible": true },
+      { "id": "reach", "label": "Reach", "type": "text", "appliesTo": ["Weapon"], "placeholder": "1,2", "promptVisible": true, "help": "Hexes the weapon reaches: \"1\", \"1,2\", \"C\" for close combat." },
+      { "id": "parryMod", "label": "Parry Mod", "type": "number", "appliesTo": ["Weapon"], "default": 0, "promptVisible": true, "help": "Display only — the GM applies it to the Parry defence." },
+      { "id": "minST", "label": "Min ST", "type": "number", "appliesTo": ["Weapon"], "default": 0, "min": 0, "promptVisible": true },
+      { "id": "weight", "label": "Weight (lbs)", "type": "number", "appliesTo": ["Weapon", "Armor"], "default": 0, "min": 0, "promptVisible": false },
+      { "id": "cost", "label": "Cost", "type": "number", "appliesTo": ["Weapon", "Armor"], "default": 0, "min": 0, "promptVisible": false }
+    ]
+  },
   "lorebookKeys": [
     "advantage",
     "disadvantage",

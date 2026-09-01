@@ -71,6 +71,28 @@ Field map (V20 sheet -> mutation tag). Every example below is a WORKED, CONCRETE
 - Morality track switch:          [mrr-state: field="Morality Track" value="Path of the Beast"] — value is one of Humanity / Path of Honorable Accord / Path of Caine / Path of the Beast / Path of Night
 - XP awarded (session/interval, round-25 idiom — see the 2026-08-27 note at the top of this file): [mrr-state: target="Mira" field="xp" delta="+3" reason="session award: automatic 1 + Roleplay + Danger"] — copy the number the GM narrated; ONE tag PER PC roster member (same delta, same reason — ruling 6, no party imbalances); never target an NPC. Milestone check: if the "XP Awards" lorebook entry's `Progression:` line reads `milestone`, emit no xp tag. Spend stays manual — never emit a negative/spend xp tag; the player edits the sheet directly.
 
+# Inventory schema (full field list — extension-confirmed)
+
+Inventory changes ride the same [mrr-state: ...] tag with field="inventory":
+
+[mrr-state: target="player" field="inventory" add="Coin pouch" qty="1" reason="GM narrated looting the belt" optional: slot damage attack_attr attack_proficient use_effect consumable notes category — see the attribute list below]
+[mrr-state: target="player" field="inventory" remove="Healing Potion" qty="1" reason="GM narrated drinking the potion"]
+
+When ADDING an item, populate the full character-sheet item dialog in one tag by including any of these optional attributes (all OPTIONAL; the extension parser silently ignores attrs it does not know):
+
+- slot              — equipment slot ("weapon", "armor", "shield", "head", "ring", etc.). Setting slot auto-categorizes the item as equipment unless you also set category explicitly.
+- damage            — free-text damage expression ("1d8 slashing", "2d6 fire", "1 piercing").
+- attack_attr       — attribute name whose modifier adds to attack/damage rolls ("Strength", "Dexterity", "Charisma", etc. — use the active ruleset's vocabulary).
+- attack_proficient — "true" to add the proficiency bonus on attack rolls.
+- use_effect        — free-text effect expression that the player Use button parses and rolls ("2d4+2 healing", "1d6 fire").
+- consumable        — "true" to make the item decrement quantity on each Use; item is removed when quantity hits 0.
+- notes             — free-text notes (rules text, AC bonus description, source page, etc.).
+- category          — "equipment" (lives in the on-sheet Inventory section, equippable to slot) or "item" (Items flyout, usable / consumable). Default: "item" when no slot, "equipment" when slot is set.
+
+Only fill these from what the narration actually says. An item described only as "a sword" gets a name and a quantity; it does not get an invented damage expression.
+
+Repeated inventory.add tags with the same name BUMP QUANTITY and ENRICH any blank fields on the existing item. Populate fields ONCE authoritatively on first add; omit them on subsequent qty bumps. Empty strings on a field are treated as "leave alone" — to clear a populated field, the player must use the in-app dialog. Booleans only land on truthy ("true"); once set, they persist until the player edits via the dialog.
+
 # Encounter shells are not sheet targets
 
 Names listed in the Combat Overseer's `ENCOUNTER:` block (unnamed mortals/mooks with no sheet of their own) have no field map above — NEVER instruct the GM model to emit a mutation tag targeting an ENCOUNTER name, not even when the narration states a Health Track hit or Blood loss for them ("the bouncer takes two lethal"). The ENCOUNTER block's own re-emission tracks that number; a tag against an unsheeted name only drops with a warn per name, turn after turn.

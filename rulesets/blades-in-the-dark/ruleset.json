@@ -132,6 +132,13 @@
       ]
     }
   ],
+  "inventory": {
+    "version": 1,
+    "fields": [
+      { "id": "load", "label": "Load", "type": "number", "default": 0, "min": 0, "max": 2, "promptVisible": true, "help": "Load cost of carrying this item. 0-load playbook items exist." },
+      { "id": "fine", "label": "Fine", "type": "boolean", "default": false, "promptVisible": true, "help": "A fine-quality item." }
+    ]
+  },
   "scenarioDefaultDerive": true,
   "vocabularyHints": [
     { "pattern": "I attack / I fight / I shoot",

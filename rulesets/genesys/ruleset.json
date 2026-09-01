@@ -376,6 +376,23 @@
       ]
     }
   ],
+  "equipmentSlots": ["Weapon", "Armor", "Worn"],
+  "inventory": {
+    "version": 1,
+    "fields": [
+      { "id": "soak", "label": "Soak", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "bonusTarget": "Soak", "promptVisible": true },
+      { "id": "defenseMelee", "label": "Defense (Melee)", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "bonusTarget": "Defense (Melee)", "promptVisible": true },
+      { "id": "defenseRanged", "label": "Defense (Ranged)", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "bonusTarget": "Defense (Ranged)", "promptVisible": true },
+      { "id": "skillName", "label": "Skill", "type": "text", "appliesTo": ["Weapon"], "placeholder": "Ranged (Light)", "promptVisible": true, "help": "The skill this weapon rolls: Melee, Brawl, Ranged (Light), Ranged (Heavy), Gunnery." },
+      { "id": "critical", "label": "Critical", "type": "number", "appliesTo": ["Weapon"], "default": 0, "min": 0, "promptVisible": true, "help": "Crit rating — the Advantage cost to trigger a Critical Injury." },
+      { "id": "range", "label": "Range", "type": "enum", "appliesTo": ["Weapon"], "options": ["Engaged", "Short", "Medium", "Long", "Extreme"], "promptVisible": true },
+      { "id": "qualities", "label": "Qualities", "type": "text", "appliesTo": ["Weapon"], "placeholder": "Pierce 2, Vicious 1", "promptVisible": true, "help": "Open list — the Genesys quality vocabulary is not closed, so this is free text rather than a fixed menu." },
+      { "id": "encumbrance", "label": "Encumbrance", "type": "number", "appliesTo": ["Weapon", "Armor"], "default": 0, "min": 0, "promptVisible": false },
+      { "id": "hardPoints", "label": "Hard Points", "type": "number", "appliesTo": ["Weapon", "Armor"], "default": 0, "min": 0, "promptVisible": true },
+      { "id": "rarity", "label": "Rarity", "type": "number", "default": 0, "min": 0, "promptVisible": false },
+      { "id": "price", "label": "Price", "type": "number", "default": 0, "min": 0, "promptVisible": false }
+    ]
+  },
   "scenarioDefaultDerive": true,
   "vocabularyHints": [
     {

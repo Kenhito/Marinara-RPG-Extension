@@ -27,6 +27,7 @@
   "resolution": {
     "mode": "single-roll",
     "modifierFormula": "1d20 + attack_bonus + ability_mod (STR for melee, DEX for missile; ability_mod from the step table, not a formula)",
+    "attackBonusTarget": "Attack Bonus",
     "additionalModes": [
       {
         "id": "thief-skills",
@@ -185,6 +186,19 @@
 
   "equipmentSlots": ["Weapon", "Armor", "Shield", "Helmet"],
   "equipmentBonusTargets": ["Melee", "Missile", "Armor Class", "Damage"],
+  "inventory": {
+    "version": 1,
+    "fields": [
+      { "id": "acBonus", "label": "AC Bonus", "type": "number", "appliesTo": ["Armor", "Shield", "Helmet"], "default": 0, "min": 0, "bonusTarget": "Armor Class", "promptVisible": true, "help": "Added to Armor Class under this bundle's ascending-AC house convention — armour, shields and helmets all sum." },
+      { "id": "magicBonus", "label": "Magic Bonus", "type": "number", "appliesTo": ["Weapon"], "default": 0, "bonusTarget": "Attack Bonus", "promptVisible": true },
+      { "id": "rangeShort", "label": "Range (Short)", "type": "number", "appliesTo": ["Weapon"], "default": 0, "min": 0, "promptVisible": true },
+      { "id": "rangeMedium", "label": "Range (Medium)", "type": "number", "appliesTo": ["Weapon"], "default": 0, "min": 0, "promptVisible": true },
+      { "id": "rangeLong", "label": "Range (Long)", "type": "number", "appliesTo": ["Weapon"], "default": 0, "min": 0, "promptVisible": true },
+      { "id": "qualities", "label": "Qualities", "type": "text", "appliesTo": ["Weapon"], "placeholder": "two-handed, slow", "promptVisible": true, "help": "Open list: two-handed, slow, brace, blunt, reload, charge, and so on." },
+      { "id": "weightCoins", "label": "Weight (coins)", "type": "number", "default": 0, "min": 0, "promptVisible": false },
+      { "id": "costGp", "label": "Cost (gp)", "type": "number", "default": 0, "min": 0, "promptVisible": false }
+    ]
+  },
 
   "classOptions": [
     { "name": "Fighter", "hitDie": "d8", "description": "Best attack bonus progression, widest weapon/armor access, no spells." },

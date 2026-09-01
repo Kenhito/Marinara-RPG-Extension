@@ -155,6 +155,12 @@
     "template": "[mrr-roll: ruleset=trophy-dark, stance={stance}, stat=Risk, statValue={statValue}, pool={pool}, dice=[{diceCsv}], successes={successes}, exactMatches={exactMatches}, tier={tier}{narrationHookPart}]",
     "example": "[mrr-roll: ruleset=trophy-dark, stance=light, stat=Risk, statValue=3, pool=3, dice=[2,4,5], successes=2, exactMatches=0, tier=clean, narrationHook=]"
   },
+  "inventory": {
+    "version": 1,
+    "fields": [
+      { "id": "burden", "label": "Burden", "type": "boolean", "default": false, "promptVisible": true, "help": "The Devil's-Bargain sacrifice currency — a thing the wood can take from you." }
+    ]
+  },
   "lorebookKeys": [
     "trophy",
     "trophy dark",

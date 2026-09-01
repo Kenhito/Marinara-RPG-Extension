@@ -6,6 +6,7 @@
   "license": "Original mechanical references; Pathfinder 2e ruleset content under Paizo's ORC license. Spell, class, and monster names belong to Paizo Publishing.",
   "summary": "Pathfinder 2nd Edition is a tightly mathematical d20 fantasy system. A check is 1d20 + ability modifier + proficiency bonus + item bonus vs. a Difficulty Class, with four degrees of success: critical success at +10 over the DC, success at meeting it, failure under it, critical failure at -10 below. The three-action economy and Multiple Attack Penalty give every turn meaningful tactical choice.",
   "commitmentModel": "invested",
+  "commitmentCap": 10,
   "xpTable": [
     { "level": 1, "xp": 0 },
     { "level": 2, "xp": 1000 },
@@ -37,7 +38,8 @@
     "modifierFormula": "1d20 + ability_mod + proficiency_bonus + item_bonus + circumstance_bonus - status_penalty",
     "skillBonusFormula": "{linkedAttribute_mod} + {tierBonus}",
     "spellSaveDcFormula": "10 + {Level} + {spellcastingAttribute_mod}",
-    "attackProficiencyFormula": "{Level} + 2"
+    "attackProficiencyFormula": "{Level} + 2",
+    "attackBonusTarget": "Attack Bonus"
   },
   "difficulties": {
     "Trivial": {
@@ -324,12 +326,23 @@
       "formula": "10 + DEX_mod (capped by armor) + armor proficiency bonus + armor item bonus",
       "renderAs": "value",
       "default": 10,
-      "valueFormula": "10 + {Dexterity_mod} + {tierBonus}",
+      "valueFormula": "10 + {capped:Dexterity_mod} + {tierBonus}",
       "tooltipFormula": "10 + {Dexterity_mod} + {tierBonus} + {bonuses:Armor Class}",
       "aliases": [
         "ac",
         "AC",
         "armorClass"
+      ]
+    },
+    {
+      "name": "Attack Bonus",
+      "formula": "Equipment/magic bonus to weapon attack rolls (weapon potency runes). Proficiency (via resolution.attackProficiencyFormula, the tier's {tierBonus} term) and the ability modifier ({Strength_mod} by default, or the finesse attribute picked in the dice widget via item.attackAttribute) are added separately by the dice widget — this stat carries only the equipped-item contribution.",
+      "renderAs": "value",
+      "default": 0,
+      "aliases": [
+        "attack",
+        "attack bonus",
+        "atk"
       ]
     },
     {
@@ -684,6 +697,30 @@
       "conditions",
       "inventory",
       "notes"
+    ]
+  },
+  "equipmentSlots": ["Weapon", "Off-hand", "Armor", "Shield", "Worn"],
+  "inventory": {
+    "version": 1,
+    "fields": [
+      { "id": "acItemBonus", "label": "AC Item Bonus", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "bonusTarget": "Armor Class", "promptVisible": true, "help": "The armour's item bonus to AC. Shields are NOT auto-summed: Raise a Shield is an action, not equip-state, so give a shield an AC Item Bonus of 0 and add a bonuses[] row only while it is actually raised." },
+      { "id": "dexCap", "label": "Dex Cap", "type": "number", "appliesTo": ["Armor"], "min": 0, "capsToken": "Dexterity_mod", "capMode": "clamp", "promptVisible": true, "help": "Maximum Dexterity modifier this armour allows. Absent = uncapped. A cap of 0 still lets a negative Dexterity modifier through (PF2e semantics)." },
+      { "id": "checkPenalty", "label": "Check Penalty", "type": "number", "appliesTo": ["Armor"], "default": 0, "max": 0, "promptVisible": true, "help": "Negative value applied to Strength- and Dexterity-based skill checks per RAW. Display only — the GM applies it." },
+      { "id": "speedPenalty", "label": "Speed Penalty", "type": "number", "appliesTo": ["Armor"], "default": 0, "max": 0, "promptVisible": true, "help": "Negative feet, e.g. -5. Display only — the GM applies it." },
+      { "id": "strengthThreshold", "label": "Strength", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "promptVisible": true, "help": "At or above this Strength score, the check and speed penalties ease per RAW." },
+      { "id": "armorGroup", "label": "Armor Group", "type": "enum", "appliesTo": ["Armor"], "options": ["leather", "composite", "chain", "plate", "cloth"], "promptVisible": true },
+      { "id": "armorPotencyRune", "label": "Armor Potency (+N)", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "bonusTarget": "Armor Class", "promptVisible": true, "help": "Item bonus to AC from the armour potency rune." },
+      { "id": "weaponPotencyRune", "label": "Weapon Potency (+N)", "type": "number", "appliesTo": ["Weapon"], "default": 0, "min": 0, "bonusTarget": "Attack Bonus", "promptVisible": true, "help": "Item bonus to attack rolls from the weapon potency rune. Reaches the dice widget through resolution.attackBonusTarget." },
+      { "id": "strikingRune", "label": "Striking Rune", "type": "enum", "appliesTo": ["Weapon"], "options": ["none", "striking", "greater striking", "major striking"], "promptVisible": true, "help": "Damage-dice count is a GM/widget concern; this field displays and prompts only." },
+      { "id": "damageType", "label": "Damage Type", "type": "enum", "appliesTo": ["Weapon"], "options": ["bludgeoning", "piercing", "slashing", "fire", "cold", "acid", "electricity", "sonic", "force", "mental", "poison"], "promptVisible": true },
+      { "id": "hands", "label": "Hands", "type": "enum", "appliesTo": ["Weapon"], "options": ["1", "2", "1+"], "promptVisible": true },
+      { "id": "rangeIncrement", "label": "Range Increment", "type": "text", "appliesTo": ["Weapon"], "placeholder": "30 ft", "promptVisible": true },
+      { "id": "reload", "label": "Reload", "type": "number", "appliesTo": ["Weapon"], "default": 0, "min": 0, "promptVisible": true },
+      { "id": "traits", "label": "Traits", "type": "text", "appliesTo": ["Weapon", "Armor"], "placeholder": "agile, finesse, deadly d8", "promptVisible": true, "help": "Open list — the PF2e trait vocabulary is not closed, so this is free text rather than a fixed menu." },
+      { "id": "bulk", "label": "Bulk", "type": "text", "placeholder": "L", "promptVisible": true },
+      { "id": "itemLevel", "label": "Item Level", "type": "number", "default": 0, "min": 0, "promptVisible": true },
+      { "id": "price", "label": "Price", "type": "text", "placeholder": "2 gp", "promptVisible": false },
+      { "id": "rarity", "label": "Rarity", "type": "enum", "options": ["common", "uncommon", "rare", "unique"], "promptVisible": false }
     ]
   },
   "abilities": {

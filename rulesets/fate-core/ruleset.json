@@ -391,6 +391,14 @@
     "boost",
     "stunt"
   ],
+  "inventory": {
+    "version": 1,
+    "fields": [
+      { "id": "weaponRating", "label": "Weapon Rating", "type": "number", "default": 0, "min": 0, "promptVisible": true, "help": "Weapon:N. Display and prompt only — Fate stress math stays on the GM's side of the table." },
+      { "id": "armorRating", "label": "Armor Rating", "type": "number", "default": 0, "min": 0, "promptVisible": true, "help": "Armor:N. Display and prompt only — Fate stress math stays on the GM's side of the table." },
+      { "id": "freeInvokes", "label": "Free Invokes", "type": "number", "default": 0, "min": 0, "promptVisible": true }
+    ]
+  },
   "abilities": {
     "label": "Stunts",
     "categories": [

@@ -194,6 +194,13 @@
       "renderAs": "value",
       "default": 0,
       "aliases": ["build", "BLD"]
+    },
+    {
+      "name": "Armor Points",
+      "formula": "Armor points reduce each hit's damage; Keeper-applied. Fed by equipped armor.",
+      "renderAs": "value",
+      "default": 0,
+      "aliases": ["armor", "armour", "armorPoints", "armor points", "AP"]
     }
   ],
   "states": [
@@ -285,6 +292,18 @@
       ]
     }
   ],
+  "equipmentSlots": ["Weapon", "Armor", "Worn"],
+  "inventory": {
+    "version": 1,
+    "fields": [
+      { "id": "skillName", "label": "Skill Used", "type": "text", "appliesTo": ["Weapon"], "placeholder": "Firearms (Handgun)", "promptVisible": true, "help": "Which percentile skill fires this attack." },
+      { "id": "baseRange", "label": "Base Range", "type": "text", "appliesTo": ["Weapon"], "placeholder": "15 yards", "promptVisible": true },
+      { "id": "usesPerRound", "label": "Uses / Round", "type": "text", "appliesTo": ["Weapon"], "placeholder": "1 or 2", "promptVisible": true },
+      { "id": "bulletsInGun", "label": "Bullets", "type": "number", "appliesTo": ["Weapon"], "default": 0, "min": 0, "promptVisible": true },
+      { "id": "malfunction", "label": "Malfunction", "type": "number", "appliesTo": ["Weapon"], "default": 0, "min": 0, "max": 100, "promptVisible": true, "help": "A d100 roll at or above this number jams the weapon. Typically 96-100; 0 means the weapon never malfunctions." },
+      { "id": "armorPoints", "label": "Armor Points", "type": "number", "appliesTo": ["Armor"], "default": 0, "min": 0, "bonusTarget": "Armor Points", "promptVisible": true, "help": "Damage reduction subtracted from each hit, applied by the Keeper. Armor points NEVER enter a to-hit roll." }
+    ]
+  },
   "lorebookKeys": [
     "mythos",
     "deity",
