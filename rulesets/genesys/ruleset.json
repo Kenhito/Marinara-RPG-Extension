@@ -307,6 +307,15 @@
       "renderAs": "value"
     }
   ],
+  "sections": {
+    "order": [
+      "attributes",
+      "skills",
+      "derived",
+      "states",
+      "inventory"
+    ]
+  },
   "resources": [
     {
       "id": "wounds",

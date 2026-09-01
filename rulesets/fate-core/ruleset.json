@@ -332,7 +332,8 @@
     "skills",
     "derived",
     "states",
-    "abilities"
+    "abilities",
+    "inventory"
   ],
   "sections": {
     "order": [

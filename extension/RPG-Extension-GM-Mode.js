@@ -6390,18 +6390,37 @@ function applyItemAttrs(it, attrs) {
     var o = parseInt(attrs.overwhelming, 10);
     if (!isNaN(o) && o >= 0) it.overwhelming = o;
   }
+  /* F3 (S4) — mote_commitment / mote_pool on field="inventory" tags.
+     docs/AUTHORING-PHASE-6.md:451-456 has told GM agents for months to
+     emit these on an inventory-add tag, but this function never parsed
+     them — they only ever landed via the separate field="commitment"
+     state-mutator tag (:22539), which stays the sole path that enforces
+     the pool-budget / attuned-invested exclusivity rules. This block is
+     a convenience seed only: same skip-on-invalid policy as hardness/
+     overwhelming just above (never coerce a bad value, just leave the
+     item's existing moteCommitment/motePool alone). mote_pool accepts
+     only the two declared values; anything else is skipped. */
+  if (attrs.mote_commitment != null) {
+    var mc = parseInt(attrs.mote_commitment, 10);
+    if (!isNaN(mc) && mc >= 0) it.moteCommitment = mc;
+  }
+  if (attrs.mote_pool === "Personal" || attrs.mote_pool === "Peripheral") {
+    it.motePool = attrs.mote_pool;
+  }
   /* S6 6b (F12) — generic write path for every OTHER declared
      ruleset.inventory.fields[] entry, keyed by the same snake_case name
      the write-vocabulary (buildFieldReferenceContent) tells the agent to
-     use, so the two can never drift apart. hardness/overwhelming are
-     excluded — they already have the hand-written, min-enforcing
-     handling directly above and this loop must not re-process (and
-     potentially loosen) them. Unknown or invalid values are skipped,
-     never coerced silently, and this never throws. */
+     use, so the two can never drift apart. hardness/overwhelming/
+     moteCommitment/motePool are excluded — they already have the
+     hand-written, min-enforcing (or enum-only) handling directly above
+     and this loop must not re-process (and potentially loosen) them.
+     Unknown or invalid values are skipped, never coerced silently, and
+     this never throws. */
   var declaredAttrFields = (state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields))
     ? state.ruleset.inventory.fields : [];
   declaredAttrFields.forEach(function (field) {
-    if (!field || !field.id || field.id === "hardness" || field.id === "overwhelming") return;
+    if (!field || !field.id || field.id === "hardness" || field.id === "overwhelming" ||
+        field.id === "moteCommitment" || field.id === "motePool") return;
     var key = mrrSnakeCaseFieldId(field.id);
     if (!(key in attrs)) return;
     var raw = attrs[key];
@@ -22190,12 +22209,18 @@ function applyStateMutation(attrs) {
        refreshed via the Import Agents flow. */
     log("state-mutator inventory attrs:", attrs);
     /* Commitment-field note: this branch creates / removes inventory
-       rows only. Setting attuned / invested / moteCommitment / motePool
-       on a newly-added item is NOT done here — the agent must emit a
-       follow-up [mrr-state: field="attunement|investiture|commitment"
-       item="<name>" ...] tag after the add. Routing those through their
-       own branches preserves cap + exclusivity + pool-budget enforcement
-       at one site instead of duplicating the rules across every path. */
+       rows only. Setting attuned / invested on a newly-added item is
+       NOT done here — the agent must emit a follow-up
+       [mrr-state: field="attunement|investiture|commitment" item="<name>"
+       ...] tag after the add. Routing those through their own branches
+       preserves cap + exclusivity + pool-budget enforcement at one site
+       instead of duplicating the rules across every path.
+       moteCommitment / motePool are the one exception (F3, S4): they can
+       ALSO be seeded here as raw mote_commitment/mote_pool attrs via
+       applyItemAttrs, per docs/AUTHORING-PHASE-6.md:451-456 — but that
+       seed is unchecked (no cap/exclusivity/pool-budget enforcement).
+       field="commitment" remains the sole enforced path for CHANGING
+       commitment on an already-equipped item. */
     if (attrs.add) {
       var existing = null;
       for (var i = 0; i < sheet.inventory.length; i++) {
