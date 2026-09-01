@@ -6368,6 +6368,14 @@ function applyItemAttrs(it, attrs) {
   if (typeof attrs.use_effect === "string" && attrs.use_effect) it.useEffect = attrs.use_effect;
   if (attrs.consumable === "true" || attrs.consumable === true) it.consumable = true;
   if (typeof attrs.notes === "string" && attrs.notes) it.notes = attrs.notes;
+  /* Core description (R10-as-amended, S7 pre-work). Hand-written here
+     rather than left to the declared-field loop below: `description` is
+     now COMMON CORE, so no ruleset declares it and the generic loop can
+     never see it — but the write vocabulary still teaches the key in
+     every system, and the state-mutator's inventory-add already seeds
+     it from `reason`. An explicit description="..." attr overrides that
+     seed; omitting it leaves whatever is there alone, same as notes. */
+  if (typeof attrs.description === "string" && attrs.description) it.description = attrs.description;
   if (attrs.category === "equipment" || attrs.category === "item") it.category = attrs.category;
   /* Hardness / Overwhelming (Exalted-driven, ruleset-agnostic data shape).
      Hardness gates Overwhelming: when an attack's post-soak raw damage is
@@ -6527,6 +6535,11 @@ function normalizeInventoryItem(it, idx, ruleset) {
   if (typeof it.useEffect !== "string") it.useEffect = "";
   if (typeof it.consumable !== "boolean") it.consumable = false;
   if (typeof it.notes !== "string") it.notes = "";
+  /* Core description (R10-as-amended, S7 pre-work) — coerced like every
+     other core string field. The state-mutator already writes this key on
+     every item in every system; healing it here keeps the dialog and the
+     prompt emission from ever meeting a non-string. */
+  if (typeof it.description !== "string") it.description = "";
   /* Hardness / Overwhelming default to 0 (= "not applicable / hidden in UI").
      Coerce numeric strings ("3") to numbers; reject NaN, infinity, and
      negative values. Both are integers — fractional Hardness/Overwhelming
@@ -7290,28 +7303,45 @@ function mrrResolveBaseToken(statName) {
      no cap declared        → ctx[TokenName] unchanged
      tightest cap > 0        → Math.min(ctx[TokenName], cap) — a negative
                                modifier still applies
-     tightest cap <= 0       → exactly 0, the term is OMITTED rather than
-                               clamped (Math.min(-1, 0) would wrongly hand
-                               a low-Dex character in heavy armor a
-                               penalty; RAW heavy armor contributes
-                               nothing at all, penalty included) */
+     tightest cap <= 0       → governed by the WINNING field's capMode
+                               (R17, S7 pre-work):
+                                 "omit" (default, and the ONLY behaviour
+                                   before R17) → exactly 0, the term is
+                                   OMITTED rather than clamped
+                                   (Math.min(-1, 0) would wrongly hand a
+                                   low-Dex character in D&D 5e heavy armor
+                                   a penalty; RAW heavy armor contributes
+                                   nothing at all, penalty included)
+                                 "clamp" → Math.min(ctx[TokenName], cap),
+                                   so a negative modifier DOES still apply
+                                   (PF2e heavy armour: a Dex cap of 0 caps
+                                   the bonus but never eats the penalty)
+   When several equipped items declare caps on the same token the tightest
+   cap wins exactly as before, and the capMode of the field supplying THAT
+   cap governs. Ties (two equal tightest caps declaring different modes)
+   resolve to the first one encountered — the comparison stays strictly
+   `<`, so the pre-R17 winner is unchanged. */
 function mrrResolveCappedToken(tokenName, ctx) {
   var base = (ctx && typeof ctx[tokenName] === "number") ? ctx[tokenName] : 0;
   var declaredFields = (state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields))
     ? state.ruleset.inventory.fields : [];
   var tightest = null;
+  var tightestMode = "omit";
   equippedItemsList().forEach(function (item) {
     declaredFields.forEach(function (field) {
       if (!field || !field.id || field.capsToken !== tokenName) return;
       if (!mrrFieldAppliesToItem(field, item)) return;
       var fv = item[field.id];
       if (typeof fv !== "number" || !isFinite(fv)) return;
-      if (tightest === null || fv < tightest) tightest = fv;
+      if (tightest === null || fv < tightest) {
+        tightest = fv;
+        tightestMode = (field.capMode === "clamp") ? "clamp" : "omit";
+      }
     });
   });
   if (tightest === null) return base;
   if (tightest > 0) return Math.min(base, tightest);
-  return 0;
+  return (tightestMode === "clamp") ? Math.min(base, tightest) : 0;
 }
 
 /* ─────  skill proficiency tier + specialty helpers  ───── */
@@ -12366,7 +12396,9 @@ function applyDiceContextSpecialties() {
                           ctx[TokenName] clamped to the tightest declared
                           capsToken field among equipped items; a
                           tightest cap of 0 (or less) omits the term
-                          entirely (resolves to 0) instead of clamping.
+                          entirely (resolves to 0) instead of clamping,
+                          unless that field declares capMode:"clamp"
+                          (R17), in which case it clamps.
 
    The breakdown is the list of [{label, value}] in source order, which the
    tooltip composer formats as e.g. "Soak (Bashing): 7 = Stamina (4) +
@@ -13535,6 +13567,25 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
   });
   if (qtyInput) qtyInput.value = String(typeof draft.quantity === "number" ? draft.quantity : 1);
 
+  /* Description — COMMON CORE (R10-as-amended, S7 pre-work). Rendered for
+     EVERY ruleset, never declared per-ruleset: the state-mutator has
+     always written `item.description` on every item it creates in every
+     system (see the inventory branch's `description: attrs.reason`), so
+     the key was already universal — it just had no editor and no prompt
+     surface outside the two pilots that declared it by hand. Core-owning
+     it means the other 15 rulesets get the same field without repeating
+     the declaration 15 more times (and without one of them forgetting).
+     Free-text input, same shape as the declared `type: "text"` rows the
+     pilots used to render here, so stored values round-trip unchanged. */
+  var descRow = marinara.addElement(dialog, "div", { "class": "mrr-item-form__row" });
+  marinara.addElement(descRow, "label", { textContent: "Description" });
+  var descInputItem = marinara.addElement(descRow, "input", {
+    "class": "mrr-item-form__input",
+    type: "text",
+    value: draft.description || "",
+    placeholder: "what it looks like / what it is"
+  });
+
   var notesRow = marinara.addElement(dialog, "div", { "class": "mrr-item-form__row" });
   marinara.addElement(notesRow, "label", { textContent: "Notes" });
   var notesInput = marinara.addElement(notesRow, "textarea", { "class": "mrr-item-form__textarea" });
@@ -13557,6 +13608,8 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
       draft.attackAttribute = (attrSel && attrSel.value) || "";
       draft.attackProficient = !!(profInput && profInput.checked);
       draft.notes = (notesInput && notesInput.value || "").trim();
+      /* Core description (R10-as-amended) — same commit path as notes. */
+      draft.description = (descInputItem && descInputItem.value || "").trim();
       draft.category = (catSel && catSel.value === "item") ? "item" : "equipment";
       draft.useEffect = (useInput && useInput.value || "").trim();
       draft.consumable = !!(consInput && consInput.checked);
@@ -17400,6 +17453,16 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
         var entry = mrrFormatDeclaredFieldEntry(field, it);
         if (entry) parts.push("· " + entry);
       });
+      /* Core description (R10-as-amended, S7 pre-work). Emitted for EVERY
+         ruleset, no declaration required — the two pilots used to declare
+         a `description` field to get this line and the other 15 rulesets
+         silently could not, even though the state-mutator writes the key
+         on every item in every system. Appended AFTER the declared-field
+         loop because `description` was the LAST declared field in both
+         pilots, so their emitted line stays byte-identical. Items with no
+         description still add exactly 0 bytes. */
+      var itDesc = (typeof it.description === "string") ? it.description.trim() : "";
+      if (itDesc) parts.push("· Description: " + itDesc);
       lines.push(parts.join(" "));
     });
     lines.push("");
@@ -18290,6 +18353,10 @@ function buildFieldReferenceContent() {
   lines.push("  use_effect        — free-text effect that the player Use button parses and rolls (\"2d4+2 healing\")");
   lines.push("  consumable        — \"true\" to decrement quantity by 1 each Use; item is removed when quantity hits 0");
   lines.push("  notes             — free-text notes that show in the dialog");
+  /* Core description (R10-as-amended, S7 pre-work) — taught here rather
+     than by the declared-field loop below, because it is common core in
+     every system now and no ruleset declares it. */
+  lines.push("  description       — free-text description of the item (what it looks like / what it is); shown in the dialog and injected into the sheet block");
   lines.push("  category          — \"equipment\" (lives in the on-sheet Inventory section, equippable to slot) or \"item\" (Items flyout, usable / consumable). Default: \"item\" when no slot, \"equipment\" when slot is set.");
   /* S6 6b (F12) — one line per ruleset.inventory.fields[] entry, generated
      from the declaration rather than hand-maintained, so this list can

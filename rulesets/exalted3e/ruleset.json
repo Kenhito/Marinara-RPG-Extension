@@ -846,8 +846,7 @@
       { "id": "defenseBonus", "label": "Defense", "type": "number", "appliesTo": ["Weapon", "Off-hand"], "default": 0, "bonusTarget": "Defense (Parry)", "promptVisible": true },
       { "id": "overwhelming", "label": "Overwhelming", "type": "number", "appliesTo": ["Weapon", "Off-hand"], "default": 0, "min": 0, "promptVisible": true },
       { "id": "weaponTags", "label": "Weapon Tags", "type": "enum", "multi": true, "appliesTo": ["Weapon", "Off-hand"], "options": ["Lethal", "Bashing", "Aggravated", "Melee", "Thrown", "Archery", "Reaching", "Piercing", "Flame", "Smashing", "Disarming", "Grappling", "Artifact"], "promptVisible": true },
-      { "id": "artifactRating", "label": "Artifact (dots)", "type": "number", "appliesTo": ["Weapon", "Off-hand", "Armor"], "default": 0, "min": 0, "max": 5, "promptVisible": true },
-      { "id": "description", "label": "Description", "type": "text", "promptVisible": true, "placeholder": "e.g. orichalcum daiklave, blazing with Solar anima" }
+      { "id": "artifactRating", "label": "Artifact (dots)", "type": "number", "appliesTo": ["Weapon", "Off-hand", "Armor"], "default": 0, "min": 0, "max": 5, "promptVisible": true }
     ]
   },
   "abilities": {
