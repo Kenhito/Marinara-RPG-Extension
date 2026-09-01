@@ -8,7 +8,7 @@ Custom RPG rulesets for [Marinara Engine](https://github.com/Pasta-Devs/Marinara
 
 ## Quick start (5 minutes)
 
-Grab the self-contained release at [`releases/1.3.0/`](releases/1.3.0/), or download the latest zip from the [Releases page](https://github.com/Kenhito/Marinara-RPG-Extension/releases/latest). It includes the importable extension package, two complete reference rulesets (D&D 5e and Exalted 3e) pre-built and ready to import, and AI-feedable build documents for authoring any other system. Per-ruleset install walkthroughs live at `rulesets/dnd5e/INSTALL.md` and `rulesets/exalted3e/INSTALL.md`.
+Grab the self-contained release at [`releases/1.4.0/`](releases/1.4.0/), or download the latest zip from the [Releases page](https://github.com/Kenhito/Marinara-RPG-Extension/releases/latest). It includes the importable extension package, two complete reference rulesets (D&D 5e and Exalted 3e) pre-built and ready to import, and AI-feedable build documents for authoring any other system. Per-ruleset install walkthroughs live at `rulesets/dnd5e/INSTALL.md` and `rulesets/exalted3e/INSTALL.md`.
 
 Install the extension, import a ruleset bundle, launch a game, attach the lorebook, enable the agents — see [`docs/HOW-IT-WORKS.md`](docs/HOW-IT-WORKS.md) for what each of those steps actually does, or [`docs/INSTALL.md`](docs/INSTALL.md) for the click-by-click version with screenshots.
 
@@ -35,11 +35,11 @@ Every ruleset ships as a single `bundle.json`, right here on GitHub — no build
 | Vampire: The Masquerade 20th Anniversary | d10 pool | [`rulesets/vtmv20/bundle.json`](rulesets/vtmv20/bundle.json) |
 | Werewolf: The Apocalypse 20th Anniversary | d10 pool | [`rulesets/w20/bundle.json`](rulesets/w20/bundle.json) |
 
-Import via **Fetch URL** in the Ruleset dialog (`https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/<id>/bundle.json`), by downloading the raw file from GitHub, or from `releases/1.3.0/install-files/` if you already have the release folder. After import, attach the ruleset's lorebook to your game and enable its agents — installing is not activating.
+Import via **Fetch URL** in the Ruleset dialog (`https://raw.githubusercontent.com/Kenhito/Marinara-RPG-Extension/main/rulesets/<id>/bundle.json`), by downloading the raw file from GitHub, or from `releases/1.4.0/install-files/` if you already have the release folder. After import, attach the ruleset's lorebook to your game and enable its agents — installing is not activating.
 
 ## Current feature set
 
-- **Sixteen ready-to-play systems**, each a single-file `bundle.json` install: sheet, dice widget, GM doctrine, and rules lorebook in one shot.
+- **Seventeen ready-to-play systems**, each a single-file `bundle.json` install: sheet, dice widget, GM doctrine, and rules lorebook in one shot.
 - **A validating schema** with nine resolution modes (d20, dice-pool, d100 percentile including roll-high/open-ended, PbtA 2d6, Fate ladder, roll-under, stance-modal pool, dice-pool-sum, narrative-handled) plus multi-mechanic routing for systems that mix more than one.
 - **Server-backed character sheets** — sheets, the per-chat roster, and ruleset selection sync through Marinara's own extension storage with local-storage mirroring, so characters survive a cleared browser and follow you to a second one.
 - **Party writes** — sheet-mutation tags can target any roster member by name, not just the active character, with per-character swipe revert/redo.
@@ -47,6 +47,8 @@ Import via **Fetch URL** in the Ruleset dialog (`https://raw.githubusercontent.c
 - **XP & leveling** — party-wide, single-fire awards from combat, social/mental challenges, and roleplay; a one-word lorebook switch flips any campaign between GM-driven XP and manual milestone leveling.
 - **Combat encounter shells** — unnamed opposition gets a consistent, re-emitted statline instead of invented numbers; recurring villains graduate to a real card and sheet.
 - **A self-healing agent/preset layer** — re-imports repair orphaned preset sections and re-stamp a chat's ruleset automatically.
+- **Per-system equipment that does the math** — each ruleset declares its own item fields (AC bases and Dex caps that follow the book's own rules, soak, artifact ratings, shield HP/Hardness/Break Threshold), equipped bonuses flow to stats and to the dice widget's attack roll, and item descriptions reach the Game Master so distinctive gear gets treated distinctively.
+- **One-click Long Rest + House Rules levers** (D&D 5e) — a single batched rest with a receipt naming every change, and a per-system House Rules lorebook whose machine-read levers (RAW vs house-ruled hit dice) are enforced, not just narrated.
 - **Zip / folder / manifest packaging** for Marinara's External Extensions import lane, comment-stripped and hash-verifiable.
 
 Full version-by-version detail lives in [`CHANGELOG.md`](CHANGELOG.md).
@@ -74,6 +76,6 @@ Marinara Engine itself is AGPL-3.0 — this repo is an **overlay** (it does not 
 
 ## Roadmap & status
 
-Sixteen shipped rulesets on a validating schema, single-file bundle install, zip/folder/manifest extension packaging, server-backed character storage, swipe-aware party writes, real server-side dice, XP/leveling, and combat encounter shells. Built and live-tested against Marinara Engine 2.4.3+.
+Seventeen shipped rulesets on a validating schema, single-file bundle install, zip/folder/manifest extension packaging, server-backed character storage, swipe-aware party writes, real server-side dice, XP/leveling, combat encounter shells, per-system declared equipment, and one-click rests with enforced house-rule levers. Built and live-tested against Marinara Engine 2.4.3+.
 
-Next up: a contributor-facing docs pass and whatever the next played session surfaces. Full version history in [`CHANGELOG.md`](CHANGELOG.md). Bug reports welcome; PRs adding a new system more so.
+Next up: interop with the community **RPG Inventory** graphical-sheet extension (optional two-way gear bridging, in cooperation with its author) and tag-driven sprite generation for items — plus whatever the next played session surfaces. Full version history in [`CHANGELOG.md`](CHANGELOG.md). Bug reports welcome; PRs adding a new system more so.

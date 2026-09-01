@@ -1,3 +1,12 @@
+<!-- SHOT LIST for Corey — captures to add to docs/screenshots/ (referenced below; the guide reads fine without them until they land):
+  1. sheet_panel_overview.png — the floating sheet panel, one mid-level character, attributes+skills+derived+EQUIPMENT visible in one frame (Exalted or D&D, no campaign names — Tester is fine).
+  2. item_dialog_declared_fields.png — the Add/Edit Item dialog open on a D&D chat, Armor slot selected, showing Base AC / Dex Cap / Armor Magic Bonus fields + the Description box.
+  3. equipment_row_chips.png — the EQUIPMENT list with one equipped armor + one weapon showing their stat chips and the derived-stat "+N" suffixes on AC.
+  4. long_rest_receipt.png — the Long Rest button plus its receipt toast right after a click.
+  5. house_rules_dialog.png — Ruleset dialog → House Rules with the Hit Dice lever visible.
+  6. encounter_shell.png — a chat turn showing an ENCOUNTER: block for unnamed opposition.
+  Existing shots already referenced: ruleset-ui.png, sheet_dice_widget.png, character-save-controls.png, plus the INSTALL.md set. -->
+
 # How Marinara RPG Works
 
 This is the plain-language guide to playing with the extension installed — what it does, how the pieces fit together, and what to check when something looks wrong. It assumes Marinara Engine is already running and you're about to install the extension, or you already have it installed and want to understand it better.
@@ -17,7 +26,7 @@ Installing a ruleset gives you:
 - **Instructions for the AI** — how your system resolves actions, what the dice-tag format looks like, how combat math works, how experience and leveling work — so the Game Master narrates mechanically correct turns instead of drifting back to D&D habits.
 - **A rules reference** that surfaces the relevant entry automatically when it's needed — a spell's cost, a condition's effect, a class's XP table — without you looking it up mid-scene.
 
-Sixteen systems ship ready to use — D&D 5e, Exalted 3e, Vampire, Werewolf, Call of Cthulhu, Pathfinder 2e, and more — and the framework is built so a new one can be authored for anything it doesn't cover yet.
+Seventeen systems ship ready to use — D&D 5e, Exalted 3e, Vampire, Werewolf, Call of Cthulhu, Pathfinder 2e, and more — and the framework is built so a new one can be authored for anything it doesn't cover yet.
 
 ### The agents, in plain terms
 
@@ -33,6 +42,15 @@ Behind the scenes, a small set of specialist agents brief the Game Master before
 You don't see any of these run directly — you see their effects: a mechanically-grounded turn, and your sheet moving to match what actually happened. If a story ever references an agent or role that isn't one of these four (or a system-specific variant of them), that's a sign something's out of date — see [When something looks wrong](#when-something-looks-wrong).
 
 **A turn, end to end:** you describe what Mira does. The Ruleset Helper, and the Combat Overseer or Context Fuser if enabled, brief the Game Master on the relevant rules and current scene state. The Game Master narrates the outcome, rolling real dice if tool use is on. Only after that narration is finished does the State Mutator read it and update Mira's sheet to match. You never see the briefing or the sheet-write happen directly — you see the sheet move and the story stay honest about your numbers.
+
+```mermaid
+flowchart LR
+    P["You describe<br/>Mira's action"] --> B["Briefings<br/>(rules + live sheet<br/>+ combat frame)"]
+    B --> GM["Game Master<br/>narrates the turn<br/>(real dice if tools on)"]
+    GM --> M["State Mutator reads<br/>the finished narration"]
+    M --> S["Your sheet moves<br/>to match the story"]
+    S -.->|"next turn's briefing<br/>carries the updated sheet"| B
+```
 
 ## Install: the three-artifact model
 
@@ -54,7 +72,11 @@ You'll repeat this for every future extension update. That re-approval requireme
 
 ### Step 2 — Import a ruleset bundle
 
-Click the **Ruleset** button that appears in the chat header once the extension is enabled. The dialog takes a `bundle.json` three ways:
+Click the **Ruleset** button that appears in the chat header once the extension is enabled.
+
+![The Ruleset dialog](screenshots/ruleset-ui.png)
+
+The dialog takes a `bundle.json` three ways:
 
 - **Choose file…** — a local download.
 - **Fetch URL** — paste a raw link and fetch it live.
@@ -121,6 +143,30 @@ The **save** button downloads every character in the current chat as a single JS
 
 **load** replaces the current chat's characters with a previously-saved file. This is also how you carry a character into a brand-new chat, since a fresh chat always starts with no characters in it.
 
+![The character control bar's save and load buttons](screenshots/character-save-controls.png)
+
+## Gear & equipment
+
+The sheet's **EQUIPMENT** section (some systems retitle it) is where items live. **Add item** opens a dialog whose fields belong to *your* system — this is the part that makes a Daiklave feel different from a longsword:
+
+- Every item, in every system, has the basics: name, quantity, a **Description** (what it looks like — the Game Master reads this, so a distinctive item gets treated distinctively in the story), notes, and an equipped/carried state with a slot.
+- On top of that, each system declares its **own** fields, shown only where they make sense. Playing D&D and editing armor? You'll see **Base AC**, **Dex Cap**, and **Armor Magic Bonus**. An Exalted artifact weapon shows **Accuracy**, **Overwhelming**, **Weapon Tags**, and **Artifact rating**. A Blades item shows just **Load** and **Fine** — because that's all Blades gear is. A system whose gear carries no numbers shows only the basics, on purpose.
+
+<!-- screenshot: item_dialog_declared_fields.png — see shot list -->
+
+### Equipping does the math for you
+
+Equip a piece of gear and its numbers flow to the right places on their own:
+
+- **Armor sets and shapes your defense.** In D&D, leather armor *sets* your AC base to 11 and your Dexterity adds on top; plate sets 18 and shuts Dexterity out entirely — including a negative modifier, which is exactly how the book plays it. Pathfinder's caps work Pathfinder's way (a Dex penalty still applies at cap 0). You type the armor's numbers once; the sheet computes the rest and shows the breakdown.
+- **Weapon bonuses reach your rolls.** A +2 weapon's attack bonus shows up in the dice widget's attack roll automatically. Its damage bonus lives in the damage string you see on the item (`1d8+2`), so nothing gets counted twice.
+- **Every other bonus rides a suffix.** Anything equipped that boosts a stat shows as a `+N` beside that stat, with the contributing items named in the hover text.
+- **Pathfinder shields** carry their own Hardness, HP pool, and Break Threshold on the item — the numbers your table needs when you block. (Raising a shield is an action, so its AC bonus stays a thing you do in play, not an always-on number.)
+
+The Game Master sees your equipped gear too — names, the fields that matter, and descriptions — which is why walking into court wearing shining orichalcum plate gets a different reception than road leathers.
+
+One honest caveat: two equipped items boosting the *same* stat currently add together even in systems where the book says take-the-highest. Armor *bases* already do highest-wins; overlapping *bonuses* are on the roadmap.
+
 ## Dice
 
 There are two separate sources of randomness in play, and they're kept apart on purpose so neither can override the other.
@@ -128,6 +174,8 @@ There are two separate sources of randomness in play, and they're kept apart on 
 ### Your rolls come from the widget, and they're authoritative
 
 You fill in the widget (the stat, the modifier, the target), roll it, and it produces a dice tag with the actual die faces printed in it. **Send to chat** drops that tag straight into your own message.
+
+![The sheet and dice widget side by side](screenshots/sheet_dice_widget.png)
 
 The Game Master reads that tag and narrates from it — it never re-rolls it, adjusts it, "corrects" its math, or re-adds a bonus the widget already folded in.
 

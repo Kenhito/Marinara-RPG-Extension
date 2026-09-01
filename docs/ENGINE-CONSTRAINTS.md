@@ -2,7 +2,7 @@
 
 This page is the honest-tradeoff document. It exists because the alternative — confidently telling you the overlay does X when it actually does Y — wastes your time when you discover the gap mid-session.
 
-Verified against Marinara Engine v1.5.6 (April 2026). If a future Marinara release changes any of these, this doc is wrong; please open a PR.
+Originally verified against Marinara Engine v1.5.6 (April 2026); individual sections re-verified since are marked inline with their date and engine version (the reputation section against v2.4.4, the storage and per-chat-ruleset sections against the v1.4.0 extension release, September 2026). If a future Marinara release changes any of these, this doc is wrong; please open a PR.
 
 ## What the overlay does
 
@@ -50,11 +50,9 @@ When Marinara's built-in **combat encounter** UI fires (the modal with party HP,
 
 Marinara's character creator wizard (the maker for new characters) uses the built-in 6-attribute model. The overlay can't intercept that flow without forking. **Workaround:** create the character with arbitrary D&D values (or all zeros), then edit the sheet in the chat using the overlay's panel. The extension's localStorage sheet is the source of truth once a chat is active.
 
-### `RPGAttributes` server storage
+### `RPGAttributes` server storage *(re-verified September 2026 — storage model superseded since the original pass)*
 
-The engine's `PlayerStats.attributes` type is hard-coded to `{ str, dex, con, int, wis, cha }`. The overlay does not write into this field for non-D&D rulesets — the attribute names don't match, and forcing them creates lossy data. Instead, the extension stores the sheet in browser `localStorage` keyed by chat ID. A "Sync sheet to chat fields" button writes the sheet into the chat's `customTrackerFields[]` array (free-form key/value strings, which the engine does support), so the GM agent reads them on subsequent turns.
-
-**Practical effect:** if you switch browsers or clear `localStorage`, you lose the sheet unless you've synced to chat fields recently. Hit the Sync button after every significant sheet update — a sane habit anyway, since the GM agent benefits from seeing current values.
+The engine's `PlayerStats.attributes` type is hard-coded to `{ str, dex, con, int, wis, cha }`. The overlay does not write into this field for non-D&D rulesets — the attribute names don't match, and forcing them creates lossy data. Instead, the extension keeps sheets in **its own server-backed extension storage** (`marinara.storage`), mirrored to browser storage for responsiveness; both copies carry timestamps and the newer wins on load. Characters therefore survive a cleared browser and follow you across devices. The GM reads current values from the live sheet block the extension injects each turn — the old "Sync sheet to chat fields" button is gone (the server discarded that write path), and no manual sync habit is needed anymore.
 
 ### Lorebook attachment + agent enablement are per-game manual steps
 
@@ -64,9 +62,9 @@ There's no marketplace for lorebooks or agents in Marinara. The ruleset bundle i
 
 When you click a skill's "roll" button on the sheet, the dice widget pre-fills the pool size with `attribute + ability` (for dice-pool) or the modifier (for single-roll), but you still confirm and click **Roll**. This is intentional — making the click a single step would mean the extension is rolling for you without you seeing it, and the failure mode (wrong attribute selected automatically) is annoying enough to be worse than the extra click.
 
-### Per-character ruleset context
+### Per-chat ruleset context *(re-verified September 2026 — shipped since the original pass)*
 
-The overlay treats ruleset selection as a global setting (one ruleset active at a time across all chats). Two simultaneous chats running different rulesets is technically possible — each chat has its own sheet in `localStorage` — but you must remember to switch the active ruleset when you switch chats. A future version could read ruleset selection from a per-chat custom field; PR welcome.
+Ruleset selection is tracked **per chat**: each chat is stamped with its ruleset, the extension re-binds automatically when you switch chats, and a deliberate in-chat ruleset switch re-stamps that chat rather than being fought. Two simultaneous chats can run two different systems with no manual switching. (This section previously described a global-selection limitation; that shipped away.)
 
 ### Reputation tracker schema mismatch (re-verified against current engine HEAD — supersedes the 1.5.6 figure below)
 

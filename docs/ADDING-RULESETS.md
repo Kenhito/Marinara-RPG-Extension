@@ -1,20 +1,12 @@
 # Adding a new ruleset
 
-This page walks through adding an entirely new tabletop system to the overlay, using **Fate Core** as the worked example. If your target system is structurally similar to one already shipped (D&D 5e for d20 systems, Exalted 3e for dice-pool systems, Fate Core for narrative-ladder systems, plus the schema-only PbtA mode), you can usually copy that bundle and edit. If your system has a fundamentally different resolution mechanic, you'll add a new resolution mode — also documented here.
+> **Role of this page:** the decision tree for whether your system fits, plus the (maintainer-lane) recipe for adding a new resolution mode. **The canonical step-by-step build path is [`docs/AUTHORING.md`](AUTHORING.md)** — start there; come here when you're unsure your system fits at all.
+
+This page walks through deciding how to add a new tabletop system to the overlay. If your target system is structurally similar to one already shipped (D&D 5e for d20 systems, Exalted 3e for dice-pool systems, Fate Core for narrative-ladder systems, PbtA via `2d6-stat`), you copy that bundle and edit — per AUTHORING.md. If your system has a fundamentally different resolution mechanic, a new resolution mode has to be added first — the recipe is preserved below, but it is maintainer work.
 
 ## Anatomy of a ruleset
 
-Every ruleset is **four files** plus a small change to the schema if you're introducing a new resolution mode. Bundle layout, using fate-core as the example:
-
-```
-rulesets/fate-core/
-├── ruleset.json     # The declarative spec the extension reads
-├── gm-agent.md      # The GM agent system prompt
-├── lorebook.json    # Keyword-triggered rules reference
-└── INSTALL.md       # User-facing install walkthrough
-```
-
-The extension and schema live one level up at `extension/RPG-Extension-GM-Mode.{css,js}` and `schema/ruleset.schema.json` and are shared across all rulesets.
+See [`docs/AUTHORING.md`](AUTHORING.md) "Anatomy of a ruleset bundle" for the current layout — the short version: four SOURCE files you edit (`ruleset.json`, `gm-agent.md`, `lorebook.json`, `INSTALL.md`, plus optional `agents/` overrides) and two BUILT artifacts the tools generate (`bundle.json`, `agents.json` — what users import; never hand-edited). The extension and schema live one level up at `extension/RPG-Extension-GM-Mode.{css,js}` and `schema/ruleset.schema.json` and are shared across all rulesets.
 
 ## Decision tree — before you start
 
@@ -59,7 +51,7 @@ Then walk through:
 
 ### `ruleset.json`
 
-- **`id`** — kebab-case, used as the localStorage key. Keep stable — your future-self will paste it into URLs.
+- **`id`** — kebab-case, the stable namespace key for every stored artifact (server-backed character storage, house-rules stamps, agent naming). NEVER change it once anyone has played under it.
 - **`name`** / **`version`** / **`edition`** / **`license`** / **`summary`** — human-facing labels.
 - **`dice`** — primary die type and notation example. The `notation` is for human reference only; the GM prompt and extension produce their own dice tags.
 - **`resolution`** — pick the existing mode and fill the required sub-fields. Validators in `tools/validate-ruleset.mjs` will tell you what's missing.
@@ -94,7 +86,7 @@ Keep entry `content` factual. The GM agent prompt is where you set tone; the lor
 
 ### `INSTALL.md`
 
-User-facing walkthrough. Required because the engine has no marketplace — every install is paste-and-import. Cover: install the extension once, activate the ruleset (paste-or-fetch), install the GM agent, install the lorebook, build a character, troubleshoot the common failure modes. Look at `rulesets/fate-core/INSTALL.md` for the structure.
+User-facing walkthrough. Required because the engine has no marketplace. The modern install is one `bundle.json` import (agents and lorebook ride inside it) followed by per-game activation — attach the lorebook, enable the agents. Cover that flow, a character build, a sanity-check roll, and the common failure modes. Structure per AUTHORING.md Step 7.
 
 ## Adding a new resolution mode
 

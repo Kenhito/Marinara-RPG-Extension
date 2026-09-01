@@ -1,20 +1,25 @@
 # Authoring a new ruleset
 
-> **Phase 5 + 6 schema additions live in [`docs/AUTHORING-PHASE-6.md`](AUTHORING-PHASE-6.md)** — that doc covers the Resources cluster, `sections.order` / `sections.hidden`, autocalc derived stats (`valueFormula` / `tooltipFormula` / `formulaShort` / `rollFormula`), `commitmentModel` + per-resource `commitmentPool`, the `state-banner` resource type, the seven current resolution modes (including roll-under and stance-modal-pool), and the item-level `hardness` / `moteCommitment` / `motePool` auto-inheritance. Read it BEFORE you start authoring — it's additive on top of this guide, but the additions are substantial.
+> **THIS IS THE CANONICAL BUILD PATH.** To produce a new ruleset a user can import, follow Steps 1–8 below in order — every step names its exact command and what success looks like. The companion docs are references you'll be pointed into when a step needs them: [`docs/BUILDING.md`](BUILDING.md) (the generator-pipeline contract and full field semantic map), [`docs/AUTHORING-PHASE-6.md`](AUTHORING-PHASE-6.md) (deep dive on the Phase 5/6/7 schema additions — Resources cluster, autocalc derived stats, `commitmentModel`, the five later resolution modes), and [`docs/ADDING-RULESETS.md`](ADDING-RULESETS.md) (the decision tree, plus the new-resolution-mode recipe, which is maintainer work). Item fields (`hardness`, mote commitment, and every other per-system gear number) are declared through the `inventory` grammar in **Step 3b** below — the older "auto-inheritance" model AUTHORING-PHASE-6 §6 used to describe is superseded.
+>
+> **If you are an AI authoring a bundle:** this file plus `schema/ruleset.schema.json` plus one reference ruleset directory (`rulesets/dnd5e/` or `rulesets/exalted3e/`) is the complete required reading. Where this doc and the schema disagree, the schema wins. Do not invent fields — the schema rejects unknown keys (`additionalProperties: false`), so every key you write must already exist there.
 
-This guide walks through adding a third ruleset to this repo. Time budget: ~2 hours for a rules-light system, ~1 day for a full mid-weight one.
+This guide walks through adding a new ruleset to this repo (seventeen ship today). Time budget: ~2 hours for a rules-light system, ~1 day for a full mid-weight one.
 
 ## Anatomy of a ruleset bundle
 
 ```
 rulesets/your-system/
-├── ruleset.json     # the data — what the extension reads
-├── gm-agent.md      # the GM agent prompt template — what the AI reads
-├── lorebook.json    # keyword-triggered references — what the AI reads on relevant turns
-└── INSTALL.md       # walks the user through pasting all of the above into Marinara
+├── ruleset.json     # SOURCE — the data spec; the system of record you edit
+├── gm-agent.md      # SOURCE — the GM prompt (the FIRST fenced code block is what ships; see Step 5)
+├── lorebook.json    # SOURCE — keyword-triggered rules reference
+├── INSTALL.md       # SOURCE — user-facing install walkthrough
+├── agents/          # SOURCE, optional — per-ruleset overrides of the shared agents/ prompts
+├── bundle.json      # BUILT — what the user actually imports; generated, never hand-edited
+└── agents.json      # BUILT — the agent set; generated, never hand-edited
 ```
 
-`ruleset.json` is the only file that's machine-validated. The other three are prose / structured prose that humans paste into Marinara's UI.
+**You edit the SOURCE files; the build generates the BUILT ones.** `bundle.json` is the single file a user imports through the Ruleset dialog — it embeds the ruleset, the lorebook, the GM prompt, and the agents in one artifact. Never edit `bundle.json` or `agents.json` by hand: the next build overwrites them, and `npm run check:freshness` fails any release where built artifacts don't match source. `ruleset.json` is the machine-validated file; the prompts and lorebook are validated structurally at bundle level.
 
 ## Step 1 — choose a resolution mode
 
@@ -214,17 +219,41 @@ Each entry in `fields[]` is one declared item field, rendered in the item dialog
 
 **Weapon damage lives in the damage string, not in a declared field.** A weapon's `damage` (the free-text expression the state-mutator writes, e.g. `"1d8+2 slashing"`) is where its enchantment bonus belongs — the "+2" is baked into the string a player reads at the table. Declared fields carry the item's OTHER magic contributions: an `attackMagicBonus`-style field (`bonusTarget: "Attack Bonus"`) reaches the dice widget's attack roll, and an armor's `armorMagicBonus` reaches AC. **Never route a weapon's magic bonus into both** — a +2 sword that also declares `attackMagicBonus: 2` targeting a stat the damage string already accounts for double-counts the enchantment. Keep the split ruleset-clean: damage-string bonuses affect the roll a player types by hand; declared-field bonuses affect the roll the widget computes.
 
-## Step 4 — validate
+## Step 4 — the validate → build → re-validate loop
+
+This is the loop you'll run after every meaningful edit, and it is the same loop CI-minded contributors run before a PR. Commands assume the repo root (`npm run` and `bun run` both work; the scripts live in `package.json`).
 
 ```bash
+# 1. Validate your spec (fast; run constantly while editing)
 node tools/validate-ruleset.mjs rulesets/your-system/ruleset.json
+#    Success: "PASS rulesets/your-system/ruleset.json  (your-system vX.Y.Z)", exit 0.
+#    Failure: "FAIL" + the JSON Pointer to the offending field + the schema rule
+#    that rejected it. WARN lines (e.g. a bonusTarget that resolves to no stat,
+#    an appliesTo naming an undeclared slot) do NOT fail the run — read them
+#    anyway; they are usually typos.
+
+# 2. Build the importable artifacts from source
+node tools/build-bundle.mjs rulesets/your-system/
+node tools/build-agents.mjs rulesets/your-system/
+#    Success: "PASS your-system -> .../bundle.json (...)" and
+#    "PASS your-system -> .../agents.json (N agents: ...)".
+
+# 3. Validate the built bundle
+node tools/validate-bundle.mjs rulesets/your-system/bundle.json
+#    Success: PASS, exit 0.
+
+# 4. Confirm you broke nothing repo-wide (all seventeen must stay green)
+npm run validate-rulesets    # → 17/17 PASS expected... plus yours = 18
+npm run validate-bundles
 ```
 
-If it fails, the validator prints the JSON Pointer to the offending field and the JSON Schema rule that rejected it. Fix and repeat.
+**What the validator does and does not catch.** It catches structure: missing required fields, unknown keys (`additionalProperties: false`), wrong types, closed-enum violations, duplicate inventory field ids, `capMode` without `capsToken`. It can NOT catch game-rules wrongness — a Dex cap of 3 on plate armor validates fine and is still wrong. Rules correctness is the author's job; the checklist in Step 8 tells you how to spot-check it.
 
 ## Step 5 — write the GM agent prompt
 
-`gm-agent.md` is markdown for human readers, but the bit between the triple-backticks is the prompt template the user pastes into Marinara's Agent Editor.
+`gm-agent.md` is markdown for human readers, but the part that actually ships is extracted by the build: **`build-bundle.mjs` and `build-agents.mjs` take ONLY the first fenced code block in the file** (a ` ```text ` fence, or the first plain fence). Everything after that fence closes — headings, notes, more fences — is documentation for humans and is silently dropped from the shipped prompt.
+
+> ⚠️ **The first-fence rule has silently eaten doctrine before.** If you add GM instructions, they go INSIDE the first fence. Verify by grepping the rebuilt `bundle.json` for a distinctive phrase from your addition — never by re-reading the source markdown, which will happily show you text the build discarded.
 
 Cover at minimum:
 
@@ -258,6 +287,8 @@ Aim for 15-25 entries: core mechanics (always-on, ~5), conditions / states (~5),
 
 Set the lorebook's top-level `tokenBudget` to **at least 4096**. The engine applies this budget per book across every entry activated in a turn; the shipped default of 2048 (and older bundles' 1500) silently drops large entries — such as an XP award table — from context while smaller ones still surface. There is no error when this happens; the entry is simply invisible to the GM.
 
+Also know the engine's **100-entry ceiling per lorebook**: entries beyond the first 100 in a book are never read at all. The shipped rules lorebooks sit well under it, but if you (or your users) author large spell/bestiary collections, split them across multiple books rather than growing one past 100.
+
 ### Step 6a — XP & Progression standard entries (required if the system has advancement)
 
 Every ruleset whose system has character advancement ships these entries. They exist so a table can flip between GM-driven XP and manual milestone leveling by editing ONE word — without touching prompts or agents — and so the GM always reads authored numbers instead of guessing from model memory.
@@ -276,25 +307,34 @@ The GM prompt's award doctrine (Step 5) references these entries — award trigg
 
 ## Step 7 — write INSTALL.md
 
-Mirror the structure of `rulesets/dnd5e/INSTALL.md` or `rulesets/exalted3e/INSTALL.md`:
+Mirror the structure of `rulesets/dnd5e/INSTALL.md` or `rulesets/exalted3e/INSTALL.md`. The modern install is **one bundle import** (the Ruleset dialog takes `bundle.json` by file, URL, or paste — agents and lorebook ride inside it), so the walkthrough is mostly about what comes after:
 
-1. Install the extension (note "if already installed, skip").
-2. Activate the ruleset (paste or fetch URL).
-3. Install the agent prompt.
-4. Install the lorebook.
-5. (Optional) GM-screen difficulty / setup notes.
-6. Sanity check (a known dice example with expected output).
-7. What this ruleset does NOT do (be honest — overlay tradeoffs).
-8. Update / uninstall instructions.
+1. Install the extension zip (note "if already installed, skip").
+2. Import the ruleset's `bundle.json` (choose-file / fetch-URL / paste).
+3. Launch a game, then **attach the ruleset's lorebook** and **enable its agents for that game** — installing is not activating.
+4. (Optional) GM-screen difficulty / setup notes.
+5. Sanity check (a known dice example with expected output).
+6. What this ruleset does NOT do (be honest — overlay tradeoffs).
+7. Update / uninstall instructions.
 
-## Step 8 — open a PR
+## Step 8 — Definition of Done, then open a PR
+
+Before you call the ruleset finished, every box below checks. This list is the difference between "validates" and "done":
+
+- [ ] `node tools/validate-ruleset.mjs rulesets/your-system/ruleset.json` → PASS, **zero WARN lines** (or each WARN understood and deliberate).
+- [ ] `bundle.json` + `agents.json` **rebuilt from current source** (`build-bundle.mjs` + `build-agents.mjs`) and `validate-bundle.mjs` → PASS.
+- [ ] Repo-wide: `npm run validate-rulesets` and `npm run validate-bundles` both fully green.
+- [ ] Any GM-doctrine addition verified **in the rebuilt `bundle.json`**, not the source markdown (the first-fence rule, Step 5).
+- [ ] `npm run check:freshness` → clean (built artifacts match source).
+- [ ] Rules spot-check by a human who knows the system: dice math on one worked example, one item's declared fields against the book, the XP table's numbers.
+- [ ] No verbatim publisher text; no emojis in committed JSON; compact one-line style preserved for `inventory.fields[]` entries (see pitfalls below).
 
 The repo is MIT and accepts PRs adding rulesets. Include:
 
-- The four bundle files.
-- Schema validation passing (`npm run validate-rulesets`).
+- The source files AND the rebuilt `bundle.json` / `agents.json`.
+- The Definition of Done above, passing.
 - A line in the top-level `README.md` table.
-- A `CHANGELOG.md` entry if there is one (there isn't yet — feel free to start one).
+- A `CHANGELOG.md` entry under `[Unreleased]`.
 
 ## Common authoring pitfalls
 
@@ -303,6 +343,10 @@ The repo is MIT and accepts PRs adding rulesets. Include:
 **Your `oneOf` resolution disagrees.** The `resolution` field uses `oneOf` over the nine modes — extra fields from another mode (e.g. `target` on a single-roll) make the validator reject under all nine branches. Trim to the fields your mode actually requires.
 
 **You used emojis in the JSON.** They're valid JSON, but the project convention is no emojis in committed source files (engine convention; we follow it). Save them for narration.
+
+**You ran a JSON formatter over a ruleset file.** Don't. The convention is compact hand-formatting — `inventory.fields[]` entries and similar declaration rows are single lines on purpose, so a diff shows one changed line per changed fact. A pretty-printer turns a 3-line change into an 800-line diff and will get your PR bounced. Edit surgically; match the surrounding style.
+
+**You renamed a stable id.** Attribute names, ability ids, `inventory.fields[].id`, lever names — anything documented as NEVER-rename — orphans users' saved data when renamed. The escape hatch is always `aliases[]`: the old name keeps reading, the new one becomes the write target.
 
 **You included verbatim text from an IP-owning publisher.** Don't. Mechanics are not copyrightable; descriptive flavor text usually is. Paraphrase. The Exalted bundle paraphrases everything; the D&D bundle uses SRD 5.1 (CC-BY-4.0) and is safe.
 
