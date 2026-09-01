@@ -40,7 +40,7 @@ var MRR_TAG_CAT_PFX = "mrr-cat-";
 
 var EXT_VERSION = "1.4.0";
 
-var MRR_BUILD_STAMP = "2026-08-31-legf-s6-gear-in-prompt";
+var MRR_BUILD_STAMP = "2026-09-01-legf-complete";
 
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
@@ -4158,6 +4158,7 @@ function applyItemAttrs(it, attrs) {
   if (typeof attrs.use_effect === "string" && attrs.use_effect) it.useEffect = attrs.use_effect;
   if (attrs.consumable === "true" || attrs.consumable === true) it.consumable = true;
   if (typeof attrs.notes === "string" && attrs.notes) it.notes = attrs.notes;
+  if (typeof attrs.description === "string" && attrs.description) it.description = attrs.description;
   if (attrs.category === "equipment" || attrs.category === "item") it.category = attrs.category;
   if (attrs.hardness != null) {
     var h = parseInt(attrs.hardness, 10);
@@ -4167,9 +4168,16 @@ function applyItemAttrs(it, attrs) {
     var o = parseInt(attrs.overwhelming, 10);
     if (!isNaN(o) && o >= 0) it.overwhelming = o;
   }
+  if (attrs.mote_commitment != null) {
+    var mc = parseInt(attrs.mote_commitment, 10);
+    if (!isNaN(mc) && mc >= 0) it.moteCommitment = mc;
+  }
+  if (attrs.mote_pool === "Personal" || attrs.mote_pool === "Peripheral") {
+    it.motePool = attrs.mote_pool;
+  }
   var declaredAttrFields = state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
   declaredAttrFields.forEach(function(field) {
-    if (!field || !field.id || field.id === "hardness" || field.id === "overwhelming") return;
+    if (!field || !field.id || field.id === "hardness" || field.id === "overwhelming" || field.id === "moteCommitment" || field.id === "motePool") return;
     var key = mrrSnakeCaseFieldId(field.id);
     if (!(key in attrs)) return;
     var raw = attrs[key];
@@ -4268,6 +4276,7 @@ function normalizeInventoryItem(it, idx, ruleset) {
   if (typeof it.useEffect !== "string") it.useEffect = "";
   if (typeof it.consumable !== "boolean") it.consumable = false;
   if (typeof it.notes !== "string") it.notes = "";
+  if (typeof it.description !== "string") it.description = "";
   if (typeof it.hardness === "string" && it.hardness) {
     var ph = parseInt(it.hardness, 10);
     it.hardness = !isNaN(ph) && ph >= 0 ? ph : 0;
@@ -4773,18 +4782,22 @@ function mrrResolveCappedToken(tokenName, ctx) {
   var base = ctx && typeof ctx[tokenName] === "number" ? ctx[tokenName] : 0;
   var declaredFields = state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
   var tightest = null;
+  var tightestMode = "omit";
   equippedItemsList().forEach(function(item) {
     declaredFields.forEach(function(field) {
       if (!field || !field.id || field.capsToken !== tokenName) return;
       if (!mrrFieldAppliesToItem(field, item)) return;
       var fv = item[field.id];
       if (typeof fv !== "number" || !isFinite(fv)) return;
-      if (tightest === null || fv < tightest) tightest = fv;
+      if (tightest === null || fv < tightest) {
+        tightest = fv;
+        tightestMode = field.capMode === "clamp" ? "clamp" : "omit";
+      }
     });
   });
   if (tightest === null) return base;
   if (tightest > 0) return Math.min(base, tightest);
-  return 0;
+  return tightestMode === "clamp" ? Math.min(base, tightest) : 0;
 }
 
 function tierForSkill(skillName) {
@@ -10452,6 +10465,18 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
     step: "1"
   });
   if (qtyInput) qtyInput.value = String(typeof draft.quantity === "number" ? draft.quantity : 1);
+  var descRow = marinara.addElement(dialog, "div", {
+    class: "mrr-item-form__row"
+  });
+  marinara.addElement(descRow, "label", {
+    textContent: "Description"
+  });
+  var descInputItem = marinara.addElement(descRow, "input", {
+    class: "mrr-item-form__input",
+    type: "text",
+    value: draft.description || "",
+    placeholder: "what it looks like / what it is"
+  });
   var notesRow = marinara.addElement(dialog, "div", {
     class: "mrr-item-form__row"
   });
@@ -10492,6 +10517,7 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
       draft.attackAttribute = attrSel && attrSel.value || "";
       draft.attackProficient = !!(profInput && profInput.checked);
       draft.notes = (notesInput && notesInput.value || "").trim();
+      draft.description = (descInputItem && descInputItem.value || "").trim();
       draft.category = catSel && catSel.value === "item" ? "item" : "equipment";
       draft.useEffect = (useInput && useInput.value || "").trim();
       draft.consumable = !!(consInput && consInput.checked);
@@ -13908,6 +13934,8 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
         var entry = mrrFormatDeclaredFieldEntry(field, it);
         if (entry) parts.push("· " + entry);
       });
+      var itDesc = typeof it.description === "string" ? it.description.trim() : "";
+      if (itDesc) parts.push("· Description: " + itDesc);
       lines.push(parts.join(" "));
     });
     lines.push("");
@@ -14265,6 +14293,36 @@ function mrrCommittedMotesLines() {
   return out;
 }
 
+var MRR_SUMMARY_DESC_MAX_CHARS = 120;
+
+function mrrSummaryEquippedLines(sheet) {
+  var out = [];
+  if (!sheet || !Array.isArray(sheet.inventory) || !sheet.inventory.length) return out;
+  var equipped = sheet.equipped && typeof sheet.equipped === "object" ? sheet.equipped : null;
+  if (!equipped) return out;
+  var declaredFields = state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
+  sheet.inventory.forEach(function(it) {
+    if (!it || !it.name || !it.slot) return;
+    if ((it.category || (it.slot ? "equipment" : "item")) !== "equipment") return;
+    if (equipped[it.slot] !== it.id) return;
+    var segments = [ "  Equipped: " + it.name + " [" + it.slot + "]" ];
+    var chips = [];
+    declaredFields.forEach(function(field) {
+      if (!field || field.promptVisible !== true) return;
+      if (!mrrFieldAppliesToItem(field, it)) return;
+      var entry = mrrFormatDeclaredFieldEntry(field, it);
+      if (entry) chips.push(entry);
+    });
+    if (chips.length) segments.push(chips.join(" · "));
+    var desc = typeof it.description === "string" ? it.description.trim() : "";
+    if (desc) {
+      segments.push(desc.length > MRR_SUMMARY_DESC_MAX_CHARS ? desc.slice(0, MRR_SUMMARY_DESC_MAX_CHARS) + "…" : desc);
+    }
+    out.push(segments.join(" — "));
+  });
+  return out;
+}
+
 function mrrSheetBlockForTier(party, tier) {
   if (!party || !party.text) return "";
   if (tier === "full") return party.text;
@@ -14282,7 +14340,8 @@ function mrrSheetBlockForTier(party, tier) {
     var sheet = m.id === state.activeCharacterId ? state.sheet : mrrPartyMemberSheet(m.id, state.ruleset);
     var label = m.active ? MRR_PARTY_LABEL_ACTIVE : MRR_PARTY_LABEL_MEMBER;
     if (!sheet) return mrrPartySectionHeader(label, m.name, "(no sheet for this system)");
-    return mrrPartySectionHeader(label, m.name) + "\n" + mrrPartyMemberSummaryLines(sheet, m.id).join("\n");
+    var memberLines = mrrPartyMemberSummaryLines(sheet, m.id).concat(mrrSummaryEquippedLines(sheet));
+    return mrrPartySectionHeader(label, m.name) + "\n" + memberLines.join("\n");
   });
   return [ header ].concat(memberSections).join("\n");
 }
@@ -14424,6 +14483,7 @@ function buildFieldReferenceContent() {
   lines.push('  use_effect        — free-text effect that the player Use button parses and rolls ("2d4+2 healing")');
   lines.push('  consumable        — "true" to decrement quantity by 1 each Use; item is removed when quantity hits 0');
   lines.push("  notes             — free-text notes that show in the dialog");
+  lines.push("  description       — free-text description of the item (what it looks like / what it is); shown in the dialog and injected into the sheet block");
   lines.push('  category          — "equipment" (lives in the on-sheet Inventory section, equippable to slot) or "item" (Items flyout, usable / consumable). Default: "item" when no slot, "equipment" when slot is set.');
   var declaredAttrDefs = state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
   declaredAttrDefs.forEach(function(field) {

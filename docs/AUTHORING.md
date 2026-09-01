@@ -100,7 +100,7 @@ Map of label -> `{ threshold, description? }`. For `single-roll` this is the DC;
 
 ### Sheet sections
 
-`sheetSections` is an ordered array of section keys. Recognized values: `attributes`, `skills`, `derived`, `states`, `inventory`, `charms`, `notes`. Sections you don't list won't render. Sections the extension doesn't yet implement (`inventory`, `charms`, `notes`) silently no-op for now — extending the extension to render them is straightforward (~30 lines per section).
+`sheetSections` is an ordered array of section keys. Recognized values: `attributes`, `skills`, `derived`, `states`, `inventory`, `charms`, `notes`. Sections you don't list won't render. `inventory` is fully implemented — the extension renders an item dialog and (per Step 3b below) an optional declaration grammar for ruleset-specific item fields; `charms` and `notes` remain simple free-text/keyword sections.
 
 ### Step 3a — rests & house-rule levers (systems with recovery mechanics)
 
@@ -147,6 +147,72 @@ TABLE NOTES (GM-read - narrative only; notes here change narration, never number
 Grammar rules, all fail-closed: the `MRR-HOUSERULES v1 system=<id>` header line is mandatory and matched exactly — `<id>` is the lowercase `[a-z0-9-]` ruleset id, never fuzzy- or prefix-matched, one system per entry (want a rule in two systems? duplicate the entry). Lever lines are `Name: value`, one per line, between the two sentinel lines verbatim; anything outside the sentinels is never parsed as config. An absent entry, an unknown lever value, a mismatched system stamp, or an unparseable entry all resolve to the declared `default` — and readers ignore unknown lever *names* (forward compatibility). Because the header carries the id, **ruleset ids must be unique across bundles you ship together**; a fork that reuses an id will read the original's house rules as its own.
 
 Also append the House Rules doctrine section to your `gm-agent.md` (copy it from any shipped system, swapping the id) so your GM knows the enforcement boundary and the signpost behavior.
+
+### Step 3b — equipment & item field declarations
+
+Declaring `inventory` is opt-in, same posture as `rests[]` above: a system whose gear doesn't carry ruleset-specific numbers should simply omit it, and the item dialog falls back to its generic fields only (name, category, quantity, notes, bonuses[], equipped, description — see COMMON CORE below). Two shipped systems, `stewpot` and `lasers-and-feelings`, deliberately declare nothing for exactly this reason — don't invent a Dex-cap field for a system that has no armor-class concept.
+
+```json
+"inventory": {
+  "version": 1,
+  "namePlaceholder": "Longsword +1",
+  "fields": [
+    {
+      "id": "acBase",
+      "label": "Base AC",
+      "type": "number",
+      "appliesTo": ["Armor"],
+      "min": 0,
+      "bonusKind": "replace-base",
+      "bonusTarget": "Armor Class",
+      "promptVisible": true,
+      "help": "The AC this armour sets before Dexterity — leather 11, chain shirt 13, plate 18."
+    },
+    {
+      "id": "acDexCap",
+      "label": "Dex Cap",
+      "type": "number",
+      "appliesTo": ["Armor"],
+      "min": 0,
+      "capsToken": "Dexterity_mod",
+      "promptVisible": true,
+      "help": "Maximum Dexterity bonus this armour allows. Light armour: leave blank. Medium: 2. Heavy: 0."
+    }
+  ]
+}
+```
+
+`inventory` is a container object, `version: 1` (const, required) plus an ordered `fields[]` array (required). Two optional container-level fields: `label` — the on-sheet section title, defaults to "EQUIPMENT" when absent — and `namePlaceholder` — per-ruleset placeholder text for the item-name input in the dialog (Exalted's `"Daiklave of Glory"` vs D&D's system-neutral default), following the same pattern as `backgrounds.label`.
+
+Each entry in `fields[]` is one declared item field, rendered in the item dialog and, where `promptVisible`, emitted into the injected agent sheet block for equipped items. The full grammar (source of truth: `schema/ruleset.schema.json`'s `properties.inventory`):
+
+- **`id`** (required) — stable storage key on the item object, pattern `^[a-z][a-zA-Z0-9]*$` (camelCase). **NEVER rename** — stored item field values orphan if the id changes, the same NEVER-rename contract every other stable id in this schema carries. Need to rename for clarity? Add the old name to `aliases[]` instead (see below) — the new `id` becomes the write target, the old name still reads.
+- **`label`** (required) — dialog label / sheet chip label.
+- **`type`** (required) — one of `number`, `text`, `boolean`, `enum`, `dice`. Closed set; drives both the dialog's renderer and the state-mutator's parser dispatch.
+- **`appliesTo`** — array of equipment slot names this field shows for in the item dialog (e.g. `["Armor"]`, `["Weapon", "Off-hand"]`). Absent = shown for every item. Advisory against `equipmentSlots`, not enforced — the loader doesn't check membership, so a typo'd slot name just means the field never shows rather than a validation error.
+- **`default`** — value applied when a new item is created. No schema-level type restriction; match it to `type`.
+- **`min` / `max` / `step`** — for `type: "number"` only: numeric-input bounds and increment.
+- **`options`** — array of selectable values. Required by convention (not schema enforcement) when `type: "enum"` — an enum field with no `options` renders no choices.
+- **`multi`** — for `type: "enum"` only, `true` allows selecting several values instead of one (Exalted's Armor Tags, Weapon Tags).
+- **`bonusTarget`** — the stat name (attribute / skill / derivedStat) this field's value contributes to while the item is equipped. Advisory, exact-string matched, same convention as `equipmentBonusTargets`.
+- **`bonusKind`** — how the value combines with `bonusTarget` while equipped. Default `"value"` — added as a flat numeric modifier. `"dice"` / `"successes"` / `"damage-pool"` — contributed to the matching dice-pool-style bonus category. **`"replace-base"`** — see the dedicated paragraph below.
+- **`capsToken`** / **`capMode`** — see the dedicated warning box below.
+- **`promptVisible`** — boolean, default `false`. Whether this field's value is emitted into the injected agent sheet block for equipped items. Set it `true` for anything the GM needs to see to adjudicate (AC math, damage type, weapon range); leave it `false` for bookkeeping-only fields (price, rarity) nobody needs narrated.
+- **`placeholder`** — placeholder text for the field's input in the item dialog, per-ruleset vocabulary (PF2e's `"2 gp"` for Price).
+- **`help`** — optional help text / tooltip shown next to the field in the item dialog, per-ruleset vocabulary. Use it for anything a player would otherwise have to look up (PF2e's Dex Cap: "Absent = uncapped. A cap of 0 still lets a negative Dexterity modifier through").
+- **`aliases`** — array of legacy key names read on load for backward compatibility. Never written — new saves always use `id`. This is the migration path for a rename: add the retired name here rather than actually renaming `id`.
+
+**COMMON CORE fields — never declare these.** Every item, in every ruleset, already carries `name`, `category` ("equipment" | "item"), `quantity`, `notes`, `bonuses[]` (the generic target/value/kind/tag rows), `equipped` (boolean), and `description` (free text — promoted to common core so every ruleset gets it without 15 separate declarations, see the extension source's "COMMON CORE" comment on the description field). These render for every ruleset regardless of what `inventory.fields[]` declares. **Do not declare a field with `id: "description"`** (or any of the other common-core names) — it would collide with the built-in one.
+
+**`bonusKind: "replace-base"` — highest-wins, never summed.** Use this when a field sets a stat's base value outright rather than adding to it — armor setting the AC base is the canonical case (leather 11, plate 18 — these aren't +11/+18 modifiers, they're the number Dexterity gets added to). When more than one equipped item declares `replace-base` against the same `bonusTarget` (two armors worn at once, say), the HIGHEST declared value among them wins. The values are never summed, unlike every other `bonusKind`.
+
+> **Cap-of-zero asymmetry — read this before declaring `capsToken`.** `capsToken` names a formula-context token (e.g. `"Dexterity_mod"`) this field caps while the item is equipped; across multiple equipped items, the TIGHTEST (lowest) declared cap wins. What a tightest cap of exactly 0 (or less) means depends on `capMode`, and the two systems' RAW genuinely disagree here — pick the wrong one and you'll silently misapply a Dex penalty in one direction or the other:
+> - **`capMode: "omit"`** (default) — the capped term is OMITTED entirely, not clamped, so a NEGATIVE modifier does not apply either. This is D&D 5e heavy armor: at Dex cap 0, Dexterity contributes nothing at all to AC, penalty included. Do NOT "fix" this into a `min()` clamp — that's PF2e's rule, not 5e's.
+> - **`capMode: "clamp"`** — `min(token, cap)` at every value, including 0, so a negative modifier still applies. This is PF2e heavy armor: a Dex cap of 0 still lets a Dex penalty through.
+>
+> When several equipped items declare caps on the same token, the tightest cap wins and the `capMode` of the field supplying THAT cap governs — so get this right on every field that declares `capsToken`, not just the tightest one you expect to see in play.
+
+**Weapon damage lives in the damage string, not in a declared field.** A weapon's `damage` (the free-text expression the state-mutator writes, e.g. `"1d8+2 slashing"`) is where its enchantment bonus belongs — the "+2" is baked into the string a player reads at the table. Declared fields carry the item's OTHER magic contributions: an `attackMagicBonus`-style field (`bonusTarget: "Attack Bonus"`) reaches the dice widget's attack roll, and an armor's `armorMagicBonus` reaches AC. **Never route a weapon's magic bonus into both** — a +2 sword that also declares `attackMagicBonus: 2` targeting a stat the damage string already accounts for double-counts the enchantment. Keep the split ruleset-clean: damage-string bonuses affect the roll a player types by hand; declared-field bonuses affect the roll the widget computes.
 
 ## Step 4 — validate
 

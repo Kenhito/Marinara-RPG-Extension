@@ -634,8 +634,7 @@
       { "id": "damageType", "label": "Damage Type", "type": "enum", "appliesTo": ["Weapon", "Off-hand"], "options": ["slashing", "piercing", "bludgeoning", "acid", "cold", "fire", "force", "lightning", "necrotic", "poison", "psychic", "radiant", "thunder"], "promptVisible": true },
       { "id": "properties", "label": "Properties", "type": "enum", "multi": true, "appliesTo": ["Weapon", "Off-hand"], "options": ["finesse", "versatile", "heavy", "light", "reach", "thrown", "two-handed", "ammunition", "loading", "special"], "promptVisible": true },
       { "id": "weaponRange", "label": "Range", "type": "text", "appliesTo": ["Weapon", "Off-hand"], "placeholder": "20/60", "promptVisible": true },
-      { "id": "weight", "label": "Weight (lb)", "type": "number", "min": 0 },
-      { "id": "description", "label": "Description", "type": "text", "promptVisible": true }
+      { "id": "weight", "label": "Weight (lb)", "type": "number", "min": 0 }
     ]
   },
   "abilities": {

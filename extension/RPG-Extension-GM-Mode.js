@@ -57,7 +57,7 @@ var EXT_VERSION      = "1.4.0";
 /* Build discriminator (plan A7): same-version test rebuilds are told apart
    from inside the environment — the init console line prints this stamp,
    so a stale cached package is caught before a test session is burned. */
-var MRR_BUILD_STAMP  = "2026-08-31-legf-s6-gear-in-prompt";
+var MRR_BUILD_STAMP  = "2026-09-01-legf-complete";
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
 /* Markers used by the bundle installer to recognize artifacts it created

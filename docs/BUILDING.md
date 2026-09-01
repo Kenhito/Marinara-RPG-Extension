@@ -81,11 +81,13 @@ Authoritative shape lives in `schema/ruleset.schema.json`. The table below names
 | `commitmentModel` | string | — | sheet renderer + state-mutator | `"mote"` for Exalted-style commitment; null for non-commitment systems. |
 | `conditions` | array | — | sheet renderer | Status conditions (Stunned, Prone, etc.) |
 | `states` | array | — | sheet renderer | Health-track / state-banner config. |
+| `rests` | array | — | sheet renderer (Resources area) + house-rules lorebook entry | Declarative one-click rest buttons (Long Rest, etc.) — `restore`/`reset` rules per rest tier, plus optional `lever` blocks that surface as House Rules dialog toggles. See `docs/AUTHORING.md` Step 3a. |
 | `roundCounters` | array | — | sheet renderer | Per-round combat penalties + decrement schedule. |
 | `xpTable` | array | — | sheet renderer | Level-up XP cost table. |
 | `morality` | object | — | sheet renderer | Humanity/Path/Conviction tracks (V20-family systems). |
 | `equipmentSlots` | array | — | sheet renderer | Equipment slot definitions. |
 | `equipmentBonusTargets` | array | — | sheet renderer | Where equipment bonuses can target. |
+| `inventory` | object | — | sheet renderer (item dialog) + state-mutator + agent sheet-block prompt | Declaration-driven per-ruleset item fields (leg F) — grammar, slot gating (`appliesTo`), `bonusTarget`/`bonusKind` wiring (including `replace-base`), `capsToken`/`capMode` Dex-cap semantics, `promptVisible` gating into the injected sheet block. See `docs/AUTHORING.md` Step 3b. |
 | `header` | object | — | sheet renderer | Top-of-sheet display config. |
 | `sections.order` | array | — | sheet renderer | Section render order. |
 | `sections.hidden` | array | — | sheet renderer | Section visibility toggles. |

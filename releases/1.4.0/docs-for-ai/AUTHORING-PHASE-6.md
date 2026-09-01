@@ -405,11 +405,13 @@ After deduction, the cast tag (`[mrr-cast: name="..." discipline="..." rating=".
 
 ---
 
-## 6. Items — natural ratings and equipped bonuses
+## 6. Items — equipped bonuses and per-ruleset field declarations
 
-Items in `state.sheet.inventory` are runtime-created via the in-extension dialog or via the state-mutator chat-tag parser. Authors don't ship inventory in the ruleset, but the **GM agent prompt** should know what fields the parser accepts and what they do.
+> **Superseded by leg F.** This section's Phase-6 `item.hardness` "auto-inheritance" special case is gone from the code — `hardness` is now just an ordinary declared `inventory.fields[]` entry with `bonusTarget: "Hardness"`, resolved through the same generic mechanism as every other equipped-bonus field (`equippedBonuses()` no longer special-cases it; see `extension/RPG-Extension-GM-Mode.js`'s `equippedBonuses()` comment: "The Phase-6 Hardness special case that used to live here is gone"). **For declaring ruleset-specific item fields (armor AC math, weapon damage types, Dex caps, artifact ratings, and so on), see [`docs/AUTHORING.md` Step 3b](AUTHORING.md#step-3b--equipment--item-field-declarations)** — that's the current, actively-maintained reference for the `inventory` container grammar, the COMMON CORE fields every item gets for free, `bonusKind: "replace-base"`, and the `capsToken`/`capMode` cap-of-zero semantics. The mote-commitment mechanic below is unaffected by leg F and still works exactly as documented here.
 
-Canonical item shape (only the Phase 5+6-relevant fields):
+Items in `state.sheet.inventory` are runtime-created via the in-extension dialog or via the state-mutator chat-tag parser. Authors don't ship inventory in the ruleset itself (declared *field definitions* live in `ruleset.json`'s `inventory.fields[]` per Step 3b; actual item instances are always runtime data), but the **GM agent prompt** should know what fields the parser accepts and what they do.
+
+Canonical item shape (only the Phase 5+6-relevant fields; declared-field values from Step 3b ride alongside these under their own `id`s):
 
 ```jsonc
 {
@@ -418,7 +420,7 @@ Canonical item shape (only the Phase 5+6-relevant fields):
   "slot": "armor",                  // slot name, controls equip target
   "category": "equipment",          // "equipment" (slot-equippable) | "item" (consumable / stored)
   "damage": "—",
-  "hardness": 5,                    // Phase 6 — auto-flows into Hardness derived stat
+  "hardness": 5,                    // ordinary declared field (bonusTarget: "Hardness") as of leg F
   "overwhelming": 0,
   "moteCommitment": 3,              // mote-model: integer cost
   "motePool": "Personal",           // mote-model: "Personal" or "Peripheral"
@@ -429,14 +431,6 @@ Canonical item shape (only the Phase 5+6-relevant fields):
   ]
 }
 ```
-
-### `item.hardness` — auto-inheritance (Phase 6)
-
-The top-level `item.hardness` integer flows automatically into the `Hardness` derived stat's bonus aggregate via `equippedBonuses("Hardness")`. The Hardness card shows it as a `+N` contribution with the item name in the tooltip, tagged `"natural"`. Authors do NOT need to add a redundant `bonuses[]` entry for hardness — `item.hardness` IS the source of truth.
-
-If your ruleset has a similar Hardness-style stat under a different name, you can either:
-- Use the same auto-inheritance by adding an explicit `bonuses[]` entry of `{ target: "<your stat>", value: <amount>, kind: "value" }` in the GM agent's item-creation tag format, OR
-- Open a PR to extend `equippedBonuses()` with another auto-flow for a different per-item field.
 
 ### `item.moteCommitment` + `item.motePool` — commitment
 
@@ -631,6 +625,7 @@ When authoring a new ruleset, walk through this list:
 - [ ] **V20-style trinity grouping** declares `abilities.groups[]` with `id`, `label`, `members` per group.
 - [ ] **Merits/Flaws section** added to `sections.order` between `backgrounds` and `inventory` where the system uses one.
 - [ ] **Items** in the GM agent's inventory-tag examples include `hardness`, `mote_commitment`, `mote_pool` where the system uses them.
+- [ ] **`inventory.fields[]`** declared for every ruleset-specific item field (armor AC/Dex-cap math, weapon damage type, artifact/potency ratings, etc.) per `docs/AUTHORING.md` Step 3b — or deliberately omitted (`inventory` absent entirely) for a system whose gear carries no ruleset-specific numbers.
 - [ ] **`validate-ruleset.mjs`** passes for the new bundle.
 - [ ] **`build-bundle.mjs`** assembles the bundle.json successfully.
 
