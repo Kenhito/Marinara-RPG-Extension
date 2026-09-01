@@ -311,7 +311,7 @@
       "name": "Hit Points",
       "formula": "(class HP per level + CON_mod) per character level + ancestry HP at level 1",
       "renderAs": "bar",
-      "tooltipFormula": "8 + ((10 + {Constitution_mod}) * {Level}) + {bonuses:Hit Points}",
+      "tooltipFormula": "8 + ((10 + {Constitution_mod}) * {Level})",
       "aliases": [
         "hp",
         "HP",
@@ -324,6 +324,7 @@
       "formula": "10 + DEX_mod (capped by armor) + armor proficiency bonus + armor item bonus",
       "renderAs": "value",
       "default": 10,
+      "valueFormula": "10 + {Dexterity_mod} + {tierBonus}",
       "tooltipFormula": "10 + {Dexterity_mod} + {tierBonus} + {bonuses:Armor Class}",
       "aliases": [
         "ac",
@@ -336,6 +337,7 @@
       "formula": "10 + class proficiency bonus + key ability modifier",
       "renderAs": "value",
       "default": 10,
+      "valueFormula": "10 + {tierBonus}",
       "tooltipFormula": "10 + {tierBonus} + {bonuses:Class DC}",
       "aliases": [
         "classDC",
@@ -347,6 +349,7 @@
       "formula": "10 + spell proficiency bonus + casting ability modifier",
       "renderAs": "value",
       "default": 10,
+      "valueFormula": "10 + {Level}",
       "tooltipFormula": "10 + {Level} + {bonuses:Spell DC}",
       "aliases": [
         "spellDC",
@@ -357,6 +360,7 @@
       "name": "Perception",
       "formula": "WIS_mod + perception proficiency bonus + item bonus",
       "renderAs": "value",
+      "valueFormula": "{Wisdom_mod} + {tierBonus}",
       "tooltipFormula": "{Wisdom_mod} + {tierBonus} + {bonuses:Perception}",
       "rollFormula": "{Wisdom_mod} + {tierBonus}",
       "aliases": [
@@ -368,6 +372,7 @@
       "name": "Fortitude Save",
       "formula": "CON_mod + fortitude proficiency bonus + item bonus",
       "renderAs": "value",
+      "valueFormula": "{Constitution_mod} + {tierBonus}",
       "tooltipFormula": "{Constitution_mod} + {tierBonus} + {bonuses:Fortitude Save}",
       "rollFormula": "{Constitution_mod} + {tierBonus}",
       "aliases": [
@@ -379,6 +384,7 @@
       "name": "Reflex Save",
       "formula": "DEX_mod + reflex proficiency bonus + item bonus",
       "renderAs": "value",
+      "valueFormula": "{Dexterity_mod} + {tierBonus}",
       "tooltipFormula": "{Dexterity_mod} + {tierBonus} + {bonuses:Reflex Save}",
       "rollFormula": "{Dexterity_mod} + {tierBonus}",
       "aliases": [
@@ -390,6 +396,7 @@
       "name": "Will Save",
       "formula": "WIS_mod + will proficiency bonus + item bonus",
       "renderAs": "value",
+      "valueFormula": "{Wisdom_mod} + {tierBonus}",
       "tooltipFormula": "{Wisdom_mod} + {tierBonus} + {bonuses:Will Save}",
       "rollFormula": "{Wisdom_mod} + {tierBonus}",
       "aliases": [
@@ -401,6 +408,7 @@
       "formula": "Ancestry base speed (typically 25 ft) + bonuses",
       "renderAs": "value",
       "default": 25,
+      "valueFormula": "25",
       "tooltipFormula": "25 + {bonuses:Speed}",
       "aliases": [
         "speed",

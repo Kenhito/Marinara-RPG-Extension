@@ -533,7 +533,7 @@
       "name": "Soak",
       "formula": "Stamina + armour soak dice, rolled at difficulty 6. Exalts soak ALL THREE damage types (bashing, lethal, AND aggravated) with the same Stamina + armour pool — unlike most WoD creatures, who cannot soak lethal/aggravated without armour. Optional rule: if the Storyteller uses Dangerous Aggravated, aggravated soak is difficulty 8 instead of 6. Soak rolls cannot botch.",
       "renderAs": "value",
-      "valueFormula": "{Stamina} + {bonuses:Soak}",
+      "valueFormula": "{Stamina}",
       "tooltipFormula": "{Stamina} + {bonuses:Soak}",
       "aliases": [
         "soak",

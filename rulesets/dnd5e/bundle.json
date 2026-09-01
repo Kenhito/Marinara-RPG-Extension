@@ -106,7 +106,8 @@
       "modifierFormula": "1d20 + ability_mod + (proficient ? proficiency_bonus : 0)",
       "skillBonusFormula": "{linkedAttribute_mod} + {tierBonus}",
       "spellSaveDcFormula": "8 + {Proficiency Bonus} + {spellcastingAttribute_mod}",
-      "attackProficiencyFormula": "{Proficiency Bonus}"
+      "attackProficiencyFormula": "{Proficiency Bonus}",
+      "attackBonusTarget": "Attack Bonus"
     },
     "difficulties": {
       "Very Easy": {
@@ -366,12 +367,24 @@
         "name": "Armor Class",
         "formula": "10 + DEX_mod (or armor formula)",
         "renderAs": "value",
+        "valueFormula": "{base:Armor Class} + {capped:Dexterity_mod}",
         "default": 10,
-        "tooltipFormula": "10 + {Dexterity_mod} + {bonuses:Armor Class}",
+        "tooltipFormula": "{base:Armor Class} + {capped:Dexterity_mod} + {bonuses:Armor Class}",
         "aliases": [
           "ac",
           "AC",
           "armorClass"
+        ]
+      },
+      {
+        "name": "Attack Bonus",
+        "formula": "Equipment/magic bonus to weapon attack rolls. Proficiency (via resolution.attackProficiencyFormula) and the ability modifier (via item.attackAttribute) are added separately by the dice widget — this stat carries only the equipped-item contribution.",
+        "renderAs": "value",
+        "default": 0,
+        "aliases": [
+          "attack",
+          "attack bonus",
+          "atk"
         ]
       },
       {
@@ -615,6 +628,13 @@
         ]
       }
     ],
+    "equipmentSlots": [
+      "Weapon",
+      "Off-hand",
+      "Armor",
+      "Shield",
+      "Worn"
+    ],
     "lorebookKeys": [
       "spell",
       "class",
@@ -624,6 +644,153 @@
       "race",
       "background"
     ],
+    "inventory": {
+      "version": 1,
+      "namePlaceholder": "Longsword +1",
+      "fields": [
+        {
+          "id": "acBase",
+          "label": "Base AC",
+          "type": "number",
+          "appliesTo": [
+            "Armor"
+          ],
+          "min": 0,
+          "bonusKind": "replace-base",
+          "bonusTarget": "Armor Class",
+          "promptVisible": true,
+          "help": "The AC this armour sets before Dexterity — leather 11, chain shirt 13, plate 18. Shields add instead: use Magic Bonus."
+        },
+        {
+          "id": "acDexCap",
+          "label": "Dex Cap",
+          "type": "number",
+          "appliesTo": [
+            "Armor"
+          ],
+          "min": 0,
+          "capsToken": "Dexterity_mod",
+          "help": "Maximum Dexterity bonus this armour allows. Light armour: leave blank. Medium: 2. Heavy: 0.",
+          "promptVisible": true
+        },
+        {
+          "id": "stealthDisadvantage",
+          "label": "Stealth Disadvantage",
+          "type": "boolean",
+          "appliesTo": [
+            "Armor"
+          ],
+          "default": false,
+          "promptVisible": true
+        },
+        {
+          "id": "strengthRequirement",
+          "label": "Str Requirement",
+          "type": "number",
+          "appliesTo": [
+            "Armor"
+          ],
+          "min": 0,
+          "default": 0
+        },
+        {
+          "id": "armorMagicBonus",
+          "label": "Magic Bonus",
+          "type": "number",
+          "appliesTo": [
+            "Armor",
+            "Shield",
+            "Off-hand"
+          ],
+          "default": 0,
+          "bonusTarget": "Armor Class",
+          "promptVisible": true
+        },
+        {
+          "id": "attackMagicBonus",
+          "label": "Attack Bonus",
+          "type": "number",
+          "appliesTo": [
+            "Weapon",
+            "Off-hand"
+          ],
+          "default": 0,
+          "bonusTarget": "Attack Bonus",
+          "promptVisible": true
+        },
+        {
+          "id": "damageType",
+          "label": "Damage Type",
+          "type": "enum",
+          "appliesTo": [
+            "Weapon",
+            "Off-hand"
+          ],
+          "options": [
+            "slashing",
+            "piercing",
+            "bludgeoning",
+            "acid",
+            "cold",
+            "fire",
+            "force",
+            "lightning",
+            "necrotic",
+            "poison",
+            "psychic",
+            "radiant",
+            "thunder"
+          ],
+          "promptVisible": true
+        },
+        {
+          "id": "properties",
+          "label": "Properties",
+          "type": "enum",
+          "multi": true,
+          "appliesTo": [
+            "Weapon",
+            "Off-hand"
+          ],
+          "options": [
+            "finesse",
+            "versatile",
+            "heavy",
+            "light",
+            "reach",
+            "thrown",
+            "two-handed",
+            "ammunition",
+            "loading",
+            "special"
+          ],
+          "promptVisible": true
+        },
+        {
+          "id": "weaponRange",
+          "label": "Range",
+          "type": "text",
+          "appliesTo": [
+            "Weapon",
+            "Off-hand"
+          ],
+          "placeholder": "20/60",
+          "promptVisible": true
+        },
+        {
+          "id": "weight",
+          "label": "Weight (lb)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "description",
+          "label": "Description",
+          "type": "text",
+          "promptVisible": true
+        }
+      ]
+    },
     "abilities": {
       "label": "Spellbook",
       "categories": [
@@ -1560,7 +1727,17 @@
         "keys": [
           "Armor Class"
         ],
-        "content": "Dungeons & Dragons 5th Edition derived stat. Armor Class — formula: 10 + DEX_mod (or armor formula)",
+        "content": "Dungeons & Dragons 5th Edition derived stat. Armor Class — formula: {base:Armor Class} + {capped:Dexterity_mod}",
+        "position": 0,
+        "selective": false,
+        "constant": false
+      },
+      {
+        "name": "Derived stat: Attack Bonus",
+        "keys": [
+          "Attack Bonus"
+        ],
+        "content": "Dungeons & Dragons 5th Edition derived stat. Attack Bonus — formula: Equipment/magic bonus to weapon attack rolls. Proficiency (via resolution.attackProficiencyFormula) and the ability modifier (via item.attackAttribute) are added separately by the dice widget — this stat carries only the equipped-item contribution.",
         "position": 0,
         "selective": false,
         "constant": false

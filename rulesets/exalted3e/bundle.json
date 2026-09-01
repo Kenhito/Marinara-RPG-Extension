@@ -318,7 +318,8 @@
       "enabled": true,
       "valueLabel": "+ dice",
       "valueKind": "dice",
-      "defaultValue": 1
+      "defaultValue": 1,
+      "placeholder": "Specialty name (e.g. Daiklaves, Thrones, Crowds)"
     },
     "backgrounds": {
       "enabled": true,
@@ -486,8 +487,8 @@
         "name": "Soak (Bashing)",
         "formula": "Stamina + armor B-soak",
         "renderAs": "value",
-        "valueFormula": "{Stamina} + {bonuses:Bashing Soak}",
-        "tooltipFormula": "{Stamina} + {bonuses:Bashing Soak}",
+        "valueFormula": "{Stamina}",
+        "tooltipFormula": "{Stamina} + {bonuses:Soak (Bashing)}",
         "aliases": [
           "soakBashing",
           "bashingSoak",
@@ -498,8 +499,8 @@
         "name": "Soak (Lethal)",
         "formula": "Stamina + armor L-soak (Exalts use FULL Stamina; mortals use Stamina/2 rounded down)",
         "renderAs": "value",
-        "valueFormula": "{Stamina} + {bonuses:Lethal Soak}",
-        "tooltipFormula": "{Stamina} + {bonuses:Lethal Soak}",
+        "valueFormula": "{Stamina}",
+        "tooltipFormula": "{Stamina} + {bonuses:Soak (Lethal)}",
         "aliases": [
           "soakLethal",
           "lethalSoak",
@@ -823,6 +824,12 @@
         }
       }
     ],
+    "equipmentSlots": [
+      "Weapon",
+      "Off-hand",
+      "Armor",
+      "Worn"
+    ],
     "lorebookKeys": [
       "charm",
       "anima",
@@ -840,6 +847,161 @@
       "caste",
       "supernal"
     ],
+    "inventory": {
+      "version": 1,
+      "namePlaceholder": "Daiklave of Glory",
+      "fields": [
+        {
+          "id": "soakBashing",
+          "label": "Bashing Soak",
+          "type": "number",
+          "appliesTo": [
+            "Armor"
+          ],
+          "default": 0,
+          "min": 0,
+          "bonusTarget": "Soak (Bashing)",
+          "promptVisible": true
+        },
+        {
+          "id": "soakLethal",
+          "label": "Lethal Soak",
+          "type": "number",
+          "appliesTo": [
+            "Armor"
+          ],
+          "default": 0,
+          "min": 0,
+          "bonusTarget": "Soak (Lethal)",
+          "promptVisible": true
+        },
+        {
+          "id": "hardness",
+          "label": "Hardness",
+          "type": "number",
+          "appliesTo": [
+            "Armor"
+          ],
+          "default": 0,
+          "min": 0,
+          "bonusTarget": "Hardness",
+          "promptVisible": true,
+          "help": "Incoming damage at or below this value is reduced to the attacker's Overwhelming."
+        },
+        {
+          "id": "mobilityPenalty",
+          "label": "Mobility Penalty",
+          "type": "number",
+          "appliesTo": [
+            "Armor"
+          ],
+          "default": 0,
+          "max": 0,
+          "promptVisible": true
+        },
+        {
+          "id": "armorTags",
+          "label": "Armor Tags",
+          "type": "enum",
+          "multi": true,
+          "appliesTo": [
+            "Armor"
+          ],
+          "options": [
+            "Light",
+            "Medium",
+            "Heavy",
+            "Artifact",
+            "Silent",
+            "Buoyant",
+            "Concealable"
+          ],
+          "promptVisible": true
+        },
+        {
+          "id": "accuracy",
+          "label": "Accuracy",
+          "type": "number",
+          "appliesTo": [
+            "Weapon",
+            "Off-hand"
+          ],
+          "default": 0,
+          "promptVisible": true
+        },
+        {
+          "id": "defenseBonus",
+          "label": "Defense",
+          "type": "number",
+          "appliesTo": [
+            "Weapon",
+            "Off-hand"
+          ],
+          "default": 0,
+          "bonusTarget": "Defense (Parry)",
+          "promptVisible": true
+        },
+        {
+          "id": "overwhelming",
+          "label": "Overwhelming",
+          "type": "number",
+          "appliesTo": [
+            "Weapon",
+            "Off-hand"
+          ],
+          "default": 0,
+          "min": 0,
+          "promptVisible": true
+        },
+        {
+          "id": "weaponTags",
+          "label": "Weapon Tags",
+          "type": "enum",
+          "multi": true,
+          "appliesTo": [
+            "Weapon",
+            "Off-hand"
+          ],
+          "options": [
+            "Lethal",
+            "Bashing",
+            "Aggravated",
+            "Melee",
+            "Thrown",
+            "Archery",
+            "Reaching",
+            "Piercing",
+            "Flame",
+            "Smashing",
+            "Disarming",
+            "Grappling",
+            "Artifact"
+          ],
+          "promptVisible": true
+        },
+        {
+          "id": "artifactRating",
+          "label": "Artifact (dots)",
+          "type": "number",
+          "appliesTo": [
+            "Weapon",
+            "Off-hand",
+            "Armor"
+          ],
+          "default": 0,
+          "min": 0,
+          "max": 5,
+          "promptVisible": true
+        },
+        {
+          "id": "description",
+          "label": "Description",
+          "type": "text",
+          "promptVisible": true,
+          "placeholder": "e.g. orichalcum daiklave, blazing with Solar anima"
+        }
+      ]
+    },
     "abilities": {
       "label": "Charms",
       "categories": [
@@ -2725,7 +2887,7 @@
         "keys": [
           "Soak (Bashing)"
         ],
-        "content": "Exalted 3rd Edition derived stat. Soak (Bashing) — formula: {Stamina} + {bonuses:Bashing Soak}",
+        "content": "Exalted 3rd Edition derived stat. Soak (Bashing) — formula: {Stamina}",
         "position": 0,
         "selective": false,
         "constant": false
@@ -2735,7 +2897,7 @@
         "keys": [
           "Soak (Lethal)"
         ],
-        "content": "Exalted 3rd Edition derived stat. Soak (Lethal) — formula: {Stamina} + {bonuses:Lethal Soak}",
+        "content": "Exalted 3rd Edition derived stat. Soak (Lethal) — formula: {Stamina}",
         "position": 0,
         "selective": false,
         "constant": false

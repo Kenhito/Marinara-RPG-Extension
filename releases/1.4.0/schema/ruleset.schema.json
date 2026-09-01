@@ -40,6 +40,11 @@
       "default": null,
       "description": "Optional declaration of how items in this ruleset are bound to a character to grant their magical / mechanical effects. \"attuned\" — D&D 5e style: each item has an Attuned boolean; cap of 3 attuned items at once. \"invested\" — Pathfinder 2e style: each item has an Invested boolean; cap of 10 invested items at once. \"mote\" — Exalted style: each item has a Mote Commitment integer plus a Personal/Peripheral pool selection; commitment is subtracted from the chosen pool's current value while the item is committed, and restored when uncommitted. null (default) — ruleset has no commitment mechanic; the inventory editor hides the commitment section."
     },
+    "commitmentCap": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Optional per-ruleset cap on how many items may be simultaneously bound under commitmentModel (D&D attunement = 3, PF2e investiture = 10). When absent, the loader keeps today's behaviour."
+    },
     "xpTable": {
       "type": "array",
       "description": "Optional ordered array of {level, xp} entries for formula-based XP progression (D&D 5e, PF2e). The XP card uses this to render the next-level threshold and progress bar. Pool-based rulesets (Exalted) omit this; their XP card shows current/total + a +1 button instead.",
@@ -94,6 +99,10 @@
             "attackProficiencyFormula": {
               "type": "string",
               "description": "Optional formula for the proficiency contribution to weapon attack rolls when an item is marked attackProficient. When set, the sheet's `atk` button evaluates this formula and pre-fills the dice widget's Proficiency input. When omitted, attacks contribute zero proficiency and the player can type a value manually. The core extension knows no system's proficiency convention by default. Examples: D&D 5e \"{Proficiency Bonus}\"; PF2e (trained tier) \"{Level} + 2\"."
+            },
+            "attackBonusTarget": {
+              "type": "string",
+              "description": "Optional derived-stat / attribute / skill name that equipped-item bonuses target to modify attack rolls. When set, the sheet's `atk` button looks up equippedBonuses() against this name and pre-fills the dice widget's Equip input. When absent, equipped items contribute nothing to attack rolls. Example: D&D 5e declares a dedicated \"Attack Bonus\" derivedStat and sets this to \"Attack Bonus\"."
             },
             "additionalModes": { "$ref": "#/$defs/additionalModesArray" }
           },
@@ -698,6 +707,11 @@
         "defaultValue": {
           "type": "integer",
           "description": "Default numeric value for a newly-added specialty (Exalted: 1)."
+        },
+        "placeholder": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional placeholder text for the specialty-name input, per-ruleset vocabulary (e.g. Exalted's \"Specialty name (e.g. Daiklaves, Thrones, Crowds)\"). Defaults to a system-neutral \"Specialty name\" when absent."
         }
       }
     },
@@ -833,7 +847,7 @@
           },
           "tooltipFormula": {
             "type": "string",
-            "description": "Plan B v1 — token-substituted formula whose breakdown surfaces as the tooltip on the derived stat's value cell (Phase 5 step 5.4). Token convention matches skillBonusFormula: {StatName} resolves to the named attribute/skill/derived; {bonuses:<key>} sums equipment bonuses tagged with that key; {Level} resolves to character level; {tierBonus} resolves to the active proficiency tier's rollBonusFormula. The renderer evaluates this AND surfaces the substituted breakdown in a `title=` tooltip (e.g. 'Soak (Bashing): 7 = Stamina (4) + Armor (3)'). Distinct from `formula` (plain-language GM hint) and `valueFormula` (autocalc that suppresses the manual stepper). When both `tooltipFormula` and `valueFormula` are present, `valueFormula` drives the displayed value and `tooltipFormula` drives the tooltip; when only `tooltipFormula` is present, the renderer also uses it to compute the value."
+            "description": "Plan B v1 — token-substituted formula whose breakdown surfaces as the tooltip on the derived stat's value cell (Phase 5 step 5.4). Token convention matches skillBonusFormula: {StatName} resolves to the named attribute/skill/derived; {bonuses:<key>} sums equipment bonuses tagged with that key; {Level} resolves to character level; {tierBonus} resolves to the active proficiency tier's rollBonusFormula. S3 adds two more: {base:<StatName>} resolves to the HIGHEST declared bonusKind:\"replace-base\" field value among equipped items (never summed — two armors must not stack bases), falling back to the named derivedStat's own `default` when none is equipped, or 0 when that stat has no default either; {capped:<TokenName>} resolves to the named formula-context token (e.g. \"Dexterity_mod\") clamped to the TIGHTEST declared capsToken field value among equipped items — a tightest cap of 0 (or less) omits the term entirely (resolves to 0) rather than clamping, so a negative modifier isn't wrongly applied; no declared cap leaves the token unchanged. The renderer evaluates this AND surfaces the substituted breakdown in a `title=` tooltip (e.g. 'Soak (Bashing): 7 = Stamina (4) + Armor (3)'). Distinct from `formula` (plain-language GM hint) and `valueFormula` (autocalc that suppresses the manual stepper). When both `tooltipFormula` and `valueFormula` are present, `valueFormula` drives the displayed value and `tooltipFormula` drives the tooltip; when only `tooltipFormula` is present, the renderer also uses it to compute the value."
           },
           "rollFormula": {
             "type": "string",
@@ -1292,6 +1306,116 @@
       "description": "Optional advisory list of stat names that authors are encouraged to use as bonus targets (e.g. \"Melee\", \"Defense (Parry)\", \"Soak (Bashing)\"). Targets are matched by exact string against attributes, skills, or derivedStats names; the loader does not enforce membership.",
       "items": { "type": "string", "minLength": 1 },
       "uniqueItems": true
+    },
+    "inventory": {
+      "type": "object",
+      "description": "Optional declaration of per-ruleset item fields rendered in the inventory item dialog and, where promptVisible, emitted into the injected agent sheet block for equipped items. When absent, the inventory editor falls back to its generic fields only.",
+      "additionalProperties": false,
+      "required": ["version", "fields"],
+      "properties": {
+        "version": { "const": 1 },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional section title for the inventory/equipment section on the sheet, following the same pattern as backgrounds.label. Defaults to \"EQUIPMENT\" when absent."
+        },
+        "namePlaceholder": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional placeholder text for the item-name input in the item dialog, per-ruleset vocabulary (e.g. Exalted's \"Daiklave of Glory\"). Defaults to a system-neutral \"Item name\" when absent."
+        },
+        "fields": {
+          "type": "array",
+          "description": "Ordered list of item field declarations.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "label", "type"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9]*$",
+                "description": "Stable storage key on the item object. NEVER rename — stored item field values orphan if the id changes."
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Dialog label / sheet chip label."
+              },
+              "type": {
+                "type": "string",
+                "enum": ["number", "text", "boolean", "enum", "dice"],
+                "description": "Field render/parse type. Closed set — drives renderer dispatch in the inventory dialog and sheet chip."
+              },
+              "appliesTo": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "uniqueItems": true,
+                "description": "Equipment slot names this field shows for in the item dialog. Absent = shown for all items. Advisory against equipmentSlots, not enforced — the loader does not check membership."
+              },
+              "default": {
+                "description": "Default value applied when a new item is created. No schema-level type restriction — a number, string, or boolean is legal depending on the field's type."
+              },
+              "min": {
+                "type": "number",
+                "description": "For type:\"number\": minimum value for the numeric input."
+              },
+              "max": {
+                "type": "number",
+                "description": "For type:\"number\": maximum value for the numeric input."
+              },
+              "step": {
+                "type": "number",
+                "description": "For type:\"number\": step increment for the numeric input."
+              },
+              "options": {
+                "type": "array",
+                "items": { "type": "string" },
+                "uniqueItems": true,
+                "description": "Selectable values. REQUIRED (by convention, not schema enforcement) when type:\"enum\" — a field declared enum without options renders no choices."
+              },
+              "multi": {
+                "type": "boolean",
+                "default": false,
+                "description": "For type:\"enum\", when true the dialog allows selecting several values rather than one."
+              },
+              "bonusTarget": {
+                "type": "string",
+                "description": "Stat name this field's value contributes to while the item is equipped. Advisory: matched by exact string against attributes / skills / derivedStats, same convention as equipmentBonusTargets; the loader does not enforce membership."
+              },
+              "bonusKind": {
+                "type": "string",
+                "enum": ["value", "dice", "successes", "damage-pool", "replace-base"],
+                "default": "value",
+                "description": "How this field's value combines with the bonusTarget stat while equipped. \"value\" (default) — added as a flat numeric modifier. \"dice\", \"successes\", \"damage-pool\" — contributed to the matching dice-pool-style bonus category. \"replace-base\" — the field REPLACES the target stat's base constant rather than adding to it (e.g. armor setting the AC base); when multiple equipped items declare replace-base against the same target, the highest such value among them wins — the values are never summed."
+              },
+              "capsToken": {
+                "type": "string",
+                "description": "Names a formula context token this field caps while the item is equipped, e.g. \"Dexterity_mod\". Resolution: no cap declared by any equipped item → token unchanged. Tightest declared cap > 0 → min(token, cap). Tightest declared cap == 0 → the term is omitted entirely (NOT clamped to 0), so a negative modifier is not applied. Across multiple equipped items, the tightest (lowest) declared cap wins."
+              },
+              "promptVisible": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether this field's value is emitted into the injected agent sheet block for equipped items."
+              },
+              "placeholder": {
+                "type": "string",
+                "description": "Placeholder text for the field's input in the item dialog, per-ruleset vocabulary."
+              },
+              "help": {
+                "type": "string",
+                "description": "Optional help text / tooltip shown next to the field in the item dialog, per-ruleset vocabulary."
+              },
+              "aliases": {
+                "type": "array",
+                "items": { "type": "string" },
+                "uniqueItems": true,
+                "description": "Legacy key names read on load for backward compatibility. Never written — new saves always use `id`."
+              }
+            }
+          }
+        }
+      }
     },
     "abilities": {
       "type": "object",

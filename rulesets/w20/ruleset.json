@@ -228,7 +228,7 @@
       "name": "Soak (Bashing)",
       "formula": "Stamina + armour B-soak, rolled at difficulty 6. Soak rolls cannot botch. Garou regenerate 1 bashing level per turn automatically.",
       "renderAs": "value",
-      "valueFormula": "{Stamina} + {bonuses:Soak (Bashing)}",
+      "valueFormula": "{Stamina}",
       "tooltipFormula": "{Stamina} + {bonuses:Soak (Bashing)}",
       "aliases": ["soakBashing", "bashingSoak", "bSoak"]
     },
@@ -236,7 +236,7 @@
       "name": "Soak (Lethal)",
       "formula": "Stamina + armour L-soak, rolled at difficulty 6. Garou soak lethal with full Stamina (mortals cannot). Regenerate 1 lethal level per hour automatically.",
       "renderAs": "value",
-      "valueFormula": "{Stamina} + {bonuses:Soak (Lethal)}",
+      "valueFormula": "{Stamina}",
       "tooltipFormula": "{Stamina} + {bonuses:Soak (Lethal)}",
       "aliases": ["soakLethal", "lethalSoak", "lSoak"]
     },
@@ -244,7 +244,7 @@
       "name": "Soak (Aggravated)",
       "formula": "Stamina (in non-breed forms only) + supernatural armour, rolled at difficulty 6. Garou CANNOT soak aggravated in their BREED form (Homids in Homid, Lupus in Lupus, Metis in Crinos). Silver damage is unsoakable in breed form and bypasses regeneration entirely. Heals 1 level/day with rest.",
       "renderAs": "value",
-      "valueFormula": "{Stamina} + {bonuses:Soak (Aggravated)}",
+      "valueFormula": "{Stamina}",
       "tooltipFormula": "{Stamina} + {bonuses:Soak (Aggravated)}",
       "aliases": ["soakAggravated", "aggravatedSoak", "aSoak"]
     }

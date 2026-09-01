@@ -40,7 +40,7 @@ var MRR_TAG_CAT_PFX = "mrr-cat-";
 
 var EXT_VERSION = "1.4.0";
 
-var MRR_BUILD_STAMP = "2026-08-28-round29-lever-labels";
+var MRR_BUILD_STAMP = "2026-08-31-legf-s6-gear-in-prompt";
 
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
@@ -2580,7 +2580,7 @@ function mrrHydrateSheetRecord(parsed, ruleset, characterId, migrationPending) {
   mrrClearSheetHold(characterId);
   return {
     held: null,
-    sheet: mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(parsed, ruleset))
+    sheet: mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(parsed, ruleset), ruleset)
   };
 }
 
@@ -4167,10 +4167,90 @@ function applyItemAttrs(it, attrs) {
     var o = parseInt(attrs.overwhelming, 10);
     if (!isNaN(o) && o >= 0) it.overwhelming = o;
   }
+  var declaredAttrFields = state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
+  declaredAttrFields.forEach(function(field) {
+    if (!field || !field.id || field.id === "hardness" || field.id === "overwhelming") return;
+    var key = mrrSnakeCaseFieldId(field.id);
+    if (!(key in attrs)) return;
+    var raw = attrs[key];
+    if (raw == null) return;
+    if (field.type === "number") {
+      var n = parseFloat(raw);
+      if (typeof n === "number" && isFinite(n)) it[field.id] = n;
+    } else if (field.type === "boolean") {
+      if (raw === "true" || raw === true) it[field.id] = true; else if (raw === "false" || raw === false) it[field.id] = false;
+    } else if (field.type === "enum") {
+      var opts = Array.isArray(field.options) ? field.options : [];
+      if (field.multi) {
+        if (typeof raw !== "string") return;
+        var chosen = raw.split(",").map(function(s) {
+          return s.trim();
+        }).filter(function(s) {
+          return s && opts.indexOf(s) !== -1;
+        });
+        if (chosen.length) it[field.id] = chosen;
+      } else if (typeof raw === "string" && raw && opts.indexOf(raw) !== -1) {
+        it[field.id] = raw;
+      }
+    } else if (field.type === "text" || field.type === "dice") {
+      if (typeof raw === "string" && raw) it[field.id] = raw;
+    }
+  });
   return it;
 }
 
-function normalizeInventoryItem(it, idx) {
+function mrrMigrateInventoryBonuses(item, ruleset) {
+  if (!item || !ruleset || !ruleset.inventory || !Array.isArray(ruleset.inventory.fields)) return;
+  if (!Array.isArray(item.bonuses) || !item.bonuses.length) return;
+  var eligibleByTarget = {};
+  ruleset.inventory.fields.forEach(function(f) {
+    if (!f || !f.id || typeof f.bonusTarget !== "string" || !f.bonusTarget) return;
+    if (f.type !== "number") return;
+    var bk = f.bonusKind || BONUS_KIND.VALUE;
+    if (bk !== BONUS_KIND.VALUE) return;
+    if (!eligibleByTarget[f.bonusTarget]) eligibleByTarget[f.bonusTarget] = [];
+    eligibleByTarget[f.bonusTarget].push(f);
+  });
+  var rowCountByTarget = {};
+  item.bonuses.forEach(function(b) {
+    if (!b || typeof b.target !== "string" || !b.target) return;
+    rowCountByTarget[b.target] = (rowCountByTarget[b.target] || 0) + 1;
+  });
+  var migrations = [];
+  item.bonuses.forEach(function(b, i) {
+    if (!b || typeof b.target !== "string" || !b.target) return;
+    var candidates = eligibleByTarget[b.target];
+    if (!candidates || candidates.length !== 1) return;
+    var field = candidates[0];
+    var rowKind = b.kind;
+    if (rowKind !== undefined && rowKind !== null && rowKind !== "" && rowKind !== BONUS_KIND.VALUE) return;
+    if (b.tag !== undefined && b.tag !== null && b.tag !== "") return;
+    if (rowCountByTarget[b.target] !== 1) return;
+    if (typeof b.value !== "number" || !isFinite(b.value)) return;
+    var current = item[field.id];
+    if (!(current === undefined || current === null || current === 0)) return;
+    migrations.push({
+      index: i,
+      field,
+      value: b.value
+    });
+  });
+  if (!migrations.length) return;
+  var removeIdx = [];
+  migrations.forEach(function(m) {
+    item[m.field.id] = m.value;
+    removeIdx.push(m.index);
+    console.log('[MRR S3b migration] item="' + (item.name || item.id) + '" target="' + m.field.bonusTarget + '" value=' + m.value + ' -> field="' + m.field.id + '"');
+  });
+  removeIdx.sort(function(a, b) {
+    return b - a;
+  });
+  removeIdx.forEach(function(idx) {
+    item.bonuses.splice(idx, 1);
+  });
+}
+
+function normalizeInventoryItem(it, idx, ruleset) {
   if (!it || typeof it !== "object") return it;
   if (typeof it.name !== "string") it.name = "";
   if (typeof it.id !== "string" || !it.id) {
@@ -4227,6 +4307,7 @@ function normalizeInventoryItem(it, idx) {
   } else {
     it.quantity = Math.floor(it.quantity);
   }
+  if (ruleset) mrrMigrateInventoryBonuses(it, ruleset);
   return it;
 }
 
@@ -4243,7 +4324,7 @@ function normalizeIntimacy(it, idx) {
   return it;
 }
 
-function mergeSheet(base, override) {
+function mergeSheet(base, override, ruleset) {
   [ "attributes", "skills", "derived", "states", "track" ].forEach(function(k) {
     if (override[k] && typeof override[k] === "object") {
       Object.keys(override[k]).forEach(function(name) {
@@ -4277,7 +4358,7 @@ function mergeSheet(base, override) {
     base.inventory = override.inventory.filter(function(it) {
       return it && typeof it === "object" && typeof it.name === "string" && it.name;
     }).map(function(it, idx) {
-      return normalizeInventoryItem(it, idx);
+      return normalizeInventoryItem(it, idx, ruleset);
     });
   }
   if (override.equipped && typeof override.equipped === "object") {
@@ -4574,6 +4655,12 @@ function reconcileCommittedMotes(poolName, stateName) {
   return liveCommitted;
 }
 
+function commitmentCapFor(model) {
+  var declared = state.ruleset && state.ruleset.commitmentCap;
+  if (typeof declared === "number" && isFinite(declared) && declared >= 0) return declared;
+  return model === "attuned" ? 3 : 10;
+}
+
 function equippedBonuses(target) {
   var out = {
     dice: 0,
@@ -4587,32 +4674,117 @@ function equippedBonuses(target) {
   Object.keys(equipped).forEach(function(slot) {
     if (typeof equipped[slot] === "string") equippedIds[equipped[slot]] = true;
   });
+  var declaredFields = state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
   inv.forEach(function(item) {
     if (!item || !equippedIds[item.id]) return;
-    if (target === "Hardness" && typeof item.hardness === "number" && item.hardness > 0) {
-      out.value += item.hardness;
-      out.contributors.push({
-        name: item.name || item.id,
-        value: item.hardness,
-        kind: BONUS_KIND.VALUE,
-        tag: "natural"
+    if (Array.isArray(item.bonuses)) {
+      item.bonuses.forEach(function(b) {
+        if (!b || b.target !== target) return;
+        var v = typeof b.value === "number" && isFinite(b.value) ? b.value : 0;
+        if (v === 0) return;
+        if (b.kind === BONUS_KIND.DICE) out.dice += v; else out.value += v;
+        out.contributors.push({
+          name: item.name || item.id,
+          value: v,
+          kind: b.kind || BONUS_KIND.VALUE,
+          tag: b.tag || ""
+        });
       });
     }
-    if (!Array.isArray(item.bonuses)) return;
-    item.bonuses.forEach(function(b) {
-      if (!b || b.target !== target) return;
-      var v = typeof b.value === "number" && isFinite(b.value) ? b.value : 0;
-      if (v === 0) return;
-      if (b.kind === BONUS_KIND.DICE) out.dice += v; else out.value += v;
+    declaredFields.forEach(function(field) {
+      if (!field || !field.id || field.bonusTarget !== target) return;
+      if (!mrrFieldAppliesToItem(field, item)) return;
+      var kind = field.bonusKind || BONUS_KIND.VALUE;
+      if (kind === "replace-base") return;
+      var fv = item[field.id];
+      if (typeof fv !== "number" || !isFinite(fv) || fv === 0) return;
+      if (kind === BONUS_KIND.DICE) out.dice += fv; else out.value += fv;
       out.contributors.push({
         name: item.name || item.id,
-        value: v,
-        kind: b.kind || BONUS_KIND.VALUE,
-        tag: b.tag || ""
+        value: fv,
+        kind,
+        tag: ""
       });
     });
   });
   return out;
+}
+
+function equippedItemsList() {
+  if (!state.sheet) return [];
+  var inv = Array.isArray(state.sheet.inventory) ? state.sheet.inventory : [];
+  var equipped = state.sheet.equipped && typeof state.sheet.equipped === "object" ? state.sheet.equipped : {};
+  var equippedIds = {};
+  Object.keys(equipped).forEach(function(slot) {
+    if (typeof equipped[slot] === "string") equippedIds[equipped[slot]] = true;
+  });
+  return inv.filter(function(item) {
+    return item && equippedIds[item.id];
+  });
+}
+
+function mrrFieldAppliesToItem(field, item) {
+  if (!field) return false;
+  if (!Array.isArray(field.appliesTo) || !field.appliesTo.length) return true;
+  var slot = item && typeof item.slot === "string" ? item.slot : "";
+  return field.appliesTo.indexOf(slot) !== -1;
+}
+
+function mrrSnakeCaseFieldId(id) {
+  return String(id).replace(/([A-Z])/g, "_$1").toLowerCase();
+}
+
+function mrrFormatDeclaredFieldEntry(field, item) {
+  if (!field || !field.id || !item) return null;
+  var v = item[field.id];
+  if (field.type === "boolean") return v === true ? field.label : null;
+  if (field.type === "enum" && field.multi) {
+    return Array.isArray(v) && v.length ? field.label + ": " + v.join(", ") : null;
+  }
+  if (field.type === "number") {
+    return typeof v === "number" && isFinite(v) && v !== 0 ? field.label + ": " + v : null;
+  }
+  return typeof v === "string" && v ? field.label + ": " + v : null;
+}
+
+function mrrResolveBaseToken(statName) {
+  var declaredFields = state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
+  var best = null;
+  equippedItemsList().forEach(function(item) {
+    declaredFields.forEach(function(field) {
+      if (!field || !field.id || field.bonusKind !== "replace-base" || field.bonusTarget !== statName) return;
+      if (!mrrFieldAppliesToItem(field, item)) return;
+      var fv = item[field.id];
+      if (typeof fv !== "number" || !isFinite(fv)) return;
+      if (best === null || fv > best) best = fv;
+    });
+  });
+  if (best !== null) return best;
+  var defs = state.ruleset && Array.isArray(state.ruleset.derivedStats) ? state.ruleset.derivedStats : [];
+  for (var i = 0; i < defs.length; i++) {
+    if (defs[i] && defs[i].name === statName) {
+      return typeof defs[i]["default"] === "number" ? defs[i]["default"] : 0;
+    }
+  }
+  return 0;
+}
+
+function mrrResolveCappedToken(tokenName, ctx) {
+  var base = ctx && typeof ctx[tokenName] === "number" ? ctx[tokenName] : 0;
+  var declaredFields = state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
+  var tightest = null;
+  equippedItemsList().forEach(function(item) {
+    declaredFields.forEach(function(field) {
+      if (!field || !field.id || field.capsToken !== tokenName) return;
+      if (!mrrFieldAppliesToItem(field, item)) return;
+      var fv = item[field.id];
+      if (typeof fv !== "number" || !isFinite(fv)) return;
+      if (tightest === null || fv < tightest) tightest = fv;
+    });
+  });
+  if (tightest === null) return base;
+  if (tightest > 0) return Math.min(base, tightest);
+  return 0;
 }
 
 function tierForSkill(skillName) {
@@ -5077,8 +5249,7 @@ function safeEvalArithmetic(s) {
 function evalFormula(formula, ctx) {
   if (!formula) return null;
   var subbed = String(formula).replace(/\{([^}]+)\}/g, function(_, key) {
-    var v = ctx[key];
-    return typeof v === "number" ? String(v) : "0";
+    return String(mrrResolveFormulaToken(key, ctx).value);
   });
   if (!/^[\s0-9+\-*/().]*$/.test(subbed)) return null;
   try {
@@ -5953,7 +6124,7 @@ function mrrP3RenderSkillRow(parent, opts) {
       var specInput = marinara.addElement(editor, "input", {
         class: "mrr-p3-row__spec-input",
         type: "text",
-        placeholder: "Specialty name (e.g. Daiklaves, Thrones, Crowds)"
+        placeholder: typeof opts.specialtyPlaceholder === "string" && opts.specialtyPlaceholder ? opts.specialtyPlaceholder : "Specialty name"
       });
       var addBtn = marinara.addElement(editor, "button", {
         type: "button",
@@ -7646,6 +7817,7 @@ function mrrP3RenderSkillsSection(parent) {
   var specsCfg = state.ruleset.skillSpecialties || {};
   var allowSpecs = !!specsCfg.enabled;
   var specBonus = typeof specsCfg.value === "number" ? specsCfg.value : 1;
+  var specPlaceholder = typeof specsCfg.placeholder === "string" && specsCfg.placeholder ? specsCfg.placeholder : "Specialty name";
   var groups = state.ruleset.abilities && Array.isArray(state.ruleset.abilities.groups) ? state.ruleset.abilities.groups : null;
   var skillsByName = {};
   state.ruleset.skills.forEach(function(sk) {
@@ -7689,6 +7861,7 @@ function mrrP3RenderSkillsSection(parent) {
       specialties: primitiveSpecs,
       allowSpecialties: allowSpecs,
       specialtyBonus: specBonus,
+      specialtyPlaceholder: specPlaceholder,
       onTier: function(nextCode) {
         if (!state.sheet.skillProficiency) state.sheet.skillProficiency = {};
         state.sheet.skillProficiency[sk.name] = nextCode;
@@ -8319,9 +8492,11 @@ function mrrP3RenderIntimaciesSection(parent) {
 
 function mrrP3RenderInventorySection(parent) {
   if (!parent) return;
+  var invCfg = state.ruleset && state.ruleset.inventory;
+  var title = invCfg && typeof invCfg.label === "string" && invCfg.label ? invCfg.label.toUpperCase() : "EQUIPMENT";
   mrrP3RenderSection(parent, {
     id: "inventory-p3",
-    title: "EQUIPMENT",
+    title,
     defaultOpen: true
   }, function(body) {
     renderInventoryList(body);
@@ -8758,7 +8933,15 @@ function quickRollAttack(item) {
       if (typeof pv === "number" && isFinite(pv)) prof = Math.floor(pv);
     }
   }
-  var bonuses = equippedBonuses("attack");
+  var bonuses = {
+    dice: 0,
+    value: 0,
+    contributors: []
+  };
+  var attackBonusTarget = state.ruleset.resolution && state.ruleset.resolution.attackBonusTarget;
+  if (typeof attackBonusTarget === "string" && attackBonusTarget) {
+    bonuses = equippedBonuses(attackBonusTarget);
+  }
   showDice(true);
   state.diceContext = {
     itemAttack: item.id,
@@ -9073,24 +9256,44 @@ function applyDiceContextSpecialties() {
   }
 }
 
+function mrrResolveFormulaToken(key, ctx) {
+  if (key.indexOf("bonuses:") === 0) {
+    var bonusKey = key.slice("bonuses:".length).trim();
+    var b = equippedBonuses(bonusKey);
+    return {
+      value: b && typeof b.value === "number" ? b.value : 0,
+      label: bonusKey
+    };
+  }
+  if (key.indexOf("base:") === 0) {
+    var baseStat = key.slice("base:".length).trim();
+    return {
+      value: mrrResolveBaseToken(baseStat),
+      label: "base:" + baseStat
+    };
+  }
+  if (key.indexOf("capped:") === 0) {
+    var cappedTok = key.slice("capped:".length).trim();
+    return {
+      value: mrrResolveCappedToken(cappedTok, ctx),
+      label: "capped:" + cappedTok
+    };
+  }
+  return {
+    value: ctx && typeof ctx[key] === "number" ? ctx[key] : 0,
+    label: key
+  };
+}
+
 function mrrSubstituteTokens(formula, ctx) {
   var breakdown = [];
   var subbed = String(formula || "").replace(/\{([^}]+)\}/g, function(_, key) {
-    var v, label;
-    if (key.indexOf("bonuses:") === 0) {
-      var bonusKey = key.slice("bonuses:".length).trim();
-      var b = equippedBonuses(bonusKey);
-      v = b && typeof b.value === "number" ? b.value : 0;
-      label = bonusKey;
-    } else {
-      v = ctx && typeof ctx[key] === "number" ? ctx[key] : 0;
-      label = key;
-    }
+    var r = mrrResolveFormulaToken(key, ctx);
     breakdown.push({
-      label,
-      value: v
+      label: r.label,
+      value: r.value
     });
-    return String(v);
+    return String(r.value);
   });
   return {
     substituted: subbed,
@@ -9394,32 +9597,34 @@ function renderInventoryList(parent) {
           title: "Damage: " + item.damage
         });
       }
-      if (typeof item.hardness === "number" && item.hardness > 0) {
+      var chipFields = state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
+      chipFields.forEach(function(field) {
+        if (!field || !field.id) return;
+        if (field.type === "text" || field.type === "dice") return;
+        var v = item[field.id];
+        var has = false;
+        if (typeof v === "number") has = v !== 0; else if (typeof v === "boolean") has = v === true; else if (typeof v === "string") has = v.trim() !== ""; else if (Array.isArray(v)) has = v.length > 0;
+        if (!has) return;
+        var label = field.label || field.id;
+        var display = typeof v === "boolean" ? label : label + " " + (Array.isArray(v) ? v.join(", ") : v);
         marinara.addElement(row, "span", {
-          class: "mrr-chip mrr-chip--hardness",
-          textContent: "Hardness " + item.hardness,
-          title: "Hardness " + item.hardness + " — incoming damage below this floor reduces to the attacker's Overwhelming"
+          class: "mrr-chip mrr-chip--field",
+          textContent: display,
+          title: display
         });
-      }
-      if (typeof item.overwhelming === "number" && item.overwhelming > 0) {
-        marinara.addElement(row, "span", {
-          class: "mrr-chip mrr-chip--overwhelming",
-          textContent: "Overwhelming " + item.overwhelming,
-          title: "Overwhelming " + item.overwhelming + " — minimum damage this weapon always lands, even against soak/Hardness"
-        });
-      }
+      });
       var commitModelInv = state.ruleset && state.ruleset.commitmentModel;
       if (commitModelInv === "attuned" && item.attuned) {
         marinara.addElement(row, "span", {
           class: "mrr-chip mrr-chip--attuned",
           textContent: "Attuned",
-          title: "Attuned (D&D 5e) — magical effects from this item are currently active. 3-item attunement cap."
+          title: "Attuned (D&D 5e) — magical effects from this item are currently active. " + commitmentCapFor("attuned") + "-item attunement cap."
         });
       } else if (commitModelInv === "invested" && item.invested) {
         marinara.addElement(row, "span", {
           class: "mrr-chip mrr-chip--invested",
           textContent: "Invested",
-          title: "Invested (Pathfinder 2e) — magical effects from this item are currently active. 10-item investiture cap."
+          title: "Invested (Pathfinder 2e) — magical effects from this item are currently active. " + commitmentCapFor("invested") + "-item investiture cap."
         });
       } else if (commitModelInv === "mote" && typeof item.moteCommitment === "number" && item.moteCommitment > 0) {
         var poolLabel = item.motePool === "Peripheral" ? "Peripheral" : "Personal";
@@ -9836,11 +10041,12 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
   marinara.addElement(nameRow, "label", {
     textContent: "Name"
   });
+  var namePlaceholder = state.ruleset && state.ruleset.inventory && typeof state.ruleset.inventory.namePlaceholder === "string" && state.ruleset.inventory.namePlaceholder ? state.ruleset.inventory.namePlaceholder : "Item name";
   var nameInput = marinara.addElement(nameRow, "input", {
     class: "mrr-item-form__input",
     type: "text",
     value: draft.name || "",
-    placeholder: "Daiklave of Glory"
+    placeholder: namePlaceholder
   });
   var slotRow = marinara.addElement(dialog, "div", {
     class: "mrr-item-form__row"
@@ -9910,41 +10116,107 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
     type: "checkbox"
   });
   if (profInput && draft.attackProficient) profInput.checked = true;
-  var hardRow = marinara.addElement(dialog, "div", {
-    class: "mrr-item-form__row mrr-item-form__row--equipment-only"
+  var declaredInvFields = state.ruleset && state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
+  var declaredFieldRows = [];
+  declaredInvFields.forEach(function(field) {
+    if (!field || !field.id || !field.type) return;
+    var fRow = marinara.addElement(dialog, "div", {
+      class: "mrr-item-form__row"
+    });
+    if (!fRow) return;
+    if (field.help) fRow.title = field.help;
+    marinara.addElement(fRow, "label", {
+      textContent: field.label || field.id
+    });
+    var stored = draft[field.id] !== undefined ? draft[field.id] : field.default;
+    var getValue;
+    if (field.type === "boolean") {
+      var boolInput = marinara.addElement(fRow, "input", {
+        type: "checkbox"
+      });
+      if (boolInput && stored) boolInput.checked = true;
+      getValue = function() {
+        return !!(boolInput && boolInput.checked);
+      };
+    } else if (field.type === "enum") {
+      var selAttrs = {
+        class: "mrr-item-form__select"
+      };
+      if (field.multi) selAttrs.multiple = "multiple";
+      var enumSel = marinara.addElement(fRow, "select", selAttrs);
+      if (enumSel) {
+        if (!field.multi) {
+          var blankOpt = document.createElement("option");
+          blankOpt.value = "";
+          blankOpt.textContent = "—";
+          enumSel.appendChild(blankOpt);
+        }
+        var selectedSet = {};
+        if (field.multi && Array.isArray(stored)) {
+          stored.forEach(function(v) {
+            selectedSet[v] = true;
+          });
+        }
+        (field.options || []).forEach(function(optVal) {
+          var opt = document.createElement("option");
+          opt.value = optVal;
+          opt.textContent = optVal;
+          if (field.multi) {
+            if (selectedSet[optVal]) opt.selected = true;
+          } else if (stored === optVal) {
+            opt.selected = true;
+          }
+          enumSel.appendChild(opt);
+        });
+      }
+      getValue = function() {
+        if (!enumSel) return field.multi ? [] : "";
+        if (field.multi) {
+          var out = [];
+          for (var oi = 0; oi < enumSel.options.length; oi++) {
+            if (enumSel.options[oi].selected) out.push(enumSel.options[oi].value);
+          }
+          return out;
+        }
+        return enumSel.value;
+      };
+    } else if (field.type === "number") {
+      var numAttrs = {
+        class: "mrr-item-form__input",
+        type: "number"
+      };
+      if (typeof field.min === "number") numAttrs.min = String(field.min);
+      if (typeof field.max === "number") numAttrs.max = String(field.max);
+      if (typeof field.step === "number") numAttrs.step = String(field.step);
+      if (field.placeholder) numAttrs.placeholder = field.placeholder;
+      var seedNum = typeof stored === "number" ? stored : typeof field.default === "number" ? field.default : 0;
+      numAttrs.value = String(seedNum);
+      var numInput = marinara.addElement(fRow, "input", numAttrs);
+      getValue = function() {
+        var n = parseFloat(numInput && numInput.value);
+        if (isNaN(n)) n = typeof field.default === "number" ? field.default : 0;
+        if (typeof field.min === "number" && n < field.min) n = field.min;
+        if (typeof field.max === "number" && n > field.max) n = field.max;
+        return n;
+      };
+    } else {
+      var txtAttrs = {
+        class: "mrr-item-form__input",
+        type: "text",
+        value: stored != null ? String(stored) : ""
+      };
+      if (field.placeholder) txtAttrs.placeholder = field.placeholder;
+      var txtInput = marinara.addElement(fRow, "input", txtAttrs);
+      getValue = function() {
+        return txtInput && txtInput.value || "";
+      };
+    }
+    declaredFieldRows.push({
+      field,
+      row: fRow,
+      get: getValue
+    });
   });
-  marinara.addElement(hardRow, "label", {
-    textContent: "Hardness"
-  });
-  var hardInput = marinara.addElement(hardRow, "input", {
-    class: "mrr-item-form__input",
-    type: "number",
-    min: "0",
-    step: "1",
-    value: String(typeof draft.hardness === "number" ? draft.hardness : 0),
-    placeholder: "0"
-  });
-  var overRow = marinara.addElement(dialog, "div", {
-    class: "mrr-item-form__row mrr-item-form__row--equipment-only"
-  });
-  marinara.addElement(overRow, "label", {
-    textContent: "Overwhelming"
-  });
-  var overInput = marinara.addElement(overRow, "input", {
-    class: "mrr-item-form__input",
-    type: "number",
-    min: "0",
-    step: "1",
-    value: String(typeof draft.overwhelming === "number" ? draft.overwhelming : 0),
-    placeholder: "0"
-  });
-  function applyEquipmentVisibility() {
-    var isEquipment = catSel && catSel.value === "equipment";
-    if (hardRow) hardRow.style.display = isEquipment ? "" : "none";
-    if (overRow) overRow.style.display = isEquipment ? "" : "none";
-  }
-  applyEquipmentVisibility();
-  if (catSel) marinara.on(catSel, "change", applyEquipmentVisibility);
   var commitmentModel = state.ruleset && state.ruleset.commitmentModel || null;
   var attuneInput = null;
   var investInput = null;
@@ -9959,7 +10231,7 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
     if (commitTitle) commitmentRows.push(commitTitle);
     if (commitmentModel === "attuned" || commitmentModel === "invested") {
       var labelText = commitmentModel === "attuned" ? "Attuned" : "Invested";
-      var capN = commitmentModel === "attuned" ? 3 : 10;
+      var capN = commitmentCapFor(commitmentModel);
       var commitRow = marinara.addElement(dialog, "div", {
         class: "mrr-item-form__row"
       });
@@ -10037,14 +10309,21 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
       }
     }
   }
-  function applyCommitmentVisibility() {
+  function applyDeclaredFieldVisibility() {
     var isEquipment = catSel && catSel.value === "equipment";
     for (var i = 0; i < commitmentRows.length; i++) {
       commitmentRows[i].style.display = isEquipment ? "" : "none";
     }
+    var slotVal = (slotInput && slotInput.value || "").trim();
+    declaredFieldRows.forEach(function(entry) {
+      var appliesTo = entry.field.appliesTo;
+      var visible = !Array.isArray(appliesTo) || appliesTo.length === 0 || appliesTo.indexOf(slotVal) !== -1;
+      entry.row.style.display = visible ? "" : "none";
+    });
   }
-  applyCommitmentVisibility();
-  if (catSel) marinara.on(catSel, "change", applyCommitmentVisibility);
+  applyDeclaredFieldVisibility();
+  if (catSel) marinara.on(catSel, "change", applyDeclaredFieldVisibility);
+  if (slotInput) marinara.on(slotInput, "input", applyDeclaredFieldVisibility);
   marinara.addElement(dialog, "div", {
     class: "mrr-bonus-list__title",
     textContent: "Bonuses"
@@ -10218,15 +10497,9 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
       draft.consumable = !!(consInput && consInput.checked);
       var qn = qtyInput ? parseInt(qtyInput.value, 10) : 1;
       draft.quantity = !isNaN(qn) && qn >= 0 ? Math.floor(qn) : 1;
-      if (draft.category === "equipment") {
-        var ph = parseInt(hardInput && hardInput.value, 10);
-        draft.hardness = !isNaN(ph) && ph >= 0 ? ph : 0;
-        var po = parseInt(overInput && overInput.value, 10);
-        draft.overwhelming = !isNaN(po) && po >= 0 ? po : 0;
-      } else {
-        draft.hardness = 0;
-        draft.overwhelming = 0;
-      }
+      declaredFieldRows.forEach(function(entry) {
+        draft[entry.field.id] = entry.get();
+      });
       if (draft.category === "equipment" && commitmentModel === "attuned") {
         var wantAttuned = !!(attuneInput && attuneInput.checked);
         if (wantAttuned) {
@@ -10237,15 +10510,13 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
             if (!ao || ao.id === draft.id) continue;
             if (ao.attuned) attunedInUse += 1;
           }
-          if (attunedInUse >= 3) {
+          if (attunedInUse >= commitmentCapFor("attuned")) {
             wantAttuned = false;
             if (attuneInput) attuneInput.checked = false;
-            setMsg(msg, "Attuned cap of 3 reached. Saved with Attuned cleared — un-attune another item first.", "err");
+            setMsg(msg, "Attuned cap of " + commitmentCapFor("attuned") + " reached. Saved with Attuned cleared — un-attune another item first.", "err");
           }
         }
         draft.attuned = wantAttuned;
-        draft.invested = false;
-        draft.moteCommitment = 0;
       } else if (draft.category === "equipment" && commitmentModel === "invested") {
         var wantInvested = !!(investInput && investInput.checked);
         if (wantInvested) {
@@ -10256,15 +10527,13 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
             if (!io || io.id === draft.id) continue;
             if (io.invested) investedInUse += 1;
           }
-          if (investedInUse >= 10) {
+          if (investedInUse >= commitmentCapFor("invested")) {
             wantInvested = false;
             if (investInput) investInput.checked = false;
-            setMsg(msg, "Invested cap of 10 reached. Saved with Invested cleared — un-invest another item first.", "err");
+            setMsg(msg, "Invested cap of " + commitmentCapFor("invested") + " reached. Saved with Invested cleared — un-invest another item first.", "err");
           }
         }
         draft.invested = wantInvested;
-        draft.attuned = false;
-        draft.moteCommitment = 0;
       } else if (draft.category === "equipment" && commitmentModel === "mote") {
         var pmc = parseInt(moteCommitInput && moteCommitInput.value, 10);
         var newMotes = !isNaN(pmc) && pmc >= 0 ? pmc : 0;
@@ -10292,13 +10561,7 @@ function openItemDialog(itemId, onSaved, defaultCategory) {
           draft.moteCommitment = newMotes;
           draft.motePool = newPool;
         }
-        draft.attuned = false;
-        draft.invested = false;
-      } else {
-        draft.attuned = false;
-        draft.invested = false;
-        draft.moteCommitment = 0;
-      }
+      } else {}
       draft.bonuses = (draft.bonuses || []).filter(function(b) {
         return b && b.target;
       });
@@ -13625,6 +13888,7 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
   }
   if (Array.isArray(state.sheet.inventory) && state.sheet.inventory.length) {
     var commitModelPrompt = state.ruleset.commitmentModel || null;
+    var declaredFieldsInvPrompt = state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
     lines.push("Inventory:");
     state.sheet.inventory.forEach(function(it) {
       if (!it || !it.name) return;
@@ -13638,6 +13902,12 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
       if (commitModelPrompt === "mote" && it.moteCommitment > 0) {
         parts.push("committed: " + it.moteCommitment + " mote" + (it.moteCommitment === 1 ? "" : "s") + " (" + (it.motePool || "Personal") + ")");
       }
+      declaredFieldsInvPrompt.forEach(function(field) {
+        if (!field || field.promptVisible !== true) return;
+        if (!mrrFieldAppliesToItem(field, it)) return;
+        var entry = mrrFormatDeclaredFieldEntry(field, it);
+        if (entry) parts.push("· " + entry);
+      });
       lines.push(parts.join(" "));
     });
     lines.push("");
@@ -13649,14 +13919,14 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
         return it && it.attuned;
       }).length;
       lines.push("Magic / Commitment:");
-      lines.push("- Items attuned: " + acP + " / 3 (D&D attunement cap)");
+      lines.push("- Items attuned: " + acP + " / " + commitmentCapFor("attuned") + " (D&D attunement cap)");
       lines.push("");
     } else if (commitModelSummary === "invested") {
       var icP = state.sheet.inventory.filter(function(it) {
         return it && it.invested;
       }).length;
       lines.push("Magic / Commitment:");
-      lines.push("- Items invested: " + icP + " / 10 (PF2e investiture cap)");
+      lines.push("- Items invested: " + icP + " / " + commitmentCapFor("invested") + " (PF2e investiture cap)");
       lines.push("");
     } else if (commitModelSummary === "mote") {
       var personalP = 0, peripheralP = 0;
@@ -13755,9 +14025,9 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
   }
   var commitMod = state.ruleset.commitmentModel;
   if (commitMod === "attuned") {
-    refLines.push('- attunement (use field="attunement" item="<item name>" attuned="true|false" — D&D cap 3)');
+    refLines.push('- attunement (use field="attunement" item="<item name>" attuned="true|false" — D&D cap ' + commitmentCapFor("attuned") + ")");
   } else if (commitMod === "invested") {
-    refLines.push('- investiture (use field="investiture" item="<item name>" invested="true|false" — PF2e cap 10)');
+    refLines.push('- investiture (use field="investiture" item="<item name>" invested="true|false" — PF2e cap ' + commitmentCapFor("invested") + ")");
   } else if (commitMod === "mote") {
     refLines.push('- commitment (use field="commitment" item="<item name>" motes="N" pool="Personal|Peripheral" — Exalted mote commit)');
   }
@@ -13804,7 +14074,7 @@ function mrrPartyMemberSheet(characterId, ruleset) {
   var parsed = safeParse(res.raw);
   if (!parsed) return null;
   if (mrrStoredSheetForeignRuleset(parsed, ruleset)) return null;
-  return mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(parsed, ruleset));
+  return mergeSheet(blankSheet(ruleset), mrrMigrateIfNeeded(parsed, ruleset), ruleset);
 }
 
 function mrrPartyRosterOrder() {
@@ -14155,6 +14425,14 @@ function buildFieldReferenceContent() {
   lines.push('  consumable        — "true" to decrement quantity by 1 each Use; item is removed when quantity hits 0');
   lines.push("  notes             — free-text notes that show in the dialog");
   lines.push('  category          — "equipment" (lives in the on-sheet Inventory section, equippable to slot) or "item" (Items flyout, usable / consumable). Default: "item" when no slot, "equipment" when slot is set.');
+  var declaredAttrDefs = state.ruleset.inventory && Array.isArray(state.ruleset.inventory.fields) ? state.ruleset.inventory.fields : [];
+  declaredAttrDefs.forEach(function(field) {
+    if (!field || !field.id || !field.label) return;
+    var key = mrrSnakeCaseFieldId(field.id);
+    var pad = key.length < 18 ? key + new Array(18 - key.length + 1).join(" ") : key + " ";
+    var desc = field.label + (field.help ? ", " + field.help : "");
+    lines.push("  " + pad + "— " + desc);
+  });
   lines.push("");
   lines.push("Repeated inventory.add tags with the same name BUMP QUANTITY and ENRICH any blank fields on the existing item — populate fields once authoritatively on first add, omit them on subsequent qty bumps.");
   lines.push("");
@@ -16642,8 +16920,8 @@ function applyStateMutation(attrs) {
         if (!ao || ao === attTarget) continue;
         if (ao.attuned) aInUse += 1;
       }
-      if (aInUse >= 3) {
-        warn("state-mutator attunement: cap of 3 reached, cannot attune '" + attTarget.name + "'");
+      if (aInUse >= commitmentCapFor("attuned")) {
+        warn("state-mutator attunement: cap of " + commitmentCapFor("attuned") + " reached, cannot attune '" + attTarget.name + "'");
         return false;
       }
     }
@@ -16693,8 +16971,8 @@ function applyStateMutation(attrs) {
         if (!io || io === iTarget) continue;
         if (io.invested) iInUse += 1;
       }
-      if (iInUse >= 10) {
-        warn("state-mutator investiture: cap of 10 reached, cannot invest '" + iTarget.name + "'");
+      if (iInUse >= commitmentCapFor("invested")) {
+        warn("state-mutator investiture: cap of " + commitmentCapFor("invested") + " reached, cannot invest '" + iTarget.name + "'");
         return false;
       }
     }
