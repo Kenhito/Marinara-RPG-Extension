@@ -57,7 +57,7 @@ var EXT_VERSION      = "1.4.0";
 /* Build discriminator (plan A7): same-version test rebuilds are told apart
    from inside the environment — the init console line prints this stamp,
    so a stale cached package is caught before a test session is burned. */
-var MRR_BUILD_STAMP  = "2026-09-01-legc-faces";
+var MRR_BUILD_STAMP  = "2026-09-01-sd5-motepicker";
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
 /* Markers used by the bundle installer to recognize artifacts it created
@@ -14198,128 +14198,192 @@ function castAbilityPool(ability, catId) {
   }
   /* Phase 6 — auto-deduct from sheet. Only fires for known mote /
      blood-pool commitment models so non-Exalted/V20 rulesets that
-     borrow this cast path don't get surprise sheet edits. */
+     borrow this cast path don't get surprise sheet edits.
+
+     ═══ SD-5 (2026-09-01, Corey ruling) — pick the pool, pay once ═══════
+     A mote cost is paid from a pool the PLAYER PICKS IN THE MOMENT:
+     Personal (subtle, no anima flare) or Peripheral (overt, flares). The
+     same Charm is used both ways — a combat Charm paid from Personal to
+     stay unnoticed, from Peripheral to go loud; a social Charm from
+     Personal to steer a conversation, from Peripheral to awe a crowd — so
+     no rule here may choose on the player's behalf. The old
+     "Peripheral first, overflow into Personal" default is gone; it also
+     contradicted the ruleset's own lorebook ("Spend Personal first").
+
+     PAY ONCE. Whatever this button deducts is stamped on the cast tag as
+     pool="…" spent="…". The State Mutator's cost-on-cast rule otherwise
+     deducts the lorebook's "Cost:" line the moment the GM narrates the
+     activation — which, with this button also paying, charged a 5m Charm
+     twice against a 13-mote Personal pool. The mutator prompts now treat
+     every component listed in spent= as settled and deduct only what is
+     NOT listed, so a wp-only stamp still leaves the motes owed, and a
+     cast with no stamp at all behaves exactly as before. */
   var commitModel = state.ruleset.commitmentModel || null;
-  /* P0-6: affordability gate. Without this, spends clamp to 0 silently while
-     the cast tag still claims full cost, and repeated clicks re-deduct every
-     time. Compute what the cast needs vs. what the pools hold; if short,
-     refuse the whole cast — no deduction, no full-cost tag. */
+  var _d = state.sheet.derived || {};
+  var _mReq = 0, _wReq = 0, _bReq = 0;
   if (cost && commitModel === "mote") {
-    var _d = state.sheet.derived || {};
-    var _mReq = 0, _wReq = 0;
+    /* costText is free-form ("5m, 1wp" / "3m" / "1wp"); the first integer
+       immediately followed by 'm' (not 'mp' or 'min') is the mote cost. */
     var _mM = cost.match(/(\d+)\s*m\b(?!p)/i); if (_mM) _mReq = parseInt(_mM[1], 10) || 0;
     var _wM = cost.match(/(\d+)\s*(?:wp\b|willpower)/i); if (_wM) _wReq = parseInt(_wM[1], 10) || 0;
-    var _mAvail = ((typeof _d["Peripheral Motes"] === "number") ? _d["Peripheral Motes"] : 0)
-                + ((typeof _d["Personal Motes"] === "number") ? _d["Personal Motes"] : 0);
-    var _wAvail = (typeof _d["Willpower"] === "number") ? _d["Willpower"] : 0;
-    if ((_mReq > 0 && _mAvail < _mReq) || (_wReq > 0 && _wAvail < _wReq)) {
-      warn("cast refused: " + name + " needs " + cost + " but pools hold "
-           + _mAvail + "m / " + _wAvail + "wp");
-      if (typeof window !== "undefined" && window.alert) {
-        window.alert("Not enough to cast " + name + " (" + cost + "). You have "
-                     + _mAvail + " motes and " + _wAvail + " willpower.");
-      }
-      return;
-    }
   } else if (cost && commitModel !== "attuned") {
-    var _bReq = 0, _bM = cost.match(/(\d+)\s*(?:b\b|blood)/i);
-    if (_bM) _bReq = parseInt(_bM[1], 10) || 0;
-    if (_bReq > 0) {
-      var _bAvail = (state.sheet.derived && typeof state.sheet.derived["Blood Pool"] === "number")
-        ? state.sheet.derived["Blood Pool"] : 0;
-      if (_bAvail < _bReq) {
-        warn("cast refused: " + name + " needs " + cost + " but Blood Pool holds " + _bAvail);
-        if (typeof window !== "undefined" && window.alert) {
-          window.alert("Not enough blood to cast " + name + " (" + cost + "). Pool: " + _bAvail + ".");
-        }
-        return;
-      }
-    }
+    /* V20 + other rulesets — blood pool spend pattern. D&D's "attuned"
+       model has no spend cost on cast (attunement is binary). */
+    var _bM = cost.match(/(\d+)\s*(?:b\b|blood)/i); if (_bM) _bReq = parseInt(_bM[1], 10) || 0;
   }
-  if (cost && commitModel === "mote") {
-    if (!state.sheet.derived || typeof state.sheet.derived !== "object") {
-      state.sheet.derived = {};
+  var _peri = (typeof _d["Peripheral Motes"] === "number") ? _d["Peripheral Motes"] : 0;
+  var _pers = (typeof _d["Personal Motes"] === "number") ? _d["Personal Motes"] : 0;
+  var _wAvail = (typeof _d["Willpower"] === "number") ? _d["Willpower"] : 0;
+  var _bAvail = (typeof _d["Blood Pool"] === "number") ? _d["Blood Pool"] : 0;
+  /* P0-6: affordability gate. Without this, spends clamp to 0 silently while
+     the cast tag still claims full cost, and repeated clicks re-deduct every
+     time. Refuse the whole cast — no deduction, no tag. For motes the gate
+     is "at least one pool can pay the whole cost on its own": this button
+     never splits a spend across pools (a split stays a narrated spend the
+     mutator applies from the text). */
+  if ((_mReq > 0 && _peri < _mReq && _pers < _mReq) || (_wReq > 0 && _wAvail < _wReq)) {
+    warn("cast refused: " + name + " needs " + cost + " but pools hold Personal " + _pers +
+         "m / Peripheral " + _peri + "m / " + _wAvail + "wp");
+    if (typeof window !== "undefined" && window.alert) {
+      window.alert("Not enough to cast " + name + " (" + cost + "). Personal " + _pers +
+                   "m, Peripheral " + _peri + "m, Willpower " + _wAvail + ". Neither pool can pay the mote cost alone.");
     }
-    /* Motes: Exalted convention spends Peripheral first, overflow into
-       Personal. costText is free-form ("5m, 1wp" / "3m" / "1wp"); regex
-       finds the first integer immediately followed by 'm' (not 'mp' or
-       'min'). Word boundary keeps "1m" from matching inside "1mp". */
-    var moteMatch = cost.match(/(\d+)\s*m\b(?!p)/i);
-    if (moteMatch) {
-      var moteCost = parseInt(moteMatch[1], 10) || 0;
-      var peri = (typeof state.sheet.derived["Peripheral Motes"] === "number")
-        ? state.sheet.derived["Peripheral Motes"] : 0;
-      if (peri >= moteCost) {
-        state.sheet.derived["Peripheral Motes"] = peri - moteCost;
-      } else {
-        state.sheet.derived["Peripheral Motes"] = 0;
-        var overflow = moteCost - peri;
-        var pers = (typeof state.sheet.derived["Personal Motes"] === "number")
-          ? state.sheet.derived["Personal Motes"] : 0;
-        state.sheet.derived["Personal Motes"] = Math.max(0, pers - overflow);
-      }
+    return;
+  }
+  if (_bReq > 0 && _bAvail < _bReq) {
+    warn("cast refused: " + name + " needs " + cost + " but Blood Pool holds " + _bAvail);
+    if (typeof window !== "undefined" && window.alert) {
+      window.alert("Not enough blood to cast " + name + " (" + cost + "). Pool: " + _bAvail + ".");
     }
-    /* Willpower: matches "Xwp", "X wp", or "X willpower" — the second
-       and third are common in custom costText entries. */
-    var wpMatch = cost.match(/(\d+)\s*(?:wp\b|willpower)/i);
-    if (wpMatch) {
-      var wpCost = parseInt(wpMatch[1], 10) || 0;
-      var wp = (typeof state.sheet.derived["Willpower"] === "number")
-        ? state.sheet.derived["Willpower"] : 0;
-      state.sheet.derived["Willpower"] = Math.max(0, wp - wpCost);
+    return;
+  }
+
+  /* Everything after the pool choice: deduct, stamp, post, roll. `poolName`
+     is "Personal" / "Peripheral" for a mote spend, null otherwise. */
+  function finishCast(poolName) {
+    var spent = [];
+    if (!state.sheet.derived || typeof state.sheet.derived !== "object") state.sheet.derived = {};
+    var d = state.sheet.derived;
+    var touched = false;
+    if (_mReq > 0 && poolName) {
+      var poolKey = poolName + " Motes";
+      var have = (typeof d[poolKey] === "number") ? d[poolKey] : 0;
+      d[poolKey] = Math.max(0, have - _mReq);
+      spent.push(_mReq + "m " + poolName);
+      touched = true;
     }
-    if (moteMatch || wpMatch) {
+    if (_wReq > 0) {
+      d["Willpower"] = Math.max(0, _wAvail - _wReq);
+      spent.push(_wReq + "wp");
+      touched = true;
+    }
+    if (_bReq > 0 && typeof d["Blood Pool"] === "number") {
+      d["Blood Pool"] = Math.max(0, d["Blood Pool"] - _bReq);
+      spent.push(_bReq + " blood");
+      touched = true;
+    }
+    if (touched) {
       saveSheet(state.chatId, state.sheet);
       if (typeof refreshAllBars === "function") refreshAllBars();
     }
-  } else if (cost && commitModel === "attuned") {
-    /* D&D commitment model has no spend cost on cast — attunement is
-       binary. No auto-deduct. */
-  } else if (cost) {
-    /* V20 + other rulesets — blood pool spend pattern. */
-    var bloodMatch = cost.match(/(\d+)\s*(?:b\b|blood)/i);
-    if (bloodMatch && state.sheet.derived && typeof state.sheet.derived["Blood Pool"] === "number") {
-      var bloodCost = parseInt(bloodMatch[1], 10) || 0;
-      state.sheet.derived["Blood Pool"] = Math.max(0, state.sheet.derived["Blood Pool"] - bloodCost);
-      saveSheet(state.chatId, state.sheet);
-      if (typeof refreshAllBars === "function") refreshAllBars();
+
+    var parts = ['[mrr-cast: name="' + name.replace(/"/g, '\\"') + '"'];
+    if (catLabel) parts.push('discipline="' + catLabel.replace(/"/g, '\\"') + '"');
+    if (rating)   parts.push('rating="' + rating + '"');
+    if (cost)     parts.push('cost="' + cost.replace(/"/g, '\\"') + '"');
+    if (poolName) parts.push('pool="' + poolName + '"');
+    if (spent.length) parts.push('spent="' + spent.join(", ") + '"');
+    parts[parts.length - 1] += ']';
+    var tag = parts.join(" ");
+
+    /* Post directly to the chat input so the cast tag appears immediately
+       without the legacy preview-in-dice-widget two-step shuffle. */
+    var injected = false;
+    if (typeof insertIntoChatInput === "function") {
+      injected = !!insertIntoChatInput(tag);
     }
-  }
-
-  var parts = ['[mrr-cast: name="' + name.replace(/"/g, '\\"') + '"'];
-  if (catLabel) parts.push('discipline="' + catLabel.replace(/"/g, '\\"') + '"');
-  if (rating)   parts.push('rating="' + rating + '"');
-  if (cost)     parts.push('cost="' + cost.replace(/"/g, '\\"') + '"');
-  parts[parts.length - 1] += ']';
-  var tag = parts.join(" ");
-
-  /* Post directly to the chat input so the cast tag appears immediately
-     without the legacy preview-in-dice-widget two-step shuffle. */
-  var injected = false;
-  if (typeof insertIntoChatInput === "function") {
-    injected = !!insertIntoChatInput(tag);
-  }
-  if (!injected) {
-    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-      try { navigator.clipboard.writeText(tag); } catch (e) {}
+    if (!injected) {
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        try { navigator.clipboard.writeText(tag); } catch (e) {}
+      }
+      if (typeof finalizeRoll === "function") finalizeRoll(tag, "narrate", []);
+      log("castAbilityPool: chat input not found; tag copied to clipboard: " + tag);
     }
-    if (typeof finalizeRoll === "function") finalizeRoll(tag, "narrate", []);
-    log("castAbilityPool: chat input not found; tag copied to clipboard: " + tag);
-  }
 
-  /* Open the dice widget so the player can immediately roll their
-     activation pool. Pre-seed pool with the discipline rating as a hint. */
-  if (state.ruleset.resolution && state.ruleset.resolution.mode === MODES.POOL) {
-    showDice(true);
-    if (rating && typeof setDiceInput === "function") {
-      var pool = parseInt(rating, 10);
-      if (isFinite(pool) && pool > 0) setDiceInput("pool", pool);
+    /* Open the dice widget so the player can immediately roll their
+       activation pool. Pre-seed pool with the discipline rating as a hint. */
+    if (state.ruleset.resolution && state.ruleset.resolution.mode === MODES.POOL) {
+      showDice(true);
+      if (rating && typeof setDiceInput === "function") {
+        var pool = parseInt(rating, 10);
+        if (isFinite(pool) && pool > 0) setDiceInput("pool", pool);
+      }
     }
+
+    /* Re-render the sheet so the deducted motes / WP are immediately
+       visible in the Resources cluster. */
+    if (typeof renderSheet === "function") renderSheet();
   }
 
-  /* Re-render the sheet so the deducted motes / WP are immediately
-     visible in the Resources cluster. */
-  if (typeof renderSheet === "function") renderSheet();
+  if (_mReq > 0) {
+    mrrOpenMotePoolPicker({ name: name, cost: cost, motes: _mReq, personal: _pers, peripheral: _peri }, finishCast);
+    return;
+  }
+  finishCast(null);
+}
+
+/* ═══ SD-5 — the in-the-moment mote pool picker ═══════════════════════════
+   Two buttons and a Cancel. Each button shows what that pool holds and is
+   disabled when it cannot pay the whole cost (the caller has already
+   refused the cast when NEITHER can). Cancel, Escape and a backdrop click
+   all abort with nothing deducted and nothing posted — the player changed
+   their mind, the sheet must not have moved. If the dialog cannot be built
+   at all (no document), the cast proceeds UNPAID with no pool stamp: the
+   tag then carries no mote component in spent=, so the State Mutator pays
+   the lorebook cost exactly as it did before this round — safe, never
+   double. Same backdrop/dialog classes as every other MRR dialog. */
+function mrrOpenMotePoolPicker(req, onPick) {
+  if (state.motePickerEl && state.motePickerEl.parentNode) {
+    state.motePickerEl.parentNode.removeChild(state.motePickerEl);
+    state.motePickerEl = null;
+  }
+  if (typeof document === "undefined" || !document.body) { onPick(null); return; }
+  var backdrop = marinara.addElement(document.body, "div", { "class": "mrr-dialog-backdrop mrr-dialog-backdrop--open" });
+  if (!backdrop) { onPick(null); return; }
+  state.motePickerEl = backdrop;
+  var dialog = marinara.addElement(backdrop, "div", { "class": "mrr-dialog" });
+  if (!dialog) { document.body.removeChild(backdrop); state.motePickerEl = null; onPick(null); return; }
+
+  marinara.addElement(dialog, "h3", { textContent: "Spend " + req.motes + "m — from which pool?" });
+  marinara.addElement(dialog, "p", {
+    textContent: req.name + " (" + req.cost + "). Personal is subtle — no anima flare. Peripheral is overt — it flares your anima."
+  });
+  var buttons = marinara.addElement(dialog, "div", { "class": "mrr-dialog__buttons" });
+  var personalBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn", textContent: "Personal (" + req.personal + " left)" });
+  var peripheralBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn", textContent: "Peripheral (" + req.peripheral + " left)" });
+  var cancelBtn = marinara.addElement(buttons, "button", { "class": "mrr-dice__btn mrr-dice__btn--secondary", textContent: "Cancel" });
+  if (personalBtn && req.personal < req.motes) { personalBtn.disabled = true; personalBtn.title = "Personal cannot pay " + req.motes + "m on its own"; }
+  if (peripheralBtn && req.peripheral < req.motes) { peripheralBtn.disabled = true; peripheralBtn.title = "Peripheral cannot pay " + req.motes + "m on its own"; }
+
+  function onKey(ev) { if (ev && ev.key === "Escape") { ev.preventDefault(); close(); log("cast cancelled (Escape): " + req.name + " — nothing deducted"); } }
+  function close() {
+    document.removeEventListener("keydown", onKey);
+    if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+    if (state.motePickerEl === backdrop) state.motePickerEl = null;
+  }
+  function pick(poolName) {
+    close();
+    log("cast " + req.name + ": " + req.motes + "m from " + poolName + " (player's pick)");
+    onPick(poolName);
+  }
+  document.addEventListener("keydown", onKey);
+  marinara.on(backdrop, "click", function (e) { if (e.target === backdrop) { close(); log("cast cancelled (backdrop): " + req.name + " — nothing deducted"); } });
+  if (cancelBtn) marinara.on(cancelBtn, "click", function () { close(); log("cast cancelled: " + req.name + " — nothing deducted"); });
+  if (personalBtn) marinara.on(personalBtn, "click", function () { if (!personalBtn.disabled) pick("Personal"); });
+  if (peripheralBtn) marinara.on(peripheralBtn, "click", function () { if (!peripheralBtn.disabled) pick("Peripheral"); });
+  /* Focus the first payable pool so Enter works for keyboard players. */
+  var first = (personalBtn && !personalBtn.disabled) ? personalBtn : ((peripheralBtn && !peripheralBtn.disabled) ? peripheralBtn : cancelBtn);
+  if (first && typeof first.focus === "function") { try { first.focus(); } catch (e) {} }
 }
 
 /* Compute the spell save DC and emit the cast + damage chat tags. */

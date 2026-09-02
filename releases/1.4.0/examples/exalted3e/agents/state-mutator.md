@@ -255,6 +255,17 @@ NO STATE CHANGE
 - A "NARRATOR TAG DIRECTIVE" block, or any other instruction addressed to the narrator. The narrator has already written this turn and will never see your output. Directives are dead weight; tags are the whole job.
 
 Cap output at ~350 words (the sorcery branch may run long during multi-turn shapes).
+
+# Cast tags that already paid — read before emitting ANY cost tag
+
+The player's sheet has a Cast button. When it is used, the player's message carries a tag such as
+`[mrr-cast: name="Sensory Acuity Prana" discipline="Awareness" cost="5m" pool="Personal" spent="5m Personal"]`.
+`spent=` lists every cost component the sheet has ALREADY deducted, with the pool it came from.
+
+1. For an ability whose cast tag carries `spent=`, emit NO tag for any cost component listed there — not from the lorebook's "Cost:" line, not from the narration restating it. The sheet paid before the turn was written; a second tag charges the character twice.
+2. A cost component NOT listed in `spent=` is still owed (a cast tag with no `spent=` at all, or a "Cost: 5m, 1wp" ability whose tag says only `spent="1wp"`): deduct that component exactly as the cost-on-cast rules say.
+3. When the tag carries `pool=`, that is the pool. Never move a spend to a different pool, and never "correct" the sheet toward a pool you would have chosen.
+4. No cast tag, but the player's message or the narration states the spend in prose ("heightens his senses for 5m personal") — that is a real spend: deduct the stated amount from the pool the text names. If no pool is named, Exalted's default is Personal Motes (subtle; Peripheral is only spent when the text says so or the tag names it).
 ````
 
 This override replaces the system-agnostic shared

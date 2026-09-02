@@ -249,6 +249,10 @@ For example, if Mira channels an ability whose entry reads `Cost: 5 motes, 1 wil
 
 If a power's entry has no stated numeric cost, nothing is deducted automatically — a material component, a narrative condition, anything non-numeric stays something you and the Game Master track by hand in the story itself.
 
+### Casting from the sheet pays up front — and only once
+
+The **Cast** button on a Charm or power pays its numeric cost from your sheet the moment you click it. In Exalted, a mote cost first asks which pool to pay from — **Personal** (subtle, no anima flare) or **Peripheral** (overt, flares your anima) — because the same Charm can be used quietly or loudly and that choice is yours, in the moment. Cancel, Escape, or clicking outside the box aborts with nothing spent. The cast tag that lands in the chat records what was paid and from where, and the State Mutator treats that as settled: it does not deduct the lorebook cost a second time when the Game Master narrates the activation. If you would rather not use the button, narrating the spend yourself ("…for 5 motes, Personal") still works — the mutator pays it from the pool you name.
+
 ### Authoring your own enemy types — the bestiary pattern
 
 If you're authoring a ruleset, or homebrewing content for one you're already playing, and you keep running into the *same kind* of enemy across different encounters — not a unique named villain (that's the card+sheet pattern above), but a recurring *type*, like "Fire-Aspect Soldier" or "Rot-touched Ghoul" — you can write it as its own keyword lorebook entry, the same way you'd write a spell or a Charm:

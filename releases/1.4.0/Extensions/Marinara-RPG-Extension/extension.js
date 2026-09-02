@@ -40,7 +40,7 @@ var MRR_TAG_CAT_PFX = "mrr-cat-";
 
 var EXT_VERSION = "1.4.0";
 
-var MRR_BUILD_STAMP = "2026-09-01-legc-faces";
+var MRR_BUILD_STAMP = "2026-09-01-sd5-motepicker";
 
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
@@ -10993,99 +10993,199 @@ function castAbilityPool(ability, catId) {
     rating = String(state.sheet.abilityCategoryScores[catId]);
   }
   var commitModel = state.ruleset.commitmentModel || null;
+  var _d = state.sheet.derived || {};
+  var _mReq = 0, _wReq = 0, _bReq = 0;
   if (cost && commitModel === "mote") {
-    var _d = state.sheet.derived || {};
-    var _mReq = 0, _wReq = 0;
     var _mM = cost.match(/(\d+)\s*m\b(?!p)/i);
     if (_mM) _mReq = parseInt(_mM[1], 10) || 0;
     var _wM = cost.match(/(\d+)\s*(?:wp\b|willpower)/i);
     if (_wM) _wReq = parseInt(_wM[1], 10) || 0;
-    var _mAvail = (typeof _d["Peripheral Motes"] === "number" ? _d["Peripheral Motes"] : 0) + (typeof _d["Personal Motes"] === "number" ? _d["Personal Motes"] : 0);
-    var _wAvail = typeof _d["Willpower"] === "number" ? _d["Willpower"] : 0;
-    if (_mReq > 0 && _mAvail < _mReq || _wReq > 0 && _wAvail < _wReq) {
-      warn("cast refused: " + name + " needs " + cost + " but pools hold " + _mAvail + "m / " + _wAvail + "wp");
-      if (typeof window !== "undefined" && window.alert) {
-        window.alert("Not enough to cast " + name + " (" + cost + "). You have " + _mAvail + " motes and " + _wAvail + " willpower.");
-      }
-      return;
-    }
   } else if (cost && commitModel !== "attuned") {
-    var _bReq = 0, _bM = cost.match(/(\d+)\s*(?:b\b|blood)/i);
+    var _bM = cost.match(/(\d+)\s*(?:b\b|blood)/i);
     if (_bM) _bReq = parseInt(_bM[1], 10) || 0;
-    if (_bReq > 0) {
-      var _bAvail = state.sheet.derived && typeof state.sheet.derived["Blood Pool"] === "number" ? state.sheet.derived["Blood Pool"] : 0;
-      if (_bAvail < _bReq) {
-        warn("cast refused: " + name + " needs " + cost + " but Blood Pool holds " + _bAvail);
-        if (typeof window !== "undefined" && window.alert) {
-          window.alert("Not enough blood to cast " + name + " (" + cost + "). Pool: " + _bAvail + ".");
-        }
-        return;
-      }
-    }
   }
-  if (cost && commitModel === "mote") {
-    if (!state.sheet.derived || typeof state.sheet.derived !== "object") {
-      state.sheet.derived = {};
+  var _peri = typeof _d["Peripheral Motes"] === "number" ? _d["Peripheral Motes"] : 0;
+  var _pers = typeof _d["Personal Motes"] === "number" ? _d["Personal Motes"] : 0;
+  var _wAvail = typeof _d["Willpower"] === "number" ? _d["Willpower"] : 0;
+  var _bAvail = typeof _d["Blood Pool"] === "number" ? _d["Blood Pool"] : 0;
+  if (_mReq > 0 && _peri < _mReq && _pers < _mReq || _wReq > 0 && _wAvail < _wReq) {
+    warn("cast refused: " + name + " needs " + cost + " but pools hold Personal " + _pers + "m / Peripheral " + _peri + "m / " + _wAvail + "wp");
+    if (typeof window !== "undefined" && window.alert) {
+      window.alert("Not enough to cast " + name + " (" + cost + "). Personal " + _pers + "m, Peripheral " + _peri + "m, Willpower " + _wAvail + ". Neither pool can pay the mote cost alone.");
     }
-    var moteMatch = cost.match(/(\d+)\s*m\b(?!p)/i);
-    if (moteMatch) {
-      var moteCost = parseInt(moteMatch[1], 10) || 0;
-      var peri = typeof state.sheet.derived["Peripheral Motes"] === "number" ? state.sheet.derived["Peripheral Motes"] : 0;
-      if (peri >= moteCost) {
-        state.sheet.derived["Peripheral Motes"] = peri - moteCost;
-      } else {
-        state.sheet.derived["Peripheral Motes"] = 0;
-        var overflow = moteCost - peri;
-        var pers = typeof state.sheet.derived["Personal Motes"] === "number" ? state.sheet.derived["Personal Motes"] : 0;
-        state.sheet.derived["Personal Motes"] = Math.max(0, pers - overflow);
-      }
+    return;
+  }
+  if (_bReq > 0 && _bAvail < _bReq) {
+    warn("cast refused: " + name + " needs " + cost + " but Blood Pool holds " + _bAvail);
+    if (typeof window !== "undefined" && window.alert) {
+      window.alert("Not enough blood to cast " + name + " (" + cost + "). Pool: " + _bAvail + ".");
     }
-    var wpMatch = cost.match(/(\d+)\s*(?:wp\b|willpower)/i);
-    if (wpMatch) {
-      var wpCost = parseInt(wpMatch[1], 10) || 0;
-      var wp = typeof state.sheet.derived["Willpower"] === "number" ? state.sheet.derived["Willpower"] : 0;
-      state.sheet.derived["Willpower"] = Math.max(0, wp - wpCost);
+    return;
+  }
+  function finishCast(poolName) {
+    var spent = [];
+    if (!state.sheet.derived || typeof state.sheet.derived !== "object") state.sheet.derived = {};
+    var d = state.sheet.derived;
+    var touched = false;
+    if (_mReq > 0 && poolName) {
+      var poolKey = poolName + " Motes";
+      var have = typeof d[poolKey] === "number" ? d[poolKey] : 0;
+      d[poolKey] = Math.max(0, have - _mReq);
+      spent.push(_mReq + "m " + poolName);
+      touched = true;
     }
-    if (moteMatch || wpMatch) {
+    if (_wReq > 0) {
+      d["Willpower"] = Math.max(0, _wAvail - _wReq);
+      spent.push(_wReq + "wp");
+      touched = true;
+    }
+    if (_bReq > 0 && typeof d["Blood Pool"] === "number") {
+      d["Blood Pool"] = Math.max(0, d["Blood Pool"] - _bReq);
+      spent.push(_bReq + " blood");
+      touched = true;
+    }
+    if (touched) {
       saveSheet(state.chatId, state.sheet);
       if (typeof refreshAllBars === "function") refreshAllBars();
     }
-  } else if (cost && commitModel === "attuned") {} else if (cost) {
-    var bloodMatch = cost.match(/(\d+)\s*(?:b\b|blood)/i);
-    if (bloodMatch && state.sheet.derived && typeof state.sheet.derived["Blood Pool"] === "number") {
-      var bloodCost = parseInt(bloodMatch[1], 10) || 0;
-      state.sheet.derived["Blood Pool"] = Math.max(0, state.sheet.derived["Blood Pool"] - bloodCost);
-      saveSheet(state.chatId, state.sheet);
-      if (typeof refreshAllBars === "function") refreshAllBars();
+    var parts = [ '[mrr-cast: name="' + name.replace(/"/g, '\\"') + '"' ];
+    if (catLabel) parts.push('discipline="' + catLabel.replace(/"/g, '\\"') + '"');
+    if (rating) parts.push('rating="' + rating + '"');
+    if (cost) parts.push('cost="' + cost.replace(/"/g, '\\"') + '"');
+    if (poolName) parts.push('pool="' + poolName + '"');
+    if (spent.length) parts.push('spent="' + spent.join(", ") + '"');
+    parts[parts.length - 1] += "]";
+    var tag = parts.join(" ");
+    var injected = false;
+    if (typeof insertIntoChatInput === "function") {
+      injected = !!insertIntoChatInput(tag);
+    }
+    if (!injected) {
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          navigator.clipboard.writeText(tag);
+        } catch (e) {}
+      }
+      if (typeof finalizeRoll === "function") finalizeRoll(tag, "narrate", []);
+      log("castAbilityPool: chat input not found; tag copied to clipboard: " + tag);
+    }
+    if (state.ruleset.resolution && state.ruleset.resolution.mode === MODES.POOL) {
+      showDice(true);
+      if (rating && typeof setDiceInput === "function") {
+        var pool = parseInt(rating, 10);
+        if (isFinite(pool) && pool > 0) setDiceInput("pool", pool);
+      }
+    }
+    if (typeof renderSheet === "function") renderSheet();
+  }
+  if (_mReq > 0) {
+    mrrOpenMotePoolPicker({
+      name,
+      cost,
+      motes: _mReq,
+      personal: _pers,
+      peripheral: _peri
+    }, finishCast);
+    return;
+  }
+  finishCast(null);
+}
+
+function mrrOpenMotePoolPicker(req, onPick) {
+  if (state.motePickerEl && state.motePickerEl.parentNode) {
+    state.motePickerEl.parentNode.removeChild(state.motePickerEl);
+    state.motePickerEl = null;
+  }
+  if (typeof document === "undefined" || !document.body) {
+    onPick(null);
+    return;
+  }
+  var backdrop = marinara.addElement(document.body, "div", {
+    class: "mrr-dialog-backdrop mrr-dialog-backdrop--open"
+  });
+  if (!backdrop) {
+    onPick(null);
+    return;
+  }
+  state.motePickerEl = backdrop;
+  var dialog = marinara.addElement(backdrop, "div", {
+    class: "mrr-dialog"
+  });
+  if (!dialog) {
+    document.body.removeChild(backdrop);
+    state.motePickerEl = null;
+    onPick(null);
+    return;
+  }
+  marinara.addElement(dialog, "h3", {
+    textContent: "Spend " + req.motes + "m — from which pool?"
+  });
+  marinara.addElement(dialog, "p", {
+    textContent: req.name + " (" + req.cost + "). Personal is subtle — no anima flare. Peripheral is overt — it flares your anima."
+  });
+  var buttons = marinara.addElement(dialog, "div", {
+    class: "mrr-dialog__buttons"
+  });
+  var personalBtn = marinara.addElement(buttons, "button", {
+    class: "mrr-dice__btn",
+    textContent: "Personal (" + req.personal + " left)"
+  });
+  var peripheralBtn = marinara.addElement(buttons, "button", {
+    class: "mrr-dice__btn",
+    textContent: "Peripheral (" + req.peripheral + " left)"
+  });
+  var cancelBtn = marinara.addElement(buttons, "button", {
+    class: "mrr-dice__btn mrr-dice__btn--secondary",
+    textContent: "Cancel"
+  });
+  if (personalBtn && req.personal < req.motes) {
+    personalBtn.disabled = true;
+    personalBtn.title = "Personal cannot pay " + req.motes + "m on its own";
+  }
+  if (peripheralBtn && req.peripheral < req.motes) {
+    peripheralBtn.disabled = true;
+    peripheralBtn.title = "Peripheral cannot pay " + req.motes + "m on its own";
+  }
+  function onKey(ev) {
+    if (ev && ev.key === "Escape") {
+      ev.preventDefault();
+      close();
+      log("cast cancelled (Escape): " + req.name + " — nothing deducted");
     }
   }
-  var parts = [ '[mrr-cast: name="' + name.replace(/"/g, '\\"') + '"' ];
-  if (catLabel) parts.push('discipline="' + catLabel.replace(/"/g, '\\"') + '"');
-  if (rating) parts.push('rating="' + rating + '"');
-  if (cost) parts.push('cost="' + cost.replace(/"/g, '\\"') + '"');
-  parts[parts.length - 1] += "]";
-  var tag = parts.join(" ");
-  var injected = false;
-  if (typeof insertIntoChatInput === "function") {
-    injected = !!insertIntoChatInput(tag);
+  function close() {
+    document.removeEventListener("keydown", onKey);
+    if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+    if (state.motePickerEl === backdrop) state.motePickerEl = null;
   }
-  if (!injected) {
-    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
-      try {
-        navigator.clipboard.writeText(tag);
-      } catch (e) {}
+  function pick(poolName) {
+    close();
+    log("cast " + req.name + ": " + req.motes + "m from " + poolName + " (player's pick)");
+    onPick(poolName);
+  }
+  document.addEventListener("keydown", onKey);
+  marinara.on(backdrop, "click", function(e) {
+    if (e.target === backdrop) {
+      close();
+      log("cast cancelled (backdrop): " + req.name + " — nothing deducted");
     }
-    if (typeof finalizeRoll === "function") finalizeRoll(tag, "narrate", []);
-    log("castAbilityPool: chat input not found; tag copied to clipboard: " + tag);
+  });
+  if (cancelBtn) marinara.on(cancelBtn, "click", function() {
+    close();
+    log("cast cancelled: " + req.name + " — nothing deducted");
+  });
+  if (personalBtn) marinara.on(personalBtn, "click", function() {
+    if (!personalBtn.disabled) pick("Personal");
+  });
+  if (peripheralBtn) marinara.on(peripheralBtn, "click", function() {
+    if (!peripheralBtn.disabled) pick("Peripheral");
+  });
+  var first = personalBtn && !personalBtn.disabled ? personalBtn : peripheralBtn && !peripheralBtn.disabled ? peripheralBtn : cancelBtn;
+  if (first && typeof first.focus === "function") {
+    try {
+      first.focus();
+    } catch (e) {}
   }
-  if (state.ruleset.resolution && state.ruleset.resolution.mode === MODES.POOL) {
-    showDice(true);
-    if (rating && typeof setDiceInput === "function") {
-      var pool = parseInt(rating, 10);
-      if (isFinite(pool) && pool > 0) setDiceInput("pool", pool);
-    }
-  }
-  if (typeof renderSheet === "function") renderSheet();
 }
 
 function castSpell(ability) {
