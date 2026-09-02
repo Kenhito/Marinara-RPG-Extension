@@ -625,7 +625,8 @@
     "version": 1,
     "namePlaceholder": "Longsword +1",
     "fields": [
-      { "id": "acBase", "label": "Base AC", "type": "number", "appliesTo": ["Armor"], "min": 0, "bonusKind": "replace-base", "bonusTarget": "Armor Class", "promptVisible": true, "help": "The AC this armour sets before Dexterity — leather 11, chain shirt 13, plate 18. Shields add instead: use Magic Bonus." },
+      { "id": "acBase", "label": "Base AC", "type": "number", "appliesTo": ["Armor"], "min": 0, "bonusKind": "replace-base", "bonusTarget": "Armor Class", "promptVisible": true, "help": "The AC this armour sets before Dexterity — leather 11, chain shirt 13, plate 18. Shields add instead: use the Shield slot's AC Bonus." },
+      { "id": "acBonus", "label": "AC Bonus", "type": "number", "appliesTo": ["Shield"], "default": 2, "min": 0, "bonusTarget": "Armor Class", "promptVisible": true, "help": "The shield's flat AC bonus — a standard shield is +2. Summed into Armor Class while the shield is equipped, on top of the armour's Base AC. Put any +1/+2/+3 enchantment in Magic Bonus, not here." },
       { "id": "acDexCap", "label": "Dex Cap", "type": "number", "appliesTo": ["Armor"], "min": 0, "capsToken": "Dexterity_mod", "help": "Maximum Dexterity bonus this armour allows. Light armour: leave blank. Medium: 2. Heavy: 0.", "promptVisible": true },
       { "id": "stealthDisadvantage", "label": "Stealth Disadvantage", "type": "boolean", "appliesTo": ["Armor"], "default": false, "promptVisible": true },
       { "id": "strengthRequirement", "label": "Str Requirement", "type": "number", "appliesTo": ["Armor"], "min": 0, "default": 0 },
