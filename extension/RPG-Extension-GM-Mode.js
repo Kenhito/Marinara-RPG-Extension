@@ -57,7 +57,7 @@ var EXT_VERSION      = "1.4.0";
 /* Build discriminator (plan A7): same-version test rebuilds are told apart
    from inside the environment — the init console line prints this stamp,
    so a stale cached package is caught before a test session is burned. */
-var MRR_BUILD_STAMP  = "2026-09-02-sd6-anima-alias";
+var MRR_BUILD_STAMP  = "2026-09-02-sd7-sync-provenance";
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
 /* Markers used by the bundle installer to recognize artifacts it created
@@ -325,6 +325,24 @@ function warn(msg, payload) {
   if (payload === undefined) console.warn("[mrr]", msg);
   else                       console.warn("[mrr]", msg, payload);
 }
+
+/* SD-7 (2026-09-02) — sync-trigger provenance. See
+   Plans/2026-09-02_sd7-mote-snapshot-silent-max-fallback.md Phase 3B.
+   syncSheetToAgents() has exactly one path in (scheduleAutoSync, itself only
+   reachable from saveSheet's single call site and init()'s activation sync)
+   plus its own deferred re-run, so nothing here can tell WHY a given sync
+   fired just by looking at syncSheetToAgents' own stack. Traced call sites
+   stamp this module-scoped "last known reason the sheet moved" immediately
+   before the save/sync that follows from them; syncSheetToAgents' resource
+   loop reads it at render time. This is a last-trigger heuristic, not a
+   per-sync causal proof — a call site nobody has traced yet, or a save that
+   lands after a traced one without itself being traced, both leave the
+   PREVIOUS label standing rather than resetting to "unknown". A wrong label
+   is worse than "unknown", so only trace call sites that are actually
+   confirmed (see the 3B anchors in the plan) — everything else is honestly
+   "unknown" until someone traces it. */
+var mrrSd7Trigger = "unknown";
+function mrrSd7SetTrigger(label) { mrrSd7Trigger = label; }
 
 function safeParse(text) {
   try { return JSON.parse(text); }
@@ -9810,6 +9828,10 @@ function mrrSetResourceCurrent(resource, value) {
   if (!state.sheet.resources || typeof state.sheet.resources !== "object") {
     state.sheet.resources = {};
   }
+  /* SD-7 3B: the sheet UI's sole write path for a player-driven resource
+     pool edit (stepper +/-, direct number entry) — see the plan's
+     manual-sheet-edit trigger label. */
+  mrrSd7SetTrigger("manual-sheet-edit");
   if (typeof resource.stateName === "string" && resource.stateName) {
     if (!state.sheet.derived || typeof state.sheet.derived !== "object") {
       state.sheet.derived = {};
@@ -14283,6 +14305,7 @@ function castAbilityPool(ability, catId) {
       touched = true;
     }
     if (touched) {
+      mrrSd7SetTrigger("cast-deduct");
       saveSheet(state.chatId, state.sheet);
       if (typeof refreshAllBars === "function") refreshAllBars();
     }
@@ -17379,6 +17402,32 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
      mutations that haven't yet been mirrored to state.sheet.resources. */
   if (Array.isArray(state.ruleset.resources) && state.ruleset.resources.length) {
     var resourceLinesForSnap = [];
+    /* SD-7 (2026-09-02) Phase 2 + 3A — see
+       Plans/2026-09-02_sd7-mote-snapshot-silent-max-fallback.md. Two passes
+       over the same resources[] the pre-SD-7 code walked once:
+         PASS 1 resolves every non-custom resource's branch (d = derived
+           [stateName], r = resources[id].current, or "pending" when
+           neither is populated) WITHOUT rendering or deciding max-fallback
+           vs unknown yet, and records whether ANYTHING on this sheet
+           resolved via d/r.
+         PASS 2 (2A discriminator) renders each line: a "pending" resource
+           with a declared max is a genuinely fresh, never-touched pool
+           ONLY if pass 1 found nothing else resolved anywhere on this same
+           sheet (branch "M", current = max, exactly today's behavior, no
+           warn). If pass 1 DID find something else resolved, this
+           resource's own missing key is a read miss on an otherwise-
+           hydrated sheet — rendering max here would be the exact silent
+           lie SD-7 caught (F2/F11: Motes Personal 22/22 on a sheet whose
+           real current was 19). Q1(b) (Corey, ruled): render an explicit
+           "unknown" alongside the real max, never a fabricated number
+           (branch "u"), and warn loudly (3A/2B) so the condition is
+           diagnosable from an exported console log without a code read.
+       A resource with no declared max at all is untouched by this
+       discriminator (branch "z", current = 0 — nothing to alongside).
+       The healthy-path line format (d/r/z, and the fresh-sheet M case) is
+       byte-identical to the pre-SD-7 code — the P1 fixture asserts this. */
+    var mrrSd7ResolvedInfo = [];
+    var mrrSd7AnyResolved = false;
     state.ruleset.resources.forEach(function (r) {
       if (!r || !r.id) return;
       if (r.type === "custom") return;
@@ -17400,22 +17449,52 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
       }
       var stateRec = state.sheet.resources ? state.sheet.resources[r.id] : null;
       var stateNameVal = (r.stateName && state.sheet.derived) ? state.sheet.derived[r.stateName] : null;
-      var current = null;
+      var branch = null, current = null;
       if (stateNameVal != null && stateNameVal !== "") {
         current = (typeof stateNameVal === "number") ? stateNameVal : (parseInt(stateNameVal, 10) || 0);
+        branch = "d";
       } else if (stateRec && stateRec.current != null && stateRec.current !== "") {
         current = (typeof stateRec.current === "number") ? stateRec.current : (parseInt(stateRec.current, 10) || 0);
-      } else if (maxVal != null) {
-        current = maxVal;
-      } else {
-        current = 0;
+        branch = "r";
+      }
+      if (branch === "d" || branch === "r") mrrSd7AnyResolved = true;
+      mrrSd7ResolvedInfo.push({ r: r, maxVal: maxVal, committedForSnap: committedForSnap, branch: branch, current: current });
+    });
+    var mrrSd7ProvenanceTokens = [];
+    mrrSd7ResolvedInfo.forEach(function (info) {
+      var r = info.r, maxVal = info.maxVal, committedForSnap = info.committedForSnap;
+      var branch = info.branch, current = info.current;
+      if (branch == null) {
+        if (maxVal != null) {
+          if (mrrSd7AnyResolved) {
+            branch = "u";   /* read miss — Q1(b): unknown, never a fabricated number */
+            current = null;
+          } else {
+            branch = "M";   /* genuinely fresh sheet — max is correct, no warn */
+            current = maxVal;
+          }
+        } else {
+          branch = "z";     /* no declared max either — nothing to fall back to */
+          current = 0;
+        }
+      }
+      if (branch === "u") {
+        var mrrSd7DerivedKeys = (state.sheet.derived && typeof state.sheet.derived === "object")
+          ? Object.keys(state.sheet.derived) : [];
+        warn("[mrr-sd7] resource read miss: id=" + r.id + " stateName=" + (r.stateName || "(none)") +
+             " — state.sheet.derived keys at this instant: [" + mrrSd7DerivedKeys.join(", ") + "]");
       }
       var label = r.label || r.id;
-      var line = "- " + label + ": " + current;
+      var renderedCurrent = (current == null) ? "unknown" : current;
+      var line = "- " + label + ": " + renderedCurrent;
       if (maxVal != null) line += " / " + maxVal;
       if (committedForSnap > 0) line += "  (" + committedForSnap + " committed)";
       resourceLinesForSnap.push(line);
+      mrrSd7ProvenanceTokens.push(label + "=" + renderedCurrent + ":" + branch);
     });
+    if (mrrSd7ProvenanceTokens.length) {
+      log("[mrr-sd7] sync trigger=" + mrrSd7Trigger + " " + mrrSd7ProvenanceTokens.join(" "));
+    }
     if (resourceLinesForSnap.length) {
       lines.push("Resources:");
       Array.prototype.push.apply(lines, resourceLinesForSnap);
@@ -18456,6 +18535,7 @@ function syncSheetToAgents() {
     if (fannedOut && (state.mrrSyncGen || 0) === syncGen) state.mrrSyncLastBlock[rulesetId] = signature;
     if (state.mrrSyncDirty || (state.mrrSyncGen || 0) !== syncGen) {
       state.mrrSyncDirty = false;
+      mrrSd7SetTrigger("deferred-rerun"); /* SD-7 3B: E-2(c)'s in-flight dirty re-run — a change landed while the prior pass was in flight */
       syncSheetToAgents();   /* exactly one deferred re-run; the content gate decides whether it costs anything */
     }
   }, function (e) {
@@ -20672,6 +20752,12 @@ function applyStateTagsWithDedup(tags, anchorId, journalKey, channel) {
   if (!tags || !tags.length) return 0;
   var bucketKey = journalKey || anchorId;
   var chan = channel || "dom"; /* defensive default: an un-passed channel behaves as the historic single-writer (narrator) path */
+  /* SD-7 3B: this is THE shared choke point for both the narrator DOM pass
+     (:23474-ish, channel "dom") and the runs-poller mutation-apply pass
+     (:23909-ish, channel "poller") — see this function's own header. The
+     17:20:42 bad write (F10) came from the mutation-apply family, so these
+     two labels are the ones the plan calls load-bearing. */
+  mrrSd7SetTrigger(chan === "poller" ? "poller-apply" : "dom-state-tag-apply");
   var occ = Object.create(null);
   var applied = 0;
   var tally = mrrNewOutcomeTally();
@@ -24380,6 +24466,7 @@ function init() {
      activation, not just after the user's first edit. Debounced via the
      same path as saveSheet so multiple activations on a fast SPA route
      change coalesce into one round of PATCHes. */
+  mrrSd7SetTrigger("chat-hydrate/binding-restore"); /* SD-7 3B: chat activation — loadSheet() + binding restore just ran above */
   if (typeof scheduleAutoSync === "function") scheduleAutoSync();
   /* Round-24: the unconditional `reconcileActiveAgents(true)` that used to
      live here has MOVED into mrrConfirmChatRuleset. Reason (full write-up

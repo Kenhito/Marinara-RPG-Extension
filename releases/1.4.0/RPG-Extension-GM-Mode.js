@@ -40,7 +40,7 @@ var MRR_TAG_CAT_PFX = "mrr-cat-";
 
 var EXT_VERSION = "1.4.0";
 
-var MRR_BUILD_STAMP = "2026-09-02-sd6-anima-alias";
+var MRR_BUILD_STAMP = "2026-09-02-sd7-sync-provenance";
 
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
@@ -259,6 +259,12 @@ function log(msg, payload) {
 
 function warn(msg, payload) {
   if (payload === undefined) console.warn("[mrr]", msg); else console.warn("[mrr]", msg, payload);
+}
+
+var mrrSd7Trigger = "unknown";
+
+function mrrSd7SetTrigger(label) {
+  mrrSd7Trigger = label;
 }
 
 function safeParse(text) {
@@ -6920,6 +6926,7 @@ function mrrSetResourceCurrent(resource, value) {
   if (!state.sheet.resources || typeof state.sheet.resources !== "object") {
     state.sheet.resources = {};
   }
+  mrrSd7SetTrigger("manual-sheet-edit");
   if (typeof resource.stateName === "string" && resource.stateName) {
     if (!state.sheet.derived || typeof state.sheet.derived !== "object") {
       state.sheet.derived = {};
@@ -11045,6 +11052,7 @@ function castAbilityPool(ability, catId) {
       touched = true;
     }
     if (touched) {
+      mrrSd7SetTrigger("cast-deduct");
       saveSheet(state.chatId, state.sheet);
       if (typeof refreshAllBars === "function") refreshAllBars();
     }
@@ -13907,6 +13915,8 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
   }
   if (Array.isArray(state.ruleset.resources) && state.ruleset.resources.length) {
     var resourceLinesForSnap = [];
+    var mrrSd7ResolvedInfo = [];
+    var mrrSd7AnyResolved = false;
     state.ruleset.resources.forEach(function(r) {
       if (!r || !r.id) return;
       if (r.type === "custom") return;
@@ -13922,22 +13932,56 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
       }
       var stateRec = state.sheet.resources ? state.sheet.resources[r.id] : null;
       var stateNameVal = r.stateName && state.sheet.derived ? state.sheet.derived[r.stateName] : null;
-      var current = null;
+      var branch = null, current = null;
       if (stateNameVal != null && stateNameVal !== "") {
         current = typeof stateNameVal === "number" ? stateNameVal : parseInt(stateNameVal, 10) || 0;
+        branch = "d";
       } else if (stateRec && stateRec.current != null && stateRec.current !== "") {
         current = typeof stateRec.current === "number" ? stateRec.current : parseInt(stateRec.current, 10) || 0;
-      } else if (maxVal != null) {
-        current = maxVal;
-      } else {
-        current = 0;
+        branch = "r";
+      }
+      if (branch === "d" || branch === "r") mrrSd7AnyResolved = true;
+      mrrSd7ResolvedInfo.push({
+        r,
+        maxVal,
+        committedForSnap,
+        branch,
+        current
+      });
+    });
+    var mrrSd7ProvenanceTokens = [];
+    mrrSd7ResolvedInfo.forEach(function(info) {
+      var r = info.r, maxVal = info.maxVal, committedForSnap = info.committedForSnap;
+      var branch = info.branch, current = info.current;
+      if (branch == null) {
+        if (maxVal != null) {
+          if (mrrSd7AnyResolved) {
+            branch = "u";
+            current = null;
+          } else {
+            branch = "M";
+            current = maxVal;
+          }
+        } else {
+          branch = "z";
+          current = 0;
+        }
+      }
+      if (branch === "u") {
+        var mrrSd7DerivedKeys = state.sheet.derived && typeof state.sheet.derived === "object" ? Object.keys(state.sheet.derived) : [];
+        warn("[mrr-sd7] resource read miss: id=" + r.id + " stateName=" + (r.stateName || "(none)") + " — state.sheet.derived keys at this instant: [" + mrrSd7DerivedKeys.join(", ") + "]");
       }
       var label = r.label || r.id;
-      var line = "- " + label + ": " + current;
+      var renderedCurrent = current == null ? "unknown" : current;
+      var line = "- " + label + ": " + renderedCurrent;
       if (maxVal != null) line += " / " + maxVal;
       if (committedForSnap > 0) line += "  (" + committedForSnap + " committed)";
       resourceLinesForSnap.push(line);
+      mrrSd7ProvenanceTokens.push(label + "=" + renderedCurrent + ":" + branch);
     });
+    if (mrrSd7ProvenanceTokens.length) {
+      log("[mrr-sd7] sync trigger=" + mrrSd7Trigger + " " + mrrSd7ProvenanceTokens.join(" "));
+    }
     if (resourceLinesForSnap.length) {
       lines.push("Resources:");
       Array.prototype.push.apply(lines, resourceLinesForSnap);
@@ -14525,6 +14569,7 @@ function syncSheetToAgents() {
     if (fannedOut && (state.mrrSyncGen || 0) === syncGen) state.mrrSyncLastBlock[rulesetId] = signature;
     if (state.mrrSyncDirty || (state.mrrSyncGen || 0) !== syncGen) {
       state.mrrSyncDirty = false;
+      mrrSd7SetTrigger("deferred-rerun");
       syncSheetToAgents();
     }
   }, function(e) {
@@ -15787,6 +15832,7 @@ function applyStateTagsWithDedup(tags, anchorId, journalKey, channel) {
   if (!tags || !tags.length) return 0;
   var bucketKey = journalKey || anchorId;
   var chan = channel || "dom";
+  mrrSd7SetTrigger(chan === "poller" ? "poller-apply" : "dom-state-tag-apply");
   var occ = Object.create(null);
   var applied = 0;
   var tally = mrrNewOutcomeTally();
@@ -17931,6 +17977,7 @@ function init() {
   mrrWatchSheetPanelUse();
   exposeDebug();
   log("activated ruleset " + rs.id + " v" + rs.version + " on chat " + (state.chatId || "(none)") + " as " + state.activeCharacterId);
+  mrrSd7SetTrigger("chat-hydrate/binding-restore");
   if (typeof scheduleAutoSync === "function") scheduleAutoSync();
 }
 
