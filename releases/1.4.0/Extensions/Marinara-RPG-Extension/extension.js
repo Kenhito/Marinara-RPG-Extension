@@ -40,7 +40,7 @@ var MRR_TAG_CAT_PFX = "mrr-cat-";
 
 var EXT_VERSION = "1.4.0";
 
-var MRR_BUILD_STAMP = "2026-09-01-sd5-motepicker";
+var MRR_BUILD_STAMP = "2026-09-02-sd6-anima-alias";
 
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
@@ -14250,7 +14250,18 @@ function mrrPartyMemberSummaryLines(sheet, characterId) {
       if (!isBar && !isPool) return;
       var cur = typeof dv === "number" && isFinite(dv) ? dv : 0;
       var max = mrrP3ComputeBarMax(d);
-      lines.push("- " + d.name + ": " + cur + " / " + max);
+      var committedHere = 0;
+      if (typeof max === "number" && isFinite(max) && state.ruleset && Array.isArray(state.ruleset.resources) && typeof computeCommittedMotes === "function") {
+        for (var ri = 0; ri < state.ruleset.resources.length; ri++) {
+          var rr = state.ruleset.resources[ri];
+          if (rr && rr.stateName === d.name && typeof rr.commitmentPool === "string" && rr.commitmentPool) {
+            committedHere = computeCommittedMotes(rr.commitmentPool);
+            if (committedHere > 0) max = Math.max(0, max - committedHere);
+            break;
+          }
+        }
+      }
+      lines.push("- " + d.name + ": " + cur + " / " + max + (committedHere > 0 ? "  (" + committedHere + " committed)" : ""));
     });
     if (!lines.length) {
       defs.forEach(function(d) {
@@ -16677,6 +16688,34 @@ function resolveRulesetState(field) {
   for (var i = 0; i < state.ruleset.states.length; i++) {
     var st = state.ruleset.states[i];
     if (st && typeof st.name === "string" && normalizeFieldKey(st.name) === target) return st;
+  }
+  for (var a = 0; a < state.ruleset.states.length; a++) {
+    var sa = state.ruleset.states[a];
+    if (!sa || !Array.isArray(sa.aliases)) continue;
+    for (var k = 0; k < sa.aliases.length; k++) {
+      if (typeof sa.aliases[k] === "string" && normalizeFieldKey(sa.aliases[k]) === target) {
+        log("state-mutator: field '" + field + "' resolved to state '" + sa.name + "' via declared alias");
+        return sa;
+      }
+    }
+  }
+  if (target.length < 3) return null;
+  if (typeof resolveSheetField === "function" && state.sheet && resolveSheetField(state.sheet, field)) return null;
+  var partial = null, partialCount = 0;
+  for (var p = 0; p < state.ruleset.states.length; p++) {
+    var sp = state.ruleset.states[p];
+    if (!sp || typeof sp.name !== "string") continue;
+    var nm = normalizeFieldKey(sp.name);
+    if (!nm || nm === target) continue;
+    var hit = nm.indexOf(target) === 0 || nm.split("_").indexOf(target) !== -1;
+    if (hit) {
+      partial = sp;
+      partialCount++;
+    }
+  }
+  if (partialCount === 1) {
+    log("state-mutator: field '" + field + "' resolved to state '" + partial.name + "' (unique partial match)");
+    return partial;
   }
   return null;
 }

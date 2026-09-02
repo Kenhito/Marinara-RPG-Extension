@@ -520,6 +520,12 @@
     "states": [
       {
         "name": "Anima Banner",
+        "aliases": [
+          "anima",
+          "banner",
+          "anima level",
+          "anima flare"
+        ],
         "values": [
           {
             "label": "Dim",

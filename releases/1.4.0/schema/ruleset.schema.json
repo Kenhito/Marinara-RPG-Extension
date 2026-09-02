@@ -940,6 +940,7 @@
         "additionalProperties": false,
         "properties": {
           "name": { "type": "string" },
+          "aliases": { "type": "array", "items": { "type": "string" }, "uniqueItems": true, "description": "Alternate field names a state-mutator tag may use for this state (e.g. \"anima\" for \"Anima Banner\"). Matched case-insensitively after the exact name." },
           "values": {
             "type": "array",
             "minItems": 2,

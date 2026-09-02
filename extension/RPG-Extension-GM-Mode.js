@@ -57,7 +57,7 @@ var EXT_VERSION      = "1.4.0";
 /* Build discriminator (plan A7): same-version test rebuilds are told apart
    from inside the environment — the init console line prints this stamp,
    so a stale cached package is caught before a test session is burned. */
-var MRR_BUILD_STAMP  = "2026-09-01-sd5-motepicker";
+var MRR_BUILD_STAMP  = "2026-09-02-sd6-anima-alias";
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
 /* Markers used by the bundle installer to recognize artifacts it created
@@ -17876,7 +17876,25 @@ function mrrPartyMemberSummaryLines(sheet, characterId) {
       if (!isBar && !isPool) return;
       var cur = (typeof dv === "number" && isFinite(dv)) ? dv : 0;
       var max = mrrP3ComputeBarMax(d);
-      lines.push("- " + d.name + ": " + cur + " / " + max);
+      /* SD-6 parity (live, 2026-09-02): the full tier reports a committed pool
+         as "37 / 42  (12 committed)" (buildSheetForPrompt's resource
+         snapshot subtracts the commitment from the max), while this tier
+         printed the raw ceiling "37 / 54" — two agents, two denominators,
+         one sheet. Same subtraction here, keyed the same way: the ruleset
+         resource whose stateName is this derived stat and which declares a
+         commitmentPool. Rulesets without commitment are byte-identical. */
+      var committedHere = 0;
+      if (typeof max === "number" && isFinite(max) && state.ruleset && Array.isArray(state.ruleset.resources) && typeof computeCommittedMotes === "function") {
+        for (var ri = 0; ri < state.ruleset.resources.length; ri++) {
+          var rr = state.ruleset.resources[ri];
+          if (rr && rr.stateName === d.name && typeof rr.commitmentPool === "string" && rr.commitmentPool) {
+            committedHere = computeCommittedMotes(rr.commitmentPool);
+            if (committedHere > 0) max = Math.max(0, max - committedHere);
+            break;
+          }
+        }
+      }
+      lines.push("- " + d.name + ": " + cur + " / " + max + (committedHere > 0 ? "  (" + committedHere + " committed)" : ""));
     });
     if (!lines.length) {
       defs.forEach(function (d) {
@@ -22124,6 +22142,49 @@ function resolveRulesetState(field) {
   for (var i = 0; i < state.ruleset.states.length; i++) {
     var st = state.ruleset.states[i];
     if (st && typeof st.name === "string" && normalizeFieldKey(st.name) === target) return st;
+  }
+  /* SD-6 (2026-09-02, live miss): the narrator wrote field="anima" for the
+     Exalted "Anima Banner" state and the write was dropped as a non-integer
+     numeric — the sheet never moved while the narrator believed it had.
+     Two tolerant steps after the exact match, in this order:
+       1. DECLARED ALIASES — ruleset.states[].aliases, authored per system.
+       2. UNIQUE PARTIAL — the field is a leading prefix or a whole-word part
+          of exactly ONE declared state name ("anima" -> "Anima Banner",
+          "banner" -> "Anima Banner"). Two candidates = no match, so this
+          can never route a write to the wrong state; it only rescues the
+          unambiguous case. Every rescue is logged so the console shows
+          which spelling the model actually used. */
+  for (var a = 0; a < state.ruleset.states.length; a++) {
+    var sa = state.ruleset.states[a];
+    if (!sa || !Array.isArray(sa.aliases)) continue;
+    for (var k = 0; k < sa.aliases.length; k++) {
+      if (typeof sa.aliases[k] === "string" && normalizeFieldKey(sa.aliases[k]) === target) {
+        log("state-mutator: field '" + field + "' resolved to state '" + sa.name + "' via declared alias");
+        return sa;
+      }
+    }
+  }
+  /* Guards: a partial needs at least three characters (a one-letter field
+     matched "Anima Banner" by prefix in the probe), and it must not already
+     be a real numeric field — a derived stat, attribute or skill whose name
+     the field matches routes to the number, never to a state. */
+  if (target.length < 3) return null;
+  if (typeof resolveSheetField === "function" && state.sheet && resolveSheetField(state.sheet, field)) return null;
+  var partial = null, partialCount = 0;
+  for (var p = 0; p < state.ruleset.states.length; p++) {
+    var sp = state.ruleset.states[p];
+    if (!sp || typeof sp.name !== "string") continue;
+    var nm = normalizeFieldKey(sp.name);
+    if (!nm || nm === target) continue;
+    /* leading prefix, or one whole underscore-delimited word — never a bare
+       indexOf arithmetic (an earlier draft compared two -1s and matched
+       "peripheral" to "initiative"; caught by the resolver probe). */
+    var hit = nm.indexOf(target) === 0 || nm.split("_").indexOf(target) !== -1;
+    if (hit) { partial = sp; partialCount++; }
+  }
+  if (partialCount === 1) {
+    log("state-mutator: field '" + field + "' resolved to state '" + partial.name + "' (unique partial match)");
+    return partial;
   }
   return null;
 }
