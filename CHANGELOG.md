@@ -9,8 +9,14 @@ explicitly when they do).
 
 ## [Unreleased]
 
+Pending the next published release. New entries land here between releases;
+each release moves the entries into a dated section below.
+
+## v1.4.0 (2026-09-03)
+
 ### Added
 
+- **`Atk attr:` on the equipped-gear identity line (batch-2 F7)** — a weapon's attack attribute now renders as a core chip on both the full-tier and summary-tier inventory lines (description-precedent ordering, emitted only when non-empty), so every agent tier sees which attribute swings the weapon without the full numeric breakdown.
 - **Cast pays once, from the pool you pick (shake-down SD-5, Corey ruling 2026-09-01)** — a Charm's mote cost now opens a Personal / Peripheral picker on Cast (the same Charm is used subtly or loudly; choosing in the moment is the mechanic); the old Peripheral-first-then-overflow default is gone (it also contradicted the EX3 lorebook's "Spend Personal first"). The cast tag is stamped `pool="…" spent="…"`, and the State Mutator prompts (base + exalted3e/exwod/vtmv20/w20 overrides) now treat every component in `spent=` as already paid — closing a real double-charge where the button AND the lorebook cost-on-cast rule both deducted a 5m Charm. Exalted GM prompt gains rule 3a (narrate the flare from the pool named; never restate a paid spend). Cancel/Escape/backdrop abort with nothing deducted.
 - **dnd5e Shield AC Bonus (shake-down SD-2, Corey ruling 2026-09-01)** — new declared item field `acBonus` (number, Shield slot only, default 2, `bonusTarget: "Armor Class"`, prompt-visible) so a shield's flat +2 has a real field instead of riding a Bonuses row or the Magic Bonus slot; `acBase` help now points shields at it; dnd5e state-mutator doc names `ac_bonus`. Parity with pathfinder2e's shield item bonus, without hardness or break threshold (not 5e concepts).
 - **One-click Long Rest (dnd5e)** — a declarative `rests[]` block in ruleset.json drives a Long Rest button in the Resources area: HP to max, hit dice regained at RAW half-down-min-1, all declared slot tiers refilled, temp-HP/death-saves reset (if-present semantics), applied as ONE batched `saveSheet` — never a per-widget write loop. Restore is "up to", never "set to": an above-max pool is never reduced. Guards: double-fire latch, poller-in-flight gate, blank-sheet refusal; a House-Rules read failure HARD-STOPS the rest rather than silently applying a default. Every rest emits a receipt (toast + console) naming each change, the lever values in effect, and their source — including the explicit "no House Rules entry for `<system>` — RAW" absence line. Systems without `rests[]` render no button by design (currently dnd5e only). Amount vocabulary is a closed schema enum: unknown names are a validation error, never a silent skip. Long-tier rests apply short-tier restores too (superset rule, dormant until a system declares short rests).
@@ -37,6 +43,10 @@ explicitly when they do).
 
 ### Fixed
 
+- **Agent snapshot could carry a wrong Personal mote current after a mutation-apply sync (shake-down SD-7, 2026-09-02, live miss)** — after a round's mutation-apply pass, the injected sheet snapshot showed Personal at full (22/22) while the stored sheet held 19; the narrator would happily spend motes that weren't there. The snapshot sync now resolves each pool's current on its own per-pool branch (no shared fallback between pools), and every sync logs an `[mrr-sd7]` provenance line naming its trigger (`chat-hydrate`, `manual-sheet-edit`, `cast-deduct`, `poller-apply`, …) — so the next wrong number arrives with its own audit trail attached. A read-miss on a hydrated sheet now renders `unknown / max` plus a console warn instead of a fabricated full pool (maintainer ruling); genuinely fresh sheets keep seeding current = max.
+- **Legacy-row migration is now slot-aware (shake-down batch-2 s3b — closes the SD-2 regression)** — the R16 migration groups eligible declared fields by `bonusTarget` and declines when more than one claims a target (the ambiguity guard), but it never slot-filtered the candidate set. SD-2's Shield-only `acBonus` therefore made every dnd5e legacy armor `+2 → Armor Class` row look ambiguous (`acBonus` + `armorMagicBonus` both claimed it), silently declining migrations that used to run. Candidates are now filtered through `mrrFieldAppliesToItem` before the ambiguity count: an Armor-slot item sees only the fields that apply to it and migrates again; a Shield-slot row stays correctly declined (two AC fields genuinely apply); a slotless item still declines, now pinned by its own probe.
+- **Charms category rating no longer contradicts the Skills block (batch-2 F6, exalted3e)** — a populated Charm category with no stored rating rendered `rating 0` in the agent sheet block while the Skills block showed the character's real dots; the category rating now falls back to `skills[cat.label]` when unset.
+- **Summary tier renders `unknown` on a hydrated read-miss (batch-2 F13)** — the SD-7 rule applied at the summary tier: a pool read-miss on a hydrated sheet renders `unknown` with an `[mrr-sd7]` warn, never a fabricated `0`; genuinely fresh members are unchanged.
 - **State writes accept declared aliases and unambiguous partial names (shake-down SD-6, 2026-09-02, live miss)** — the narrator wrote `field="anima"` for Exalted's "Anima Banner" and the write was dropped as a non-integer numeric: the sheet never moved while the narrator believed it had. `resolveRulesetState` now tries, after the exact name, `states[].aliases` (new schema field; exalted3e declares anima / banner / anima level / anima flare) and then a unique leading-prefix or whole-word match against exactly one state — guarded to three-plus characters and to fields that are not already a numeric stat, and logged on every rescue. Probed against every numeric field name (derived / attributes / skills / resources) in all sixteen rulesets: none newly routed to a state.
 - **Summary-tier pool denominator matches the full tier** — the Context Fuser showed Peripheral as 37/54 while the Ruleset Helper showed 37/42 (12 committed); the summary tier now subtracts the commitment the same way and appends "(N committed)". Rulesets without commitment are byte-identical.
 - **Pre-round: equipment bonuses were double-counted on 13 UI stats / 14 agent-prompt stats (F19)** — a stat whose value-winning formula also carried a `{bonuses:X}` token summed the same equipped-item contribution twice: once inside the computed base, once again as the displayed suffix (Corey's D&D Armor Class read 14 in the base and +2 in the suffix — 16 total — for gear that actually gives 14). Root cause: two independent token resolvers (`evalFormula` for `valueFormula`, `mrrSubstituteTokens` for `tooltipFormula`) had different vocabularies, so which formula "won" the displayed value determined whether the bonus landed once or twice. Fixed at the resolver level — one shared token resolver both evaluators now delegate to — with the affected stats' formulas edited so value and tooltip deliberately disagree by exactly the equipment bonus (the base excludes it, the suffix carries it, both reconcile). Confirmed on real data: Tester's D&D AC now computes 12 (base) + 2 (suffix) = **14**, not 16. **The known hover-tooltip trade-off (stripping the bonus token would have cost the hover breakdown) was retired, not accepted** — the fix preserves both the value fix and the tooltip's per-item contributor breakdown.
@@ -476,13 +486,14 @@ Second docs-only round, closing the findings the first one reported plus the six
 - **A "Permissions" explanation now accompanies the permissions screenshot** in `README.md` and `docs/INSTALL.md`: what **Full page access** covers and why MRR needs it (page access for the sheet / dice widget / Ruleset dialog; same-origin engine API for bundle install and state write-back), stated from the manifest and the engine's own lane semantics — no invented permission names. Paired with the player-vs-GM dice distinction: the widget's roll goes into *your* message and is authoritative, never re-rolled; the GM's rolls come from the engine `roll_dice` tool behind the chat toggle.
 
 
-## [Unreleased]
+### v1.1.0 engineering log — the detail behind the release notes above
 
-Pending the next published release. New entries land here between releases;
-each release moves the entries into a dated section below.
-
-> The entries below target **v1.0.0**: Marinara 2.0.1 compliance + single-track
-> consolidation (the GM-mode and RP-mode extensions merge into this one).
+> Historical note (rolled into place 2026-09-03): this block sat under a stale
+> `## [Unreleased]` header left over from the v1.0.0 → v1.1.0 era. Every entry
+> from here down to the `## v1.0.0` section landed between 2026-07-15 and
+> 2026-08-24 (dates verified against git history) and shipped in **v1.1.0** —
+> this is the engineering detail the release notes above summarize. Entries
+> keep their original headers and order (roughly newest first).
 
 ### Removed — pre-1.0.0 release folders
 
@@ -862,6 +873,15 @@ re-verified independently at source before being written into the ledger.
 - Ships **inert by design**: `MRR_RUNS_POLLER_MODE` = `"off"` (default, byte-identical to prior narrator-only behavior) | `"dump"` (log one raw run row for live-smoke verification, apply nothing) | `"apply"` (full second transport). Two-stage so a second live state-writer is never activated blind.
 - New shared `applyStateTagsWithDedup(tags, anchorId)` keyed on `anchorId::contentSig::occIdx` — both the narrator path and the poller route through it, so identical tags across turns/transports apply exactly once.
 - Live activation and the apply-exactly-once proof are deferred to the live-smoke session (plan §4.A6) — needs the running engine.
+
+## v1.0.0 (2026-06-22)
+
+The single-track consolidation release: the RP-mode extension line
+(`Marinara-RPG-RP-Mode-Extension`, `mrrp-` namespace) merged into this one
+extension, versioning jumped to 1.0.0, and packaging moved to the Marinara
+2.0+ folder/manifest/zip format. Its release folder lived at `releases/1.0.0/`
+until the v1.1.0 bump (2026-08-24) moved it. (Section reconstructed 2026-09-03
+from the stale unreleased block; date is the consolidation commit `1b7793b`.)
 
 ### Changed — single-track consolidation, this is now the only Marinara RPG extension (v1.0.0)
 
@@ -1868,5 +1888,5 @@ Exalted 3e, Fate Core, Pathfinder 2e).
   position-free; the bundle builder defaults to 0. Manual lorebook imports
   via Marinara's UI are unaffected.
 
-[Unreleased]: https://github.com/Kenhito/Marinara-RPG-Extension/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Kenhito/Marinara-RPG-Extension/compare/v1.4.0...HEAD
 [0.3.0]: https://github.com/Kenhito/Marinara-RPG-Extension/compare/b85e7b0...v0.3.0
