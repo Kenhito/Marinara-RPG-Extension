@@ -6,7 +6,18 @@ You are an AI coding agent working on or with the **Marinara-RPG-Extension** rep
 >
 > This file (AGENTS.md) is for the deeper architectural concerns of working ON the framework (extending it with new resolution modes, modifying the extension JS, etc.).
 
-Read this file end-to-end before making changes. It is intentionally dense and self-contained: you should not need to fetch other files in the repo to understand the architecture, the constraints, or the authoring contract.
+> **⚠️ Currency note (2026-09-03, v1.4.0):** the two "v0.4.x changes" sections
+> just below are a **historical snapshot** from May 2026 and are kept for context
+> only — do NOT treat them as the current state. Sixteen rulesets ship today, and
+> the schema has grown substantially since they were written (declared
+> `inventory.fields[]`, `states[].aliases`, `rests[]`, House Rules levers, XP &
+> progression — see `docs/AUTHORING-PHASE-6.md` and `CHANGELOG.md` from v1.1.0
+> forward). Where this file and a newer doc disagree, trust, in order:
+> `CHANGELOG.md` (dated sections), `docs/AUTHORING-PHASE-6.md`,
+> `docs/AUTHORING.md`, `docs/BUILDING.md`, then this file. A full AGENTS.md
+> rewrite is scheduled for the 1.5 cycle.
+
+Read this file end-to-end before making changes. It is intentionally dense and covers the architecture, the constraints, and the authoring contract — but per the currency note above, verify anything version-sensitive against the newer docs before acting on it.
 
 If a human invokes you with a request like "add a Pathfinder 2e ruleset" or "extend the framework to support [system]," start here, then read the specific source files this document references.
 
