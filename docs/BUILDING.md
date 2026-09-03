@@ -114,7 +114,7 @@ Every script under `tools/` is a generator (produces an artifact) or a validator
 
 **Input:** ruleset directory containing `ruleset.json` + `lorebook.json` (+ optional `gm-agent.md`, per-ruleset `agents/`). **Output:** `bundle.json` in the same directory. **Purpose:** the orchestrator. Reads the source files, calls every other derivation generator in order, assembles the result into a single bundle envelope.
 
-Composition order (as of v0.4.x+):
+Composition order:
 1. Read `ruleset.json` (validated separately by `validate-ruleset.mjs`)
 2. Read `lorebook.json` and normalize entries (drop server-assigned `id`, default `position` to 0)
 3. Call `buildRegexScripts(ruleset)` (Vector 9) — emit `bundle.regexScripts` if non-empty
@@ -164,7 +164,7 @@ Composition order (as of v0.4.x+):
 
 **Input:** ruleset object. **Output:** `CustomTool[]` (engine `CustomTool` shape minus server-assigned `id` / `createdAt` / `updatedAt`).
 
-**Purpose:** derive engine-native CustomTool entries the AI can call mid-generation. Tonight's slice (v0.4.x) ships only `executionType: "static"` tools — they don't require the `CUSTOM_TOOL_SCRIPT_ENABLED` env var and work out of the box on any self-hosted Marinara install where the caller has privileged access. One tool per ruleset: a comprehensive ruleset-reference lookup the AI can call when it needs authoritative dice / resolution / difficulty / attribute / skill detail.
+**Purpose:** derive engine-native CustomTool entries the AI can call mid-generation. The shipped generator emits only `executionType: "static"` tools — they don't require the `CUSTOM_TOOL_SCRIPT_ENABLED` env var and work out of the box on any self-hosted Marinara install where the caller has privileged access. One tool per ruleset: a comprehensive ruleset-reference lookup the AI can call when it needs authoritative dice / resolution / difficulty / attribute / skill detail.
 
 **Fields consumed:**
 - `id` (required) — kebab-case ruleset id is converted to `snake_case` for the tool-name prefix.

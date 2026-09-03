@@ -22,7 +22,7 @@ Marinara-RPG-Extension's ruleset dialog.
 ## How this works
 
 1. The AI reads the reference docs named in the prompt below:
-   - [`releases/1.1.0/docs-for-ai/`](releases/1.1.0/docs-for-ai/) (01 through 07) — full schema, agent architecture, and authoring patterns
+   - [`releases/1.1.0/docs-for-ai/`](releases/1.1.0/docs-for-ai/) (01 through 07) — full schema, agent architecture, and authoring patterns. (The `1.1.0` path is deliberate: the seven-part canon is frozen in that release folder, and everything newer is carried by `AUTHORING-PHASE-6.md` — later release folders ship only the delta doc.)
    - [`docs/AUTHORING-PHASE-6.md`](docs/AUTHORING-PHASE-6.md) — the newer schema fields docs-for-ai doesn't cover yet
    - [`schema/bundle.schema.json`](./schema/bundle.schema.json) — the bundle envelope
    - One or more reference bundles (D&D, Fate, Exalted) so it has worked examples
