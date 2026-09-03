@@ -1,12 +1,3 @@
-<!-- SHOT LIST for Corey — captures to add to docs/screenshots/ (referenced below; the guide reads fine without them until they land):
-  1. sheet_panel_overview.png — the floating sheet panel, one mid-level character, attributes+skills+derived+EQUIPMENT visible in one frame (Exalted or D&D, no campaign names — Tester is fine).
-  2. item_dialog_declared_fields.png — the Add/Edit Item dialog open on a D&D chat, Armor slot selected, showing Base AC / Dex Cap / Armor Magic Bonus fields + the Description box.
-  3. equipment_row_chips.png — the EQUIPMENT list with one equipped armor + one weapon showing their stat chips and the derived-stat "+N" suffixes on AC.
-  4. long_rest_receipt.png — the Long Rest button plus its receipt toast right after a click.
-  5. house_rules_dialog.png — Ruleset dialog → House Rules with the Hit Dice lever visible.
-  6. encounter_shell.png — a chat turn showing an ENCOUNTER: block for unnamed opposition.
-  Existing shots already referenced: ruleset-ui.png, sheet_dice_widget.png, character-save-controls.png, plus the INSTALL.md set. -->
-
 # How Marinara RPG Works
 
 This is the plain-language guide to playing with the extension installed — what it does, how the pieces fit together, and what to check when something looks wrong. It assumes Marinara Engine is already running and you're about to install the extension, or you already have it installed and want to understand it better.
@@ -105,6 +96,8 @@ If you're playing in roleplay mode and want a ready-made narrator persona instea
 
 The floating sheet panel is your system's character, not D&D's — whatever attributes, skills, derived stats, states, and inventory your ruleset defines. It's resizable, and the small scroll-icon button next to the Ruleset button toggles it open and closed.
 
+![The floating sheet panel for an Exalted character — pools, health track, and collapsible sections top to bottom; the boxes call out the Anima Banner state and the green equipment "+N" suffixes on derived pools](screenshots/sheet_panel_overview.png)
+
 A control bar at the top of the panel lets you:
 
 - Switch between multiple characters in the same chat.
@@ -152,9 +145,11 @@ The sheet's **EQUIPMENT** section (some systems retitle it) is where items live.
 - Every item, in every system, has the basics: name, quantity, a **Description** (what it looks like — the Game Master reads this, so a distinctive item gets treated distinctively in the story), notes, and an equipped/carried state with a slot.
 - On top of that, each system declares its **own** fields, shown only where they make sense. Playing D&D and editing armor? You'll see **Base AC**, **Dex Cap**, and **Armor Magic Bonus**. An Exalted artifact weapon shows **Accuracy**, **Overwhelming**, **Weapon Tags**, and **Artifact rating**. A Blades item shows just **Load** and **Fine** — because that's all Blades gear is. A system whose gear carries no numbers shows only the basics, on purpose.
 
-<!-- screenshot: item_dialog_declared_fields.png — see shot list -->
+![The Edit Item dialog on a D&D chat with the Armor slot selected — the boxed fields (Base AC, Dex Cap, Stealth Disadvantage, Str Requirement, Magic Bonus) are declared by the dnd5e ruleset, and every item gets the Description box](screenshots/item_dialog_declared_fields.png)
 
 ### Equipping does the math for you
+
+![The EQUIPMENT list — each item row carries chips for its declared stats (Base AC 11 · Dex Cap 5 · Magic Bonus 2 on the armor; Attack Bonus 2 · Damage Type slashing on the sword)](screenshots/equipment_row_chips.png)
 
 Equip a piece of gear and its numbers flow to the right places on their own:
 
@@ -224,6 +219,8 @@ ENCOUNTER:
 ```
 
 The exact fields depend on your system — a d20 game shows AC, HP, attack bonus, damage, and save DCs instead; a narrative-first system might show nothing more than a threat description and a condition track.
+
+![A live combat turn — the boxed statline table is the shell for unnamed opposition, re-emitted in full every round](screenshots/encounter_shell.png)
 
 The Game Master treats these numbers as the truth for the fight and doesn't invent its own on top of them. The block re-emits in full, updated, every single turn, so whichever version you're looking at right now is the one to trust over an earlier round's memory. Once the scene ends, the shell goes away entirely — it was never a saved character, just bookkeeping scoped to that fight.
 
@@ -305,6 +302,8 @@ In systems that track a running experience pool instead of discrete levels (Exal
 
 For systems that declare rests — **currently D&D 5e only**; other systems show no rest button, and that's expected, not a bug — a **Long Rest** button sits at the bottom of the Resources area. One click applies everything the rest touches together, as a single sheet write: HP back to max, hit dice regained (rules-as-written: up to half your maximum, round down, minimum one), all spell slot tiers refilled, temp HP and death saves cleared when your sheet is carrying them. No more clicking each widget's own button and hoping you got them all — the whole point is that nothing gets missed and nothing gets half-applied.
 
+![The D&D resources area with its Long Rest buttons; below, the receipt toast the click produces — naming exactly what moved and what was skipped](screenshots/long_rest_receipt.png)
+
 Every rest produces a **receipt** — a toast naming each change, plus a fuller line in the browser console. The receipt also names the hit-dice rule that was actually used and where it came from ("half — RAW", or your house rule and which lorebook it was read from). **The receipt is the authority.** If you expected something to move and the receipt doesn't name it, that's your tell — an empty spell-slot counter that was never configured, say, shows up as "0/0 (already full)" instead of silently doing nothing. A pool sitting *above* its maximum (a buff, a temporary grant) is never reduced by a rest.
 
 The button refuses politely rather than guessing: mid-update, before your sheet has loaded, or when it can't read your house rules, you get a "REST BLOCKED" or "REST STOPPED" toast naming the reason and nothing is applied. A refusal is always safe to retry after the stated cause clears.
@@ -316,6 +315,8 @@ Short rests are not in this release — spending hit dice is an interactive choi
 House rules live in a dedicated lorebook per system — created for you as **"MRR House Rules — D&D 5e"** (and so on) the first time you change a setting away from rules-as-written. Open the **Ruleset dialog → House Rules** to see the levers your system declares; for D&D 5e that's **Hit Dice on Long Rest** (RAW half, or house-ruled full). Nothing is created while everything is RAW — no entry, no book, no clutter.
 
 **The one distinction that matters: levers are enforced, table notes are not.** The entry the extension manages has two parts. Lines in its LEVERS section are **machine-read** — the extension applies them mechanically, and the rest receipt shows the value in effect. Everything below the sentinel line is **TABLE NOTES**: free prose the Game Master honors in narration ("crits are extra dramatic at this table") but which **never changes a number**. If you write "long rests restore everything" in the notes while the lever says half, the lever wins and the narration is expected to say so. When you want a mechanical house rule that has no lever yet, that's a feature request — the notes can carry it narratively in the meantime, but don't expect the math to move.
+
+![The Ruleset dialog's House Rules section — the boxed dropdown is the Hit Dice lever, and the status line below names the lorebook entry the value was read from](screenshots/house_rules_dialog.png)
 
 Three ways to engage it: flip a lever in the **Ruleset dialog** (the extension creates and edits the entry — it is the *only* writer; the AI cannot create or edit house rules through any prompt); *ask the GM in chat* ("we're implementing some house rules") and it will point you to the dialog or the notes, whichever fits; or hand-author the entry yourself in the lorebook editor following the exact grammar in [`AUTHORING.md`](AUTHORING.md) — the extension adopts a well-formed hand-made entry as its own.
 
