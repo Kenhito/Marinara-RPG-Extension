@@ -40,7 +40,7 @@ var MRR_TAG_CAT_PFX = "mrr-cat-";
 
 var EXT_VERSION = "1.4.0";
 
-var MRR_BUILD_STAMP = "2026-09-02-sd7-sync-provenance";
+var MRR_BUILD_STAMP = "2026-09-02-b2-migration-agents";
 
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
@@ -4222,6 +4222,7 @@ function mrrMigrateInventoryBonuses(item, ruleset) {
     if (f.type !== "number") return;
     var bk = f.bonusKind || BONUS_KIND.VALUE;
     if (bk !== BONUS_KIND.VALUE) return;
+    if (!mrrFieldAppliesToItem(f, item)) return;
     if (!eligibleByTarget[f.bonusTarget]) eligibleByTarget[f.bonusTarget] = [];
     eligibleByTarget[f.bonusTarget].push(f);
   });
@@ -14085,6 +14086,9 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
         var entry = mrrFormatDeclaredFieldEntry(field, it);
         if (entry) parts.push("· " + entry);
       });
+      if (typeof it.attackAttribute === "string" && it.attackAttribute) {
+        parts.push("· Atk attr: " + it.attackAttribute);
+      }
       var itDesc = typeof it.description === "string" ? it.description.trim() : "";
       if (itDesc) parts.push("· Description: " + itDesc);
       lines.push(parts.join(" "));
@@ -14158,8 +14162,15 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
     var anyDiscipline = false;
     var disciplineLines = [];
     allCatsSnap.forEach(function(cat) {
-      var score = state.sheet.abilityCategoryScores && typeof state.sheet.abilityCategoryScores[cat.id] === "number" ? state.sheet.abilityCategoryScores[cat.id] : 0;
       var abs = state.sheet.abilities && Array.isArray(state.sheet.abilities[cat.id]) ? state.sheet.abilities[cat.id] : [];
+      var score;
+      if (state.sheet.abilityCategoryScores && typeof state.sheet.abilityCategoryScores[cat.id] === "number") {
+        score = state.sheet.abilityCategoryScores[cat.id];
+      } else if (abs.length > 0 && state.sheet.skills && typeof state.sheet.skills[cat.label] === "number") {
+        score = state.sheet.skills[cat.label];
+      } else {
+        score = 0;
+      }
       if (score === 0 && abs.length === 0) return;
       anyDiscipline = true;
       var catLine = "- " + cat.label + ": rating " + score;
@@ -14286,13 +14297,28 @@ function mrrPartyMemberSummaryLines(sheet, characterId) {
   return mrrWithSheetBound(sheet, characterId, function() {
     var defs = state.ruleset && Array.isArray(state.ruleset.derivedStats) ? state.ruleset.derivedStats : [];
     var lines = [];
+    var mrrF13AnyResolved = false;
+    defs.forEach(function(od) {
+      if (!od || !od.name) return;
+      var odIsBar = od.renderAs === "bar";
+      var odv = state.sheet.derived && state.sheet.derived[od.name];
+      var odIsPool = !odIsBar && typeof od.maxFormula === "string" && typeof odv === "number" && isFinite(odv);
+      if (!odIsBar && !odIsPool) return;
+      if (typeof odv === "number" && isFinite(odv)) mrrF13AnyResolved = true;
+    });
     defs.forEach(function(d) {
       if (!d || !d.name) return;
       var isBar = d.renderAs === "bar";
       var dv = state.sheet.derived && state.sheet.derived[d.name];
       var isPool = !isBar && typeof d.maxFormula === "string" && typeof dv === "number" && isFinite(dv);
       if (!isBar && !isPool) return;
-      var cur = typeof dv === "number" && isFinite(dv) ? dv : 0;
+      var dvMissed = !(typeof dv === "number" && isFinite(dv));
+      var cur = dvMissed ? 0 : dv;
+      if (dvMissed && isBar && mrrF13AnyResolved) {
+        cur = null;
+        var mrrF13DerivedKeys = state.sheet.derived && typeof state.sheet.derived === "object" ? Object.keys(state.sheet.derived) : [];
+        warn("[mrr-sd7] summary pool read miss: member=" + (mrrCharacterLabel(characterId) || characterId) + " stat=" + d.name + " — state.sheet.derived keys at this instant: [" + mrrF13DerivedKeys.join(", ") + "]");
+      }
       var max = mrrP3ComputeBarMax(d);
       var committedHere = 0;
       if (typeof max === "number" && isFinite(max) && state.ruleset && Array.isArray(state.ruleset.resources) && typeof computeCommittedMotes === "function") {
@@ -14305,7 +14331,8 @@ function mrrPartyMemberSummaryLines(sheet, characterId) {
           }
         }
       }
-      lines.push("- " + d.name + ": " + cur + " / " + max + (committedHere > 0 ? "  (" + committedHere + " committed)" : ""));
+      var renderedCur = cur == null ? "unknown" : cur;
+      lines.push("- " + d.name + ": " + renderedCur + " / " + max + (committedHere > 0 ? "  (" + committedHere + " committed)" : ""));
     });
     if (!lines.length) {
       defs.forEach(function(d) {
@@ -14475,6 +14502,9 @@ function mrrSummaryEquippedLines(sheet) {
       var entry = mrrFormatDeclaredFieldEntry(field, it);
       if (entry) chips.push(entry);
     });
+    if (typeof it.attackAttribute === "string" && it.attackAttribute) {
+      chips.push("Atk attr: " + it.attackAttribute);
+    }
     if (chips.length) segments.push(chips.join(" · "));
     var desc = typeof it.description === "string" ? it.description.trim() : "";
     if (desc) {

@@ -57,7 +57,7 @@ var EXT_VERSION      = "1.4.0";
 /* Build discriminator (plan A7): same-version test rebuilds are told apart
    from inside the environment — the init console line prints this stamp,
    so a stale cached package is caught before a test session is burned. */
-var MRR_BUILD_STAMP  = "2026-09-02-sd7-sync-provenance";
+var MRR_BUILD_STAMP  = "2026-09-02-b2-migration-agents";
 var BUNDLE_SCHEMA_ID = "mrr-bundle";
 
 /* Markers used by the bundle installer to recognize artifacts it created
@@ -6490,8 +6490,20 @@ function applyItemAttrs(it, attrs) {
         value the user already set
      7. exactly one row in item.bonuses targets F.bonusTarget — two or
         more is ambiguous, migrate none of them
-     8. exactly one declared field (among those passing 2+3) claims that
-        bonusTarget — two candidate fields is ambiguous, migrate none
+     8. exactly one declared field (among those passing 2+3, AND applying
+        to this item's slot per mrrFieldAppliesToItem) claims that
+        bonusTarget — two candidate fields among fields that apply to
+        this item's slot is ambiguous, migrate none
+
+   Slot-aware eligibility (batch-2, closes an SD-2/acBonus regression):
+   the eligibility grouping used to ignore item.slot entirely, so once
+   SD-2 declared dnd5e's acBonus (appliesTo ["Shield"], bonusTarget
+   "Armor Class"), any Armor-slot item's legacy "+2 -> Armor Class" row
+   saw TWO eligible fields (acBonus + armorMagicBonus) and condition 8
+   refused to migrate it, even though acBonus can never apply to an
+   Armor-slot item. Filtering eligibleByTarget through
+   mrrFieldAppliesToItem before grouping restores the intended
+   single-candidate match per slot.
 
    Idempotent by construction: the row is gone afterwards, and condition
    6 prevents re-entry on a second pass. Never reorders surviving
@@ -6510,6 +6522,7 @@ function mrrMigrateInventoryBonuses(item, ruleset) {
     if (f.type !== "number") return;
     var bk = f.bonusKind || BONUS_KIND.VALUE;
     if (bk !== BONUS_KIND.VALUE) return;
+    if (!mrrFieldAppliesToItem(f, item)) return; /* slot-aware — see cond 8 note below (SD-2/acBonus regression) */
     if (!eligibleByTarget[f.bonusTarget]) eligibleByTarget[f.bonusTarget] = [];
     eligibleByTarget[f.bonusTarget].push(f);
   });
@@ -17631,6 +17644,19 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
         var entry = mrrFormatDeclaredFieldEntry(field, it);
         if (entry) parts.push("· " + entry);
       });
+      /* F7 (batch-2) — attackAttribute is a core field (all rulesets, always
+         normalized to a string by normalizeInventoryItem), not a declared
+         field, so it never went through the loop above and no prompt tier
+         ever rendered it — the equipped weapon's Accuracy/Damage/tags all
+         reached the agent but the attribute the attack pool actually rolls
+         (e.g. "Dexterity") did not, which is why no agent caught a
+         Strength-for-Dexterity attack-pool swap live. Promoted to core
+         rendering the same way `description` was (see CHANGELOG
+         "[Unreleased] — description promoted to common core"): placed
+         adjacent to the Accuracy chip emitted just above, non-empty only. */
+      if (typeof it.attackAttribute === "string" && it.attackAttribute) {
+        parts.push("· Atk attr: " + it.attackAttribute);
+      }
       /* Core description (R10-as-amended, S7 pre-work). Emitted for EVERY
          ruleset, no declaration required — the two pilots used to declare
          a `description` field to get this line and the other 15 rulesets
@@ -17725,9 +17751,25 @@ function buildSheetForPrompt(sheetArg, characterIdArg) {
     var anyDiscipline = false;
     var disciplineLines = [];
     allCatsSnap.forEach(function (cat) {
-      var score = (state.sheet.abilityCategoryScores && typeof state.sheet.abilityCategoryScores[cat.id] === "number")
-        ? state.sheet.abilityCategoryScores[cat.id] : 0;
       var abs = (state.sheet.abilities && Array.isArray(state.sheet.abilities[cat.id])) ? state.sheet.abilities[cat.id] : [];
+      /* F6 (batch-2) — abilityCategoryScores is {} on real sheets, so this
+         used to hard-default every category to rating 0 while the Skills
+         block (built elsewhere in this same prompt) printed the true
+         rating from state.sheet.skills[cat.label] forty lines above —
+         contradictory data fed to rules agents. Fallback chain: an
+         explicit abilityCategoryScores[cat.id] number still wins outright;
+         else, ONLY for a category that actually has abilities (abs.length
+         > 0 — never for an ability-less category, so the pre-existing
+         empty-category skip below keeps firing exactly as before), fall
+         back to the matching skills[cat.label] rating; else 0. */
+      var score;
+      if (state.sheet.abilityCategoryScores && typeof state.sheet.abilityCategoryScores[cat.id] === "number") {
+        score = state.sheet.abilityCategoryScores[cat.id];
+      } else if (abs.length > 0 && state.sheet.skills && typeof state.sheet.skills[cat.label] === "number") {
+        score = state.sheet.skills[cat.label];
+      } else {
+        score = 0;
+      }
       if (score === 0 && abs.length === 0) return;
       anyDiscipline = true;
       var catLine = "- " + cat.label + ": rating " + score;
@@ -17939,6 +17981,26 @@ function mrrPartyMemberSummaryLines(sheet, characterId) {
   return mrrWithSheetBound(sheet, characterId, function () {
     var defs = (state.ruleset && Array.isArray(state.ruleset.derivedStats)) ? state.ruleset.derivedStats : [];
     var lines = [];
+    /* F13 (batch-2) — mirrors SD-7's read-miss-vs-fresh discriminator
+       (Plans/2026-09-02_sd7-mote-snapshot-silent-max-fallback.md), the
+       mirror-image bug: the isBar path below used to silently default a
+       missing derived[d.name] to 0 — a fabricated EMPTY pool instead of
+       SD-7's fabricated FULL one, which could make an agent wrongly veto
+       an affordable spend. Same shape as SD-7's mrrSd7AnyResolved: before
+       the per-stat loop, work out once whether this member's sheet is
+       hydrated at all — at least one bar/pool stat resolves to a live
+       number. A genuinely fresh/empty member (nothing resolves) keeps
+       today's 0 rendering unchanged; a hydrated member with one miss
+       renders that stat "unknown" and warns instead. */
+    var mrrF13AnyResolved = false;
+    defs.forEach(function (od) {
+      if (!od || !od.name) return;
+      var odIsBar = od.renderAs === "bar";
+      var odv = state.sheet.derived && state.sheet.derived[od.name];
+      var odIsPool = !odIsBar && typeof od.maxFormula === "string" && typeof odv === "number" && isFinite(odv);
+      if (!odIsBar && !odIsPool) return;
+      if (typeof odv === "number" && isFinite(odv)) mrrF13AnyResolved = true;
+    });
     defs.forEach(function (d) {
       if (!d || !d.name) return;
       var isBar = d.renderAs === "bar";
@@ -17953,7 +18015,20 @@ function mrrPartyMemberSummaryLines(sheet, characterId) {
       var dv = state.sheet.derived && state.sheet.derived[d.name];
       var isPool = !isBar && typeof d.maxFormula === "string" && typeof dv === "number" && isFinite(dv);
       if (!isBar && !isPool) return;
-      var cur = (typeof dv === "number" && isFinite(dv)) ? dv : 0;
+      var dvMissed = !(typeof dv === "number" && isFinite(dv));
+      /* F13 (batch-2): isPool's own definition above requires a numeric dv,
+         so a miss can only reach here on the isBar path — isPool already
+         returns before this point on a miss (Q1(a) behavior, untouched).
+         Hydrated + missed -> "unknown" + one [mrr-sd7] warn; genuinely
+         fresh (nothing on the sheet resolved) -> today's 0, unchanged. */
+      var cur = dvMissed ? 0 : dv;
+      if (dvMissed && isBar && mrrF13AnyResolved) {
+        cur = null;
+        var mrrF13DerivedKeys = (state.sheet.derived && typeof state.sheet.derived === "object")
+          ? Object.keys(state.sheet.derived) : [];
+        warn("[mrr-sd7] summary pool read miss: member=" + (mrrCharacterLabel(characterId) || characterId) +
+             " stat=" + d.name + " — state.sheet.derived keys at this instant: [" + mrrF13DerivedKeys.join(", ") + "]");
+      }
       var max = mrrP3ComputeBarMax(d);
       /* SD-6 parity (live, 2026-09-02): the full tier reports a committed pool
          as "37 / 42  (12 committed)" (buildSheetForPrompt's resource
@@ -17973,7 +18048,8 @@ function mrrPartyMemberSummaryLines(sheet, characterId) {
           }
         }
       }
-      lines.push("- " + d.name + ": " + cur + " / " + max + (committedHere > 0 ? "  (" + committedHere + " committed)" : ""));
+      var renderedCur = (cur == null) ? "unknown" : cur;
+      lines.push("- " + d.name + ": " + renderedCur + " / " + max + (committedHere > 0 ? "  (" + committedHere + " committed)" : ""));
     });
     if (!lines.length) {
       defs.forEach(function (d) {
@@ -18333,6 +18409,11 @@ function mrrSummaryEquippedLines(sheet) {
       var entry = mrrFormatDeclaredFieldEntry(field, it);
       if (entry) chips.push(entry);
     });
+    /* F7 (batch-2) — same core-chip promotion as the full tier, adjacent to
+       the Accuracy chip above; non-empty attackAttribute only. */
+    if (typeof it.attackAttribute === "string" && it.attackAttribute) {
+      chips.push("Atk attr: " + it.attackAttribute);
+    }
     if (chips.length) segments.push(chips.join(" · "));
     var desc = (typeof it.description === "string") ? it.description.trim() : "";
     if (desc) {
