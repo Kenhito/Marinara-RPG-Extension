@@ -635,5 +635,5 @@ When authoring a new ruleset, walk through this list:
 
 - Live schema: `schema/ruleset.schema.json` — the JSON Schema is the source of truth; this doc is the prose explanation.
 - Reference bundles: `rulesets/exalted3e/` uses every Phase 5+6 feature (mote commit, state-banner, sections.hidden, valueFormula derived, custom health-track renderer).
-- Pre-v0.2 single-paste prompt: `AUTHORING-PROMPT.md` — still works for legacy authoring; reference this file for the Phase 5+6 additions.
+- Canonical authoring entry point: `AUTHORING-PROMPT.md` — the paste-into-your-chat-AI prompt; pair it with this file for the Phase 5+6 additions.
 - Engine constraints: `docs/ENGINE-CONSTRAINTS.md` — Marinara-side limits that bound what the overlay can do.
